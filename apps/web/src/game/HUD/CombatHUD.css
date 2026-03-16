@@ -1,0 +1,150 @@
+.combat-hud {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 24px;
+  background: linear-gradient(to top, rgba(10, 14, 23, 0.95), rgba(10, 14, 23, 0.7));
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.hud-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.hud-hp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  min-width: 24px;
+}
+
+.hud-bar {
+  flex: 1;
+  height: 12px;
+  background: var(--color-bg);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hud-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.hud-bar-fill.hp {
+  background: linear-gradient(90deg, #ef4444, #22c55e);
+}
+
+.hud-value {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  min-width: 60px;
+  text-align: right;
+}
+
+.hud-points {
+  display: flex;
+  gap: 16px;
+}
+
+.hud-ap, .hud-mp {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.hud-ap { color: var(--color-accent); }
+.hud-mp { color: #60a5fa; }
+
+.hud-spells {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.hud-spell-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  transition: all 0.2s;
+  position: relative;
+}
+
+.hud-spell-btn:hover:not(.disabled) {
+  border-color: var(--color-primary);
+}
+
+.hud-spell-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.spell-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.spell-cost {
+  font-size: 0.7rem;
+  color: var(--color-accent);
+}
+
+.spell-cooldown {
+  font-size: 0.65rem;
+  color: var(--color-danger);
+}
+
+.hud-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.hud-turn-indicator {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.hud-turn-indicator.my-turn {
+  color: var(--color-success);
+}
+
+.hud-end-turn {
+  padding: 8px 24px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.hud-end-turn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.hud-end-turn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

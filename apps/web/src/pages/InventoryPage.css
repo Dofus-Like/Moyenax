@@ -1,0 +1,89 @@
+.inventory-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.inventory-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inventory-loading {
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.inventory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inventory-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  transition: border-color 0.2s;
+}
+
+.inventory-item.equipped {
+  border-color: var(--color-success);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.inventory-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inventory-item-name {
+  font-weight: 500;
+}
+
+.inventory-item-type {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  padding: 2px 8px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 4px;
+}
+
+.inventory-item-qty {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.inventory-equip-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: opacity 0.2s;
+}
+
+.inventory-equip-btn.equip {
+  background: var(--color-primary);
+  color: white;
+}
+
+.inventory-equip-btn.unequip {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.inventory-equip-btn:hover {
+  opacity: 0.85;
+}

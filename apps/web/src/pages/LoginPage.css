@@ -1,0 +1,102 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0e17 0%, #1a1a3e 50%, #0a0e17 100%);
+}
+
+.login-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.login-title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.login-subtitle {
+  text-align: center;
+  color: var(--color-text-secondary);
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+.login-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.login-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.login-tab.active {
+  background: var(--color-primary);
+  color: white;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-input {
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.login-button {
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--color-primary), #7c3aed);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+  margin-top: 8px;
+}
+
+.login-button:hover {
+  opacity: 0.9;
+}
+
+.login-error {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  text-align: center;
+}

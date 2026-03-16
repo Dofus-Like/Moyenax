@@ -1,96 +1,93 @@
-# GameMonorepo
+# ⚔️ Dofus-like — Jeu de Stratégie au Tour par Tour
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Monorepo NX pour un jeu de stratégie au tour par tour sur navigateur inspiré de Dofus.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## 🎮 Phases de Jeu
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+1. **Exploration** — Récoltez des ressources sur la carte isométrique
+2. **Économie** — Achetez, vendez et craftez des objets dans la boutique
+3. **Combat** — Défiez d'autres joueurs dans des combats tactiques au tour par tour
 
-## Run tasks
+## 📋 Prérequis
 
-To run tasks with Nx use:
+- Node.js 20+
+- Docker & Docker Compose
+- Yarn
 
-```sh
-npx nx <target> <project-name>
+## 🚀 Installation
+
+```bash
+git clone <url> && cd game-monorepo
+cp .env.example .env
+yarn run setup          # install + docker + migrate + seed
+yarn run dev            # api (3000) + web (5173) en parallèle
 ```
 
-For example:
+## 🏗️ Architecture
 
-```sh
-npx nx build myproject
+```
+game-monorepo/
+├── apps/
+│   ├── api/                    # NestJS backend
+│   │   ├── src/
+│   │   │   ├── auth/           # JWT authentication
+│   │   │   ├── player/         # Player + Stats services
+│   │   │   ├── world/          # Resources (Équipe A)
+│   │   │   ├── economy/        # Inventory, Items, Shop, Crafting (Équipe A)
+│   │   │   ├── combat/         # Session, Turn, Spells, Map (Équipe B)
+│   │   │   └── shared/         # Prisma, Redis, SSE
+│   │   └── prisma/             # Schema + seed
+│   └── web/                    # React + Three.js frontend
+│       └── src/
+│           ├── pages/          # Login, Lobby, Shop, Inventory, Combat, Map
+│           ├── game/           # Composants Three.js (ResourceMap, CombatMap, HUD)
+│           ├── store/          # Zustand (auth, combat)
+│           └── api/            # Clients API typés (axios)
+├── libs/
+│   ├── shared-types/           # Interfaces/enums TypeScript partagés
+│   ├── game-engine/            # Logique métier pure (calculs, formules)
+│   └── ui-components/          # Composants React partagés
+├── docker-compose.yml          # Dev: PostgreSQL + Redis
+└── docker-compose.prod.yml     # Prod: + API + Web
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+## 👥 Découpage Équipes
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+| | Équipe A (World + Economy) | Équipe B (Combat) |
+|---|---|---|
+| **Modules** | world/, economy/ | combat/ |
+| **Émet** | ITEM_EQUIPPED, ITEM_UNEQUIPPED, SPELL_LEARNED | COMBAT_ENDED, COMBAT_PLAYER_DIED |
+| **Consomme** | COMBAT_ENDED, COMBAT_PLAYER_DIED | ITEM_EQUIPPED, ITEM_UNEQUIPPED |
+| **Données** | PostgreSQL (inventaire, items, joueurs) | Redis (état combat temps réel) |
 
-## Add new projects
+### Contrat Inter-Équipes
+- **PlayerStatsService** : calcule les stats effectives (base + items équipés) via `@game/game-engine`
+- **GAME_EVENTS** : événements partagés définis dans `@game/shared-types`
+- **CombatState** : interface partagée pour l'état de combat
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+## 📦 Commandes Utiles
 
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
-```
+| Commande | Description |
+|---|---|
+| `yarn dev` | Lance API + Web en parallèle |
+| `yarn dev:api` | Lance uniquement l'API |
+| `yarn dev:web` | Lance uniquement le frontend |
+| `yarn build` | Build tous les projets |
+| `yarn lint` | Lint tous les projets |
+| `yarn test` | Tests tous les projets |
+| `yarn db:migrate` | Exécute les migrations Prisma |
+| `yarn db:studio` | Ouvre Prisma Studio |
+| `yarn db:seed` | Seed la base de données |
+| `yarn docker:dev` | Lance PostgreSQL + Redis |
+| `yarn docker:prod` | Lance toute la stack en production |
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
+## 🛠️ Stack Technique
 
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
-
-# Generate a library
-npx nx g @nx/react:lib some-lib
-```
-
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
-```
-
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
-```
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- **Monorepo** : NX
+- **Backend** : NestJS, TypeScript strict, Prisma, PostgreSQL 16
+- **Frontend** : Vite, React 18, Three.js (@react-three/fiber), Zustand
+- **État combat** : Redis 7 (ioredis)
+- **Realtime** : SSE (Server-Sent Events)
+- **Auth** : JWT (passport-jwt)
+- **Validation** : class-validator + class-transformer
+- **Docker** : Docker Compose (dev + prod)

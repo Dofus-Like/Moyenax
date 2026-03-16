@@ -33,6 +33,8 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
+.env
+*.js.map
 
 # System Files
 .DS_Store
@@ -40,3 +42,5 @@ Thumbs.db
 
 .nx/cache
 .nx/workspace-data
+
+vite.config.*.timestamp*

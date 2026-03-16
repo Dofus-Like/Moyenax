@@ -1,0 +1,53 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --color-bg: #0a0e17;
+  --color-bg-secondary: #111827;
+  --color-bg-card: #1a2332;
+  --color-primary: #6366f1;
+  --color-primary-hover: #818cf8;
+  --color-accent: #f59e0b;
+  --color-text: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-border: #2d3748;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-heal: #34d399;
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --radius: 8px;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-main);
+}
+
+input, select {
+  font-family: var(--font-main);
+}
