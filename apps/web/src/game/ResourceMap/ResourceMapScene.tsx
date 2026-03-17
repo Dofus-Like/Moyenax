@@ -1,70 +1,57 @@
-import React, { useState } from 'react';
-import { ThreeEvent } from '@react-three/fiber';
-import * as THREE from 'three';
+import React from 'react';
+import { TerrainType, GameMap, PathNode } from '@game/shared-types';
+import { TerrainTile, TileHoverInfo } from './TerrainTile';
+import { PlayerPawn } from './PlayerPawn';
+import { PathPreview } from './PathPreview';
 
-const GRID_SIZE = 20;
-
-function Tile({ position, hasResource, onGather }: {
-  position: [number, number, number];
-  hasResource: boolean;
-  onGather: () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-
-  const color = hasResource
-    ? hovered ? '#22c55e' : '#16a34a'
-    : hovered ? '#4b5563' : '#374151';
-
-  return (
-    <mesh
-      position={position}
-      rotation={[-Math.PI / 2, 0, 0]}
-      onPointerOver={() => setHovered(true)}
-      onPointerOut={() => setHovered(false)}
-      onClick={(e: ThreeEvent<MouseEvent>) => {
-        e.stopPropagation();
-        if (hasResource) onGather();
-      }}
-    >
-      <planeGeometry args={[0.9, 0.9]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
-  );
+interface ResourceMapSceneProps {
+  map: GameMap;
+  onTileClick?: (x: number, y: number, terrain: TerrainType) => void;
+  onTileHover?: (info: TileHoverInfo | null) => void;
+  playerPosition: PathNode;
+  movePath: PathNode[] | null;
+  previewPath: PathNode[];
+  onPathComplete: () => void;
 }
 
-export function ResourceMapScene() {
-  const [resources, setResources] = useState<Set<string>>(() => {
-    const set = new Set<string>();
-    for (let i = 0; i < 30; i++) {
-      const x = Math.floor(Math.random() * GRID_SIZE);
-      const y = Math.floor(Math.random() * GRID_SIZE);
-      set.add(`${x},${y}`);
-    }
-    return set;
-  });
+export function ResourceMapScene({
+  map,
+  onTileClick,
+  onTileHover,
+  playerPosition,
+  movePath,
+  previewPath,
+  onPathComplete,
+}: ResourceMapSceneProps) {
+  const tiles: React.ReactElement[] = [];
 
-  const handleGather = (x: number, y: number) => {
-    setResources((prev) => {
-      const next = new Set(prev);
-      next.delete(`${x},${y}`);
-      return next;
-    });
-  };
-
-  const tiles = [];
-  for (let x = 0; x < GRID_SIZE; x++) {
-    for (let y = 0; y < GRID_SIZE; y++) {
-      const hasResource = resources.has(`${x},${y}`);
+  for (let y = 0; y < map.height; y++) {
+    for (let x = 0; x < map.width; x++) {
+      const terrain = map.grid[y][x] as TerrainType;
       tiles.push(
-        <Tile
+        <TerrainTile
           key={`${x}-${y}`}
-          position={[x - GRID_SIZE / 2, 0, y - GRID_SIZE / 2]}
-          hasResource={hasResource}
-          onGather={() => handleGather(x, y)}
+          x={x}
+          y={y}
+          terrain={terrain}
+          gridSize={map.width}
+          onTileClick={onTileClick}
+          onTileHover={onTileHover}
         />,
       );
     }
   }
 
-  return <group>{tiles}</group>;
+  return (
+    <group>
+      {tiles}
+      <PathPreview path={previewPath} gridSize={map.width} />
+      <PlayerPawn
+        gridPosition={playerPosition}
+        gridSize={map.width}
+        path={movePath}
+        onPathComplete={onPathComplete}
+      />
+    </group>
+  );
 }

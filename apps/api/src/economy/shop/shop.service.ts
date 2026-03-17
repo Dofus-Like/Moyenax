@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 
 @Injectable()
@@ -23,7 +24,7 @@ export class ShopService {
       throw new BadRequestException('Or insuffisant');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.player.update({
         where: { id: playerId },
         data: { gold: { decrement: totalCost } },
@@ -64,7 +65,7 @@ export class ShopService {
 
     const sellPrice = Math.floor((inventoryItem.item.shopPrice ?? 0) * 0.5) * quantity;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.player.update({
         where: { id: playerId },
         data: { gold: { increment: sellPrice } },

@@ -25,8 +25,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       existing.close();
     }
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    const eventSource = new EventSource(`${apiUrl}/api/v1/combat/session/${sessionId}/events`);
+    const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+    const eventSource = new EventSource(`${apiUrl}/combat/session/${sessionId}/events`);
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data) as CombatState;

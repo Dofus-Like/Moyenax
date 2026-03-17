@@ -8,7 +8,7 @@ export class CraftingService {
 
   async getRecipes() {
     return this.prisma.item.findMany({
-      where: { craftCost: { not: Prisma.AnyNull } },
+      where: { craftCost: { not: Prisma.DbNull } },
     });
   }
 
@@ -21,7 +21,7 @@ export class CraftingService {
 
     const craftCost = item.craftCost as Record<string, number>;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Vérifier que le joueur possède toutes les ressources nécessaires
       for (const [resourceItemId, requiredQty] of Object.entries(craftCost)) {
         const inventoryItem = await tx.inventoryItem.findUnique({

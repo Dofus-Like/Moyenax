@@ -33,14 +33,16 @@ export class PlayerStatsService {
       initiative: playerStats.initiative,
     };
 
-    const itemDefinitions: ItemDefinition[] = equippedItems.map((inv) => ({
-      id: inv.item.id,
-      name: inv.item.name,
-      type: inv.item.type as ItemDefinition['type'],
-      statsBonus: inv.item.statsBonus as Partial<PlayerStats> | null,
-      craftCost: inv.item.craftCost as Record<string, number> | null,
-      shopPrice: inv.item.shopPrice,
-    }));
+    const itemDefinitions: ItemDefinition[] = equippedItems.map(
+      (inv: (typeof equippedItems)[number]) => ({
+        id: inv.item.id,
+        name: inv.item.name,
+        type: inv.item.type as ItemDefinition['type'],
+        statsBonus: inv.item.statsBonus as Partial<PlayerStats> | null,
+        craftCost: inv.item.craftCost as Record<string, number> | null,
+        shopPrice: inv.item.shopPrice,
+      }),
+    );
 
     return calculateEffectiveStats(baseStats, itemDefinitions);
   }
