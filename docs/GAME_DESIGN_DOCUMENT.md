@@ -138,12 +138,18 @@ Chaque joueur farm dans **sa propre instance** de la carte. Les joueurs ne se vo
 4. Le node disparaît de la carte dans l'instance du joueur
 5. Le node réapparaît après un **cooldown** (respawn)
 
+### Système de Rounds (Farming)
+
+Le temps en mode exploration est découpé en **Rounds**. Un Round n'est pas une durée fixe en secondes, mais une unité de progression :
+- **1 Round passe toutes les 5 actions** de récolte effectuées par le joueur.
+- Ou via un bouton "Passer au Round suivant" (optionnel).
+
 ### Respawn
 
-- Chaque type de ressource a un temps de respawn
-- Commun : 30 secondes
-- Rare : 120 secondes
-- Les nodes respawnent à leur position d'origine
+- Les nodes récoltés ne réapparaissent pas immédiatement.
+- **Ressources communes** : Respawn au début du Round suivant (+1 Round).
+- **Ressources rares** : Respawn après **3 Rounds**.
+- Les nodes respawnent à leur position d'origine.
 
 ---
 
@@ -209,7 +215,7 @@ Chaque item équipable possède un champ `statsBonus` (JSON) exprimé dans les n
 
 ### Spells débloqués
 
-Chaque item équipable possède aussi un champ `grantsSpells` (liste de spell IDs). Le système de tiers calcule le niveau de chaque spell en comptant le nombre de sources distinctes qui le débloquent (voir section 7).
+Chaque item équipable possède aussi un champ `grantsSpells` (liste de spell IDs). Le système de rangs calcule le niveau de chaque spell en comptant le nombre de sources distinctes qui le débloquent (voir section 7).
 
 ---
 
@@ -217,24 +223,29 @@ Chaque item équipable possède aussi un champ `grantsSpells` (liste de spell ID
 
 Il n'y a pas de classes en tant que telles. Le joueur est libre de mixer les items de n'importe quel archétype. Cependant, les items sont regroupés en 3 familles thématiques, et les **full sets d'armure** débloquent des spells bonus.
 
-#### Tiers d'armure
+#### Rangs d'équipement (Épées et Armures)
 
-Les pièces d'armure (Haut, Milieu, Bas) possèdent **3 tiers**. Chaque tier augmente les stats passives de la pièce. On craft directement le tier souhaité (les recettes de tier supérieur coûtent plus de ressources). **Les armes et accessoires n'ont pas de tiers.**
+Les pièces d'armure (Haut, Milieu, Bas) ainsi que les armes possèdent **3 rangs**. Chaque rang augmente les stats passives de l'objet.
+- **Rang 1** : Se craft directement avec des ressources de base.
+- **Rang 2** : S'obtient en fusionnant (merge) **2 exemplaires** de l'objet de Rang 1.
+- **Rang 3** : S'obtient en fusionnant (merge) **2 exemplaires** de l'objet de Rang 2.
 
-Le Full Set Guerrier / Mage / Ninja fonctionne quel que soit le tier des pièces : il suffit d'avoir les 3 slots d'armure équipés avec des pièces du même archétype.
+**Les accessoires (anneaux) n'ont qu'un seul rang unique.**
+
+Le Full Set Guerrier / Mage / Ninja fonctionne quel que soit le rang des pièces : il suffit d'avoir les 3 slots d'armure équipés avec des pièces du même archétype.
 
 #### Archétype Guerrier
 
-**Armes :**
+**Armes (stats par rang) :**
 
-| Item | Type | Slot | Stats bonus | Spells débloqués | Prix / Craft |
-|------|------|------|-------------|------------------|-------------|
-| Épée | WEAPON | Arme | ATK +4, VIT +5 | Frappe | 50 or |
-| Bouclier | WEAPON | Arme | DEF +4, VIT +10 | Endurance | 60 or |
+| Item | Type | Slot | Rang 1 | Rang 2 | Rang 3 | Spells |
+|------|------|------|--------|--------|--------|---------|
+| Épée | WEAPON | Arme | ATK +4, VIT +5 | ATK +6, VIT +7 | ATK +9, VIT +10 | Frappe |
+| Bouclier | WEAPON | Arme | DEF +4, VIT +10 | DEF +6, VIT +15 | DEF +9, VIT +20 | Endurance |
 
-**Armures (stats par tier) :**
+**Armures (stats par rang) :**
 
-| Item | Slot | Tier 1 | Tier 2 | Tier 3 |
+| Item | Slot | Rang 1 | Rang 2 | Rang 3 |
 |------|------|--------|--------|--------|
 | Heaume | Haut | DEF +2, VIT +10 | DEF +3, VIT +15 | DEF +5, VIT +20 |
 | Armure | Milieu | DEF +3, VIT +15 | DEF +5, VIT +20 | DEF +7, VIT +30 |
@@ -244,21 +255,21 @@ Le Full Set Guerrier / Mage / Ninja fonctionne quel que soit le tier des pièces
 
 | Combo | Condition | Spells débloqués |
 |-------|-----------|------------------|
-| **Full Set Guerrier** | Heaume + Armure + Bottes de Fer (tout tier) | Bond, Endurance |
+| **Full Set Guerrier** | Heaume + Armure + Bottes de Fer (tout rang) | Bond, Endurance |
 | **Combo Épée + Bouclier** | Les deux équipés | Bond |
 
 #### Archétype Mage
 
-**Armes :**
+**Armes (stats par rang) :**
 
-| Item | Type | Slot | Stats bonus | Spells débloqués | Prix / Craft |
-|------|------|------|-------------|------------------|-------------|
-| Bâton Magique | WEAPON | Arme | MAG +6, INI +2 | Boule de Feu | 70 or |
-| Grimoire | WEAPON | Arme | MAG +4, PA +1 | Menhir | 80 or |
+| Item | Type | Slot | Rang 1 | Rang 2 | Rang 3 | Spells |
+|------|------|------|--------|--------|--------|---------|
+| Bâton Magique | WEAPON | Arme | MAG +6, INI +2 | MAG +9, INI +3 | MAG +12, INI +4 | Boule de Feu |
+| Grimoire | WEAPON | Arme | MAG +4, PA +1 | MAG +6, PA +1 | MAG +8, PA +1 | Menhir |
 
-**Armures (stats par tier) :**
+**Armures (stats par rang) :**
 
-| Item | Slot | Tier 1 | Tier 2 | Tier 3 |
+| Item | Slot | Rang 1 | Rang 2 | Rang 3 |
 |------|------|--------|--------|--------|
 | Chapeau de Mage | Haut | MAG +2, RES +2 | MAG +3, RES +3 | MAG +5, RES +5 |
 | Toge de Mage | Milieu | RES +3, VIT +10, PA +1 | RES +5, VIT +15, PA +1 | RES +7, VIT +20, PA +1 |
@@ -268,21 +279,21 @@ Le Full Set Guerrier / Mage / Ninja fonctionne quel que soit le tier des pièces
 
 | Combo | Condition | Spells débloqués |
 |-------|-----------|------------------|
-| **Full Set Mage** | Chapeau + Toge + Bottes de Mage (tout tier) | Menhir, Soin |
+| **Full Set Mage** | Chapeau + Toge + Bottes de Mage (tout rang) | Menhir, Soin |
 | **Combo Bâton + Grimoire** | Les deux équipés | Soin |
 
 #### Archétype Ninja
 
-**Armes :**
+**Armes (stats par rang) :**
 
-| Item | Type | Slot | Stats bonus | Spells débloqués | Prix / Craft |
-|------|------|------|-------------|------------------|-------------|
-| Kunaï | WEAPON | Arme | ATK +5, INI +3 | Lancer de Kunaï | 55 or |
-| Bombe du Ninja | WEAPON | Arme | ATK +3, INI +2 | Bombe de Repousse | 65 or |
+| Item | Type | Slot | Rang 1 | Rang 2 | Rang 3 | Spells |
+|------|------|------|--------|--------|--------|---------|
+| Kunaï | WEAPON | Arme | ATK +5, INI +3 | ATK +7, INI +4 | ATK +10, INI +5 | Lancer de Kunaï |
+| Bombe du Ninja | WEAPON | Arme | ATK +3, INI +2 | ATK +5, INI +3 | ATK +7, INI +4 | Bombe de Repousse |
 
-**Armures (stats par tier) :**
+**Armures (stats par rang) :**
 
-| Item | Slot | Tier 1 | Tier 2 | Tier 3 |
+| Item | Slot | Rang 1 | Rang 2 | Rang 3 |
 |------|------|--------|--------|--------|
 | Bandeau | Haut | INI +4, PM +1 | INI +6, PM +1 | INI +8, PM +2 |
 | Kimono | Milieu | INI +3, PM +1 | INI +5, PM +1 | INI +7, PM +2 |
@@ -292,7 +303,7 @@ Le Full Set Guerrier / Mage / Ninja fonctionne quel que soit le tier des pièces
 
 | Combo | Condition | Spells débloqués |
 |-------|-----------|------------------|
-| **Full Set Ninja** | Bandeau + Kimono + Geta (tout tier) | Bombe de Repousse, Vélocité |
+| **Full Set Ninja** | Bandeau + Kimono + Geta (tout rang) | Bombe de Repousse, Vélocité |
 | **Combo Kunaï + Bombe du Ninja** | Les deux équipés | Vélocité |
 
 #### Anneaux d'archétype (Accessoires)
@@ -318,7 +329,10 @@ Un seul anneau équipable à la fois. Chaque anneau débloque les deux spells se
 
 ### Principe
 
-Le crafting permet de fabriquer des items à partir de ressources récoltées. Chaque item craftable possède une recette définie par le champ `craftCost` : une map `{ resourceItemId: quantité }`.
+Le crafting repose sur deux mécaniques : la **fabrication initiale** (Rang 1) et la **fusion** (Merge) pour les rangs supérieurs.
+
+- **Craft Rang 1 / Anneaux / Consommables** : Utilise des ressources récoltées.
+- **Merge (Rang 2 & 3)** : Fusionne deux items de rang identique pour obtenir le rang supérieur. Cette opération ne coûte pas d'or ni de ressources supplémentaires, mais consomme les deux items sources.
 
 ### Flux de craft
 
@@ -336,49 +350,42 @@ graph TD
 3. Les ressources sont consommées (transaction atomique)
 4. L'item crafté est ajouté à l'inventaire (quantité +1)
 
-### Recettes
+#### Recettes de Fusion (Merge) — Épées & Armures
 
-#### Armures Guerrier
+| Item Cible | Rang | Ingrédients |
+|------------|------|-------------|
+| N'importe quelle Arme / Armure | **Rang 2** | 2× [Même Objet] Rang 1 |
+| N'importe quelle Arme / Armure | **Rang 3** | 2× [Même Objet] Rang 2 |
 
-| Item crafté | Tier | Ingrédients |
+#### Recettes de Fabrication (Rang 1) — Guerrier
+
+| Item crafté | Rang | Ingrédients |
 |-------------|------|-------------|
-| Heaume | T1 | 5× Minerai de Fer, 3× Cuir Robuste |
-| Heaume | T2 | 10× Minerai de Fer, 6× Cuir Robuste |
-| Heaume | T3 | 18× Minerai de Fer, 10× Cuir Robuste, 2× Cristal d'Ombre |
-| Armure | T1 | 8× Minerai de Fer, 5× Cuir Robuste |
-| Armure | T2 | 15× Minerai de Fer, 10× Cuir Robuste |
-| Armure | T3 | 25× Minerai de Fer, 16× Cuir Robuste, 3× Cristal d'Ombre |
-| Bottes de Fer | T1 | 4× Minerai de Fer, 3× Cuir Robuste |
-| Bottes de Fer | T2 | 8× Minerai de Fer, 6× Cuir Robuste |
-| Bottes de Fer | T3 | 14× Minerai de Fer, 10× Cuir Robuste, 2× Cristal d'Ombre |
+| Épée | R1 | 10× Minerai de Fer, 5× Bois de Frêne |
+| Bouclier | R1 | 8× Minerai de Fer, 4× Cuir Robuste |
+| Heaume | R1 | 5× Minerai de Fer, 3× Cuir Robuste |
+| Armure | R1 | 8× Minerai de Fer, 5× Cuir Robuste |
+| Bottes de Fer | R1 | 4× Minerai de Fer, 3× Cuir Robuste |
 
-#### Armures Mage
+#### Recettes de Fabrication (Rang 1) — Mage
 
-| Item crafté | Tier | Ingrédients |
+| Item crafté | Rang | Ingrédients |
 |-------------|------|-------------|
-| Chapeau de Mage | T1 | 3× Cristal d'Ombre, 2× Herbe Médicinale |
-| Chapeau de Mage | T2 | 6× Cristal d'Ombre, 4× Herbe Médicinale |
-| Chapeau de Mage | T3 | 10× Cristal d'Ombre, 7× Herbe Médicinale, 2× Minerai de Fer |
-| Toge de Mage | T1 | 4× Cristal d'Ombre, 3× Cuir Robuste |
-| Toge de Mage | T2 | 8× Cristal d'Ombre, 6× Cuir Robuste |
-| Toge de Mage | T3 | 14× Cristal d'Ombre, 10× Cuir Robuste, 3× Herbe Médicinale |
-| Bottes de Mage | T1 | 2× Cristal d'Ombre, 2× Herbe Médicinale |
-| Bottes de Mage | T2 | 5× Cristal d'Ombre, 4× Herbe Médicinale |
-| Bottes de Mage | T3 | 9× Cristal d'Ombre, 7× Herbe Médicinale, 2× Cuir Robuste |
+| Bâton Magique | R1 | 12× Cristal d'Ombre, 6× Bois de Frêne |
+| Grimoire | R1 | 10× Cristal d'Ombre, 5× Herbe Médicinale |
+| Chapeau de Mage | R1 | 3× Cristal d'Ombre, 2× Herbe Médicinale |
+| Toge de Mage | R1 | 4× Cristal d'Ombre, 3× Cuir Robuste |
+| Bottes de Mage | R1 | 2× Cristal d'Ombre, 2× Herbe Médicinale |
 
-#### Armures Ninja
+#### Recettes de Fabrication (Rang 1) — Ninja
 
-| Item crafté | Tier | Ingrédients |
+| Item crafté | Rang | Ingrédients |
 |-------------|------|-------------|
-| Bandeau | T1 | 3× Cuir Robuste, 2× Herbe Médicinale |
-| Bandeau | T2 | 6× Cuir Robuste, 4× Herbe Médicinale |
-| Bandeau | T3 | 10× Cuir Robuste, 7× Herbe Médicinale, 2× Cristal d'Ombre |
-| Kimono | T1 | 5× Cuir Robuste, 3× Herbe Médicinale |
-| Kimono | T2 | 10× Cuir Robuste, 6× Herbe Médicinale |
-| Kimono | T3 | 16× Cuir Robuste, 10× Herbe Médicinale, 3× Cristal d'Ombre |
-| Geta | T1 | 4× Cuir Robuste, 2× Minerai de Fer |
-| Geta | T2 | 8× Cuir Robuste, 4× Minerai de Fer |
-| Geta | T3 | 14× Cuir Robuste, 7× Minerai de Fer, 2× Cristal d'Ombre |
+| Kunaï | R1 | 8× Cuir Robuste, 4× Minerai de Fer |
+| Bombe du Ninja | R1 | 6× Cuir Robuste, 3× Cristal d'Ombre |
+| Bandeau | R1 | 3× Cuir Robuste, 2× Herbe Médicinale |
+| Kimono | R1 | 5× Cuir Robuste, 3× Herbe Médicinale |
+| Geta | R1 | 4× Cuir Robuste, 2× Minerai de Fer |
 
 #### Anneaux
 
@@ -520,7 +527,7 @@ Un sort ne peut atteindre sa cible que si la **ligne de vue** n'est pas obstrué
 
 Les spells ne sont pas appris directement. Ils sont **débloqués par les items équipés** et leurs combinaisons. Chaque source qui accorde un spell ajoute **+1 à son niveau** (max 3). Plus le niveau est élevé, plus le spell est puissant.
 
-#### Système de tiers (niveaux de spell)
+#### Système de rangs (niveaux de spell)
 
 ```
 niveau_spell = nombre de sources distinctes qui accordent ce spell (équipées)
@@ -748,21 +755,21 @@ Le stuff Guerrier et Ninja donne principalement ATK et DEF. Le stuff Mage donne 
 
 ### Stats effectives
 
-Les stats effectives sont calculées à partir des **items équipés sur le mannequin** uniquement. Pour les armures, les stats dépendent du **tier** de la pièce équipée :
+Les stats effectives sont calculées à partir des **items équipés sur le mannequin** uniquement. Pour les armures et armes, les stats dépendent du **rang** de la pièce équipée :
 
 ```
-stat_effective = stat_base + somme(statsBonus de chaque item ÉQUIPÉ selon son tier)
+stat_effective = stat_base + somme(statsBonus de chaque item ÉQUIPÉ selon son rang)
 ```
 
 Seuls les items placés sur un slot du mannequin contribuent aux stats. Les items stockés dans l'inventaire n'ont aucun effet passif.
 
-Par exemple, un joueur avec 5 ATK de base qui équipe une Épée (ATK +4) et une Armure T1 (DEF +3, VIT +15) aura : ATK 9, DEF 3, VIT 115, MAG 0. S'il upgrade son Armure en T3 (DEF +7, VIT +30) : ATK 9, DEF 7, VIT 130, MAG 0.
+Par exemple, un joueur avec 5 ATK de base qui équipe une Épée (ATK +4) et une Armure R1 (DEF +3, VIT +15) aura : ATK 9, DEF 3, VIT 115, MAG 0. S'il upgrade son Armure en R3 (DEF +7, VIT +30) : ATK 9, DEF 7, VIT 130, MAG 0.
 
-Un mage avec un Bâton Magique (MAG +6) et une Toge de Mage T2 (RES +5, VIT +15) aura : MAG 6, RES 5, VIT 115.
+Un mage avec un Bâton Magique (MAG +6) et une Toge de Mage R2 (RES +5, VIT +15) aura : MAG 6, RES 5, VIT 115.
 
 ### Spells débloqués par l'équipement
 
-Au-delà des stats, les items équipés (et leurs combinaisons) débloquent des **spells** avec un système de tiers (voir section 7). Changer d'équipement change directement les sorts disponibles en combat.
+Au-delà des stats, les items équipés (et leurs combinaisons) débloquent des **spells** avec un système de rangs (voir section 7). Changer d'équipement change directement les sorts disponibles en combat.
 
 ### Pas de niveaux
 
@@ -899,7 +906,7 @@ Les deux équipes communiquent via un système d'événements (NestJS EventEmitt
 | Carte de ressources connectée API | OK (endpoints) | Non connecté | 2 ressources | A compléter |
 | Mannequin d'équipement (6 slots) | Non implémenté (ancien equip simple) | Non implémenté | — | A faire (refonte majeure) |
 | Nouveau système de stats (VIT/ATK/DEF/INI/PA/PM) | Non implémenté | — | — | A faire |
-| 9 spells avec tiers (lvl 1-3) | Non implémenté | — | — | A faire |
+| 9 spells avec rangs (lvl 1-3) | Non implémenté | — | — | A faire |
 | Détection combos et full sets | Non implémenté | — | — | A faire |
 | 3 archétypes d'items (Guerrier/Mage/Ninja) | Non implémenté | — | Seed à refaire | A faire |
 | 6 anneaux magiques | Non implémenté | — | — | A faire |
@@ -935,7 +942,7 @@ Les deux équipes communiquent via un système d'événements (NestJS EventEmitt
 | Moyenne | Implémenter les instances de farming séparées par joueur |
 | Moyenne | Ajouter l'UI de vente (shop + inventaire) |
 | Moyenne | Écouter `combat.ended` pour distribuer les récompenses |
-| Moyenne | Respawn des ressources avec cooldown |
+| Moyenne | Respawn des ressources par système de Rounds |
 | Basse | Afficher les stats bonus et spells débloqués dans le lobby |
 
 ### Priorités Équipe B (Combat)
@@ -952,6 +959,6 @@ Les deux équipes communiquent via un système d'événements (NestJS EventEmitt
 | Haute | Utiliser `PlayerStatsService` avec nouvelles stats (VIT/ATK/DEF/INI/PA/PM) |
 | Haute | Implémenter la condition de victoire (VIT <= 0) |
 | Haute | Câbler les actions de mouvement et sorts depuis l'UI (barre de 9 spells) |
-| Moyenne | Charger les spells du joueur depuis son équipement (combos + tiers) |
+| Moyenne | Charger les spells du joueur depuis son équipement (combos + rangs) |
 | Moyenne | Émettre `combat.ended` et `combat.player.died` |
 | Basse | Historique des combats |
