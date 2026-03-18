@@ -173,15 +173,27 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover,
       {previewColor && (
         <mesh position={[worldX, 0.02, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[0.3, 16]} />
-          <meshBasicMaterial color={previewColor} transparent opacity={0.6} emissive={previewColor} emissiveIntensity={0.3} />
+          <meshBasicMaterial color={previewColor} transparent opacity={0.6} />
         </mesh>
       )}
 
       {/* Overlay de combat : tuile dans la portée d'un sort */}
       {isInSpellRange && (
         <mesh position={[worldX, 0.03, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.3, 0.4, 16]} />
-          <meshBasicMaterial color="#ef4444" transparent opacity={0.7} emissive="#ef4444" emissiveIntensity={0.5} />
+          <planeGeometry args={[0.92, 0.92]} />
+          <meshBasicMaterial color="#ef4444" transparent opacity={0.4} />
+          <mesh position={[0, 0, 0]}>
+            <ringGeometry args={[0.4, 0.45, 16]} />
+            <meshBasicMaterial color="#ef4444" transparent opacity={0.8} />
+          </mesh>
+        </mesh>
+      )}
+
+      {/* Overlay de combat : tuile accessible pour le mouvement */}
+      {isReachable && !isInSpellRange && (
+        <mesh position={[worldX, 0.015, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.92, 0.92]} />
+          <meshBasicMaterial color="#3b82f6" transparent opacity={0.3} />
         </mesh>
       )}
     </group>

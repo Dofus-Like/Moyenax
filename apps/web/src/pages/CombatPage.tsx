@@ -12,12 +12,21 @@ import './CombatPage.css';
 export function CombatPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  const { combatState } = useCombatStore();
+  const { combatState, connectToSession, disconnect } = useCombatStore();
   const authInitialize = useAuthStore((s) => s.initialize);
 
   useEffect(() => {
     authInitialize();
   }, [authInitialize]);
+
+  useEffect(() => {
+    if (sessionId) {
+      connectToSession(sessionId);
+    }
+    return () => {
+      disconnect();
+    };
+  }, [sessionId, connectToSession, disconnect]);
 
   // Construire une GameMap fictive à partir de combatState pour UnifiedMapScene
   const gameMap = useMemo(() => {

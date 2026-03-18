@@ -41,7 +41,7 @@ export function UnifiedMapScene({
   onTileHover,
 }: UnifiedMapSceneProps) {
   // === Combat State ===
-  const { connectToSession, disconnect, combatState, sseConnection, setCombatState } = useCombatStore();
+  const { combatState, sseConnection, setCombatState } = useCombatStore();
   const [popups, setPopups] = useState<{ id: string; pos: [number, number, number]; val: number }[]>([]);
   const [vfx, setVfx] = useState<{ id: string; type: string; from: { x: number; y: number }; to: { x: number; y: number } }[]>([]);
   const [playerPaths, setPlayerPaths] = useState<Record<string, { x: number; y: number }[]>>({});
@@ -53,18 +53,6 @@ export function UnifiedMapScene({
   
   const user = useAuthStore((s) => s.player);
 
-  // === Combat: Connexion SSE ===
-  useEffect(() => {
-    if (mode !== 'combat' || !sessionId) return;
-    
-    console.log('UnifiedMapScene: Connecting to combat session:', sessionId);
-    connectToSession(sessionId);
-
-    return () => {
-      console.log('UnifiedMapScene: Disconnecting from combat');
-      disconnect();
-    };
-  }, [mode, sessionId, connectToSession, disconnect]);
 
   // === Combat: Listener dégâts ===
   useEffect(() => {
@@ -317,6 +305,9 @@ export function UnifiedMapScene({
               isInRange(currentPlayer.position, { x, y }, spell.minRange, spell.maxRange) &&
               (spell.id === 'spell-bond' || hasLineOfSight(currentPlayer.position, { x, y }, combatState!.map.tiles));
           }
+        } else {
+          // Si aucun sort n'est sélectionné, on affiche la zone de mouvement
+          tileProps.isReachable = reachableTiles.some((t) => t.x === x && t.y === y);
         }
       }
 
