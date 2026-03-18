@@ -138,11 +138,6 @@ export class TurnService {
       throw new BadRequestException('PA insuffisants');
     }
 
-    const cooldown = player.spellCooldowns[spell.id] ?? 0;
-    if (cooldown > 0) {
-      throw new BadRequestException('Sort en cooldown');
-    }
-
     const targetPos = { x: action.targetX ?? 0, y: action.targetY ?? 0 };
 
     // Validation portée et LoS (sauf pour certains sorts comme Bond)
@@ -167,7 +162,7 @@ export class TurnService {
         case 'spell-kunai':
             this.applyDamage(state, targetPos, spell, player.stats, false);
             break;
-        case 'spell-bond':
+        case 'spell-bond': {
             const occupied = Object.values(state.players)
                 .some(p => p.position.x === targetPos.x && p.position.y === targetPos.y);
             if (occupied) throw new BadRequestException('Case occupée');
@@ -177,6 +172,7 @@ export class TurnService {
             }
             player.position = targetPos;
             break;
+        }
         case 'spell-soin':
             this.applyHeal(state, targetPos, spell, player.stats);
             break;
@@ -189,9 +185,6 @@ export class TurnService {
     }
 
     player.remainingPa -= spell.paCost;
-    if (spell.cooldown > 0) {
-      player.spellCooldowns[spell.id] = spell.cooldown;
-    }
 
     return state;
   }

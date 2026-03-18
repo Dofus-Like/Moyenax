@@ -62,4 +62,31 @@ export class InventoryService {
 
     return updated;
   }
+
+  async addResourceByName(playerId: string, resourceName: string) {
+    const item = await this.prisma.item.findFirst({
+      where: { name: resourceName },
+    });
+    if (!item) throw new NotFoundException(`Ressource introuvable: ${resourceName}`);
+
+    const existingInventoryItem = await this.prisma.inventoryItem.findFirst({
+      where: { playerId, itemId: item.id }
+    });
+
+    if (existingInventoryItem) {
+      return this.prisma.inventoryItem.update({
+        where: { id: existingInventoryItem.id },
+        data: { quantity: { increment: 1 } },
+      });
+    } else {
+      return this.prisma.inventoryItem.create({
+        data: {
+          playerId,
+          itemId: item.id,
+          quantity: 1,
+        }
+      });
+    }
+  }
 }
+

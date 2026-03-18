@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ThreeEvent } from '@react-three/fiber';
 import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
 
@@ -19,7 +19,7 @@ export interface TileHoverInfo {
   terrain: TerrainType;
 }
 
-interface TerrainTileProps {
+export interface TerrainTileProps {
   x: number;
   y: number;
   terrain: TerrainType;
@@ -44,7 +44,6 @@ function WallObstacle({
   height: number;
   terrain: TerrainType;
 }) {
-  // Propriétés différentes selon le type de ressource
   const isWood = terrain === TerrainType.WOOD;
   const isMetal = terrain === TerrainType.IRON || terrain === TerrainType.GOLD;
   const isCrystal = terrain === TerrainType.CRYSTAL;
@@ -96,8 +95,7 @@ function FlatResource({ position, color }: { position: [number, number, number];
   );
 }
 
-export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover, isReachable, isInSpellRange, previewColor }: TerrainTileProps) {
-  const [hovered, setHovered] = useState(false);
+export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, isReachable, isInSpellRange, previewColor }: TerrainTileProps) => {
   const colors = TERRAIN_COLORS[terrain];
   const props = TERRAIN_PROPERTIES[terrain];
 
@@ -105,22 +103,9 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover,
   const worldZ = y - gridSize / 2;
   const pos: [number, number, number] = [worldX, 0, worldZ];
 
-  const tileColor = hovered ? colors.hover : colors.base;
-
-  const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
-    e.stopPropagation();
-    setHovered(true);
-    if (onTileHover) onTileHover({ x, y, terrain });
-  };
-
-  const handlePointerOut = () => {
-    setHovered(false);
-    if (onTileHover) onTileHover(null);
-  };
-
   const baseColor = props.combatType === CombatTerrainType.HOLE
     ? '#1a1a0f'
-    : tileColor;
+    : colors.base;
 
   return (
     <group>
@@ -128,8 +113,7 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover,
         position={[worldX, 0, worldZ]}
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
-        onPointerOver={handlePointerOver}
-        onPointerOut={handlePointerOut}
+        userData={{ x, y, terrain, type: 'terrain-tile' }}
         onClick={(e: ThreeEvent<MouseEvent>) => {
           e.stopPropagation();
           if (onTileClick) onTileClick(x, y, terrain);
@@ -142,7 +126,7 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover,
       {props.combatType === CombatTerrainType.WALL && (
         <WallObstacle
           position={pos}
-          color={hovered ? colors.hover : colors.base}
+          color={colors.base}
           height={terrain === TerrainType.WOOD ? 1.0 : 0.6}
           terrain={terrain}
         />
@@ -151,25 +135,19 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover,
       {props.combatType === CombatTerrainType.HOLE && (
         <HoleTerrain
           position={pos}
-          color={hovered ? colors.hover : colors.base}
+          color={colors.base}
         />
       )}
 
       {props.combatType === CombatTerrainType.FLAT && props.harvestable && (
         <FlatResource
           position={pos}
-          color={hovered ? colors.hover : colors.base}
+          color={colors.base}
         />
       )}
 
-      {hovered && props.harvestable && (
-        <mesh position={[worldX, 0.01, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.35, 0.45, 16]} />
-          <meshBasicMaterial color="#f59e0b" transparent opacity={0.6} />
-        </mesh>
-      )}
+      {/* Les effets de survol (hover) ne sont plus ici ! */}
 
-      {/* Overlay de combat : chemin de prévisualisation */}
       {previewColor && (
         <mesh position={[worldX, 0.02, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[0.3, 16]} />
@@ -177,7 +155,6 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover,
         </mesh>
       )}
 
-      {/* Overlay de combat : tuile dans la portée d'un sort */}
       {isInSpellRange && (
         <mesh position={[worldX, 0.03, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[0.92, 0.92]} />
@@ -189,7 +166,6 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover,
         </mesh>
       )}
 
-      {/* Overlay de combat : tuile accessible pour le mouvement */}
       {isReachable && !isInSpellRange && (
         <mesh position={[worldX, 0.015, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[0.92, 0.92]} />
@@ -198,4 +174,4 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover,
       )}
     </group>
   );
-}
+});

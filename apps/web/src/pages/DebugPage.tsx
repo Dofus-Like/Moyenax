@@ -29,8 +29,9 @@ export function DebugPage() {
       const sid = response.data.sessionId;
       setLastResult(`Combat cree: ${sid}`);
       navigate(`/combat/${sid}`);
-    } catch (err: any) {
-      setLastResult(`Erreur combat: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      setLastResult(`Erreur combat: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(null);
     }
@@ -42,9 +43,10 @@ export function DebugPage() {
       resetFarming();
       const map = await mapApi.generateNew(selectedSeed);
       setLastResult(`Map generee: seed=${map.seedId}, ${map.width}x${map.height}`);
-      navigate('/farming');
-    } catch (err: any) {
-      setLastResult(`Erreur farming: ${err.response?.data?.message || err.message}`);
+      navigate('/farming?debug=true');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      setLastResult(`Erreur farming: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(null);
     }
@@ -55,8 +57,9 @@ export function DebugPage() {
     try {
       const map = await mapApi.generateNew(selectedSeed);
       setLastResult(`Map reset: seed=${map.seedId}`);
-    } catch (err: any) {
-      setLastResult(`Erreur reset: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      setLastResult(`Erreur reset: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(null);
     }

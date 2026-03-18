@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { CameraControls, OrthographicCamera } from '@react-three/drei';
+import CameraControlsImpl from 'camera-controls';
 import { Canvas } from '@react-three/fiber';
-import { OrthographicCamera, OrbitControls } from '@react-three/drei';
-import { useQuery } from '@tanstack/react-query';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { FarmingHUD } from '../game/HUD/FarmingHUD';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import { useAutoHarvest } from '../game/UnifiedMap/hooks/useAutoHarvest';
 import { useFarmingStore } from '../store/farming.store';
-import { mapApi } from '../api/map.api';
 import {
   TerrainType,
   TERRAIN_PROPERTIES,
@@ -14,8 +15,8 @@ import {
   SeedId,
   PathNode,
   findPath,
+  findPathToAdjacent,
 } from '@game/shared-types';
-import { useNavigate } from 'react-router-dom';
 import './ResourceMapPage.css';
 
 function findSpawnPosition(grid: TerrainType[][]): PathNode {
@@ -34,19 +35,14 @@ export function FarmingPage() {
   const [hoverInfo, setHoverInfo] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
   const [movePath, setMovePath] = useState<PathNode[] | null>(null);
   const [isMoving, setIsMoving] = useState(false);
+  const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(null);
 
-  const { playerPosition, movePlayer, inventory, reset } = useFarmingStore();
+  const [searchParams] = useSearchParams();
+  const isDebugMode = searchParams.get('debug') === 'true';
 
-  const {
-    data: map,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['map', 'session'],
-    queryFn: mapApi.generateNew,
-    staleTime: Infinity,
-    refetchOnMount: 'always',
-  });
+  const [isCameraMoving, setIsCameraMoving] = useState(false);
+  const { map, playerPosition, movePlayer, inventory, fetchState, gatherNode, endPhase, debugRefill } = useFarmingStore();
+  const controlsRef = useRef<CameraControlsImpl>(null);
 
   const seedConfig = useMemo(() => {
     if (!map) return null;
@@ -59,7 +55,54 @@ export function FarmingPage() {
     return { x: 0, y: 0 };
   }, [playerPosition, map]);
 
-  // Initialiser la position du joueur au premier chargement
+  useEffect(() => {
+    fetchState();
+  }, [fetchState]);
+
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.mouseButtons.left = CameraControlsImpl.ACTION.TRUCK;
+      controlsRef.current.mouseButtons.right = CameraControlsImpl.ACTION.ROTATE;
+    }
+  }, []);
+
+  const [controls, setControls] = useState<CameraControlsImpl | null>(null);
+
+  useEffect(() => {
+    if (!controls) return;
+    let timeoutId: NodeJS.Timeout;
+
+    const start = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      setIsCameraMoving(true);
+    };
+
+    const end = () => {
+      // On attend un court instant (300ms) avant de réactiver le hover
+      // Cela couvre l'inertie de la caméra et évite les stutters de "fin de clic"
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setIsCameraMoving(false);
+      }, 300);
+    };
+
+    const immediateEnd = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      setIsCameraMoving(false);
+    };
+
+    controls.addEventListener('controlstart', start);
+    controls.addEventListener('controlend', end);
+    controls.addEventListener('rest', immediateEnd);
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      controls.removeEventListener('controlstart', start);
+      controls.removeEventListener('controlend', end);
+      controls.removeEventListener('rest', immediateEnd);
+    };
+  }, [controls]); 
+
   useEffect(() => {
     if (map && !playerPosition) {
       const spawn = findSpawnPosition(map.grid);
@@ -68,9 +111,14 @@ export function FarmingPage() {
   }, [map, playerPosition, movePlayer]);
 
   const previewPath = useMemo(() => {
-    if (!map || !hoverInfo || isMoving) return [];
+    if (!map || !hoverInfo) return [];
     const target = { x: hoverInfo.x, y: hoverInfo.y };
     if (target.x === currentPlayerPos.x && target.y === currentPlayerPos.y) return [];
+    
+    if (TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable) {
+       return findPathToAdjacent(map, currentPlayerPos, target) ?? [];
+    }
+
     if (!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable) return [];
     return findPath(map, currentPlayerPos, target) ?? [];
   }, [map, hoverInfo, currentPlayerPos, isMoving]);
@@ -78,32 +126,88 @@ export function FarmingPage() {
   const handleTileClick = useCallback(
     (x: number, y: number, terrain: TerrainType) => {
       if (!map || isMoving) return;
-      if (!TERRAIN_PROPERTIES[terrain].traversable) return;
       if (x === currentPlayerPos.x && y === currentPlayerPos.y) return;
+
+      const props = TERRAIN_PROPERTIES[terrain];
+      const isAdjacent = Math.abs(currentPlayerPos.x - x) + Math.abs(currentPlayerPos.y - y) <= 1;
+
+      if (props.harvestable) {
+        if (isAdjacent) {
+          gatherNode(x, y).catch(console.error);
+        } else {
+          const adjacentTiles = [
+            { x: x + 1, y },
+            { x: x - 1, y },
+            { x, y: y + 1 },
+            { x, y: y - 1 },
+          ].filter(t => 
+            t.x >= 0 && t.x < map.width && 
+            t.y >= 0 && t.y < map.height && 
+            TERRAIN_PROPERTIES[map.grid[t.y][t.x]].traversable
+          );
+
+          if (adjacentTiles.length === 0) return;
+
+          const closestTile = adjacentTiles.reduce((prev, curr) => {
+            const distPrev = Math.abs(prev.x - currentPlayerPos.x) + Math.abs(prev.y - currentPlayerPos.y);
+            const distCurr = Math.abs(curr.x - currentPlayerPos.x) + Math.abs(curr.y - currentPlayerPos.y);
+            return distCurr < distPrev ? curr : prev;
+          }, adjacentTiles[0]);
+
+          const bestPath = findPath(map, currentPlayerPos, closestTile);
+
+          if (bestPath && bestPath.length > 0) {
+            setMovePath(bestPath);
+            setQueuedAction({ type: 'gather', x, y });
+            setIsMoving(true);
+          }
+        }
+        return;
+      }
+
+      if (!props.traversable) return;
 
       const path = findPath(map, currentPlayerPos, { x, y });
       if (path && path.length > 0) {
         setMovePath(path);
+        setQueuedAction(null);
         setIsMoving(true);
       }
     },
-    [map, isMoving, currentPlayerPos]
+    [map, isMoving, currentPlayerPos, gatherNode]
   );
 
   const handlePathComplete = useCallback(() => {
     if (movePath && movePath.length > 0) {
       const last = movePath[movePath.length - 1];
       movePlayer({ x: last.x, y: last.y });
+      
+      if (queuedAction?.type === 'gather') {
+        gatherNode(queuedAction.x, queuedAction.y).catch(console.error);
+      }
     }
     setMovePath(null);
+    setQueuedAction(null);
     setIsMoving(false);
-  }, [movePath, movePlayer]);
+  }, [movePath, movePlayer, queuedAction, gatherNode]);
 
   const handleTileHover = useCallback((info: { x: number; y: number; terrain: TerrainType } | null) => {
     setHoverInfo(info);
   }, []);
 
-  // Auto-récolte quand le joueur arrive sur une ressource
+  const handleEndHarvest = useCallback(async () => {
+    try {
+      if (isDebugMode) {
+        await debugRefill();
+      } else {
+        await endPhase();
+        navigate('/');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [isDebugMode, debugRefill, endPhase, navigate]);
+
   const currentTerrain = map ? map.grid[currentPlayerPos.y]?.[currentPlayerPos.x] : TerrainType.GROUND;
   useAutoHarvest({
     currentPosition: currentPlayerPos,
@@ -111,7 +215,7 @@ export function FarmingPage() {
   });
 
   const totalResources = useMemo(() => {
-    return Object.values(inventory).reduce((sum, count) => sum + count, 0);
+    return Object.values(inventory).reduce((sum, count) => (sum as number) + (count as number), 0);
   }, [inventory]);
 
   return (
@@ -136,47 +240,43 @@ export function FarmingPage() {
           <span className="legend-item legend-herb">Herbe</span>
           <span className="legend-item legend-gold">Or</span>
         </div>
+        <button className="harvest-end-btn" onClick={handleEndHarvest} style={{ marginLeft: 'auto', background: 'var(--color-primary)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+          {isDebugMode ? 'Fin de la récolte (Refill Debug)' : 'Fin de la récolte'}
+        </button>
       </header>
 
       <div className="resource-map-canvas">
-        {isLoading && <div className="map-loading">Chargement de la carte...</div>}
-        {error && <div className="map-error">Erreur de chargement</div>}
+        <FarmingHUD />
+        {!map && <div className="map-loading">Chargement de la carte...</div>}
         {map && (
-          <Canvas shadows>
+          <Canvas>
             <OrthographicCamera makeDefault position={[15, 20, 15]} zoom={30} near={0.1} far={100} />
-            <OrbitControls
-              target={[0, 0, 0]}
-              enableRotate={true}
-              enablePan={true}
+            <CameraControls
+              ref={setControls}
+              makeDefault
               minZoom={15}
               maxZoom={80}
-              maxPolarAngle={Math.PI / 2.2}
-              minPolarAngle={0.2}
+              dollyToCursor={true}
+              infinityDolly={false}
+              minPolarAngle={0}
+              maxPolarAngle={Math.PI * 90 / 180}
+              onStart={() => setIsCameraMoving(true)}
             />
             <ambientLight intensity={0.5} />
             <hemisphereLight args={['#87CEEB', '#654321', 0.6]} />
-            <directionalLight
-              position={[10, 15, 10]}
-              intensity={1.2}
-              castShadow
-              shadow-mapSize-width={2048}
-              shadow-mapSize-height={2048}
-              shadow-camera-far={50}
-              shadow-camera-left={-20}
-              shadow-camera-right={20}
-              shadow-camera-top={20}
-              shadow-camera-bottom={-20}
-            />
+            <directionalLight position={[10, 20, 10]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} />
             <color attach="background" args={['#0a0e17']} />
-            <UnifiedMapScene
-              mode="farming"
-              map={map}
-              playerPosition={currentPlayerPos}
+            <UnifiedMapScene 
+              mode="farming" 
+              map={map} 
+              playerPosition={playerPosition || undefined}
               movePath={movePath}
               previewPath={previewPath}
               onPathComplete={handlePathComplete}
               onTileClick={handleTileClick}
               onTileHover={handleTileHover}
+              isCameraMoving={isCameraMoving}
+              isMoving={isMoving}
             />
           </Canvas>
         )}
@@ -196,28 +296,14 @@ export function FarmingPage() {
               </ul>
             )}
           </div>
-
           <hr />
-
           {hoverInfo ? (
             <>
               <div className="tile-info-title">{TERRAIN_LABELS[hoverInfo.terrain]}</div>
-              <div className="tile-info-coords">
-                Case ({hoverInfo.x}, {hoverInfo.y})
-              </div>
-              {previewPath.length > 0 && (
-                <div className="tile-info-distance">
-                  Distance : {previewPath.length} case{previewPath.length > 1 ? 's' : ''}
-                </div>
-              )}
-              {TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable && (
-                <div className="tile-info-resource">
-                  Ressource : {TERRAIN_PROPERTIES[hoverInfo.terrain].resourceName}
-                </div>
-              )}
-              {!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable && (
-                <div className="tile-info-blocked">Inaccessible</div>
-              )}
+              <div className="tile-info-coords">Case ({hoverInfo.x}, {hoverInfo.y})</div>
+              {previewPath.length > 0 && <div className="tile-info-distance">Distance : {previewPath.length} cases</div>}
+              {TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable && <div className="tile-info-resource">Ressource : {TERRAIN_PROPERTIES[hoverInfo.terrain].resourceName}</div>}
+              {!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable && <div className="tile-info-blocked">Inaccessible</div>}
             </>
           ) : (
             <div className="tile-info-empty">Survolez une case</div>

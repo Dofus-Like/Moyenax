@@ -112,6 +112,52 @@ export function findPath(
 }
 
 /**
+ * Finds the shortest path from start to ANY tile adjacent to the target.
+ * Useful for interacting with objects (harvesting, etc).
+ */
+export function findPathToAdjacent(
+  map: GameMap,
+  start: PathNode,
+  target: PathNode,
+): PathNode[] | null {
+  const key = (x: number, y: number) => `${x},${y}`;
+  const queue: { x: number; y: number; path: PathNode[] }[] = [];
+  const visited = new Set<string>();
+
+  queue.push({ x: start.x, y: start.y, path: [] });
+  visited.add(key(start.x, start.y));
+
+  while (queue.length > 0) {
+    const { x, y, path } = queue.shift()!;
+
+    // Si on est adjacent à la cible, on a trouvé le chemin le plus court (BFS)
+    const dist = Math.abs(x - target.x) + Math.abs(y - target.y);
+    if (dist === 1) {
+      return path;
+    }
+
+    for (const dir of DIRECTIONS) {
+      const nx = x + dir.x;
+      const ny = y + dir.y;
+      const nKey = key(nx, ny);
+
+      if (nx < 0 || nx >= map.width || ny < 0 || ny >= map.height) continue;
+      if (visited.has(nKey)) continue;
+      if (!isWalkable(map.grid[ny][nx])) continue;
+
+      visited.add(nKey);
+      queue.push({
+        x: nx,
+        y: ny,
+        path: [...path, { x: nx, y: ny }],
+      });
+    }
+  }
+
+  return null;
+}
+
+/**
  * Checks if a HOLE (TROU) cell is adjacent and jumpable:
  * the cell on the other side must be walkable and in bounds.
  */
