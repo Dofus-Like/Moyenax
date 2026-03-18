@@ -52,8 +52,6 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       existing.close();
     }
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    
     // Fetch initial state
     try {
         const response = await combatApi.getState(sessionId);
@@ -64,9 +62,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
 
     const token = useAuthStore.getState().token;
-    const eventSource = new EventSource(`${apiUrl}/combat/session/${sessionId}/events?token=${token}`, {
-        withCredentials: true
-    });
+    const sseUrl = `${window.location.origin}/api/v1/combat/session/${sessionId}/events?token=${token}`;
+    const eventSource = new EventSource(sseUrl);
 
     eventSource.addEventListener('STATE_UPDATED', (event: MessageEvent) => {
         const data = JSON.parse(event.data);

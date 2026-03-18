@@ -8,6 +8,7 @@ import { FarmingPage } from './pages/FarmingPage';
 import { ShopPage } from './pages/ShopPage';
 import { InventoryPage } from './pages/InventoryPage';
 import { CombatPage } from './pages/CombatPage';
+import { DebugPage } from './pages/DebugPage';
 import { useAuthStore } from './store/auth.store';
 import './styles/global.css';
 
@@ -43,6 +44,7 @@ root.render(
           <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
           <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
           <Route path="/combat/:sessionId" element={<ProtectedRoute><CombatPage /></ProtectedRoute>} />
+          <Route path="/debug" element={<ProtectedRoute><DebugPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </BrowserRouter>

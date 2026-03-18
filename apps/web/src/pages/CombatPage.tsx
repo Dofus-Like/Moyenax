@@ -36,7 +36,8 @@ export function CombatPage() {
     return { 
       width: combatState.map.width, 
       height: combatState.map.height, 
-      grid 
+      grid,
+      seedId: 'FORGE' as const,
     };
   }, [combatState?.map]);
 

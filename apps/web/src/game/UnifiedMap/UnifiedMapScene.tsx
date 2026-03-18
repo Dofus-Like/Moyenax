@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { TerrainType, CombatActionType, findPath, GameMap, PathNode } from '@game/shared-types';
+import { TerrainType, CombatActionType, findPath, GameMap, PathNode, TERRAIN_PROPERTIES } from '@game/shared-types';
 import { TerrainTile } from '../ResourceMap/TerrainTile';
 import { PlayerPawn } from '../ResourceMap/PlayerPawn';
 import { PathPreview } from '../ResourceMap/PathPreview';
@@ -102,7 +102,7 @@ export function UnifiedMapScene({
         grid[t.y][t.x] = t.type;
       }
     });
-    return { width: combatState.map.width, height: combatState.map.height, grid } as GameMap;
+    return { width: combatState.map.width, height: combatState.map.height, grid, seedId: 'FORGE' } as GameMap;
   }, [mode, map, combatState?.map]);
 
   // === Combat: Positions occupées ===
@@ -167,7 +167,7 @@ export function UnifiedMapScene({
             next.y < gameMap.height &&
             !visited.has(key) &&
             tile &&
-            tile.type === TerrainType.GROUND &&
+            TERRAIN_PROPERTIES[tile.type as TerrainType]?.traversable &&
             !isOccupied
           ) {
             visited.add(key);

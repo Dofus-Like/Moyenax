@@ -96,7 +96,7 @@ function FlatResource({ position, color }: { position: [number, number, number];
   );
 }
 
-export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover }: TerrainTileProps) {
+export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover, isReachable, isInSpellRange, previewColor }: TerrainTileProps) {
   const [hovered, setHovered] = useState(false);
   const colors = TERRAIN_COLORS[terrain];
   const props = TERRAIN_PROPERTIES[terrain];

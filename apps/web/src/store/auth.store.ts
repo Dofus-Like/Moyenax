@@ -17,13 +17,9 @@ interface AuthState {
   initialize: () => Promise<void>;
 }
 
-const DEV_PLAYER: PlayerProfile | null = import.meta.env.DEV
-  ? { id: 'dev-player-id', username: 'DevPlayer', email: 'dev@test.com', gold: 500 }
-  : null;
-
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: localStorage.getItem('token'),
-  player: DEV_PLAYER,
+  player: null,
 
   setToken: (token: string) => {
     localStorage.setItem('token', token);

@@ -60,7 +60,7 @@ async function main() {
     data: {
       name: 'Épée',
       type: ItemType.WEAPON,
-      statsBonus: { attaque: 5 },
+      statsBonus: { atk: 5 },
       craftCost: { [fer.id]: 2, [cuir.id]: 1 },
       shopPrice: 4,
     },
@@ -70,7 +70,7 @@ async function main() {
     data: {
       name: 'Bouclier',
       type: ItemType.WEAPON,
-      statsBonus: { defense: 5 },
+      statsBonus: { def: 5 },
       craftCost: { [fer.id]: 3 },
       shopPrice: 4,
     },
@@ -80,7 +80,7 @@ async function main() {
     data: {
       name: 'Bâton magique',
       type: ItemType.WEAPON,
-      statsBonus: { magie: 5 },
+      statsBonus: { mag: 5 },
       craftCost: { [cristal.id]: 2, [etoffe.id]: 1 },
       shopPrice: 4,
     },
@@ -90,7 +90,7 @@ async function main() {
     data: {
       name: 'Grimoire',
       type: ItemType.WEAPON,
-      statsBonus: { magie: 3, resistanceMagique: 2 },
+      statsBonus: { mag: 3, res: 2 },
       craftCost: { [cristal.id]: 3 },
       shopPrice: 4,
     },
@@ -100,7 +100,7 @@ async function main() {
     data: {
       name: 'Kunaï',
       type: ItemType.WEAPON,
-      statsBonus: { attaque: 3, initiative: 2 },
+      statsBonus: { atk: 3, ini: 2 },
       craftCost: { [fer.id]: 2, [cuir.id]: 1 },
       shopPrice: 4,
     },
@@ -110,7 +110,7 @@ async function main() {
     data: {
       name: 'Bombe ninja',
       type: ItemType.WEAPON,
-      statsBonus: { attaque: 2, initiative: 3 },
+      statsBonus: { atk: 2, ini: 3 },
       craftCost: { [herbe.id]: 2, [bois.id]: 1 },
       shopPrice: 4,
     },
@@ -122,7 +122,7 @@ async function main() {
     data: {
       name: 'Heaume',
       type: ItemType.ARMOR_HEAD,
-      statsBonus: { defense: 3 },
+      statsBonus: { def: 3 },
       craftCost: { [fer.id]: 2 },
       shopPrice: 3,
     },
@@ -132,7 +132,7 @@ async function main() {
     data: {
       name: 'Chapeau de mage',
       type: ItemType.ARMOR_HEAD,
-      statsBonus: { resistanceMagique: 3 },
+      statsBonus: { res: 3 },
       craftCost: { [cristal.id]: 1, [etoffe.id]: 1 },
       shopPrice: 3,
     },
@@ -142,7 +142,7 @@ async function main() {
     data: {
       name: 'Bandeau',
       type: ItemType.ARMOR_HEAD,
-      statsBonus: { initiative: 3 },
+      statsBonus: { ini: 3 },
       craftCost: { [cuir.id]: 2 },
       shopPrice: 3,
     },
@@ -154,7 +154,7 @@ async function main() {
     data: {
       name: 'Armure',
       type: ItemType.ARMOR_CHEST,
-      statsBonus: { defense: 5 },
+      statsBonus: { def: 5 },
       craftCost: { [fer.id]: 2, [cuir.id]: 1 },
       shopPrice: 4,
     },
@@ -164,7 +164,7 @@ async function main() {
     data: {
       name: 'Toge de mage',
       type: ItemType.ARMOR_CHEST,
-      statsBonus: { resistanceMagique: 5 },
+      statsBonus: { res: 5 },
       craftCost: { [etoffe.id]: 3 },
       shopPrice: 4,
     },
@@ -174,7 +174,7 @@ async function main() {
     data: {
       name: 'Kimono',
       type: ItemType.ARMOR_CHEST,
-      statsBonus: { initiative: 3, pointsMouvement: 1 },
+      statsBonus: { ini: 3, pm: 1 },
       craftCost: { [bois.id]: 2, [cuir.id]: 1 },
       shopPrice: 4,
     },
@@ -186,7 +186,7 @@ async function main() {
     data: {
       name: 'Bottes de fer',
       type: ItemType.ARMOR_LEGS,
-      statsBonus: { defense: 2, pointsMouvement: 1 },
+      statsBonus: { def: 2, pm: 1 },
       craftCost: { [fer.id]: 1, [cuir.id]: 1 },
       shopPrice: 3,
     },
@@ -196,7 +196,7 @@ async function main() {
     data: {
       name: 'Bottes de mage',
       type: ItemType.ARMOR_LEGS,
-      statsBonus: { resistanceMagique: 2, pointsMouvement: 1 },
+      statsBonus: { res: 2, pm: 1 },
       craftCost: { [cristal.id]: 1, [etoffe.id]: 1 },
       shopPrice: 3,
     },
@@ -206,7 +206,7 @@ async function main() {
     data: {
       name: 'Geta',
       type: ItemType.ARMOR_LEGS,
-      statsBonus: { pointsMouvement: 2 },
+      statsBonus: { pm: 2 },
       craftCost: { [bois.id]: 2 },
       shopPrice: 3,
     },
@@ -218,7 +218,7 @@ async function main() {
     data: {
       name: 'Anneau du Guerrier',
       type: ItemType.ACCESSORY,
-      statsBonus: { defense: 3, pointsMouvement: 1 },
+      statsBonus: { def: 3, pm: 1 },
       craftCost: { [fer.id]: 2, [or.id]: 2 },
       shopPrice: 5,
     },
@@ -228,7 +228,7 @@ async function main() {
     data: {
       name: 'Anneau du Mage',
       type: ItemType.ACCESSORY,
-      statsBonus: { magie: 3, pointsAction: 1 },
+      statsBonus: { mag: 3, pa: 1 },
       craftCost: { [cristal.id]: 2, [or.id]: 2 },
       shopPrice: 5,
     },
@@ -238,7 +238,7 @@ async function main() {
     data: {
       name: 'Anneau du Ninja',
       type: ItemType.ACCESSORY,
-      statsBonus: { initiative: 3, pointsMouvement: 1 },
+      statsBonus: { ini: 3, pm: 1 },
       craftCost: { [cuir.id]: 2, [or.id]: 2 },
       shopPrice: 5,
     },
