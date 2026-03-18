@@ -16,257 +16,99 @@ async function main() {
   await prisma.item.deleteMany();
   await prisma.spell.deleteMany();
 
-  // ── Ressources ──────────────────────────────────────────────────
-
-  const fer = await prisma.item.create({
-    data: { name: 'Fer', type: 'RESOURCE' },
-  });
-  const cuir = await prisma.item.create({
-    data: { name: 'Cuir', type: 'RESOURCE' },
-  });
-  const cristal = await prisma.item.create({
-    data: { name: 'Cristal magique', type: 'RESOURCE' },
-  });
-  const etoffe = await prisma.item.create({
-    data: { name: 'Étoffe', type: 'RESOURCE' },
-  });
-  const bois = await prisma.item.create({
-    data: { name: 'Bois', type: 'RESOURCE' },
-  });
-  const herbe = await prisma.item.create({
-    data: { name: 'Herbe médicinale', type: 'RESOURCE' },
-  });
-  const or = await prisma.item.create({
-    data: { name: 'Or', type: 'RESOURCE' },
-  });
-
-  // ── Armes (craft 3u → shop 4 Or) ───────────────────────────────
-
-  await prisma.item.create({
+  // Sorts de base (utilisés si on ne suit pas strictement le système de déblocage par item pour le test)
+  const fireball = await prisma.spell.create({
     data: {
-      name: 'Épée',
-      type: 'WEAPON',
-      statsBonus: { attaque: 5 },
-      craftCost: { [fer.id]: 2, [cuir.id]: 1 },
-      shopPrice: 4,
+      name: 'Boule de Feu',
+      paCost: 4,
+      minRange: 1,
+      maxRange: 5,
+      damageMin: 15,
+      damageMax: 25,
+      cooldown: 1,
+      type: SpellType.DAMAGE,
     },
   });
 
-  await prisma.item.create({
+  // Items GDD Rang 1
+  const epee = await prisma.item.create({
     data: {
-      name: 'Bouclier',
-      type: 'WEAPON',
-      statsBonus: { defense: 5 },
-      craftCost: { [fer.id]: 3 },
-      shopPrice: 4,
+      name: 'Épée de Bronze',
+      type: ItemType.WEAPON,
+      statsBonus: { atk: 4, vit: 5 },
+      shopPrice: 50,
+      rank: 1,
     },
   });
 
-  await prisma.item.create({
+  const bouclier = await prisma.item.create({
     data: {
-      name: 'Bâton magique',
-      type: 'WEAPON',
-      statsBonus: { magie: 5 },
-      craftCost: { [cristal.id]: 2, [etoffe.id]: 1 },
-      shopPrice: 4,
+      name: 'Bouclier en Bois',
+      type: ItemType.WEAPON,
+      statsBonus: { def: 4, vit: 10 },
+      shopPrice: 50,
+      rank: 1,
     },
   });
 
-  await prisma.item.create({
+  const baton = await prisma.item.create({
     data: {
-      name: 'Grimoire',
-      type: 'WEAPON',
-      statsBonus: { magie: 3, resistanceMagique: 2 },
-      craftCost: { [cristal.id]: 3 },
-      shopPrice: 4,
+      name: 'Bâton Magique',
+      type: ItemType.WEAPON,
+      statsBonus: { mag: 6, ini: 2 },
+      shopPrice: 60,
+      rank: 1,
     },
   });
 
-  await prisma.item.create({
+  const heaume = await prisma.item.create({
     data: {
-      name: 'Kunaï',
-      type: 'WEAPON',
-      statsBonus: { attaque: 3, initiative: 2 },
-      craftCost: { [fer.id]: 2, [cuir.id]: 1 },
-      shopPrice: 4,
+      name: 'Heaume de Fer',
+      type: ItemType.ARMOR_HEAD,
+      statsBonus: { def: 2, vit: 10 },
+      rank: 1,
     },
   });
 
-  await prisma.item.create({
+  const armure = await prisma.item.create({
     data: {
-      name: 'Bombe ninja',
-      type: 'WEAPON',
-      statsBonus: { attaque: 2, initiative: 3 },
-      craftCost: { [herbe.id]: 2, [bois.id]: 1 },
-      shopPrice: 4,
+      name: 'Armure de Fer',
+      type: ItemType.ARMOR_CHEST,
+      statsBonus: { def: 3, vit: 15 },
+      rank: 1,
     },
   });
 
-  // ── Armures tête (craft 2u → shop 3 Or) ─────────────────────────
-
-  await prisma.item.create({
+  const bottes = await prisma.item.create({
     data: {
-      name: 'Heaume',
-      type: 'ARMOR',
-      statsBonus: { defense: 3 },
-      craftCost: { [fer.id]: 2 },
-      shopPrice: 3,
+      name: 'Bottes de Fer',
+      type: ItemType.ARMOR_LEGS,
+      statsBonus: { def: 2, pm: 1 },
+      rank: 1,
     },
   });
 
-  await prisma.item.create({
-    data: {
-      name: 'Chapeau de mage',
-      type: 'ARMOR',
-      statsBonus: { resistanceMagique: 3 },
-      craftCost: { [cristal.id]: 1, [etoffe.id]: 1 },
-      shopPrice: 3,
-    },
+  const anneauGuerrier = await prisma.item.create({
+      data: {
+          name: 'Anneau de Guerrier',
+          type: ItemType.ACCESSORY,
+          statsBonus: { def: 3, pm: 1 },
+          rank: 1
+      }
   });
 
+  // Ressources
   await prisma.item.create({
-    data: {
-      name: 'Bandeau',
-      type: 'ARMOR',
-      statsBonus: { initiative: 3 },
-      craftCost: { [cuir.id]: 2 },
-      shopPrice: 3,
-    },
+    data: { name: 'Bois de Frêne', type: ItemType.RESOURCE, shopPrice: 5 },
+  });
+  await prisma.item.create({
+    data: { name: 'Minerai de Fer', type: ItemType.RESOURCE, shopPrice: 10 },
   });
 
-  // ── Armures torse (craft 3u → shop 4 Or) ────────────────────────
-
-  await prisma.item.create({
-    data: {
-      name: 'Armure',
-      type: 'ARMOR',
-      statsBonus: { defense: 5 },
-      craftCost: { [fer.id]: 2, [cuir.id]: 1 },
-      shopPrice: 4,
-    },
-  });
-
-  await prisma.item.create({
-    data: {
-      name: 'Toge de mage',
-      type: 'ARMOR',
-      statsBonus: { resistanceMagique: 5 },
-      craftCost: { [etoffe.id]: 3 },
-      shopPrice: 4,
-    },
-  });
-
-  await prisma.item.create({
-    data: {
-      name: 'Kimono',
-      type: 'ARMOR',
-      statsBonus: { initiative: 3, pointsMouvement: 1 },
-      craftCost: { [bois.id]: 2, [cuir.id]: 1 },
-      shopPrice: 4,
-    },
-  });
-
-  // ── Armures jambes (craft 2u → shop 3 Or) ───────────────────────
-
-  await prisma.item.create({
-    data: {
-      name: 'Bottes de fer',
-      type: 'ARMOR',
-      statsBonus: { defense: 2, pointsMouvement: 1 },
-      craftCost: { [fer.id]: 1, [cuir.id]: 1 },
-      shopPrice: 3,
-    },
-  });
-
-  await prisma.item.create({
-    data: {
-      name: 'Bottes de mage',
-      type: 'ARMOR',
-      statsBonus: { resistanceMagique: 2, pointsMouvement: 1 },
-      craftCost: { [cristal.id]: 1, [etoffe.id]: 1 },
-      shopPrice: 3,
-    },
-  });
-
-  await prisma.item.create({
-    data: {
-      name: 'Geta',
-      type: 'ARMOR',
-      statsBonus: { pointsMouvement: 2 },
-      craftCost: { [bois.id]: 2 },
-      shopPrice: 3,
-    },
-  });
-
-  // ── Anneaux (craft 4u: 2 res + 2 Or → shop 5 Or) ───────────────
-
-  await prisma.item.create({
-    data: {
-      name: 'Anneau du Guerrier',
-      type: 'RING',
-      statsBonus: { defense: 3, pointsMouvement: 1 },
-      craftCost: { [fer.id]: 2, [or.id]: 2 },
-      shopPrice: 5,
-    },
-  });
-
-  await prisma.item.create({
-    data: {
-      name: 'Anneau du Mage',
-      type: 'RING',
-      statsBonus: { magie: 3, pointsAction: 1 },
-      craftCost: { [cristal.id]: 2, [or.id]: 2 },
-      shopPrice: 5,
-    },
-  });
-
-  await prisma.item.create({
-    data: {
-      name: 'Anneau du Ninja',
-      type: 'RING',
-      statsBonus: { initiative: 3, pointsMouvement: 1 },
-      craftCost: { [cuir.id]: 2, [or.id]: 2 },
-      shopPrice: 5,
-    },
-  });
-
-  // ── Consommables (craft 2u → shop 3 Or) ─────────────────────────
-
-  await prisma.item.create({
-    data: {
-      name: 'Potion de Soin',
-      type: 'CONSUMABLE',
-      statsBonus: { healVit: 30 },
-      craftCost: { [herbe.id]: 2 },
-      shopPrice: 3,
-    },
-  });
-
-  await prisma.item.create({
-    data: {
-      name: 'Potion de Force',
-      type: 'CONSUMABLE',
-      statsBonus: { buffAttaque: 5, buffDuree: 3 },
-      craftCost: { [herbe.id]: 1, [cristal.id]: 1 },
-      shopPrice: 3,
-    },
-  });
-
-  await prisma.item.create({
-    data: {
-      name: 'Potion de Vitesse',
-      type: 'CONSUMABLE',
-      statsBonus: { buffPM: 2, buffDuree: 2 },
-      craftCost: { [herbe.id]: 1, [cuir.id]: 1 },
-      shopPrice: 3,
-    },
-  });
-
-  // ── Joueurs de test ──────────────────────────────────────────────
-
+  // Joueurs de test
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  const player1 = await prisma.player.create({
+  const warrior = await prisma.player.create({
     data: {
       username: 'Warrior',
       email: 'warrior@test.com',
@@ -274,18 +116,30 @@ async function main() {
       gold: 100,
       stats: {
         create: {
-          baseHp: 100,
-          baseAp: 6,
-          baseMp: 3,
-          strength: 10,
-          agility: 10,
-          initiative: 10,
+          vit: 100,
+          atk: 5,
+          mag: 0,
+          def: 0,
+          res: 0,
+          ini: 10,
+          pa: 6,
+          pm: 3,
         },
+      },
+      inventory: {
+        create: [
+          { itemId: epee.id, quantity: 1, equipped: true },
+          { itemId: bouclier.id, quantity: 1, equipped: true },
+          { itemId: heaume.id, quantity: 1, equipped: true },
+          { itemId: armure.id, quantity: 1, equipped: true },
+          { itemId: bottes.id, quantity: 1, equipped: true },
+          { itemId: anneauGuerrier.id, quantity: 1, equipped: true },
+        ],
       },
     },
   });
 
-  const player2 = await prisma.player.create({
+  const mage = await prisma.player.create({
     data: {
       username: 'Mage',
       email: 'mage@test.com',
@@ -293,21 +147,27 @@ async function main() {
       gold: 100,
       stats: {
         create: {
-          baseHp: 100,
-          baseAp: 6,
-          baseMp: 3,
-          strength: 10,
-          agility: 10,
-          initiative: 10,
+          vit: 80,
+          atk: 2,
+          mag: 8,
+          def: 0,
+          res: 2,
+          ini: 12,
+          pa: 7,
+          pm: 3,
         },
+      },
+      inventory: {
+        create: [
+          { itemId: baton.id, quantity: 1, equipped: true },
+        ],
       },
     },
   });
 
   const itemCount = await prisma.item.count();
   console.log('✅ Seed completed!');
-  console.log(`   Items: ${itemCount} (7 resources + 6 weapons + 9 armors + 3 rings + 3 consumables)`);
-  console.log(`   Players: ${player1.username}, ${player2.username} (100 or each)`);
+  console.log(`   Players: ${warrior.username}, ${mage.username}`);
 }
 
 main()
