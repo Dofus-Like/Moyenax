@@ -39,6 +39,7 @@ export function FarmingPage() {
   const [searchParams] = useSearchParams();
   const isDebugMode = searchParams.get('debug') === 'true';
 
+  const [isCameraMoving, setIsCameraMoving] = useState(false);
   const { map, playerPosition, movePlayer, inventory, fetchState, gatherNode, endPhase, debugRefill } = useFarmingStore();
   const controlsRef = useRef<CameraControlsImpl>(null);
 
@@ -53,7 +54,6 @@ export function FarmingPage() {
     return { x: 0, y: 0 };
   }, [playerPosition, map]);
 
-  // Fetch initial farming state on mount
   useEffect(() => {
     fetchState();
   }, [fetchState]);
@@ -65,7 +65,23 @@ export function FarmingPage() {
     }
   }, []);
 
-  // Initialiser la position du joueur au premier chargement
+  const [controls, setControls] = useState<CameraControlsImpl | null>(null);
+
+  useEffect(() => {
+    if (!controls) return;
+
+    const start = () => setIsCameraMoving(true);
+    const end = () => setIsCameraMoving(false);
+
+    controls.addEventListener('controlstart', start);
+    controls.addEventListener('rest', end);
+
+    return () => {
+      controls.removeEventListener('controlstart', start);
+      controls.removeEventListener('rest', end);
+    };
+  }, [controls]); 
+
   useEffect(() => {
     if (map && !playerPosition) {
       const spawn = findSpawnPosition(map.grid);
@@ -90,17 +106,19 @@ export function FarmingPage() {
          TERRAIN_PROPERTIES[map.grid[t.y][t.x]].traversable
        );
 
-       let bestPath: PathNode[] | null = null;
-       for (const t of adjacentTiles) {
-         if (t.x === currentPlayerPos.x && t.y === currentPlayerPos.y) {
-            return []; // Déjà adjacent, pas besoin de bouger
-         }
-         const p = findPath(map, currentPlayerPos, t);
-         if (p && (!bestPath || p.length < bestPath.length)) {
-            bestPath = p;
-         }
+       if (adjacentTiles.some(t => t.x === currentPlayerPos.x && t.y === currentPlayerPos.y)) {
+         return [];
        }
-       return bestPath ?? [];
+
+       if (adjacentTiles.length === 0) return [];
+
+       const closestTile = adjacentTiles.reduce((prev, curr) => {
+         const distPrev = Math.abs(prev.x - currentPlayerPos.x) + Math.abs(prev.y - currentPlayerPos.y);
+         const distCurr = Math.abs(curr.x - currentPlayerPos.x) + Math.abs(curr.y - currentPlayerPos.y);
+         return distCurr < distPrev ? curr : prev;
+       }, adjacentTiles[0]);
+
+       return findPath(map, currentPlayerPos, closestTile) ?? [];
     }
 
     if (!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable) return [];
@@ -115,12 +133,10 @@ export function FarmingPage() {
       const props = TERRAIN_PROPERTIES[terrain];
       const isAdjacent = Math.abs(currentPlayerPos.x - x) + Math.abs(currentPlayerPos.y - y) <= 1;
 
-      // Handle Gathering
       if (props.harvestable) {
         if (isAdjacent) {
           gatherNode(x, y).catch(console.error);
         } else {
-          // Find path to closest adjacent tile
           const adjacentTiles = [
             { x: x + 1, y },
             { x: x - 1, y },
@@ -132,13 +148,15 @@ export function FarmingPage() {
             TERRAIN_PROPERTIES[map.grid[t.y][t.x]].traversable
           );
 
-          let bestPath: PathNode[] | null = null;
-          for (const t of adjacentTiles) {
-            const p = findPath(map, currentPlayerPos, t);
-            if (p && (!bestPath || p.length < bestPath.length)) {
-              bestPath = p;
-            }
-          }
+          if (adjacentTiles.length === 0) return;
+
+          const closestTile = adjacentTiles.reduce((prev, curr) => {
+            const distPrev = Math.abs(prev.x - currentPlayerPos.x) + Math.abs(prev.y - currentPlayerPos.y);
+            const distCurr = Math.abs(curr.x - currentPlayerPos.x) + Math.abs(curr.y - currentPlayerPos.y);
+            return distCurr < distPrev ? curr : prev;
+          }, adjacentTiles[0]);
+
+          const bestPath = findPath(map, currentPlayerPos, closestTile);
 
           if (bestPath && bestPath.length > 0) {
             setMovePath(bestPath);
@@ -149,7 +167,6 @@ export function FarmingPage() {
         return;
       }
 
-      // Handle Movement
       if (!props.traversable) return;
 
       const path = findPath(map, currentPlayerPos, { x, y });
@@ -186,14 +203,13 @@ export function FarmingPage() {
         await debugRefill();
       } else {
         await endPhase();
-        navigate('/'); // On retourne au lobby temporairement en attendant le vrai module combat
+        navigate('/');
       }
     } catch (e) {
       console.error(e);
     }
   }, [isDebugMode, debugRefill, endPhase, navigate]);
 
-  // Auto-récolte quand le joueur arrive sur une ressource
   const currentTerrain = map ? map.grid[currentPlayerPos.y]?.[currentPlayerPos.x] : TerrainType.GROUND;
   useAutoHarvest({
     currentPosition: currentPlayerPos,
@@ -201,7 +217,7 @@ export function FarmingPage() {
   });
 
   const totalResources = useMemo(() => {
-    return Object.values(inventory).reduce((sum, count) => sum + count, 0);
+    return Object.values(inventory).reduce((sum, count) => (sum as number) + (count as number), 0);
   }, [inventory]);
 
   return (
@@ -226,22 +242,7 @@ export function FarmingPage() {
           <span className="legend-item legend-herb">Herbe</span>
           <span className="legend-item legend-gold">Or</span>
         </div>
-        <button 
-          className="harvest-end-btn" 
-          onClick={handleEndHarvest}
-          style={{
-            marginLeft: 'auto',
-            background: 'var(--color-primary)',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-            transition: 'background 0.2s'
-          }}
-        >
+        <button className="harvest-end-btn" onClick={handleEndHarvest} style={{ marginLeft: 'auto', background: 'var(--color-primary)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
           {isDebugMode ? 'Fin de la récolte (Refill Debug)' : 'Fin de la récolte'}
         </button>
       </header>
@@ -253,29 +254,31 @@ export function FarmingPage() {
           <Canvas>
             <OrthographicCamera makeDefault position={[15, 20, 15]} zoom={30} near={0.1} far={100} />
             <CameraControls
-              ref={controlsRef}
+              ref={setControls}
               makeDefault
               minZoom={15}
               maxZoom={80}
               dollyToCursor={true}
               infinityDolly={false}
+              minPolarAngle={0}
+              maxPolarAngle={Math.PI * 90 / 180}
+              onStart={() => setIsCameraMoving(true)}
             />
             <ambientLight intensity={0.5} />
             <hemisphereLight args={['#87CEEB', '#654321', 0.6]} />
-            <directionalLight
-              position={[10, 15, 10]}
-              intensity={1.2}
-            />
+            <directionalLight position={[10, 20, 10]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} />
             <color attach="background" args={['#0a0e17']} />
-            <UnifiedMapScene
-              mode="farming"
-              map={map}
-              playerPosition={currentPlayerPos}
+            <UnifiedMapScene 
+              mode="farming" 
+              map={map} 
+              playerPosition={playerPosition || undefined}
               movePath={movePath}
               previewPath={previewPath}
               onPathComplete={handlePathComplete}
               onTileClick={handleTileClick}
               onTileHover={handleTileHover}
+              isCameraMoving={isCameraMoving}
+              isMoving={isMoving}
             />
           </Canvas>
         )}
@@ -295,28 +298,14 @@ export function FarmingPage() {
               </ul>
             )}
           </div>
-
           <hr />
-
           {hoverInfo ? (
             <>
               <div className="tile-info-title">{TERRAIN_LABELS[hoverInfo.terrain]}</div>
-              <div className="tile-info-coords">
-                Case ({hoverInfo.x}, {hoverInfo.y})
-              </div>
-              {previewPath.length > 0 && (
-                <div className="tile-info-distance">
-                  Distance : {previewPath.length} case{previewPath.length > 1 ? 's' : ''}
-                </div>
-              )}
-              {TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable && (
-                <div className="tile-info-resource">
-                  Ressource : {TERRAIN_PROPERTIES[hoverInfo.terrain].resourceName}
-                </div>
-              )}
-              {!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable && (
-                <div className="tile-info-blocked">Inaccessible</div>
-              )}
+              <div className="tile-info-coords">Case ({hoverInfo.x}, {hoverInfo.y})</div>
+              {previewPath.length > 0 && <div className="tile-info-distance">Distance : {previewPath.length} cases</div>}
+              {TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable && <div className="tile-info-resource">Ressource : {TERRAIN_PROPERTIES[hoverInfo.terrain].resourceName}</div>}
+              {!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable && <div className="tile-info-blocked">Inaccessible</div>}
             </>
           ) : (
             <div className="tile-info-empty">Survolez une case</div>

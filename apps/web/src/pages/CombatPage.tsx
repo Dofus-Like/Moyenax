@@ -15,7 +15,11 @@ export function CombatPage() {
   const navigate = useNavigate();
   const { combatState, connectToSession, disconnect } = useCombatStore();
   const authInitialize = useAuthStore((s) => s.initialize);
+  const [isCameraMoving, setIsCameraMoving] = React.useState(false);
   const controlsRef = React.useRef<CameraControlsImpl>(null);
+
+  const onRest = React.useCallback(() => setIsCameraMoving(false), []);
+  const onStart = React.useCallback(() => setIsCameraMoving(true), []);
 
   useEffect(() => {
     authInitialize();
@@ -84,27 +88,36 @@ export function CombatPage() {
         <Canvas shadows>
           <OrthographicCamera makeDefault position={[40, 40, 40]} zoom={30} near={0.1} far={1000} />
           <CameraControls 
-            ref={controlsRef}
+            ref={(node) => {
+              if (node) {
+                node.addEventListener('rest', onRest);
+              } else if (controlsRef.current) {
+                controlsRef.current.removeEventListener('rest', onRest);
+              }
+              (controlsRef as React.MutableRefObject<CameraControlsImpl | null>).current = node;
+            }}
             makeDefault
             minZoom={20} 
             maxZoom={100}
             dollyToCursor={true}
+            minPolarAngle={0}
+            maxPolarAngle={Math.PI * 90 / 180}
+            onStart={onStart}
           />
           <ambientLight intensity={0.5} />
           <hemisphereLight args={['#87CEEB', '#654321', 0.6]} />
           <directionalLight
-            position={[10, 15, 10]}
-            intensity={1.2}
+            position={[10, 20, 10]}
+            intensity={1.5}
             castShadow
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
+            shadow-mapSize={[1024, 1024]}
             shadow-camera-far={50}
             shadow-camera-left={-10}
             shadow-camera-right={10}
             shadow-camera-top={10}
             shadow-camera-bottom={-10}
           />
-          {gameMap && <UnifiedMapScene mode="combat" map={gameMap} sessionId={sessionId} />}
+          {gameMap && <UnifiedMapScene mode="combat" map={gameMap} sessionId={sessionId} isCameraMoving={isCameraMoving} />}
         </Canvas>
 
         <CombatHUD />
