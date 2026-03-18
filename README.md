@@ -10,7 +10,7 @@ Monorepo NX pour un jeu de stratégie au tour par tour sur navigateur inspiré d
 
 ## 📋 Prérequis
 
-- Node.js 20+
+- Node.js 22+
 - Docker & Docker Compose
 - Yarn
 

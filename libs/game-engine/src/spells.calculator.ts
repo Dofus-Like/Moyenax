@@ -34,7 +34,7 @@ export function calculatePlayerSpells(items: ItemDefinition[]): SpellDefinition[
   const hasKunai = hasItem('Kunaï');
   const hasBombe = hasItem('Bombe');
 
-  const hasAnneauGuerrier = hasItem('Anneau de Guerrier');
+  const hasAnneauGuerrier = hasItem('Anneau du Guerrier');
   const hasAnneauMage = hasItem('Anneau du Mage');
   const hasAnneauNinja = hasItem('Anneau du Ninja');
 

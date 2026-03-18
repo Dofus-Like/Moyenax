@@ -1,15 +1,36 @@
+// --- Resource families ---
+
+export enum ResourceFamily {
+  FORGE = 'FORGE',
+  ARCANE = 'ARCANE',
+  NATURE = 'NATURE',
+  SPECIAL = 'SPECIAL',
+}
+
+// --- Combat terrain behavior ---
+
+export enum CombatTerrainType {
+  FLAT = 'FLAT',
+  WALL = 'WALL',
+  HOLE = 'HOLE',
+}
+
+// --- Terrain types (map cells) ---
+
 export enum TerrainType {
   GROUND = 'GROUND',
-  WATER = 'WATER',
-  IRON_ORE = 'IRON_ORE',
-  GOLD_ORE = 'GOLD_ORE',
+  IRON = 'IRON',
+  LEATHER = 'LEATHER',
+  CRYSTAL = 'CRYSTAL',
+  FABRIC = 'FABRIC',
   WOOD = 'WOOD',
   HERB = 'HERB',
-  CRYSTAL = 'CRYSTAL',
-  LEATHER = 'LEATHER',
+  GOLD = 'GOLD',
 }
 
 export interface TerrainProperties {
+  family: ResourceFamily | null;
+  combatType: CombatTerrainType;
   traversable: boolean;
   blockLineOfSight: boolean;
   jumpable: boolean;
@@ -19,62 +40,91 @@ export interface TerrainProperties {
 
 export const TERRAIN_PROPERTIES: Record<TerrainType, TerrainProperties> = {
   [TerrainType.GROUND]: {
+    family: null,
+    combatType: CombatTerrainType.FLAT,
     traversable: true,
     blockLineOfSight: false,
     jumpable: false,
     harvestable: false,
     resourceName: null,
   },
-  [TerrainType.WATER]: {
+  [TerrainType.IRON]: {
+    family: ResourceFamily.FORGE,
+    combatType: CombatTerrainType.WALL,
     traversable: false,
+    blockLineOfSight: true,
+    jumpable: false,
+    harvestable: true,
+    resourceName: 'Fer',
+  },
+  [TerrainType.LEATHER]: {
+    family: ResourceFamily.FORGE,
+    combatType: CombatTerrainType.FLAT,
+    traversable: true,
     blockLineOfSight: false,
-    jumpable: true,
-    harvestable: false,
-    resourceName: null,
+    jumpable: false,
+    harvestable: true,
+    resourceName: 'Cuir',
   },
-  [TerrainType.IRON_ORE]: {
+  [TerrainType.CRYSTAL]: {
+    family: ResourceFamily.ARCANE,
+    combatType: CombatTerrainType.WALL,
     traversable: false,
     blockLineOfSight: true,
     jumpable: false,
     harvestable: true,
-    resourceName: 'Minerai de Fer',
+    resourceName: 'Cristal Magique',
   },
-  [TerrainType.GOLD_ORE]: {
-    traversable: false,
-    blockLineOfSight: true,
+  [TerrainType.FABRIC]: {
+    family: ResourceFamily.ARCANE,
+    combatType: CombatTerrainType.FLAT,
+    traversable: true,
+    blockLineOfSight: false,
     jumpable: false,
     harvestable: true,
-    resourceName: "Minerai d'Or",
+    resourceName: 'Étoffe',
   },
   [TerrainType.WOOD]: {
+    family: ResourceFamily.NATURE,
+    combatType: CombatTerrainType.WALL,
     traversable: false,
     blockLineOfSight: true,
     jumpable: false,
     harvestable: true,
-    resourceName: 'Bois de Frêne',
+    resourceName: 'Bois',
   },
   [TerrainType.HERB]: {
+    family: ResourceFamily.NATURE,
+    combatType: CombatTerrainType.FLAT,
     traversable: true,
     blockLineOfSight: false,
     jumpable: false,
     harvestable: true,
     resourceName: 'Herbe Médicinale',
   },
-  [TerrainType.CRYSTAL]: {
+  [TerrainType.GOLD]: {
+    family: ResourceFamily.SPECIAL,
+    combatType: CombatTerrainType.WALL,
     traversable: false,
     blockLineOfSight: true,
     jumpable: false,
     harvestable: true,
-    resourceName: "Cristal d'Ombre",
-  },
-  [TerrainType.LEATHER]: {
-    traversable: true,
-    blockLineOfSight: false,
-    jumpable: false,
-    harvestable: true,
-    resourceName: 'Cuir Robuste',
+    resourceName: 'Or',
   },
 };
+
+export const TERRAIN_LABELS: Record<TerrainType, string> = {
+  [TerrainType.GROUND]: 'Sol libre',
+  [TerrainType.IRON]: 'Fer',
+  [TerrainType.LEATHER]: 'Cuir',
+  [TerrainType.CRYSTAL]: 'Cristal Magique',
+  [TerrainType.FABRIC]: 'Étoffe',
+  [TerrainType.WOOD]: 'Bois',
+  [TerrainType.HERB]: 'Herbe Médicinale',
+  [TerrainType.GOLD]: 'Or',
+};
+
+// --- Map ---
 
 export const MAP_SIZE = 20;
 
@@ -82,6 +132,7 @@ export interface GameMap {
   width: number;
   height: number;
   grid: TerrainType[][];
+  seedId: SeedId;
 }
 
 export interface MapCell {
@@ -90,13 +141,78 @@ export interface MapCell {
   terrain: TerrainType;
 }
 
-export const TERRAIN_LABELS: Record<TerrainType, string> = {
-  [TerrainType.GROUND]: 'Sol libre',
-  [TerrainType.WATER]: 'Mare d\'eau',
-  [TerrainType.IRON_ORE]: 'Minerai de Fer',
-  [TerrainType.GOLD_ORE]: 'Minerai d\'Or',
-  [TerrainType.WOOD]: 'Bois de Frêne',
-  [TerrainType.HERB]: 'Herbe Médicinale',
-  [TerrainType.CRYSTAL]: 'Cristal d\'Ombre',
-  [TerrainType.LEATHER]: 'Cuir Robuste',
+// --- Seed system ---
+
+export type SeedId =
+  | 'FORGE'
+  | 'ARCANE'
+  | 'NATURE'
+  | 'FORGE_NATURE'
+  | 'ARCANE_NATURE'
+  | 'FORGE_ARCANE';
+
+export interface SeedConfig {
+  id: SeedId;
+  label: string;
+  resources: TerrainType[];
+  dominantBuild: string;
+  counterBuild: string;
+}
+
+export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
+  FORGE: {
+    id: 'FORGE',
+    label: '🔴 FORGE',
+    resources: [TerrainType.IRON, TerrainType.LEATHER, TerrainType.HERB, TerrainType.GOLD],
+    dominantBuild: 'Guerrier',
+    counterBuild: 'Mage (full shop)',
+  },
+  ARCANE: {
+    id: 'ARCANE',
+    label: '🟣 ARCANE',
+    resources: [TerrainType.CRYSTAL, TerrainType.FABRIC, TerrainType.HERB, TerrainType.GOLD],
+    dominantBuild: 'Mage',
+    counterBuild: 'Ninja alchimiste',
+  },
+  NATURE: {
+    id: 'NATURE',
+    label: '🟢 NATURE',
+    resources: [TerrainType.WOOD, TerrainType.HERB, TerrainType.LEATHER, TerrainType.GOLD],
+    dominantBuild: 'Ninja (sans Kunaï)',
+    counterBuild: 'Guerrier (Fer shop)',
+  },
+  FORGE_NATURE: {
+    id: 'FORGE_NATURE',
+    label: '🔴🟢 FORGE+NATURE',
+    resources: [
+      TerrainType.IRON, TerrainType.LEATHER, TerrainType.WOOD,
+      TerrainType.HERB, TerrainType.GOLD,
+    ],
+    dominantBuild: 'Ninja / Guerrier',
+    counterBuild: '—',
+  },
+  ARCANE_NATURE: {
+    id: 'ARCANE_NATURE',
+    label: '🟣🟢 ARCANE+NATURE',
+    resources: [
+      TerrainType.CRYSTAL, TerrainType.FABRIC, TerrainType.WOOD,
+      TerrainType.HERB, TerrainType.LEATHER, TerrainType.GOLD,
+    ],
+    dominantBuild: 'Mage / Ninja',
+    counterBuild: '—',
+  },
+  FORGE_ARCANE: {
+    id: 'FORGE_ARCANE',
+    label: '🔴🟣 FORGE+ARCANE',
+    resources: [
+      TerrainType.IRON, TerrainType.LEATHER, TerrainType.CRYSTAL,
+      TerrainType.FABRIC, TerrainType.GOLD,
+    ],
+    dominantBuild: 'Guerrier / Mage',
+    counterBuild: '—',
+  },
 };
+
+export const ALL_SEED_IDS: SeedId[] = [
+  'FORGE', 'ARCANE', 'NATURE', 'FORGE_NATURE', 'ARCANE_NATURE', 'FORGE_ARCANE',
+];

@@ -2,11 +2,10 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { PathNode } from '@game/shared-types';
+import { getPlayerColors } from '../utils/playerColors';
 
 const MOVE_SPEED = 4.5;
 const BOUNCE_HEIGHT = 0.15;
-const PAWN_COLOR = '#6366f1';
-const PAWN_EMISSIVE = '#4338ca';
 
 interface PlayerPawnProps {
   gridPosition: PathNode;
@@ -28,6 +27,9 @@ export function PlayerPawn({ gridPosition, gridSize, path, onPathComplete }: Pla
   const progressRef = useRef(0);
   const fromRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
   const toRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
+
+  // Obtenir les couleurs du joueur (pour le moment NEUTRAL par défaut)
+  const colors = getPlayerColors();
 
   useEffect(() => {
     if (path && path.length > 0) {
@@ -87,27 +89,27 @@ export function PlayerPawn({ gridPosition, gridSize, path, onPathComplete }: Pla
 
   return (
     <group ref={groupRef} position={initialWorld}>
-      <mesh ref={bodyRef} position={[0, 0.35, 0]}>
+      <mesh ref={bodyRef} position={[0, 0.35, 0]} castShadow>
         <capsuleGeometry args={[0.18, 0.3, 8, 16]} />
         <meshStandardMaterial
-          color={PAWN_COLOR}
-          emissive={PAWN_EMISSIVE}
+          color={colors.primary}
+          emissive={colors.emissive}
           emissiveIntensity={0.3}
           metalness={0.2}
           roughness={0.5}
         />
       </mesh>
-      <mesh position={[0, 0.65, 0]}>
+      <mesh position={[0, 0.65, 0]} castShadow>
         <sphereGeometry args={[0.14, 16, 16]} />
         <meshStandardMaterial
-          color={PAWN_COLOR}
-          emissive={PAWN_EMISSIVE}
+          color={colors.secondary}
+          emissive={colors.emissive}
           emissiveIntensity={0.3}
           metalness={0.2}
           roughness={0.5}
         />
       </mesh>
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[0.22, 16]} />
         <meshBasicMaterial color="#000000" transparent opacity={0.3} />
       </mesh>

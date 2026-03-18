@@ -200,6 +200,7 @@ Les deux joueurs partagent le **même seed et la même carte de référence** (p
 - Si elle est présente, elle est récoltable autant de fois que le joueur a des points de récolte disponibles dans la manche en cours.
 - Les points de récolte se rechargent à 4 au début de chaque nouvelle manche.
 - **Farmer de l'Or = sacrifier 1 point de récolte** sur le budget de ressources classe.
+- **1 récolte d'Or = 1 Or.** C'est le taux de conversion fixe qui gouverne toute l'économie.
 
 > C'est la contrainte principale du jeu : tu ne peux pas tout avoir. Chaque récolte est un choix.
 
@@ -381,9 +382,9 @@ Un seul anneau équipable à la fois. Chaque anneau débloque les deux spells se
 
 | Nom | Effet | Recette craft | Prix shop |
 |-----|-------|---------------|-----------|
-| Potion de Soin | Restaure 30 VIT en combat | Herbe×2 | 8 or |
-| Potion de Force | +5 ATK pendant 3 tours | Herbe×1 + Cristal×1 | 10 or |
-| Potion de Vitesse | +2 PM pendant 2 tours | Herbe×1 + Cuir×1 | 8 or |
+| Potion de Soin | Restaure 30 VIT en combat | Herbe×2 | 3 or |
+| Potion de Force | +5 ATK pendant 3 tours | Herbe×1 + Cristal×1 | 3 or |
+| Potion de Vitesse | +2 PM pendant 2 tours | Herbe×1 + Cuir×1 | 3 or |
 
 ---
 
@@ -398,7 +399,7 @@ Deux mécaniques : la **fabrication initiale** (Rang 1) et la **fusion** (Merge)
 
 ### Recettes calibrées (budget 20 récoltes)
 
-Les quantités sont calibrées pour qu'un build complet de classe dominante coûte environ **14–15 récoltes + 2 Or pour l'anneau**, laissant 3–4 récoltes pour les consommables.
+Les quantités sont calibrées pour qu'un build complet de classe dominante coûte environ **17 récoltes** (15 ressources classe + 2 Or pour l'anneau), laissant **3 récoltes** pour les consommables ou les merges.
 
 #### Armes (Rang 1)
 
@@ -423,7 +424,7 @@ Les quantités sont calibrées pour qu'un build complet de classe dominante coû
 
 | Item | Archétype | Recette | Total |
 |------|-----------|---------|-------|
-| Armure | ⚔️ FORGE | Fer×2 + Cuir×2 | 4 u |
+| Armure | ⚔️ FORGE | Fer×2 + Cuir×1 | 3 u |
 | Toge de mage | 🔮 ARCANE | Étoffe×3 | 3 u |
 | Kimono | 🥷 NATURE | Bois×2 + Cuir×1 | 3 u |
 
@@ -431,8 +432,8 @@ Les quantités sont calibrées pour qu'un build complet de classe dominante coû
 
 | Item | Archétype | Recette | Total |
 |------|-----------|---------|-------|
-| Bottes de fer | ⚔️ FORGE | Fer×1 + Cuir×2 | 3 u |
-| Bottes de mage | 🔮 ARCANE | Cristal×1 + Étoffe×2 | 3 u |
+| Bottes de fer | ⚔️ FORGE | Fer×1 + Cuir×1 | 2 u |
+| Bottes de mage | 🔮 ARCANE | Cristal×1 + Étoffe×1 | 2 u |
 | Geta | 🥷 NATURE | Bois×2 | 2 u |
 
 #### Recettes de Fusion (Merge)
@@ -463,15 +464,16 @@ Le shop permet d'obtenir les items hors-famille. **Acheter = sacrifier des point
 
 ### Prix shop de référence
 
-| Catégorie | Prix | Note |
-|-----------|------|------|
-| Arme | 4 Or | Toutes les 6 armes disponibles |
-| Pièce d'armure (tête/torse/jambes) | 3 Or | Toutes les 9 armures |
-| Anneau | 3 Or | Alternative au craft |
-| Potion de soin ×1 | 2 Or | Critique si seed FORGE+ARCANE (pas d'Herbe) |
-| Potion de force ×1 | 2 Or | — |
-| Potion de vitesse ×1 | 2 Or | — |
-| Kunaï (ninja, seed NATURE) | 4 Or | Seul item cross-famille nécessitant un achat forcé |
+| Catégorie | Prix | Craft équivalent | Note |
+|-----------|------|------------------|------|
+| Arme | 4 Or | 3 récoltes | Toutes les 6 armes |
+| Armure tête | 3 Or | 2 récoltes | Heaume, Chapeau, Bandeau |
+| Armure torse | 4 Or | 3 récoltes | Armure, Toge, Kimono |
+| Armure jambes | 3 Or | 2 récoltes | Bottes fer, Bottes mage, Geta |
+| Anneau | 5 Or | 4 récoltes (2 res + 2 Or) | Alternative au craft |
+| Potion ×1 | 3 Or | 2 récoltes | Critique si seed FORGE+ARCANE (pas d'Herbe) |
+
+> **Règle d'or** : prix shop = coût craft (en récoltes) + 1 Or. Le shop est toujours plus cher que le craft — c'est le prix de la flexibilité.
 
 ### Vente
 
@@ -481,11 +483,12 @@ Le shop permet d'obtenir les items hors-famille. **Acheter = sacrifier des point
 
 ### Équilibrage économique
 
+- **1 récolte d'Or = 1 Or** (taux fixe)
 - Un combat gagné rapporte **50 or**
-- Budget build dominant complet : ~14–15 récoltes + 2 Or anneau
-- Budget counter-build : 8–10 récoltes classe + 8–12 Or shop
-- Acheter un item au shop = 3–4 Or = **3–4 récoltes sacrifiées** (converties en Or farmé)
-- Potions en seed FORGE+ARCANE : **2 Or chacune au shop** — les joueurs doivent choisir entre potions et équipement
+- Budget build dominant complet : **~17 récoltes** (15 classe + 2 Or anneau), reste 3 pour potions/merges
+- Budget counter-build : ~10 récoltes classe + ~10 Or shop (achats hors-seed)
+- Surcoût shop par item : **+1 Or** vs craft direct (ex: arme = 3 récoltes craft vs 4 Or shop)
+- Potions en seed FORGE+ARCANE : **3 Or chacune au shop** — les joueurs doivent choisir entre potions et équipement
 
 ---
 
@@ -834,11 +837,11 @@ graph TD
 - Le seed affiche : Fer ✅, Cuir ✅, Herbe ✅, Or ✅ — Cristal ❌, Étoffe ❌, Bois ❌
 - Lecture du build évident : **Guerrier**
 - Décision : aller Guerrier ou tenter Mage via shop ?
-- Manche 1 : farmer Fer×3 + Cuir×1 → crafter Épée (R1), farmer Or×1 pour démarrer le budget shop
-- Manche 2 : farmer Fer×3 → crafter Bouclier (R1). Combo Épée+Bouclier → Bond se débloque
-- Manche 3 : farmer Heaume (Fer×2) + Armure (Fer×2 + Cuir×2) → Full Set Guerrier amorcé
-- Manche 4 : crafter Bottes de Fer (Fer×1 + Cuir×2) → Full Set complet → Bond R2, Endurance R2
-- Manche 5 : Or×2 → Anneau du Guerrier (craft) → Bond R3, Endurance R3 — **Combat**
+- Manche 1 (4 pips) : Fer×3 + Cuir×1 → craft **Épée** (Fer×2+Cuir×1). Stock : Fer×1
+- Manche 2 (4 pips) : Fer×3 + Cuir×1 → craft **Bouclier** (Fer×3 avec stock). Combo → **Bond R1**. Stock : Cuir×1
+- Manche 3 (4 pips) : Fer×4 → craft **Heaume** (Fer×2) + craft **Armure** (Fer×2+Cuir×1 du stock)
+- Manche 4 (4 pips) : Fer×1 + Cuir×1 + Or×2 → craft **Bottes de fer** (Fer×1+Cuir×1) → Full Set = **Bond R2, Endurance R2**. Stock : Or×2, Fer×1
+- Manche 5 (4 pips) : Fer×1 → craft **Anneau du Guerrier** (Fer×2 stock + Or×2 stock) → **Bond R3, Endurance R3**. 3 pips restants pour potions — **Combat**
 
 ---
 

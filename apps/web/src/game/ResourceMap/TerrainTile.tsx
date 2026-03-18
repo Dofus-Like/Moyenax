@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { ThreeEvent } from '@react-three/fiber';
-import { TerrainType, TERRAIN_PROPERTIES } from '@game/shared-types';
+import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
 
 const TERRAIN_COLORS: Record<TerrainType, { base: string; hover: string }> = {
   [TerrainType.GROUND]: { base: '#374151', hover: '#4b5563' },
-  [TerrainType.WATER]: { base: '#1e40af', hover: '#2563eb' },
-  [TerrainType.IRON_ORE]: { base: '#78716c', hover: '#a8a29e' },
-  [TerrainType.GOLD_ORE]: { base: '#b45309', hover: '#d97706' },
+  [TerrainType.IRON]: { base: '#78716c', hover: '#a8a29e' },
+  [TerrainType.LEATHER]: { base: '#92400e', hover: '#b45309' },
+  [TerrainType.CRYSTAL]: { base: '#7c3aed', hover: '#a78bfa' },
+  [TerrainType.FABRIC]: { base: '#a855f7', hover: '#c084fc' },
   [TerrainType.WOOD]: { base: '#166534', hover: '#22c55e' },
   [TerrainType.HERB]: { base: '#4ade80', hover: '#86efac' },
-  [TerrainType.CRYSTAL]: { base: '#7c3aed', hover: '#a78bfa' },
-  [TerrainType.LEATHER]: { base: '#92400e', hover: '#b45309' },
+  [TerrainType.GOLD]: { base: '#eab308', hover: '#fde047' },
 };
 
 export interface TileHoverInfo {
@@ -26,50 +26,77 @@ interface TerrainTileProps {
   gridSize: number;
   onTileClick?: (x: number, y: number, terrain: TerrainType) => void;
   onTileHover?: (info: TileHoverInfo | null) => void;
+  
+  // Props optionnels pour le mode combat
+  isReachable?: boolean;
+  isInSpellRange?: boolean;
+  previewColor?: string | null;
 }
 
-function WaterTile({ position }: { position: [number, number, number] }) {
-  return (
-    <mesh position={[position[0], -0.05, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[0.92, 0.92]} />
-      <meshStandardMaterial color="#1e40af" transparent opacity={0.7} />
-    </mesh>
-  );
-}
-
-function BlockingObstacle({
+function WallObstacle({
   position,
   color,
   height,
+  terrain,
 }: {
   position: [number, number, number];
   color: string;
   height: number;
+  terrain: TerrainType;
 }) {
+  // Propriétés différentes selon le type de ressource
+  const isWood = terrain === TerrainType.WOOD;
+  const isMetal = terrain === TerrainType.IRON || terrain === TerrainType.GOLD;
+  const isCrystal = terrain === TerrainType.CRYSTAL;
+
+  const metalness = isMetal ? 0.8 : (isCrystal ? 0.3 : 0.1);
+  const roughness = isMetal ? 0.4 : (isCrystal ? 0.2 : 0.7);
+
   return (
-    <mesh position={[position[0], height / 2, position[2]]}>
-      <boxGeometry args={[0.7, height, 0.7]} />
-      <meshStandardMaterial color={color} />
+    <mesh position={[position[0], height / 2, position[2]]} castShadow receiveShadow>
+      {isWood ? (
+        <cylinderGeometry args={[0.35, 0.35, height, 8]} />
+      ) : (
+        <boxGeometry args={[0.7, height, 0.7]} />
+      )}
+      <meshStandardMaterial 
+        color={color} 
+        metalness={metalness}
+        roughness={roughness}
+      />
     </mesh>
   );
 }
 
-function GroundDetail({
-  position,
-  color,
-}: {
-  position: [number, number, number];
-  color: string;
-}) {
+function HoleTerrain({ position, color }: { position: [number, number, number]; color: string }) {
   return (
-    <mesh position={[position[0], 0.05, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[0.25, 8]} />
-      <meshStandardMaterial color={color} />
+    <group>
+      <mesh position={[position[0], -0.15, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.82, 0.82]} />
+        <meshStandardMaterial color={color} transparent opacity={0.8} />
+      </mesh>
+      <mesh position={[position[0], -0.01, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.3, 0.42, 12]} />
+        <meshStandardMaterial color="#78350f" transparent opacity={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+function FlatResource({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <mesh position={[position[0], 0.08, position[2]]} castShadow receiveShadow>
+      <cylinderGeometry args={[0.25, 0.25, 0.08, 16]} />
+      <meshStandardMaterial 
+        color={color}
+        metalness={0.1}
+        roughness={0.8}
+      />
     </mesh>
   );
 }
 
-export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover }: TerrainTileProps) {
+export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover, isReachable, isInSpellRange, previewColor }: TerrainTileProps) {
   const [hovered, setHovered] = useState(false);
   const colors = TERRAIN_COLORS[terrain];
   const props = TERRAIN_PROPERTIES[terrain];
@@ -79,7 +106,6 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover 
   const pos: [number, number, number] = [worldX, 0, worldZ];
 
   const tileColor = hovered ? colors.hover : colors.base;
-  const isClickable = props.harvestable;
 
   const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
@@ -92,11 +118,16 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover 
     if (onTileHover) onTileHover(null);
   };
 
+  const baseColor = props.combatType === CombatTerrainType.HOLE
+    ? '#1a1a0f'
+    : tileColor;
+
   return (
     <group>
       <mesh
         position={[worldX, 0, worldZ]}
         rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
         onClick={(e: ThreeEvent<MouseEvent>) => {
@@ -105,37 +136,64 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover 
         }}
       >
         <planeGeometry args={[0.92, 0.92]} />
-        <meshStandardMaterial
-          color={terrain === TerrainType.WATER ? '#1a2332' : tileColor}
-        />
+        <meshStandardMaterial color={baseColor} />
       </mesh>
 
-      {terrain === TerrainType.WATER && <WaterTile position={pos} />}
-
-      {terrain === TerrainType.IRON_ORE && (
-        <BlockingObstacle position={pos} color={hovered ? '#a8a29e' : '#78716c'} height={0.6} />
-      )}
-      {terrain === TerrainType.GOLD_ORE && (
-        <BlockingObstacle position={pos} color={hovered ? '#fbbf24' : '#d97706'} height={0.6} />
-      )}
-      {terrain === TerrainType.WOOD && (
-        <BlockingObstacle position={pos} color={hovered ? '#22c55e' : '#166534'} height={1.0} />
-      )}
-      {terrain === TerrainType.CRYSTAL && (
-        <BlockingObstacle position={pos} color={hovered ? '#c084fc' : '#7c3aed'} height={0.8} />
+      {props.combatType === CombatTerrainType.WALL && (
+        <WallObstacle
+          position={pos}
+          color={hovered ? colors.hover : colors.base}
+          height={terrain === TerrainType.WOOD ? 1.0 : 0.6}
+          terrain={terrain}
+        />
       )}
 
-      {terrain === TerrainType.HERB && (
-        <GroundDetail position={pos} color={hovered ? '#86efac' : '#4ade80'} />
-      )}
-      {terrain === TerrainType.LEATHER && (
-        <GroundDetail position={pos} color={hovered ? '#d97706' : '#92400e'} />
+      {props.combatType === CombatTerrainType.HOLE && (
+        <HoleTerrain
+          position={pos}
+          color={hovered ? colors.hover : colors.base}
+        />
       )}
 
-      {hovered && isClickable && (
+      {props.combatType === CombatTerrainType.FLAT && props.harvestable && (
+        <FlatResource
+          position={pos}
+          color={hovered ? colors.hover : colors.base}
+        />
+      )}
+
+      {hovered && props.harvestable && (
         <mesh position={[worldX, 0.01, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.35, 0.45, 16]} />
           <meshBasicMaterial color="#f59e0b" transparent opacity={0.6} />
+        </mesh>
+      )}
+
+      {/* Overlay de combat : chemin de prévisualisation */}
+      {previewColor && (
+        <mesh position={[worldX, 0.02, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.3, 16]} />
+          <meshBasicMaterial color={previewColor} transparent opacity={0.6} />
+        </mesh>
+      )}
+
+      {/* Overlay de combat : tuile dans la portée d'un sort */}
+      {isInSpellRange && (
+        <mesh position={[worldX, 0.03, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.92, 0.92]} />
+          <meshBasicMaterial color="#ef4444" transparent opacity={0.4} />
+          <mesh position={[0, 0, 0]}>
+            <ringGeometry args={[0.4, 0.45, 16]} />
+            <meshBasicMaterial color="#ef4444" transparent opacity={0.8} />
+          </mesh>
+        </mesh>
+      )}
+
+      {/* Overlay de combat : tuile accessible pour le mouvement */}
+      {isReachable && !isInSpellRange && (
+        <mesh position={[worldX, 0.015, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.92, 0.92]} />
+          <meshBasicMaterial color="#3b82f6" transparent opacity={0.3} />
         </mesh>
       )}
     </group>

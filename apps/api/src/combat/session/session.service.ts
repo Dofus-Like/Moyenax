@@ -22,13 +22,16 @@ export class SessionService {
       throw new BadRequestException('Impossible de se défier soi-même');
     }
 
-    const session = await this.prisma.combatSession.create({
-      data: {
-        player1Id: challengerId,
-        player2Id: targetId || null,
-        status: 'WAITING',
-      },
-    });
+    const data: any = {
+      player1Id: challengerId,
+      status: 'WAITING',
+    };
+    
+    if (targetId) {
+      data.player2Id = targetId;
+    }
+
+    const session = await this.prisma.combatSession.create({ data });
 
     return session;
   }
@@ -37,8 +40,8 @@ export class SessionService {
     return this.prisma.combatSession.findMany({
         where: { 
             status: 'WAITING',
-            player2Id: null 
-        },
+            player2Id: null
+        } as any,
         include: {
             player1: {
                 select: { username: true }

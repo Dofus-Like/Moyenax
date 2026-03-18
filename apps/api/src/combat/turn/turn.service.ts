@@ -172,7 +172,7 @@ export class TurnService {
                 .some(p => p.position.x === targetPos.x && p.position.y === targetPos.y);
             if (occupied) throw new BadRequestException('Case occupée');
             const tile = state.map.tiles.find(t => t.x === targetPos.x && t.y === targetPos.y);
-            if (!tile || tile.type === TerrainType.WATER || !(TERRAIN_PROPERTIES[tile.type as TerrainType]?.traversable ?? false)) {
+            if (!tile || !(TERRAIN_PROPERTIES[tile.type as TerrainType]?.traversable ?? false)) {
                 throw new BadRequestException('Terrain invalide');
             }
             player.position = targetPos;

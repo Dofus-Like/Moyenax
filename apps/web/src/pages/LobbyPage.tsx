@@ -40,7 +40,7 @@ export function LobbyPage() {
           fetchRooms();
           
           const token = localStorage.getItem('token');
-          const eventSource = new EventSource(`${import.meta.env.VITE_API_URL || '/api/v1'}/combat/session/${sessionId}/events?token=${token}`);
+          const eventSource = new EventSource(`${window.location.origin}/api/v1/combat/session/${sessionId}/events?token=${token}`);
           
           eventSource.addEventListener('STATE_UPDATED', (e) => {
               console.log('Room joined! Navigating to combat page...');
@@ -126,9 +126,9 @@ export function LobbyPage() {
       </section>
 
       <nav className="lobby-nav">
-        <button className="lobby-nav-card" onClick={() => navigate('/map')}>
+        <button className="lobby-nav-card" onClick={() => navigate('/farming')}>
           <span className="lobby-nav-icon">🗺️</span>
-          <span className="lobby-nav-title">Carte des Ressources</span>
+          <span className="lobby-nav-title">Mode Farming</span>
           <span className="lobby-nav-desc">Récoltez des ressources sur la carte</span>
         </button>
 
@@ -142,6 +142,12 @@ export function LobbyPage() {
           <span className="lobby-nav-icon">🎒</span>
           <span className="lobby-nav-title">Inventaire</span>
           <span className="lobby-nav-desc">Gérez votre équipement</span>
+        </button>
+
+        <button className="lobby-nav-card" onClick={() => navigate('/debug')}>
+          <span className="lobby-nav-icon">🛠️</span>
+          <span className="lobby-nav-title">Debug Panel</span>
+          <span className="lobby-nav-desc">Testez combat et farming séparément</span>
         </button>
       </nav>
     </div>

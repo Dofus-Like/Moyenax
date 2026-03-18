@@ -1,4 +1,4 @@
-import { TerrainType, TERRAIN_PROPERTIES, GameMap } from './map.types';
+import { TerrainType, TERRAIN_PROPERTIES, GameMap, CombatTerrainType } from './map.types';
 
 export interface PathNode {
   x: number;
@@ -18,10 +18,6 @@ function heuristic(a: PathNode, b: PathNode): number {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
-function isTraversable(terrain: TerrainType): boolean {
-  return TERRAIN_PROPERTIES[terrain].traversable;
-}
-
 const DIRECTIONS: PathNode[] = [
   { x: 0, y: -1 },
   { x: 0, y: 1 },
@@ -30,9 +26,17 @@ const DIRECTIONS: PathNode[] = [
 ];
 
 /**
- * A* pathfinding on a TerrainType grid.
- * Returns the path as an array of {x, y} from start (exclusive) to end (inclusive),
- * or null if no path exists.
+ * Determines if a terrain cell can be walked through during normal movement.
+ * WALL and HOLE block normal movement. Only FLAT terrain is walkable.
+ */
+function isWalkable(terrain: TerrainType): boolean {
+  return TERRAIN_PROPERTIES[terrain].traversable;
+}
+
+/**
+ * A* pathfinding on a TerrainType grid (walking only, no jumps).
+ * Returns the path from start (exclusive) to end (inclusive),
+ * or null if no walkable path exists.
  */
 export function findPath(
   map: GameMap,
@@ -42,7 +46,7 @@ export function findPath(
   if (
     end.x < 0 || end.x >= map.width ||
     end.y < 0 || end.y >= map.height ||
-    !isTraversable(map.grid[end.y][end.x])
+    !isWalkable(map.grid[end.y][end.x])
   ) {
     return null;
   }
@@ -84,7 +88,7 @@ export function findPath(
 
       if (nx < 0 || nx >= map.width || ny < 0 || ny >= map.height) continue;
       if (closed.has(key(nx, ny))) continue;
-      if (!isTraversable(map.grid[ny][nx])) continue;
+      if (!isWalkable(map.grid[ny][nx])) continue;
 
       const g = current.g + 1;
       const h = heuristic({ x: nx, y: ny }, end);
@@ -105,4 +109,31 @@ export function findPath(
   }
 
   return null;
+}
+
+/**
+ * Checks if a HOLE (TROU) cell is adjacent and jumpable:
+ * the cell on the other side must be walkable and in bounds.
+ */
+export function canJumpOver(
+  map: GameMap,
+  from: PathNode,
+  holeX: number,
+  holeY: number,
+): PathNode | null {
+  if (holeX < 0 || holeX >= map.width || holeY < 0 || holeY >= map.height) return null;
+
+  const terrain = map.grid[holeY][holeX];
+  if (TERRAIN_PROPERTIES[terrain].combatType !== CombatTerrainType.HOLE) return null;
+
+  const dx = holeX - from.x;
+  const dy = holeY - from.y;
+  if (Math.abs(dx) + Math.abs(dy) !== 1) return null;
+
+  const landX = holeX + dx;
+  const landY = holeY + dy;
+  if (landX < 0 || landX >= map.width || landY < 0 || landY >= map.height) return null;
+  if (!isWalkable(map.grid[landY][landX])) return null;
+
+  return { x: landX, y: landY };
 }

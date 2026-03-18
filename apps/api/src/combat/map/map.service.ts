@@ -21,9 +21,9 @@ export class MapService {
         if (!isSpawnZone) {
           const rand = Math.random();
           if (rand < 0.1) {
-            type = TerrainType.WATER;
+            type = TerrainType.IRON;
           } else if (rand < 0.15) {
-            type = TerrainType.IRON_ORE;
+            type = TerrainType.WOOD;
           } else if (rand < 0.2) {
             type = TerrainType.HERB;
           }

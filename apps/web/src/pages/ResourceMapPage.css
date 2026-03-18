@@ -35,6 +35,17 @@
   border-color: #6366f1;
 }
 
+.seed-badge {
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 .map-legend {
   display: flex;
   gap: 10px;
@@ -58,13 +69,13 @@
 }
 
 .legend-ground::before { background: #374151; }
-.legend-water::before { background: #1e40af; }
 .legend-iron::before { background: #78716c; }
-.legend-gold::before { background: #d97706; }
-.legend-wood::before { background: #166534; }
-.legend-crystal::before { background: #7c3aed; }
-.legend-herb::before { background: #4ade80; }
 .legend-leather::before { background: #92400e; }
+.legend-crystal::before { background: #7c3aed; }
+.legend-fabric::before { background: #a855f7; }
+.legend-wood::before { background: #166534; }
+.legend-herb::before { background: #4ade80; }
+.legend-gold::before { background: #eab308; }
 
 .resource-map-canvas {
   flex: 1;
