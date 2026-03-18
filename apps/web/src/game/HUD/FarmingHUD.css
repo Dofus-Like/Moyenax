@@ -1,0 +1,78 @@
+.farming-hud {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 35, 50, 0.9);
+  border: 2px solid #6366f1;
+  border-radius: 12px;
+  padding: 15px 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.hud-top .round-badge {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pips-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.pip {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #6366f1;
+  transition: all 0.3s ease;
+}
+
+.pip.filled {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  border-color: #10b981;
+}
+
+.pip.empty {
+  background: transparent;
+}
+
+.pips-label {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-top: 5px;
+  text-align: center;
+}
+
+.end-phase-btn {
+  margin-top: 5px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.end-phase-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.end-phase-btn:active {
+  transform: translateY(0);
+}

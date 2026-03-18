@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { CameraControls, OrthographicCamera } from '@react-three/drei';
+import CameraControlsImpl from 'camera-controls';
 import { Canvas } from '@react-three/fiber';
-import { OrthographicCamera, OrbitControls } from '@react-three/drei';
-import { useQuery } from '@tanstack/react-query';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { FarmingHUD } from '../game/HUD/FarmingHUD';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import { useAutoHarvest } from '../game/UnifiedMap/hooks/useAutoHarvest';
 import { useFarmingStore } from '../store/farming.store';
-import { mapApi } from '../api/map.api';
 import {
   TerrainType,
   TERRAIN_PROPERTIES,
@@ -15,7 +16,6 @@ import {
   PathNode,
   findPath,
 } from '@game/shared-types';
-import { useNavigate } from 'react-router-dom';
 import './ResourceMapPage.css';
 
 function findSpawnPosition(grid: TerrainType[][]): PathNode {
@@ -34,19 +34,13 @@ export function FarmingPage() {
   const [hoverInfo, setHoverInfo] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
   const [movePath, setMovePath] = useState<PathNode[] | null>(null);
   const [isMoving, setIsMoving] = useState(false);
+  const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(null);
 
-  const { playerPosition, movePlayer, inventory, reset } = useFarmingStore();
+  const [searchParams] = useSearchParams();
+  const isDebugMode = searchParams.get('debug') === 'true';
 
-  const {
-    data: map,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['map', 'session'],
-    queryFn: mapApi.generateNew,
-    staleTime: Infinity,
-    refetchOnMount: 'always',
-  });
+  const { map, playerPosition, movePlayer, inventory, fetchState, gatherNode, endPhase, debugRefill } = useFarmingStore();
+  const controlsRef = useRef<CameraControlsImpl>(null);
 
   const seedConfig = useMemo(() => {
     if (!map) return null;
@@ -58,6 +52,18 @@ export function FarmingPage() {
     if (map) return findSpawnPosition(map.grid);
     return { x: 0, y: 0 };
   }, [playerPosition, map]);
+
+  // Fetch initial farming state on mount
+  useEffect(() => {
+    fetchState();
+  }, [fetchState]);
+
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.mouseButtons.left = CameraControlsImpl.ACTION.TRUCK;
+      controlsRef.current.mouseButtons.right = CameraControlsImpl.ACTION.ROTATE;
+    }
+  }, []);
 
   // Initialiser la position du joueur au premier chargement
   useEffect(() => {
@@ -71,6 +77,32 @@ export function FarmingPage() {
     if (!map || !hoverInfo || isMoving) return [];
     const target = { x: hoverInfo.x, y: hoverInfo.y };
     if (target.x === currentPlayerPos.x && target.y === currentPlayerPos.y) return [];
+    
+    if (TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable) {
+       const adjacentTiles = [
+         { x: target.x + 1, y: target.y },
+         { x: target.x - 1, y: target.y },
+         { x: target.x, y: target.y + 1 },
+         { x: target.x, y: target.y - 1 },
+       ].filter(t => 
+         t.x >= 0 && t.x < map.width && 
+         t.y >= 0 && t.y < map.height && 
+         TERRAIN_PROPERTIES[map.grid[t.y][t.x]].traversable
+       );
+
+       let bestPath: PathNode[] | null = null;
+       for (const t of adjacentTiles) {
+         if (t.x === currentPlayerPos.x && t.y === currentPlayerPos.y) {
+            return []; // Déjà adjacent, pas besoin de bouger
+         }
+         const p = findPath(map, currentPlayerPos, t);
+         if (p && (!bestPath || p.length < bestPath.length)) {
+            bestPath = p;
+         }
+       }
+       return bestPath ?? [];
+    }
+
     if (!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable) return [];
     return findPath(map, currentPlayerPos, target) ?? [];
   }, [map, hoverInfo, currentPlayerPos, isMoving]);
@@ -78,30 +110,88 @@ export function FarmingPage() {
   const handleTileClick = useCallback(
     (x: number, y: number, terrain: TerrainType) => {
       if (!map || isMoving) return;
-      if (!TERRAIN_PROPERTIES[terrain].traversable) return;
       if (x === currentPlayerPos.x && y === currentPlayerPos.y) return;
+
+      const props = TERRAIN_PROPERTIES[terrain];
+      const isAdjacent = Math.abs(currentPlayerPos.x - x) + Math.abs(currentPlayerPos.y - y) <= 1;
+
+      // Handle Gathering
+      if (props.harvestable) {
+        if (isAdjacent) {
+          gatherNode(x, y).catch(console.error);
+        } else {
+          // Find path to closest adjacent tile
+          const adjacentTiles = [
+            { x: x + 1, y },
+            { x: x - 1, y },
+            { x, y: y + 1 },
+            { x, y: y - 1 },
+          ].filter(t => 
+            t.x >= 0 && t.x < map.width && 
+            t.y >= 0 && t.y < map.height && 
+            TERRAIN_PROPERTIES[map.grid[t.y][t.x]].traversable
+          );
+
+          let bestPath: PathNode[] | null = null;
+          for (const t of adjacentTiles) {
+            const p = findPath(map, currentPlayerPos, t);
+            if (p && (!bestPath || p.length < bestPath.length)) {
+              bestPath = p;
+            }
+          }
+
+          if (bestPath && bestPath.length > 0) {
+            setMovePath(bestPath);
+            setQueuedAction({ type: 'gather', x, y });
+            setIsMoving(true);
+          }
+        }
+        return;
+      }
+
+      // Handle Movement
+      if (!props.traversable) return;
 
       const path = findPath(map, currentPlayerPos, { x, y });
       if (path && path.length > 0) {
         setMovePath(path);
+        setQueuedAction(null);
         setIsMoving(true);
       }
     },
-    [map, isMoving, currentPlayerPos]
+    [map, isMoving, currentPlayerPos, gatherNode]
   );
 
   const handlePathComplete = useCallback(() => {
     if (movePath && movePath.length > 0) {
       const last = movePath[movePath.length - 1];
       movePlayer({ x: last.x, y: last.y });
+      
+      if (queuedAction?.type === 'gather') {
+        gatherNode(queuedAction.x, queuedAction.y).catch(console.error);
+      }
     }
     setMovePath(null);
+    setQueuedAction(null);
     setIsMoving(false);
-  }, [movePath, movePlayer]);
+  }, [movePath, movePlayer, queuedAction, gatherNode]);
 
   const handleTileHover = useCallback((info: { x: number; y: number; terrain: TerrainType } | null) => {
     setHoverInfo(info);
   }, []);
+
+  const handleEndHarvest = useCallback(async () => {
+    try {
+      if (isDebugMode) {
+        await debugRefill();
+      } else {
+        await endPhase();
+        navigate('/'); // On retourne au lobby temporairement en attendant le vrai module combat
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [isDebugMode, debugRefill, endPhase, navigate]);
 
   // Auto-récolte quand le joueur arrive sur une ressource
   const currentTerrain = map ? map.grid[currentPlayerPos.y]?.[currentPlayerPos.x] : TerrainType.GROUND;
@@ -136,36 +226,45 @@ export function FarmingPage() {
           <span className="legend-item legend-herb">Herbe</span>
           <span className="legend-item legend-gold">Or</span>
         </div>
+        <button 
+          className="harvest-end-btn" 
+          onClick={handleEndHarvest}
+          style={{
+            marginLeft: 'auto',
+            background: 'var(--color-primary)',
+            color: 'white',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+            transition: 'background 0.2s'
+          }}
+        >
+          {isDebugMode ? 'Fin de la récolte (Refill Debug)' : 'Fin de la récolte'}
+        </button>
       </header>
 
       <div className="resource-map-canvas">
-        {isLoading && <div className="map-loading">Chargement de la carte...</div>}
-        {error && <div className="map-error">Erreur de chargement</div>}
+        <FarmingHUD />
+        {!map && <div className="map-loading">Chargement de la carte...</div>}
         {map && (
-          <Canvas shadows>
+          <Canvas>
             <OrthographicCamera makeDefault position={[15, 20, 15]} zoom={30} near={0.1} far={100} />
-            <OrbitControls
-              target={[0, 0, 0]}
-              enableRotate={true}
-              enablePan={true}
+            <CameraControls
+              ref={controlsRef}
+              makeDefault
               minZoom={15}
               maxZoom={80}
-              maxPolarAngle={Math.PI / 2.2}
-              minPolarAngle={0.2}
+              dollyToCursor={true}
+              infinityDolly={false}
             />
             <ambientLight intensity={0.5} />
             <hemisphereLight args={['#87CEEB', '#654321', 0.6]} />
             <directionalLight
               position={[10, 15, 10]}
               intensity={1.2}
-              castShadow
-              shadow-mapSize-width={2048}
-              shadow-mapSize-height={2048}
-              shadow-camera-far={50}
-              shadow-camera-left={-20}
-              shadow-camera-right={20}
-              shadow-camera-top={20}
-              shadow-camera-bottom={-20}
             />
             <color attach="background" args={['#0a0e17']} />
             <UnifiedMapScene

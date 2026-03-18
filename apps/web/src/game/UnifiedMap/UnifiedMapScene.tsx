@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { TerrainType, CombatActionType, findPath, GameMap, PathNode, TERRAIN_PROPERTIES } from '@game/shared-types';
-import { TerrainTile } from '../ResourceMap/TerrainTile';
+import { ThreeEvent } from '@react-three/fiber';
+import { TerrainTile, TerrainTileProps } from '../ResourceMap/TerrainTile';
 import { PlayerPawn } from '../ResourceMap/PlayerPawn';
 import { PathPreview } from '../ResourceMap/PathPreview';
 import { SpellVFX } from './overlays/SpellVFX';
@@ -9,7 +10,6 @@ import { canMoveTo, canJumpTo, isInRange, hasLineOfSight } from '@game/game-engi
 import { useCombatStore } from '../../store/combat.store';
 import { useAuthStore } from '../../store/auth.store';
 import { combatApi } from '../../api/combat.api';
-import { getPlayerColors } from '../utils/playerColors';
 
 interface UnifiedMapSceneProps {
   mode: 'combat' | 'farming';
@@ -45,13 +45,17 @@ export function UnifiedMapScene({
   const [popups, setPopups] = useState<{ id: string; pos: [number, number, number]; val: number }[]>([]);
   const [vfx, setVfx] = useState<{ id: string; type: string; from: { x: number; y: number }; to: { x: number; y: number } }[]>([]);
   const [playerPaths, setPlayerPaths] = useState<Record<string, { x: number; y: number }[]>>({});
-  const lastPlayerPositions = useRef<Record<string, { x: number; y: number }>>({});
+  const visualPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
+  const targetPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
+  const [visualPositions, setVisualPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
   
   const selectedSpellId = useCombatStore((s) => s.selectedSpellId);
   const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
   
   const user = useAuthStore((s) => s.player);
+  const rightClickStartTimeRef = useRef<number>(0);
+  const noop = useCallback(() => {}, []);
 
 
   // === Combat: Listener dégâts ===
@@ -61,12 +65,13 @@ export function UnifiedMapScene({
     const damageHandler = (event: MessageEvent) => {
       const data = JSON.parse(event.data);
       const player = combatState.players[data.targetId];
+      const gridSize = combatState.map.width;
       if (player) {
         setPopups((prev) => [
           ...prev,
           {
             id: Math.random().toString(),
-            pos: [player.position.x, 0.5, player.position.y],
+            pos: [player.position.x - gridSize / 2, 0.5, player.position.y - gridSize / 2],
             val: data.damage,
           },
         ]);
@@ -111,16 +116,49 @@ export function UnifiedMapScene({
   useEffect(() => {
     if (mode !== 'combat' || !combatState || !gameMap) return;
 
+    let hasUpdates = false;
+    const pathsToAdd: Record<string, PathNode[]> = {};
+
     Object.values(combatState.players).forEach((p) => {
-      const last = lastPlayerPositions.current[p.playerId];
-      if (last && (last.x !== p.position.x || last.y !== p.position.y)) {
-        const path = findPath(gameMap, last, p.position);
-        if (path) {
-          setPlayerPaths((prev) => ({ ...prev, [p.playerId]: path }));
+      const visual = visualPositionsRef.current[p.playerId];
+      const target = targetPositionsRef.current[p.playerId];
+      
+      // Si la position a changé depuis notre dernier calcul
+      if (!visual) {
+        visualPositionsRef.current[p.playerId] = p.position;
+        targetPositionsRef.current[p.playerId] = p.position;
+        hasUpdates = true;
+      } else if (target?.x !== p.position.x || target?.y !== p.position.y) {
+        targetPositionsRef.current[p.playerId] = p.position;
+        
+        const path = findPath(gameMap, visual, p.position);
+        if (path && path.length > 0) {
+          pathsToAdd[p.playerId] = path;
+        } else {
+          // Téléportation immédiate si pas de chemin (ex: bond ou erreur)
+          visualPositionsRef.current[p.playerId] = p.position;
+          hasUpdates = true;
         }
       }
-      lastPlayerPositions.current[p.playerId] = { ...p.position };
     });
+
+    if (Object.keys(pathsToAdd).length > 0) {
+      setPlayerPaths((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const pid in pathsToAdd) {
+          if (!next[pid]) {
+            next[pid] = pathsToAdd[pid];
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }
+
+    if (hasUpdates) {
+      setVisualPositions({ ...visualPositionsRef.current });
+    }
   }, [mode, combatState, gameMap]);
 
   // === Combat: Tuiles accessibles ===
@@ -197,13 +235,13 @@ export function UnifiedMapScene({
         if (selectedSpellId) {
           console.log('Casting spell', selectedSpellId, 'at', { x, y });
 
-          setVfx((prev) => [
+            setVfx((prev) => [
             ...prev,
             {
               id: Math.random().toString(),
               type: selectedSpellId,
-              from: currentPlayer.position,
-              to: { x, y },
+              from: { x: currentPlayer.position.x - gameMap!.width / 2, y: currentPlayer.position.y - gameMap!.width / 2 },
+              to: { x: x - gameMap!.width / 2, y: y - gameMap!.width / 2 },
             },
           ]);
 
@@ -237,7 +275,7 @@ export function UnifiedMapScene({
         if (res?.data) {
           setCombatState(res.data);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('CombatAction Error:', err);
       }
     },
@@ -268,6 +306,21 @@ export function UnifiedMapScene({
     [mode, onTileHover]
   );
 
+  const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
+    if (e.button === 2) { // Right click
+      rightClickStartTimeRef.current = Date.now();
+    }
+  }, []);
+
+  const handlePointerUp = useCallback((e: ThreeEvent<PointerEvent>) => {
+    if (e.button === 2 && mode === 'combat' && selectedSpellId) {
+      const duration = Date.now() - rightClickStartTimeRef.current;
+      if (duration < 250) { // Simple click, not hold
+        setSelectedSpell(null);
+      }
+    }
+  }, [mode, selectedSpellId, setSelectedSpell]);
+
   // === Render Map ===
   if (mode === 'combat' && !combatState) {
     return null;
@@ -282,14 +335,13 @@ export function UnifiedMapScene({
       const terrain = activeMap.grid[y][x] as TerrainType;
       
       // Combat: calculer les props spécifiques
-      let tileProps: any = {
-        key: `${x}-${y}`,
+      const tileProps: TerrainTileProps = {
         x,
         y,
         terrain,
         gridSize: activeMap.width,
         onTileClick: handleTileClickDispatcher,
-        onTileHover: (info: any) => handleTileHoverDispatcher(!!info, x, y, terrain),
+        onTileHover: (info: { x: number; y: number; terrain: TerrainType } | null) => handleTileHoverDispatcher(!!info, x, y, terrain),
       };
 
       if (mode === 'combat' && isMyTurn && currentPlayer) {
@@ -311,7 +363,7 @@ export function UnifiedMapScene({
         }
       }
 
-      tiles.push(<TerrainTile {...tileProps} />);
+      tiles.push(<TerrainTile key={`${x}-${y}`} {...tileProps} />);
     }
   }
 
@@ -323,35 +375,50 @@ export function UnifiedMapScene({
           gridPosition={playerPosition}
           gridSize={activeMap.width}
           path={movePath || null}
-          onPathComplete={onPathComplete || (() => {})}
+          onPathComplete={onPathComplete || noop}
         />
       );
     }
 
     if (mode === 'combat' && combatState) {
-      const colors = getPlayerColors();
-      return Object.values(combatState.players).map((p) => (
-        <PlayerPawn
-          key={p.playerId}
-          gridPosition={p.position}
-          gridSize={activeMap.width}
-          path={playerPaths[p.playerId] || null}
-          onPathComplete={() =>
-            setPlayerPaths((prev) => {
-              const next = { ...prev };
-              delete next[p.playerId];
-              return next;
-            })
-          }
-        />
-      ));
+      return Object.values(combatState.players).map((p) => {
+        const pos = visualPositions[p.playerId] || p.position;
+        return (
+          <PlayerPawn
+            key={p.playerId}
+            gridPosition={pos}
+            gridSize={activeMap.width}
+            path={playerPaths[p.playerId] || null}
+            onPathComplete={() => {
+              setPlayerPaths((prev) => {
+                const next = { ...prev };
+                delete next[p.playerId];
+                return next;
+              });
+              visualPositionsRef.current[p.playerId] = combatState.players[p.playerId].position;
+              targetPositionsRef.current[p.playerId] = combatState.players[p.playerId].position;
+              setVisualPositions({ ...visualPositionsRef.current });
+            }}
+          />
+        );
+      });
     }
 
     return null;
   };
 
   return (
-    <group>
+    <group 
+      onPointerDown={handlePointerDown} 
+      onPointerUp={handlePointerUp}
+      onContextMenu={(e) => e.nativeEvent.preventDefault()}
+    >
+      {/* Background click catcher */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+        <planeGeometry args={[1000, 1000]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+      
       {tiles}
 
       {/* Path preview */}

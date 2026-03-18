@@ -67,13 +67,13 @@ export const TERRAIN_PROPERTIES: Record<TerrainType, TerrainProperties> = {
     resourceName: 'Cuir',
   },
   [TerrainType.CRYSTAL]: {
-    family: ResourceFamily.ARCANE,
+    family: ResourceFamily.ARCANE, // Changed from null to ARCANE
     combatType: CombatTerrainType.WALL,
     traversable: false,
     blockLineOfSight: true,
     jumpable: false,
     harvestable: true,
-    resourceName: 'Cristal Magique',
+    resourceName: 'Cristal magique',
   },
   [TerrainType.FABRIC]: {
     family: ResourceFamily.ARCANE,
@@ -100,7 +100,7 @@ export const TERRAIN_PROPERTIES: Record<TerrainType, TerrainProperties> = {
     blockLineOfSight: false,
     jumpable: false,
     harvestable: true,
-    resourceName: 'Herbe Médicinale',
+    resourceName: 'Herbe médicinale',
   },
   [TerrainType.GOLD]: {
     family: ResourceFamily.SPECIAL,
@@ -117,10 +117,10 @@ export const TERRAIN_LABELS: Record<TerrainType, string> = {
   [TerrainType.GROUND]: 'Sol libre',
   [TerrainType.IRON]: 'Fer',
   [TerrainType.LEATHER]: 'Cuir',
-  [TerrainType.CRYSTAL]: 'Cristal Magique',
+  [TerrainType.CRYSTAL]: 'Cristal magique',
   [TerrainType.FABRIC]: 'Étoffe',
   [TerrainType.WOOD]: 'Bois',
-  [TerrainType.HERB]: 'Herbe Médicinale',
+  [TerrainType.HERB]: 'Herbe médicinale',
   [TerrainType.GOLD]: 'Or',
 };
 

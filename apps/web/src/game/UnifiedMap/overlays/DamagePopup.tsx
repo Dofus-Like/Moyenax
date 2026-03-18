@@ -33,16 +33,18 @@ export function DamagePopup({ position, value, onComplete }: DamagePopupProps) {
 
   return (
     <Text
-      position={[position[0], position[1] + 1.5 + yOffset, position[2]]}
+      position={[position[0], position[1] + yOffset, position[2]]}
       fontSize={0.5}
       color="#ef4444"
       anchorX="center"
       anchorY="middle"
       outlineWidth={0.04}
       outlineColor="black"
+      renderOrder={999}
+      material-depthTest={false}
     >
       {value}
-      <meshStandardMaterial opacity={opacity} transparent />
+      <meshStandardMaterial opacity={opacity} transparent depthTest={false} />
     </Text>
   );
 }

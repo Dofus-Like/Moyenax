@@ -4,3 +4,4 @@ export * from './events';
 export * from './api.types';
 export * from './map.types';
 export * from './pathfinding';
+export * from './farming.types';

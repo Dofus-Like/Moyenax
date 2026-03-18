@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
-import { OrthographicCamera, MapControls } from '@react-three/drei';
+import { OrthographicCamera, CameraControls } from '@react-three/drei';
+import CameraControlsImpl from 'camera-controls';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import { CombatHUD } from '../game/HUD/CombatHUD';
 import { useCombatStore } from '../store/combat.store';
@@ -14,10 +15,18 @@ export function CombatPage() {
   const navigate = useNavigate();
   const { combatState, connectToSession, disconnect } = useCombatStore();
   const authInitialize = useAuthStore((s) => s.initialize);
+  const controlsRef = React.useRef<CameraControlsImpl>(null);
 
   useEffect(() => {
     authInitialize();
   }, [authInitialize]);
+
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.mouseButtons.left = CameraControlsImpl.ACTION.TRUCK;
+      controlsRef.current.mouseButtons.right = CameraControlsImpl.ACTION.ROTATE;
+    }
+  }, []);
 
   useEffect(() => {
     if (sessionId) {
@@ -74,7 +83,13 @@ export function CombatPage() {
       <div className="combat-arena">
         <Canvas shadows>
           <OrthographicCamera makeDefault position={[40, 40, 40]} zoom={30} near={0.1} far={1000} />
-          <MapControls enableRotate={false} target={[5, 0, 5]} minZoom={20} maxZoom={100} />
+          <CameraControls 
+            ref={controlsRef}
+            makeDefault
+            minZoom={20} 
+            maxZoom={100}
+            dollyToCursor={true}
+          />
           <ambientLight intensity={0.5} />
           <hemisphereLight args={['#87CEEB', '#654321', 0.6]} />
           <directionalLight

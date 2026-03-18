@@ -4,10 +4,20 @@ import { useAuthStore } from '../store/auth.store';
 import { combatApi } from '../api/combat.api';
 import './LobbyPage.css';
 
+interface Room {
+  id: string;
+  player1Id: string;
+  player1: {
+    username: string;
+  };
+  createdAt: string;
+}
+
+
 export function LobbyPage() {
   const { player, logout, initialize } = useAuthStore();
   const navigate = useNavigate();
-  const [rooms, setRooms] = React.useState<any[]>([]);
+  const [rooms, setRooms] = React.useState<Room[]>([]);
   const [loadingRooms, setLoadingRooms] = React.useState(true);
 
   const fetchRooms = React.useCallback(async () => {
@@ -42,7 +52,7 @@ export function LobbyPage() {
           const token = localStorage.getItem('token');
           const eventSource = new EventSource(`${window.location.origin}/api/v1/combat/session/${sessionId}/events?token=${token}`);
           
-          eventSource.addEventListener('STATE_UPDATED', (e) => {
+          eventSource.addEventListener('STATE_UPDATED', () => {
               console.log('Room joined! Navigating to combat page...');
               eventSource.close();
               navigate(`/combat/${sessionId}`);
@@ -50,9 +60,9 @@ export function LobbyPage() {
 
           // Indiquer à l'utilisateur qu'on attend
           setRooms(prev => [{
-              id: sessionId,
+              id: sessionId as string,
               player1: { username: 'Vous (En attente...)' },
-              player1Id: player?.id,
+              player1Id: player?.id ?? '',
               createdAt: new Date().toISOString()
           }, ...prev]);
       } catch (err) {
@@ -69,16 +79,7 @@ export function LobbyPage() {
       }
   };
 
-  const handleStartTestCombat = async () => {
-    try {
-      const response = await combatApi.startTestCombat();
-      const sessionId = response.data.sessionId;
-      navigate(`/combat/${sessionId}`);
-    } catch (err) {
-      console.error('Failed to start test combat', err);
-      alert('Erreur: Assurez-vous d\'avoir lancé le seed (yarn setup).');
-    }
-  };
+
 
   return (
     <div className="lobby-container">
@@ -96,7 +97,6 @@ export function LobbyPage() {
           <h2>⚔️ Combat Tactique</h2>
           <div className="lobby-combat-actions">
             <button className="lobby-btn action" onClick={handleCreateRoom}>Créer une Room</button>
-            <button className="lobby-btn secondary" onClick={handleStartTestCombat}>Test vs IA</button>
           </div>
         </div>
 
@@ -126,23 +126,6 @@ export function LobbyPage() {
       </section>
 
       <nav className="lobby-nav">
-        <button className="lobby-nav-card" onClick={() => navigate('/farming')}>
-          <span className="lobby-nav-icon">🗺️</span>
-          <span className="lobby-nav-title">Mode Farming</span>
-          <span className="lobby-nav-desc">Récoltez des ressources sur la carte</span>
-        </button>
-
-        <button className="lobby-nav-card" onClick={() => navigate('/shop')}>
-          <span className="lobby-nav-icon">🏪</span>
-          <span className="lobby-nav-title">Boutique</span>
-          <span className="lobby-nav-desc">Achetez et vendez des objets</span>
-        </button>
-
-        <button className="lobby-nav-card" onClick={() => navigate('/inventory')}>
-          <span className="lobby-nav-icon">🎒</span>
-          <span className="lobby-nav-title">Inventaire</span>
-          <span className="lobby-nav-desc">Gérez votre équipement</span>
-        </button>
 
         <button className="lobby-nav-card" onClick={() => navigate('/debug')}>
           <span className="lobby-nav-icon">🛠️</span>

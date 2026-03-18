@@ -19,7 +19,7 @@ export interface TileHoverInfo {
   terrain: TerrainType;
 }
 
-interface TerrainTileProps {
+export interface TerrainTileProps {
   x: number;
   y: number;
   terrain: TerrainType;
