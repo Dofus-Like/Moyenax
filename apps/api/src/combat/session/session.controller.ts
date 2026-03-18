@@ -11,6 +11,11 @@ export class SessionController {
     private readonly sessionService: SessionService,
     private readonly sseService: SseService,
   ) {}
+  
+  @Post('test')
+  async startTestCombat(@Request() req: { user: { id: string } }) {
+    return this.sessionService.startTestCombat(req.user.id);
+  }
 
   @Post('challenge/:targetId')
   async challenge(
@@ -31,7 +36,7 @@ export class SessionController {
   }
 
   @Sse('session/:id/events')
-  events(@Param('id') id: string): Observable<MessageEvent> {
+  events(@Param('id') id: string): Observable<any> {
     return this.sseService.getStream(id);
   }
 

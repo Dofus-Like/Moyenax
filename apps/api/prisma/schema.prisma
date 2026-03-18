@@ -9,8 +9,10 @@ generator client {
 
 enum ItemType {
   WEAPON
-  ARMOR
-  RING
+  ARMOR_HEAD
+  ARMOR_CHEST
+  ARMOR_LEGS
+  ACCESSORY
   CONSUMABLE
   RESOURCE
 }
@@ -43,21 +45,24 @@ model Player {
 }
 
 model PlayerStats {
-  id         String @id @default(uuid())
-  playerId   String @unique
-  player     Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  baseHp     Int    @default(100)
-  baseAp     Int    @default(6)
-  baseMp     Int    @default(4)
-  strength   Int    @default(10)
-  agility    Int    @default(10)
-  initiative Int    @default(10)
+  id       String @id @default(uuid())
+  playerId String @unique
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  vit      Int    @default(100)
+  atk      Int    @default(5)
+  mag      Int    @default(0)
+  def      Int    @default(0)
+  res      Int    @default(0)
+  ini      Int    @default(10)
+  pa       Int    @default(6)
+  pm       Int    @default(3)
 }
 
 model Item {
   id         String          @id @default(uuid())
   name       String          @unique
   type       ItemType
+  rank       Int             @default(1)
   statsBonus Json?
   craftCost  Json?
   shopPrice  Int?
@@ -79,7 +84,7 @@ model InventoryItem {
 model Spell {
   id        String        @id @default(uuid())
   name      String        @unique
-  apCost    Int
+  paCost    Int           @default(3)
   minRange  Int           @default(1)
   maxRange  Int           @default(3)
   damageMin Int           @default(10)
@@ -92,6 +97,7 @@ model Spell {
 model PlayerSpell {
   playerId String
   spellId  String
+  level    Int    @default(1)
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
   spell    Spell  @relation(fields: [spellId], references: [id])
 

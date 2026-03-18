@@ -1,15 +1,31 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
+import { combatApi } from '../api/combat.api';
 import './LobbyPage.css';
 
 export function LobbyPage() {
-  const { player, logout } = useAuthStore();
+  const { player, logout, initialize } = useAuthStore();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleStartTestCombat = async () => {
+    try {
+      const response = await combatApi.startTestCombat();
+      const sessionId = response.data.sessionId;
+      navigate(`/combat/${sessionId}`);
+    } catch (err) {
+      console.error('Failed to start test combat', err);
+      alert('Erreur: Assurez-vous d\'avoir lancé le seed (yarn setup) pour avoir un adversaire disponible.');
+    }
   };
 
   return (
@@ -42,10 +58,10 @@ export function LobbyPage() {
           <span className="lobby-nav-desc">Gérez votre équipement</span>
         </button>
 
-        <button className="lobby-nav-card combat" onClick={() => navigate('/combat/new')}>
+        <button className="lobby-nav-card combat" onClick={handleStartTestCombat}>
           <span className="lobby-nav-icon">⚔️</span>
-          <span className="lobby-nav-title">Combat</span>
-          <span className="lobby-nav-desc">Défiez d'autres joueurs</span>
+          <span className="lobby-nav-title">Combat Test</span>
+          <span className="lobby-nav-desc">Lancer un combat contre le Mage (Seed)</span>
         </button>
       </nav>
     </div>

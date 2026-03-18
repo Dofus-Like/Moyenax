@@ -1,13 +1,12 @@
 export interface PlayerStats {
-  hp: number;
-  maxHp: number;
-  ap: number;
-  maxAp: number;
-  mp: number;
-  maxMp: number;
-  strength: number;
-  agility: number;
-  initiative: number;
+  vit: number;    // Vitalité
+  atk: number;    // Attaque physique
+  mag: number;    // Magie
+  def: number;    // Défense physique
+  res: number;    // Résistance magique
+  ini: number;    // Initiative
+  pa: number;     // Points d'Action
+  pm: number;     // Points de Mouvement
 }
 
 export interface ItemDefinition {
@@ -17,6 +16,8 @@ export interface ItemDefinition {
   statsBonus: Partial<PlayerStats> | null;
   craftCost: Record<string, number> | null;
   shopPrice: number | null;
+  // Ajouté pour le système de rangs
+  rank?: number;
 }
 
 export interface InventoryItem {
@@ -29,8 +30,10 @@ export interface InventoryItem {
 
 export enum ItemType {
   WEAPON = 'WEAPON',
-  ARMOR = 'ARMOR',
-  RING = 'RING',
+  ARMOR_HEAD = 'ARMOR_HEAD',
+  ARMOR_CHEST = 'ARMOR_CHEST',
+  ARMOR_LEGS = 'ARMOR_LEGS',
+  ACCESSORY = 'ACCESSORY',
   CONSUMABLE = 'CONSUMABLE',
   RESOURCE = 'RESOURCE',
 }

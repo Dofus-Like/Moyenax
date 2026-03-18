@@ -1,7 +1,11 @@
 export { calculateEffectiveStats } from './stats.calculator';
+export { calculatePlayerSpells } from './spells.calculator';
 export {
   calculateDamage,
-  calculateInitiative,
+  calculateHeal,
+  calculateInitiativeJet,
   isInRange,
-  canMoveToPosition,
+  hasLineOfSight,
+  canMoveTo,
+  canJumpTo,
 } from './combat.calculator';

@@ -1,4 +1,5 @@
 import { PlayerStats } from './player.types';
+import { TerrainType } from './map.types';
 
 export interface CombatPosition {
   x: number;
@@ -8,7 +9,7 @@ export interface CombatPosition {
 export interface SpellDefinition {
   id: string;
   name: string;
-  apCost: number;
+  paCost: number;     // Renamed from apCost
   minRange: number;
   maxRange: number;
   damage: { min: number; max: number };
@@ -22,18 +23,27 @@ export enum SpellType {
   BUFF = 'BUFF',
 }
 
+
+export interface Tile {
+  x: number;
+  y: number;
+  type: TerrainType;
+}
+
 export interface CombatPlayer {
   playerId: string;
   stats: PlayerStats;
   position: CombatPosition;
   spells: SpellDefinition[];
-  remainingAp: number;
-  remainingMp: number;
+  remainingPa: number;
+  remainingPm: number;
+  currentVit: number;      // Pour suivre les dégâts séparément des stats de base
   spellCooldowns: Record<string, number>;
 }
 
 export enum CombatActionType {
   MOVE = 'MOVE',
+  JUMP = 'JUMP',
   CAST_SPELL = 'CAST_SPELL',
   END_TURN = 'END_TURN',
 }
@@ -53,6 +63,6 @@ export interface CombatState {
   map: {
     width: number;
     height: number;
-    obstacles: CombatPosition[];
+    tiles: Tile[];
   };
 }

@@ -14,14 +14,36 @@ Monorepo NX pour un jeu de stratégie au tour par tour sur navigateur inspiré d
 - Docker & Docker Compose
 - Yarn
 
-## 🚀 Installation
+## 🚀 Démarrage Rapide
 
+### 1. Initialisation automatique (Recommandé)
 ```bash
-git clone <url> && cd game-monorepo
-cp .env.example .env
-yarn run setup          # install + docker + migrate + seed
-yarn run dev            # api (3000) + web (5173) en parallèle
+# Clonez le repo et entrez dans le dossier
+git clone <url> && cd Dofus-Like
+
+# Lancez l'installation complète (Yarn, Docker, Prisma, Seed)
+yarn setup
 ```
+
+### 2. Lancement manuel
+Si `yarn setup` échoue ou si vous préférez le faire étape par étape :
+1. `yarn install`
+2. `docker-compose up -d` (PostgreSQL & Redis)
+3. `cp .env.example .env`
+4. `yarn db:migrate`
+5. `yarn db:seed`
+6. `yarn dev`
+
+### 3. Connexion (Comptes de Test)
+Utilisez ces comptes pré-configurés pour tester le jeu immédiatement :
+
+| Archétype | Email | Mot de passe |
+| :--- | :--- | :--- |
+| **🛡️ Warrior** | `warrior@test.com` | `password` |
+| **🧙 Mage** | `mage@test.com` | `password` |
+
+> [!TIP]
+> Pour tester un combat, connectez-vous avec le **Warrior** dans un onglet et le **Mage** dans un autre (navigation privée). Le Warrior peut alors défier le Mage via le lobby.
 
 ## 🏗️ Architecture
 

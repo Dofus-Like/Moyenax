@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, ItemType, SpellType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -6,94 +6,109 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Créer les items
-  const sword = await prisma.item.create({
-    data: {
-      name: 'Épée de Bronze',
-      type: 'WEAPON',
-      statsBonus: { strength: 5 },
-      shopPrice: 50,
-    },
-  });
+  // Nettoyage (ordre inverse des clés étrangères)
+  await prisma.combatTurn.deleteMany();
+  await prisma.combatSession.deleteMany();
+  await prisma.playerSpell.deleteMany();
+  await prisma.inventoryItem.deleteMany();
+  await prisma.playerStats.deleteMany();
+  await prisma.player.deleteMany();
+  await prisma.item.deleteMany();
+  await prisma.spell.deleteMany();
 
-  const armor = await prisma.item.create({
-    data: {
-      name: 'Armure de Cuir',
-      type: 'ARMOR',
-      statsBonus: { hp: 20, maxHp: 20 },
-      shopPrice: 80,
-    },
-  });
-
-  const ring = await prisma.item.create({
-    data: {
-      name: 'Anneau d\'Agilité',
-      type: 'RING',
-      statsBonus: { agility: 3, initiative: 2 },
-      shopPrice: 120,
-    },
-  });
-
-  const wood = await prisma.item.create({
-    data: {
-      name: 'Bois de Frêne',
-      type: 'RESOURCE',
-      shopPrice: 5,
-    },
-  });
-
-  const iron = await prisma.item.create({
-    data: {
-      name: 'Minerai de Fer',
-      type: 'RESOURCE',
-      shopPrice: 10,
-    },
-  });
-
-  // Créer les sorts
+  // Sorts de base (utilisés si on ne suit pas strictement le système de déblocage par item pour le test)
   const fireball = await prisma.spell.create({
     data: {
       name: 'Boule de Feu',
-      apCost: 4,
+      paCost: 4,
       minRange: 1,
       maxRange: 5,
       damageMin: 15,
       damageMax: 25,
       cooldown: 1,
-      type: 'DAMAGE',
+      type: SpellType.DAMAGE,
     },
   });
 
-  const heal = await prisma.spell.create({
+  // Items GDD Rang 1
+  const epee = await prisma.item.create({
     data: {
-      name: 'Soin Léger',
-      apCost: 3,
-      minRange: 0,
-      maxRange: 3,
-      damageMin: 10,
-      damageMax: 18,
-      cooldown: 2,
-      type: 'HEAL',
+      name: 'Épée de Bronze',
+      type: ItemType.WEAPON,
+      statsBonus: { atk: 4, vit: 5 },
+      shopPrice: 50,
+      rank: 1,
     },
   });
 
-  const buff = await prisma.spell.create({
+  const bouclier = await prisma.item.create({
     data: {
-      name: 'Renforcement',
-      apCost: 2,
-      minRange: 0,
-      maxRange: 1,
-      damageMin: 0,
-      damageMax: 0,
-      cooldown: 3,
-      type: 'BUFF',
+      name: 'Bouclier en Bois',
+      type: ItemType.WEAPON,
+      statsBonus: { def: 4, vit: 10 },
+      shopPrice: 50,
+      rank: 1,
     },
   });
 
-  // Créer les joueurs de test
+  const baton = await prisma.item.create({
+    data: {
+      name: 'Bâton Magique',
+      type: ItemType.WEAPON,
+      statsBonus: { mag: 6, ini: 2 },
+      shopPrice: 60,
+      rank: 1,
+    },
+  });
+
+  const heaume = await prisma.item.create({
+    data: {
+      name: 'Heaume de Fer',
+      type: ItemType.ARMOR_HEAD,
+      statsBonus: { def: 2, vit: 10 },
+      rank: 1,
+    },
+  });
+
+  const armure = await prisma.item.create({
+    data: {
+      name: 'Armure de Fer',
+      type: ItemType.ARMOR_CHEST,
+      statsBonus: { def: 3, vit: 15 },
+      rank: 1,
+    },
+  });
+
+  const bottes = await prisma.item.create({
+    data: {
+      name: 'Bottes de Fer',
+      type: ItemType.ARMOR_LEGS,
+      statsBonus: { def: 2, pm: 1 },
+      rank: 1,
+    },
+  });
+
+  const anneauGuerrier = await prisma.item.create({
+      data: {
+          name: 'Anneau de Guerrier',
+          type: ItemType.ACCESSORY,
+          statsBonus: { def: 3, pm: 1 },
+          rank: 1
+      }
+  });
+
+  // Ressources
+  await prisma.item.create({
+    data: { name: 'Bois de Frêne', type: ItemType.RESOURCE, shopPrice: 5 },
+  });
+  await prisma.item.create({
+    data: { name: 'Minerai de Fer', type: ItemType.RESOURCE, shopPrice: 10 },
+  });
+
+  // Joueurs de test
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  const player1 = await prisma.player.create({
+  const warrior = await prisma.player.create({
     data: {
       username: 'Warrior',
       email: 'warrior@test.com',
@@ -101,27 +116,30 @@ async function main() {
       gold: 500,
       stats: {
         create: {
-          baseHp: 120,
-          baseAp: 6,
-          baseMp: 3,
-          strength: 14,
-          agility: 8,
-          initiative: 10,
+          vit: 100,
+          atk: 5,
+          mag: 0,
+          def: 0,
+          res: 0,
+          ini: 10,
+          pa: 6,
+          pm: 3,
         },
-      },
-      spells: {
-        create: [{ spellId: fireball.id }],
       },
       inventory: {
         create: [
-          { itemId: sword.id, quantity: 1, equipped: true },
-          { itemId: wood.id, quantity: 10 },
+          { itemId: epee.id, quantity: 1, equipped: true },
+          { itemId: bouclier.id, quantity: 1, equipped: true },
+          { itemId: heaume.id, quantity: 1, equipped: true },
+          { itemId: armure.id, quantity: 1, equipped: true },
+          { itemId: bottes.id, quantity: 1, equipped: true },
+          { itemId: anneauGuerrier.id, quantity: 1, equipped: true },
         ],
       },
     },
   });
 
-  const player2 = await prisma.player.create({
+  const mage = await prisma.player.create({
     data: {
       username: 'Mage',
       email: 'mage@test.com',
@@ -129,34 +147,26 @@ async function main() {
       gold: 500,
       stats: {
         create: {
-          baseHp: 80,
-          baseAp: 8,
-          baseMp: 5,
-          strength: 8,
-          agility: 14,
-          initiative: 12,
+          vit: 80,
+          atk: 2,
+          mag: 8,
+          def: 0,
+          res: 2,
+          ini: 12,
+          pa: 7,
+          pm: 3,
         },
-      },
-      spells: {
-        create: [
-          { spellId: fireball.id },
-          { spellId: heal.id },
-          { spellId: buff.id },
-        ],
       },
       inventory: {
         create: [
-          { itemId: ring.id, quantity: 1, equipped: true },
-          { itemId: iron.id, quantity: 5 },
+          { itemId: baton.id, quantity: 1, equipped: true },
         ],
       },
     },
   });
 
   console.log('✅ Seed completed!');
-  console.log(`   Players: ${player1.username}, ${player2.username}`);
-  console.log(`   Items: ${sword.name}, ${armor.name}, ${ring.name}, ${wood.name}, ${iron.name}`);
-  console.log(`   Spells: ${fireball.name}, ${heal.name}, ${buff.name}`);
+  console.log(`   Players: ${warrior.username}, ${mage.username}`);
 }
 
 main()
