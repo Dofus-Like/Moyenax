@@ -32,15 +32,33 @@ function WallObstacle({
   position,
   color,
   height,
+  terrain,
 }: {
   position: [number, number, number];
   color: string;
   height: number;
+  terrain: TerrainType;
 }) {
+  // Propriétés différentes selon le type de ressource
+  const isWood = terrain === TerrainType.WOOD;
+  const isMetal = terrain === TerrainType.IRON || terrain === TerrainType.GOLD;
+  const isCrystal = terrain === TerrainType.CRYSTAL;
+
+  const metalness = isMetal ? 0.8 : (isCrystal ? 0.3 : 0.1);
+  const roughness = isMetal ? 0.4 : (isCrystal ? 0.2 : 0.7);
+
   return (
-    <mesh position={[position[0], height / 2, position[2]]}>
-      <boxGeometry args={[0.7, height, 0.7]} />
-      <meshStandardMaterial color={color} />
+    <mesh position={[position[0], height / 2, position[2]]} castShadow receiveShadow>
+      {isWood ? (
+        <cylinderGeometry args={[0.35, 0.35, height, 8]} />
+      ) : (
+        <boxGeometry args={[0.7, height, 0.7]} />
+      )}
+      <meshStandardMaterial 
+        color={color} 
+        metalness={metalness}
+        roughness={roughness}
+      />
     </mesh>
   );
 }
@@ -62,9 +80,13 @@ function HoleTerrain({ position, color }: { position: [number, number, number]; 
 
 function FlatResource({ position, color }: { position: [number, number, number]; color: string }) {
   return (
-    <mesh position={[position[0], 0.05, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[0.25, 8]} />
-      <meshStandardMaterial color={color} />
+    <mesh position={[position[0], 0.08, position[2]]} castShadow receiveShadow>
+      <cylinderGeometry args={[0.25, 0.25, 0.08, 16]} />
+      <meshStandardMaterial 
+        color={color}
+        metalness={0.1}
+        roughness={0.8}
+      />
     </mesh>
   );
 }
@@ -100,6 +122,7 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover 
       <mesh
         position={[worldX, 0, worldZ]}
         rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
         onClick={(e: ThreeEvent<MouseEvent>) => {
@@ -116,6 +139,7 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover 
           position={pos}
           color={hovered ? colors.hover : colors.base}
           height={terrain === TerrainType.WOOD ? 1.0 : 0.6}
+          terrain={terrain}
         />
       )}
 

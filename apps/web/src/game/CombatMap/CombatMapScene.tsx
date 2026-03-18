@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/auth.store';
 import { TerrainType, CombatActionType, findPath, GameMap } from '@game/shared-types';
 import { combatApi } from '../../api/combat.api';
 import { canMoveTo, canJumpTo, isInRange, hasLineOfSight } from '@game/game-engine';
+import { getPlayerColors, PlayerColors } from '../utils/playerColors';
 
 function CombatTile({ position, type, isReachable, previewColor, isTarget, onClick, onHover }: {
   position: [number, number, number];
@@ -34,8 +35,9 @@ function CombatTile({ position, type, isReachable, previewColor, isTarget, onCli
   return (
     <mesh
       position={position}
-      onPointerOver={(e) => { 
-        e.stopPropagation(); 
+      receiveShadow
+      onPointerOver={(e) => {
+        e.stopPropagation();
         setHovered(true);
         onHover(true);
       }}
@@ -49,10 +51,10 @@ function CombatTile({ position, type, isReachable, previewColor, isTarget, onCli
       }}
     >
       <boxGeometry args={[0.98, type === TerrainType.GROUND ? 0.1 : 0.4, 0.98]} />
-      <meshStandardMaterial 
-        color={finalColor} 
-        transparent={type === TerrainType.GROUND} 
-        opacity={type === TerrainType.GROUND ? 0.6 : 1} 
+      <meshStandardMaterial
+        color={finalColor}
+        transparent={type === TerrainType.GROUND}
+        opacity={type === TerrainType.GROUND ? 0.6 : 1}
       />
       {highlightColor && (
           <mesh position={[0, type === TerrainType.GROUND ? 0.06 : 0.21, 0]}>
@@ -64,9 +66,9 @@ function CombatTile({ position, type, isReachable, previewColor, isTarget, onCli
   );
 }
 
-function PlayerMesh({ gridPosition, color, isCurrent, name, path, onPathComplete }: {
+function PlayerMesh({ gridPosition, colors, isCurrent, name, path, onPathComplete }: {
   gridPosition: { x: number, y: number };
-  color: string;
+  colors: PlayerColors;
   isCurrent: boolean;
   name: string;
   path: { x: number, y: number }[] | null;
@@ -77,7 +79,7 @@ function PlayerMesh({ gridPosition, color, isCurrent, name, path, onPathComplete
   const [pathIndex, setPathIndex] = useState(0);
   const [isMoving, setIsMoving] = useState(false);
   const progressRef = useRef(0);
-  
+
   const fromRef = useRef(new THREE.Vector3(gridPosition.x, 0.5, gridPosition.y));
   const toRef = useRef(new THREE.Vector3(gridPosition.x, 0.5, gridPosition.y));
 
@@ -98,12 +100,12 @@ function PlayerMesh({ gridPosition, color, isCurrent, name, path, onPathComplete
     if (isMoving && currentPath.length > 0) {
         progressRef.current += delta * 4; // Move speed
         const t = Math.min(progressRef.current, 1);
-        
+
         const pos = new THREE.Vector3().lerpVectors(fromRef.current, toRef.current, t);
         const bounce = Math.abs(Math.sin(t * Math.PI)) * 0.2;
-        
+
         groupRef.current.position.set(pos.x, 0.5 + bounce, pos.z);
-        
+
         // Face movement
         const angle = Math.atan2(toRef.current.x - fromRef.current.x, toRef.current.z - fromRef.current.z);
         groupRef.current.rotation.y += (angle - groupRef.current.rotation.y) * 0.2;
@@ -132,9 +134,26 @@ function PlayerMesh({ gridPosition, color, isCurrent, name, path, onPathComplete
     <group ref={groupRef}>
       <mesh castShadow>
         <capsuleGeometry args={[0.3, 0.8, 4, 16]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial
+          color={colors.primary}
+          emissive={colors.emissive}
+          emissiveIntensity={0.2}
+          metalness={0.2}
+          roughness={0.6}
+        />
       </mesh>
-      
+
+      <mesh position={[0, 0.6, 0]} castShadow>
+        <sphereGeometry args={[0.25, 16, 16]} />
+        <meshStandardMaterial
+          color={colors.secondary}
+          emissive={colors.emissive}
+          emissiveIntensity={0.2}
+          metalness={0.2}
+          roughness={0.6}
+        />
+      </mesh>
+
       <Text
         position={[0, 1.5, 0]}
         fontSize={0.3}
@@ -154,6 +173,50 @@ function PlayerMesh({ gridPosition, color, isCurrent, name, path, onPathComplete
           </mesh>
       )}
     </group>
+  );
+}
+
+function ParticleTrail({ position, color, count = 20, spread = 0.5 }: {
+  position: THREE.Vector3;
+  color: string;
+  count?: number;
+  spread?: number;
+}) {
+  const particlesRef = useRef<THREE.Points>(null);
+  const positions = useMemo(() => {
+    const arr = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * spread;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * spread;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * spread;
+    }
+    return arr;
+  }, [count, spread]);
+
+  useFrame(() => {
+    if (particlesRef.current) {
+      particlesRef.current.rotation.y += 0.02;
+    }
+  });
+
+  return (
+    <points ref={particlesRef} position={position}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={positions.length / 3}
+          array={positions}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.08}
+        color={color}
+        transparent
+        opacity={0.8}
+        sizeAttenuation
+      />
+    </points>
   );
 }
 
@@ -184,26 +247,66 @@ function SpellVFX({ type, from, to, onComplete }: {
 
     if (type === 'Boule de Feu' || type === 'spell-fireball') {
         return (
-            <mesh ref={meshRef}>
-                <sphereGeometry args={[0.3, 16, 16]} />
-                <meshStandardMaterial color="#f97316" emissive="#ea580c" emissiveIntensity={2} />
-                <pointLight color="#f97316" intensity={2} distance={3} />
-            </mesh>
+            <group>
+                <mesh ref={meshRef}>
+                    <sphereGeometry args={[0.3, 16, 16]} />
+                    <meshStandardMaterial color="#f97316" emissive="#ea580c" emissiveIntensity={2} />
+                    <pointLight color="#f97316" intensity={2} distance={3} />
+                </mesh>
+                {meshRef.current && (
+                    <ParticleTrail
+                        position={meshRef.current.position}
+                        color="#f97316"
+                        count={30}
+                        spread={0.6}
+                    />
+                )}
+            </group>
+        );
+    }
+
+    if (type === 'spell-heal') {
+        return (
+            <group>
+                <mesh ref={meshRef}>
+                    <sphereGeometry args={[0.25, 16, 16]} />
+                    <meshStandardMaterial color="#22c55e" emissive="#16a34a" emissiveIntensity={2} transparent opacity={0.7} />
+                    <pointLight color="#22c55e" intensity={1.5} distance={2} />
+                </mesh>
+                {meshRef.current && (
+                    <ParticleTrail
+                        position={meshRef.current.position}
+                        color="#86efac"
+                        count={40}
+                        spread={0.8}
+                    />
+                )}
+            </group>
         );
     }
 
     return (
-        <mesh ref={meshRef}>
-            <boxGeometry args={[0.1, 0.8, 0.2]} />
-            <meshStandardMaterial color="#e2e8f0" emissive="#94a3b8" />
-        </mesh>
+        <group>
+            <mesh ref={meshRef}>
+                <boxGeometry args={[0.1, 0.8, 0.2]} />
+                <meshStandardMaterial color="#e2e8f0" emissive="#94a3b8" />
+            </mesh>
+            {meshRef.current && (
+                <ParticleTrail
+                    position={meshRef.current.position}
+                    color="#cbd5e1"
+                    count={15}
+                    spread={0.3}
+                />
+            )}
+        </group>
     );
 }
 
-function DamagePopup({ position, value, onComplete }: { 
-  position: [number, number, number], 
+function DamagePopup({ position, value, onComplete }: {
+  position: [number, number, number],
   value: number,
-  onComplete: () => void 
+  onComplete: () => void
 }) {
   const [opacity, setOpacity] = useState(1);
   const [yOffset, setYOffset] = useState(0);
@@ -211,11 +314,11 @@ function DamagePopup({ position, value, onComplete }: {
   useEffect(() => {
     const start = Date.now();
     const duration = 1000;
-    
+
     const interval = setInterval(() => {
       const elapsed = Date.now() - start;
       const progress = elapsed / duration;
-      
+
       if (progress >= 1) {
         clearInterval(interval);
         onComplete();
@@ -251,9 +354,9 @@ function PathPreview({ path }: { path?: {x: number, y: number}[] | null }) {
             {path.map((p, i) => (
                 <mesh key={`path-${i}`} position={[p.x, 0.05, p.y]} rotation={[-Math.PI / 2, 0, 0]}>
                     <circleGeometry args={[i === path.length - 1 ? 0.25 : 0.1, 12]} />
-                    <meshStandardMaterial 
-                        color={i === path.length - 1 ? "#22c55e" : "#6366f1"} 
-                        transparent 
+                    <meshStandardMaterial
+                        color={i === path.length - 1 ? "#22c55e" : "#6366f1"}
+                        transparent
                         opacity={0.8}
                         emissive={i === path.length - 1 ? "#22c55e" : "#6366f1"}
                         emissiveIntensity={0.5}
@@ -270,12 +373,12 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
   const [vfx, setVfx] = useState<{ id: string, type: string, from: {x: number, y: number}, to: {x: number, y: number} }[]>([]);
   const [playerPaths, setPlayerPaths] = useState<Record<string, {x: number, y: number}[]>>({});
   const lastPlayerPositions = useRef<Record<string, {x: number, y: number}>>({});
-  
+
   const [hoveredTile, setHoveredTile] = useState<{x: number, y: number} | null>(null);
-  
+
   const selectedSpellId = useCombatStore((s) => s.selectedSpellId);
   const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
-  
+
   const user = useAuthStore((s) => s.player);
   const currentPlayer = combatState && user ? combatState.players[user.id] : null;
   const isMyTurn = combatState?.currentTurnPlayerId === user?.id;
@@ -288,11 +391,11 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
         const player = combatState?.players[data.targetId];
         if (player) {
             setPopups(prev => [
-                ...prev, 
-                { 
-                    id: Math.random().toString(), 
-                    pos: [player.position.x, 0.5, player.position.y], 
-                    val: data.damage 
+                ...prev,
+                {
+                    id: Math.random().toString(),
+                    pos: [player.position.x, 0.5, player.position.y],
+                    val: data.damage
                 }
             ]);
         }
@@ -314,16 +417,16 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
     };
   }, [sessionId, connectToSession, disconnect]);
 
-  const occupiedPositions = useMemo(() => 
+  const occupiedPositions = useMemo(() =>
     combatState ? Object.values(combatState.players).map(p => p.position) : []
   , [combatState]);
 
   const gameMap = useMemo(() => {
     if (!combatState?.map?.tiles) return null;
     const grid = Array(combatState.map.height).fill(0).map(() => Array(combatState.map.width).fill(TerrainType.GROUND));
-    combatState.map.tiles.forEach(t => { 
+    combatState.map.tiles.forEach(t => {
         if (grid[t.y] && grid[t.y][t.x] !== undefined) {
-            grid[t.y][t.x] = t.type; 
+            grid[t.y][t.x] = t.type;
         }
     });
     return { width: combatState.map.width, height: combatState.map.height, grid } as GameMap;
@@ -347,7 +450,7 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
 
   const reachableTiles = useMemo(() => {
     if (!isMyTurn || !currentPlayer || !gameMap || !combatState) return [];
-    
+
     // BFS to find all tiles reachable within remainingPm
     const reachable: { x: number, y: number, dist: number }[] = [];
     const queue: { x: number, y: number, dist: number }[] = [{ ...currentPlayer.position, dist: 0 }];
@@ -365,7 +468,7 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
                 const tile = combatState.map.tiles.find(t => t.x === next.x && t.y === next.y);
                 const isOccupied = occupiedPositions.some(p => p.x === next.x && p.y === next.y);
 
-                if (next.x >= 0 && next.x < gameMap.width && next.y >= 0 && next.y < gameMap.height && 
+                if (next.x >= 0 && next.x < gameMap.width && next.y >= 0 && next.y < gameMap.height &&
                     !visited.has(key) && tile && tile.type === TerrainType.GROUND && !isOccupied) {
                     visited.add(key);
                     queue.push({ ...next, dist: current.dist + 1 });
@@ -378,7 +481,7 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
 
   const previewPath = useMemo(() => {
      if (!isMyTurn || !currentPlayer || !hoveredTile || !gameMap || selectedSpellId) return [];
-     
+
      // Find reachable tile closest to mouse
      let closest: {x: number, y: number} | null = null;
      let minDist = Infinity;
@@ -392,7 +495,7 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
      }
 
      if (!closest) return [];
-     
+
      // Final path is guaranteed to be within PM
      return findPath(gameMap, currentPlayer.position, closest) ?? [];
   }, [isMyTurn, currentPlayer, hoveredTile, gameMap, selectedSpellId, reachableTiles]);
@@ -407,7 +510,7 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
         let res;
         if (selectedSpellId) {
             console.log('CombatMapScene: Casting spell', selectedSpellId, 'at', { x, y });
-            
+
             // Trigger local VFX
             if (currentPlayer) {
                 setVfx(prev => [...prev, {
@@ -461,11 +564,11 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
   return (
     <group>
       <color attach="background" args={['#3f3f46']} />
-      <gridHelper 
-        args={[combatState.map.width, combatState.map.width, '#ffffff', '#888888']} 
-        position={[combatState.map.width / 2 - 0.5, -0.01, combatState.map.height / 2 - 0.5]} 
+      <gridHelper
+        args={[combatState.map.width, combatState.map.width, '#ffffff', '#888888']}
+        position={[combatState.map.width / 2 - 0.5, -0.01, combatState.map.height / 2 - 0.5]}
       />
-      
+
       {combatState.map.tiles.map((tile) => {
         let isReachable = false;
         let isTarget = false;
@@ -475,7 +578,7 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
             if (selectedSpellId) {
                 const spell = currentPlayer.spells.find(s => s.id === selectedSpellId);
                 if (spell) {
-                    isTarget = isInRange(currentPlayer.position, tile, spell.minRange, spell.maxRange) 
+                    isTarget = isInRange(currentPlayer.position, tile, spell.minRange, spell.maxRange)
                                && (spell.id === 'spell-bond' || hasLineOfSight(currentPlayer.position, tile, combatState.map.tiles));
                 }
             } else {
@@ -509,7 +612,7 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
           gridPosition={p.position}
           color={p.playerId === user?.id ? '#6366f1' : '#f59e0b'}
           isCurrent={combatState.currentTurnPlayerId === p.playerId}
-          name={p.playerId === user?.id ? `Vous (${p.username})` : p.username}
+          name={p.playerId === user?.id ? 'Vous (Warrior)' : 'Adversaire (Mage)'}
           path={playerPaths[p.playerId]}
           onPathComplete={() => setPlayerPaths(prev => {
               const next = { ...prev };
@@ -530,11 +633,11 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
       ))}
 
       {popups.map(popup => (
-          <DamagePopup 
-            key={popup.id} 
-            position={popup.pos} 
-            value={popup.val} 
-            onComplete={() => setPopups(prev => prev.filter(p => p.id !== popup.id))} 
+          <DamagePopup
+            key={popup.id}
+            position={popup.pos}
+            value={popup.val}
+            onComplete={() => setPopups(prev => prev.filter(p => p.id !== popup.id))}
           />
       ))}
     </group>

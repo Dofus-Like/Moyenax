@@ -54,9 +54,20 @@ export function CombatPage() {
             minZoom={20} 
             maxZoom={100} 
           />
-          <ambientLight intensity={1.0} />
-          <hemisphereLight intensity={0.6} groundColor="#27272a" />
-          <directionalLight position={[10, 25, 10]} intensity={1.5} castShadow />
+          <ambientLight intensity={0.5} />
+          <hemisphereLight args={['#87CEEB', '#654321', 0.6]} />
+          <directionalLight
+            position={[10, 15, 10]}
+            intensity={1.2}
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-far={50}
+            shadow-camera-left={-10}
+            shadow-camera-right={10}
+            shadow-camera-top={10}
+            shadow-camera-bottom={-10}
+          />
           <CombatMapScene sessionId={sessionId} />
         </Canvas>
 

@@ -154,7 +154,7 @@ export function ResourceMapPage() {
         {isLoading && <div className="map-loading">Chargement de la carte...</div>}
         {error && <div className="map-error">Erreur de chargement</div>}
         {map && (
-          <Canvas>
+          <Canvas shadows>
             <OrthographicCamera
               makeDefault
               position={[15, 20, 15]}
@@ -171,8 +171,20 @@ export function ResourceMapPage() {
               maxPolarAngle={Math.PI / 2.2}
               minPolarAngle={0.2}
             />
-            <ambientLight intensity={0.6} />
-            <directionalLight position={[10, 20, 10]} intensity={0.8} />
+            <ambientLight intensity={0.5} />
+            <hemisphereLight args={['#87CEEB', '#654321', 0.6]} />
+            <directionalLight
+              position={[10, 15, 10]}
+              intensity={1.2}
+              castShadow
+              shadow-mapSize-width={2048}
+              shadow-mapSize-height={2048}
+              shadow-camera-far={50}
+              shadow-camera-left={-20}
+              shadow-camera-right={20}
+              shadow-camera-top={20}
+              shadow-camera-bottom={-20}
+            />
             <color attach="background" args={['#0a0e17']} />
             <ResourceMapScene
               map={map}
