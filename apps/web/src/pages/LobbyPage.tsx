@@ -126,9 +126,9 @@ export function LobbyPage() {
       </section>
 
       <nav className="lobby-nav">
-        <button className="lobby-nav-card" onClick={() => navigate('/map')}>
+        <button className="lobby-nav-card" onClick={() => navigate('/farming')}>
           <span className="lobby-nav-icon">🗺️</span>
-          <span className="lobby-nav-title">Carte des Ressources</span>
+          <span className="lobby-nav-title">Mode Farming</span>
           <span className="lobby-nav-desc">Récoltez des ressources sur la carte</span>
         </button>
 

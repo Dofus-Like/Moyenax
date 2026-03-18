@@ -26,6 +26,11 @@ interface TerrainTileProps {
   gridSize: number;
   onTileClick?: (x: number, y: number, terrain: TerrainType) => void;
   onTileHover?: (info: TileHoverInfo | null) => void;
+  
+  // Props optionnels pour le mode combat
+  isReachable?: boolean;
+  isInSpellRange?: boolean;
+  previewColor?: string | null;
 }
 
 function WallObstacle({
@@ -161,6 +166,22 @@ export function TerrainTile({ x, y, terrain, gridSize, onTileClick, onTileHover 
         <mesh position={[worldX, 0.01, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.35, 0.45, 16]} />
           <meshBasicMaterial color="#f59e0b" transparent opacity={0.6} />
+        </mesh>
+      )}
+
+      {/* Overlay de combat : chemin de prévisualisation */}
+      {previewColor && (
+        <mesh position={[worldX, 0.02, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.3, 16]} />
+          <meshBasicMaterial color={previewColor} transparent opacity={0.6} emissive={previewColor} emissiveIntensity={0.3} />
+        </mesh>
+      )}
+
+      {/* Overlay de combat : tuile dans la portée d'un sort */}
+      {isInSpellRange && (
+        <mesh position={[worldX, 0.03, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.3, 0.4, 16]} />
+          <meshBasicMaterial color="#ef4444" transparent opacity={0.7} emissive="#ef4444" emissiveIntensity={0.5} />
         </mesh>
       )}
     </group>

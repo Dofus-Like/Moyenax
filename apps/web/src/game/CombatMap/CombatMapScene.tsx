@@ -610,7 +610,7 @@ export function CombatMapScene({ sessionId }: { sessionId: string }) {
         <PlayerMesh
           key={p.playerId}
           gridPosition={p.position}
-          color={p.playerId === user?.id ? '#6366f1' : '#f59e0b'}
+          colors={getPlayerColors()}
           isCurrent={combatState.currentTurnPlayerId === p.playerId}
           name={p.playerId === user?.id ? 'Vous (Warrior)' : 'Adversaire (Mage)'}
           path={playerPaths[p.playerId]}
