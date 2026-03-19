@@ -32,9 +32,7 @@ export function ParticleTrail({ position, color, count = 20, spread = 0.5 }: Par
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={positions.length / 3}
-          array={positions}
-          itemSize={3}
+          args={[positions, 3]}
         />
       </bufferGeometry>
       <pointsMaterial
