@@ -91,6 +91,7 @@ model PlayerStats {
 model Item {
   id           String          @id @default(uuid())
   name         String          @unique
+  description  String?         // Une description "goofy"
   type         ItemType
   family       String?         // FORGE, ARCANE, NATURE, SPECIAL
   rank         Int             @default(1)
@@ -100,6 +101,7 @@ model Item {
   shopPrice    Int?
   inventory    InventoryItem[]
 }
+
 
 model InventoryItem {
   id            String         @id @default(uuid())

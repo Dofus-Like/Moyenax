@@ -12,11 +12,13 @@ import './InventoryPage.css';
 export function InventoryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [selectedItem, setSelectedItem] = React.useState<InventoryItem | null>(null);
 
   const { data: inventory, isLoading: invLoading } = useQuery({
     queryKey: ['inventory'],
     queryFn: () => inventoryApi.getInventory(),
   });
+
 
   const { data: equipment, isLoading: eqLoading } = useQuery({
     queryKey: ['equipment'],
@@ -143,9 +145,10 @@ export function InventoryPage() {
             {inventory?.data?.map((inv: InventoryItem) => (
               <div 
                 key={inv.id} 
-                className="inventory-card"
+                className={`inventory-card ${selectedItem?.id === inv.id ? 'selected' : ''}`}
                 draggable
                 onDragStart={(e) => handleDragStart(e, inv.id)}
+                onClick={() => setSelectedItem(inv)}
                 onDoubleClick={() => handleDoubleClick(inv)}
               >
 
@@ -159,6 +162,49 @@ export function InventoryPage() {
             ))}
           </div>
         </main>
+
+        <aside className="item-details-column">
+          <h3>Détails</h3>
+          {selectedItem ? (
+            <div className="item-details-card">
+              <div className="item-details-header">
+                <div className="item-details-icon">{selectedItem.item.type[0]}</div>
+                <h4>{selectedItem.item.name}</h4>
+                <p className="item-details-type">{selectedItem.item.type}</p>
+              </div>
+              
+              <div className="item-details-description">
+                <p>"{selectedItem.item.description || 'Un objet mystérieux sans description...'}"</p>
+              </div>
+
+              {selectedItem.item.statsBonus && (
+                <div className="item-details-stats">
+                  <h5>Bonus</h5>
+                  <ul>
+                    {Object.entries(selectedItem.item.statsBonus).map(([stat, val]) => (
+                      <li key={stat}><strong>{stat.toUpperCase()}</strong> : +{val}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              <div className="item-details-footer">
+                <button 
+                  className="equip-button"
+                  onClick={() => handleDoubleClick(selectedItem)}
+                  disabled={selectedItem.item.type === ItemType.RESOURCE || selectedItem.item.type === ItemType.CONSUMABLE}
+                >
+                  🚀 Équiper
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="empty-details">
+              <p>Cliquez sur un objet pour voir ses détails</p>
+            </div>
+          )}
+        </aside>
+
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ export interface PlayerStats {
 export interface ItemDefinition {
   id: string;
   name: string;
+  description: string | null;
   type: ItemType;
   family: string | null;
   statsBonus: Partial<PlayerStats> | null;
@@ -30,6 +31,7 @@ export interface ItemDefinition {
   shopPrice: number | null;
   rank: number;
 }
+
 
 
 export interface InventoryItem {

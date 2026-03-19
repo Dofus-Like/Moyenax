@@ -32,7 +32,9 @@ export class PlayerStatsService {
     return slots.map(s => ({
       id: s.inventoryItem!.item.id,
       name: s.inventoryItem!.item.name,
+      description: s.inventoryItem!.item.description,
       type: s.inventoryItem!.item.type as ItemType,
+
       family: s.inventoryItem!.item.family,
       statsBonus: s.inventoryItem!.item.statsBonus as Partial<PlayerStats> | null,
       grantsSpells: s.inventoryItem!.item.grantsSpells as string[] | null,
@@ -40,5 +42,6 @@ export class PlayerStatsService {
       shopPrice: s.inventoryItem!.item.shopPrice,
       rank: s.inventoryItem!.item.rank
     }));
+
   }
 }
