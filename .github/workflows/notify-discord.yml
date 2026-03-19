@@ -1,0 +1,16 @@
+# .github/workflows/notify-discord.yml
+name: Notify Discord on Project Update
+
+on:
+  projects_v2_item:
+    types: [edited]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send to n8n
+        run: |
+          curl -X POST https://n8n.roketlab.duckdns.org/webhook/github-project-webhook \
+            -H "Content-Type: application/json" \
+            -d '${{ toJson(github.event) }}'
