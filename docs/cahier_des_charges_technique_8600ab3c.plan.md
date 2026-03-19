@@ -4,13 +4,13 @@ overview: Cahier des charges technique du jeu Dofus-Like, decoupant l'ensemble d
 todos:
   - id: epic1-schema
     content: "EPIC 1 : Refonte schema Prisma, types partages et seed"
-    status: pending
+    status: completed
   - id: epic2-map
     content: "EPIC 2 : Carte et terrain (generation par seed, rendu 3D MUR/TROU/PLAT)"
-    status: pending
+    status: completed
   - id: epic3-farming
     content: "EPIC 3 : Farming de ressources (instances, 4 pips/manche, 5 manches)"
-    status: pending
+    status: completed
   - id: epic4-equipment
     content: "EPIC 4 : Systeme d'items et equipement (mannequin, rangs, combos, spells)"
     status: pending
@@ -22,10 +22,10 @@ todos:
     status: pending
   - id: epic7-combat
     content: "EPIC 7 : Combat PvP (sessions, tours, 9 spells, terrain MUR/TROU/PLAT, reveal mannequins)"
-    status: pending
+    status: in-progress
   - id: epic8-ui
     content: "EPIC 8 : Interface utilisateur (pages, 3D, HUD, seed dans lobby)"
-    status: pending
+    status: in-progress
   - id: epic9-events
     content: "EPIC 9 : Evenements inter-equipes"
     status: pending
@@ -488,8 +488,6 @@ En tant que membre de l'equipe economie, je veux distribuer les recompenses quan
 - **Equipe A** (World + Economy) : EPIC 1, 2, 3, 4, 5, 6, 8 (pages hors combat), 9.1, 9.2
 - **Equipe B** (Combat) : EPIC 7, 8 (page combat + HUD)
 
-## Etat actuel (post-implementation)
-
 | Feature | Statut |
 |---------|--------|
 | `TerrainType` (8 types), `CombatTerrainType`, `ResourceFamily` | **Fait** |
@@ -497,10 +495,15 @@ En tant que membre de l'equipe economie, je veux distribuer les recompenses quan
 | `MapGeneratorService` (generation par seed, clustering, connectivite) | **Fait** |
 | `GET /map` + `POST /map/reset` | **Fait** |
 | Rendu 3D des terrains (MUR/TROU/PLAT) | **Fait** |
-| Pathfinding A* + `canJumpOver` | **Fait** |
+| Pathfinding A* avec tie-breaker (staircase) + `canJumpOver` | **Fait** |
 | Pion joueur + animation de deplacement | **Fait** |
 | Panneau info terrain (bas gauche) | **Fait** |
 | Badge seed dans le header | **Fait** |
 | Generation nouvelle carte a chaque visite `/map` | **Fait** |
 | Authentification (JWT) | **Fait** |
 | Migration Prisma initiale + seed de test | **Fait** |
+| **Optimisation Rendu Combat** : `CombatHighlightsLayer` (reachable tiles, spell range, path guide) | **Fait** |
+| **Raycasting Robuste** : Throttled hover refresh via `useFrame` (independant des mouvements souris/camera) | **Fait** |
+| **Decouplage Graphique** : Separation des highlights dynamiques de la grille statique (Zero re-renders de grille au hover) | **Fait** |
+| **Pathfinding Aesthetique** : Algorithme A* ameliore pour favoriser les trajectoires "en escalier" naturelles | **Fait** |
+
