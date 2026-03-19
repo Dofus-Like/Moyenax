@@ -1,0 +1,115 @@
+# docker-compose.portainer.yml
+# Stack deploye automatiquement via GitHub Actions CI/CD.
+# Ne pas modifier manuellement — les changements seront ecrases au prochain push sur main.
+#
+# Sous-domaines :
+#   API : https://dofus-like-api.roketlab.duckdns.org
+#   Web : https://dofus-like.roketlab.duckdns.org
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dofus-like-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: game_db
+      POSTGRES_USER: game_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U game_user -d game_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dofus-like-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dofus-like-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dofus-like-network
+
+  api:
+    image: ghcr.io/roketag33/dofus-like-api:${IMAGE_TAG:-latest}
+    container_name: dofus-like-api
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://game_user:${POSTGRES_PASSWORD}@postgres:5432/game_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      FRONTEND_URL: https://dofus-like.roketlab.duckdns.org
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - dofus-like-network
+      - proxy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+      - "traefik.enable=true"
+      - "traefik.http.routers.dofus-like-api.rule=Host(`dofus-like-api.roketlab.duckdns.org`)"
+      - "traefik.http.routers.dofus-like-api.entrypoints=websecure"
+      - "traefik.http.routers.dofus-like-api.tls=true"
+      - "traefik.http.routers.dofus-like-api.tls.certresolver=le"
+      - "traefik.http.routers.dofus-like-api.service=dofus-like-api"
+      - "traefik.http.services.dofus-like-api.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+
+  web:
+    image: ghcr.io/roketag33/dofus-like-web:${IMAGE_TAG:-latest}
+    container_name: dofus-like-web
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - api
+    networks:
+      - dofus-like-network
+      - proxy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+      - "traefik.enable=true"
+      - "traefik.http.routers.dofus-like-web.rule=Host(`dofus-like.roketlab.duckdns.org`)"
+      - "traefik.http.routers.dofus-like-web.entrypoints=websecure"
+      - "traefik.http.routers.dofus-like-web.tls=true"
+      - "traefik.http.routers.dofus-like-web.tls.certresolver=le"
+      - "traefik.http.routers.dofus-like-web.service=dofus-like-web"
+      - "traefik.http.services.dofus-like-web.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  dofus-like-network:
+    name: dofus-like-network
+    driver: bridge
+  proxy:
+    external: true

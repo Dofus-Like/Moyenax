@@ -1,0 +1,164 @@
+name: CI/CD - Build & Deploy to Portainer
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: "Forcer le redeploi meme sans changement"
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  API_IMAGE: ghcr.io/roketag33/dofus-like-api
+  WEB_IMAGE: ghcr.io/roketag33/dofus-like-web
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 1 — Build & Push les images Docker sur GitHub Container Registry (GHCR)
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image_tag: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.API_IMAGE }}:latest
+            ${{ env.API_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build & Push Web image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: |
+            ${{ env.WEB_IMAGE }}:latest
+            ${{ env.WEB_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 2 — Deploiement sur Portainer via API REST
+  # Appelle PUT /api/stacks/{id} avec pullImage:true pour forcer le re-pull
+  # des nouvelles images et le redemarrage des containers.
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Portainer
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy stack via Portainer API (upsert)
+        env:
+          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+          PORTAINER_API_TOKEN: ${{ secrets.PORTAINER_API_TOKEN }}
+          PORTAINER_STACK_NAME: ${{ secrets.PORTAINER_STACK_NAME }}
+          PORTAINER_ENDPOINT_ID: ${{ secrets.PORTAINER_ENDPOINT_ID }}
+          IMAGE_TAG: ${{ github.sha }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          COMPOSE_CONTENT=$(cat docker-compose.portainer.yml)
+
+          # Variables d'environnement communes (create + update)
+          ENV_VARS=$(jq -n \
+            --arg image_tag "$IMAGE_TAG" \
+            --arg jwt_secret "$JWT_SECRET" \
+            --arg postgres_password "$POSTGRES_PASSWORD" \
+            '[
+              {name: "IMAGE_TAG",         value: $image_tag},
+              {name: "JWT_SECRET",        value: $jwt_secret},
+              {name: "JWT_EXPIRES_IN",    value: "7d"},
+              {name: "POSTGRES_PASSWORD", value: $postgres_password}
+            ]')
+
+          echo "Fetching stack list from Portainer..."
+          STACKS=$(curl -fsSL \
+            --insecure \
+            -H "X-API-Key: ${PORTAINER_API_TOKEN}" \
+            "${PORTAINER_URL}/api/stacks")
+
+          STACK_ID=$(echo "$STACKS" | jq -r --arg name "$PORTAINER_STACK_NAME" \
+            '.[] | select(.Name == $name) | .Id')
+
+          if [ -z "$STACK_ID" ] || [ "$STACK_ID" = "null" ]; then
+            # ── CREATION (premier deploiement) ───────────────────────────────
+            echo "Stack '$PORTAINER_STACK_NAME' introuvable → creation..."
+
+            PAYLOAD=$(jq -n \
+              --arg name "$PORTAINER_STACK_NAME" \
+              --arg content "$COMPOSE_CONTENT" \
+              --argjson env "$ENV_VARS" \
+              '{name: $name, stackFileContent: $content, env: $env}')
+
+            curl -fsSL -X POST \
+              --insecure \
+              -H "X-API-Key: ${PORTAINER_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "${PORTAINER_URL}/api/stacks/create/standalone/string?endpointId=${PORTAINER_ENDPOINT_ID}" \
+              -d "$PAYLOAD" | jq '{Id, Name, Status}'
+
+            echo "Stack creee avec succes !"
+          else
+            # ── MISE A JOUR (deploiements suivants) ──────────────────────────
+            echo "Stack trouvee (ID: $STACK_ID) → mise a jour..."
+
+            PAYLOAD=$(jq -n \
+              --arg content "$COMPOSE_CONTENT" \
+              --argjson env "$ENV_VARS" \
+              '{stackFileContent: $content, pullImage: true, prune: false, env: $env}')
+
+            curl -fsSL -X PUT \
+              --insecure \
+              -H "X-API-Key: ${PORTAINER_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "${PORTAINER_URL}/api/stacks/${STACK_ID}?endpointId=${PORTAINER_ENDPOINT_ID}" \
+              -d "$PAYLOAD" | jq '{Id, Name, Status}'
+
+            echo "Stack mise a jour avec succes !"
+          fi
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "Commit  : ${{ github.sha }}"
+          echo "Branch  : ${{ github.ref_name }}"
+          echo "API     : ${{ env.API_IMAGE }}:${{ github.sha }}"
+          echo "Web     : ${{ env.WEB_IMAGE }}:${{ github.sha }}"
+          echo "URL API : https://dofus-like-api.roketlab.duckdns.org"
+          echo "URL Web : https://dofus-like.roketlab.duckdns.org"
