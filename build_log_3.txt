@@ -1,0 +1,14 @@
+Calculating the project graph on the Nx Daemon
+Calculating the project graph on the Nx Daemon is taking longer than expected. Re-run with NX_DAEMON=false to see more details.
+
+[2m> [22m[2mnx run[22m api:build
+
+[2m> [22mwebpack-cli build --node-env=production
+
+webpack compiled [1m[32msuccessfully[39m[22m (963df33dfb52e626)
+
+[2m[32m[39m[22m
+
+[7m[1m[32m NX [39m[22m[27m  [32mSuccessfully ran target [1mbuild[22m for project api[39m
+
+

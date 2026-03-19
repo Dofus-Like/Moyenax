@@ -1,5 +1,8 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+
+
+
 import { PrismaService } from '../../shared/prisma/prisma.service';
 
 @Injectable()
@@ -70,6 +73,7 @@ export class ShopService {
         where: { id: playerId },
         data: { gold: { increment: sellPrice } },
       });
+
 
       if (inventoryItem.quantity === quantity) {
         await tx.inventoryItem.delete({ where: { id: inventoryItemId } });

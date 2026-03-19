@@ -300,14 +300,15 @@ async function main() {
       },
       inventory: {
         create: [
-          { itemId: epee.id, quantity: 1, equipped: true },
-          { itemId: bouclier.id, quantity: 1, equipped: true },
-          { itemId: heaume.id, quantity: 1, equipped: true },
-          { itemId: armure.id, quantity: 1, equipped: true },
-          { itemId: bottes.id, quantity: 1, equipped: true },
-          { itemId: anneauGuerrier.id, quantity: 1, equipped: true },
+          { itemId: epee.id, quantity: 1 },
+          { itemId: bouclier.id, quantity: 1 },
+          { itemId: heaume.id, quantity: 1 },
+          { itemId: armure.id, quantity: 1 },
+          { itemId: bottes.id, quantity: 1 },
+          { itemId: anneauGuerrier.id, quantity: 1 },
         ],
       },
+
     },
   });
 
@@ -331,7 +332,7 @@ async function main() {
       },
       inventory: {
         create: [
-          { itemId: baton.id, quantity: 1, equipped: true },
+          { itemId: baton.id, quantity: 1 },
         ],
       },
     },
