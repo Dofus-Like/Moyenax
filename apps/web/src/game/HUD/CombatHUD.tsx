@@ -37,14 +37,28 @@ export function CombatHUD() {
   const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
   const setCombatState = useCombatStore((s) => s.setCombatState);
   const winnerId = useCombatStore((s) => s.winnerId);
+  const showEnemyHp = useCombatStore((s) => s.showEnemyHp);
+  const toggleShowEnemyHp = useCombatStore((s) => s.toggleShowEnemyHp);
   const surrender = useCombatStore((s) => s.surrender);
   const disconnect = useCombatStore((s) => s.disconnect);
-  
+  const [hoveredSpellId, setHoveredSpellId] = React.useState<string | null>(null);
   const user = useAuthStore((s) => s.player);
   const navigate = useNavigate();
 
   const currentPlayer = (combatState && user) ? combatState.players[user.id] : null;
   const isMyTurn = (combatState && user) ? combatState.currentTurnPlayerId === user.id : false;
+
+  const [isClosing, setIsClosing] = React.useState(false);
+  const turnRef = React.useRef(isMyTurn);
+
+  React.useEffect(() => {
+    if (turnRef.current && !isMyTurn) {
+        setIsClosing(true);
+        const timer = setTimeout(() => setIsClosing(false), 450);
+        return () => clearTimeout(timer);
+    }
+    turnRef.current = isMyTurn;
+  }, [isMyTurn]);
 
   if (!combatState || !user || !currentPlayer) return null;
 
@@ -65,17 +79,10 @@ export function CombatHUD() {
   });
 
   const handleEndTurn = async () => {
-    if (!sessionId) return;
+    if (!sessionId || !isMyTurn) return;
     try {
-      if (isMyTurn) {
-        const res = await combatApi.playAction(sessionId, { type: CombatActionType.END_TURN });
-        if (res?.data) setCombatState(res.data);
-      } else {
-        const res = await combatApi.forcePlayAction(sessionId, combatState.currentTurnPlayerId, { 
-          type: CombatActionType.END_TURN 
-        });
-        if (res?.data) setCombatState(res.data);
-      }
+      const res = await combatApi.playAction(sessionId, { type: CombatActionType.END_TURN });
+      if (res?.data) setCombatState(res.data);
       setSelectedSpell(null);
     } catch (err: any) {
       console.error('CombatHUD: End turn failed', err);
@@ -83,38 +90,43 @@ export function CombatHUD() {
   };
 
   const hpPercent = (currentPlayer.currentVit / currentPlayer.stats.vit) * 100;
-
-  // Calcul des gemmes PA / PM
-  const renderGems = (current: number, max: number, type: 'pa' | 'pm') => {
-    return Array.from({ length: max }).map((_, i) => (
-      <div key={i} className={`gem ${i < current ? 'active' : ''} ${type}`} />
-    ));
-  };
-
   const name = (user.username || '').toLowerCase();
   const avatarClass = (name.includes('mage') || name.includes('orc')) ? 'orc' : 'soldier';
 
   return (
     <div className="combat-hud">
-      {/* Overlay de fin de combat */}
+      {/* HUD de fin de combat */}
       {showCombatEnd && (
         <div className={`combat-end-overlay ${isWinner ? 'victory' : 'defeat'}`}>
           <div className="end-modal">
             <h1>{isWinner ? '🏆 VICTOIRE' : '💀 DÉFAITE'}</h1>
             <p>{isWinner ? 'Félicitations, vous avez terrassé votre adversaire !' : 'Dommage... Vous ferez mieux la prochaine fois !'}</p>
             <div className="end-modal-actions">
-                <button className="exit-button" onClick={handleCombatExit}>
-                    Retour au Lobby
-                </button>
+              <button className="exit-button" onClick={handleCombatExit}>
+                Retour au Lobby
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* TOP LEFT: PORTRAIT, HP, PA/PM */}
+      {/* TOP LEFT: PORTRAIT & STATS */}
       <div className="hud-character-block">
         <div className="hud-portrait-container">
-          <div className={`portrait-circle avatar-${avatarClass}`}></div>
+          <div className="portrait-badge-wrapper">
+            <div className={`portrait-circle avatar-${avatarClass} ${isMyTurn ? 'is-my-turn' : 'not-my-turn'}`}></div>
+            <div className="avatar-resources-group">
+              <div className="res-item">
+                <div className="res-circle pa">{currentPlayer.remainingPa}</div>
+                <span className="res-label-mini">PA</span>
+              </div>
+              <div className="res-item">
+                <div className="res-circle pm">{currentPlayer.remainingPm}</div>
+                <span className="res-label-mini">PM</span>
+              </div>
+            </div>
+          </div>
+          
           <div className="stats-info">
             <span className="username">{user.username}</span>
             <div className="hp-bar-container">
@@ -122,73 +134,70 @@ export function CombatHUD() {
             </div>
             
             <div className="hud-combined-stats">
-                <span className="hp-text">{currentPlayer.currentVit} / {currentPlayer.stats.vit} PV</span>
-                <div className="mini-res-row">
-                    <span className="res-pa">⚡ {currentPlayer.remainingPa}</span>
-                    <span className="res-pm">🦶 {currentPlayer.remainingPm}</span>
-                </div>
+              <span className="hp-text">{currentPlayer.currentVit} / {currentPlayer.stats.vit} PV</span>
             </div>
           </div>
+
+          {(isMyTurn || isClosing) && (
+            <button 
+              className={`btn-end-turn-compact my-turn ${isClosing ? 'closing' : ''}`}
+              onClick={handleEndTurn}
+            >
+              FIN DE TOUR
+            </button>
+          )}
         </div>
+
         <div className="actions-row">
             <button className="surrender-button" onClick={() => surrender()} title="Abandonner">
-                🏳️ Abandonner
+                QUITTER LE COMBAT
+            </button>
+            <button 
+              className={`toggle-hp-button ${showEnemyHp ? 'active' : ''}`} 
+              onClick={() => toggleShowEnemyHp()}
+              title={showEnemyHp ? "Cacher les HP (afficher au survol)" : "Toujours afficher les HP"}
+            >
+              👁
             </button>
         </div>
       </div>
 
-      {/* BOTTOM CENTER: SPELLS & GEMS */}
+      {/* BOTTOM CENTER: SPELLS */}
       <div className="hud-bottom-anchor">
-          {selectedSpellId && (
-              <div className="spell-info-overlay">
-                  {(() => {
-                      const spell = currentPlayer.spells.find(s => s.id === selectedSpellId);
-                      if (!spell) return null;
-                      return (
-                          <>
-                            <span className="spell-name-title">{spell.name}</span>
-                            <span className="spell-details">Dégâts: {spell.damage.min}-{spell.damage.max} • Portée: {spell.minRange}-{spell.maxRange}</span>
-                          </>
-                      );
-                  })()}
+        <div className="spell-bar">
+          {sortedSpells.map((spell) => {
+            const onCooldown = (currentPlayer.spellCooldowns[spell.id] ?? 0) > 0;
+            const notEnoughPa = currentPlayer.remainingPa < spell.paCost;
+            const isActive = selectedSpellId === spell.id;
+            const disabled = !isMyTurn || onCooldown || notEnoughPa;
+            const family = SPELL_FAMILIES[spell.id] || 'warrior';
+            const isHovered = hoveredSpellId === spell.id;
+
+            return (
+              <div 
+                key={spell.id}
+                className={`spell-card ${disabled ? 'disabled' : ''} ${isActive ? 'active' : ''} family-${family}`}
+                onMouseEnter={() => setHoveredSpellId(spell.id)}
+                onMouseLeave={() => setHoveredSpellId(null)}
+                onClick={() => !disabled && setSelectedSpell(isActive ? null : spell.id)}
+              >
+                {isHovered && (
+                  <div className="spell-hover-tag">
+                    {spell.name}
+                  </div>
+                )}
+                
+                <div className="spell-pa-cost">{spell.paCost}</div>
+                <img 
+                  src={SPELL_ICONS[spell.id] || ''} 
+                  className="spell-icon-img" 
+                  alt={spell.name} 
+                />
+                {onCooldown && <div className="spell-cooldown-timer">{currentPlayer.spellCooldowns[spell.id]}</div>}
               </div>
-          )}
-
-          <div className="spell-bar">
-            {sortedSpells.map((spell) => {
-              const onCooldown = (currentPlayer.spellCooldowns[spell.id] ?? 0) > 0;
-              const notEnoughPa = currentPlayer.remainingPa < spell.paCost;
-              const isActive = selectedSpellId === spell.id;
-              const disabled = !isMyTurn || onCooldown || notEnoughPa;
-              const family = SPELL_FAMILIES[spell.id] || 'warrior';
-
-              return (
-                <div 
-                  key={spell.id}
-                  className={`spell-card ${disabled ? 'disabled' : ''} ${isActive ? 'active' : ''} family-${family}`}
-                  onClick={() => !disabled && setSelectedSpell(isActive ? null : spell.id)}
-                >
-                  <div className="spell-pa-cost">{spell.paCost}</div>
-                  <img 
-                    src={SPELL_ICONS[spell.id] || ''} 
-                    className="spell-icon-img" 
-                    alt={spell.name} 
-                  />
-                  {onCooldown && <div className="spell-cooldown-timer">{currentPlayer.spellCooldowns[spell.id]}</div>}
-                </div>
-              );
-            })}
-          </div>
-      </div>
-
-      {/* TOP RIGHT: END TURN */}
-      <div className="hud-end-turn-anchor">
-        <button 
-          className={`btn-end-turn-hex ${isMyTurn ? 'my-turn' : ''}`}
-          onClick={handleEndTurn}
-        >
-          {isMyTurn ? 'FIN DE TOUR' : 'ATTENTE...'}
-        </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

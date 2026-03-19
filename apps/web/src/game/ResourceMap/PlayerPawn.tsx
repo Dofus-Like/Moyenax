@@ -1,7 +1,10 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
+import { Billboard, Text, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { PathNode, CombatPlayer } from '@game/shared-types';
+import { useAuthStore } from '../../store/auth.store';
+import { useCombatStore } from '../../store/combat.store';
 
 const MOVE_SPEED = 4.5;
 const ANIM_SPEED = 12;
@@ -224,10 +227,33 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
       }
     });
 
+    const currentUser = useAuthStore((s) => s.player);
+    const showEnemyHp = useCombatStore((s) => s.showEnemyHp);
+    const [isHovered, setIsHovered] = useState(false);
     const initialWorld = toWorld(gridPosition.x, gridPosition.y, gridSize);
 
+    const isEnemy = useMemo(() => {
+      if (!currentUser || !playerData) return true;
+      const uid = currentUser.id || (currentUser as any)._id;
+      return playerData.playerId !== uid;
+    }, [currentUser, playerData]);
+
+    // Calcul de la vie pour la barre
+    const hpPercent = useMemo(() => {
+        if (!playerData || !playerData.stats.vit) return 1;
+        return Math.max(0, Math.min(1, playerData.currentVit / playerData.stats.vit));
+    }, [playerData]);
+
     return (
-      <group ref={groupRef} position={initialWorld}>
+      <group 
+        ref={groupRef} 
+        position={initialWorld}
+      >
+        {/* HITBOX invisible (laissée pour d'autres clics éventuels) */}
+        <mesh visible={false} position={[0, 0.5, 0]}>
+            <boxGeometry args={[1, 1.5, 1]} />
+        </mesh>
+
         <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[0.45, 16]} />
           <meshBasicMaterial color="black" transparent opacity={0.5} />
@@ -245,6 +271,43 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
               precision="highp"
           />
         </sprite>
+
+        {/* BARRE DE VIE (Contrôlée par l'option globale) */}
+        {showEnemyHp && isEnemy && playerData && (
+          <Billboard position={[0, 1.4, 0]}>
+            {/* Outline Arrondi (Tracé fin) */}
+            <RoundedBox args={[1.54, 0.18, 0.01]} radius={0.09} smoothness={4}>
+              <meshBasicMaterial color="white" transparent opacity={0.15} />
+            </RoundedBox>
+
+            {/* Fond Arrondi (Pill shape) */}
+            <RoundedBox position={[0, 0, 0.01]} args={[1.5, 0.16, 0.01]} radius={0.08} smoothness={4}>
+              <meshBasicMaterial color="#0f172a" />
+            </RoundedBox>
+
+            {/* Fill (Contenu) */}
+            {hpPercent > 0 && (
+              <mesh position={[-(1.5 * (1 - hpPercent)) / 2, 0, 0.02]}>
+                <planeGeometry args={[1.5 * hpPercent, 0.14]} />
+                <meshBasicMaterial color="#ef4444" />
+              </mesh>
+            )}
+
+            {/* Texte PV précis (Format large restauré) */}
+            <Text
+              position={[0, 0, 0.03]}
+              fontSize={0.2}
+              color="white"
+              anchorX="center"
+              anchorY="middle"
+              fontWeight="900"
+              outlineWidth={0.025}
+              outlineColor="black"
+            >
+              {`${Math.ceil(playerData.currentVit)} / ${playerData.stats.vit} PV`}
+            </Text>
+          </Billboard>
+        )}
       </group>
     );
   }

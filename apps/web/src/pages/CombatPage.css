@@ -1,41 +1,124 @@
-.combat-container {
+.combat-page-container {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  position: relative;
   background: #0f172a;
 }
 
-.combat-arena {
+.combat-layout {
+  display: flex;
   width: 100%;
   height: 100%;
-  position: relative;
 }
 
+/* ZONE JEU (GAUCHE) */
+.combat-game-zone {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+}
+
+/* SIDEBAR LOGS (DROITE) */
+.combat-logs-side {
+  width: 350px;
+  background: rgba(15, 23, 42, 0.98);
+  border-left: 2px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  transition: width 0.3s ease;
+}
+
+.logs-sidebar-header {
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.8);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: #fbbf24; /* Victory Gold */
+  border-bottom: 2px solid rgba(251, 191, 36, 0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.logs-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.logs-sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.logs-sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.log-entry {
+  padding: 12px 15px;
+  border-radius: var(--radius-sm, 8px);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  border-left: 4px solid transparent;
+  animation: logFadeIn 0.3s ease-out;
+}
+
+@keyframes logFadeIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.log-entry.type-info { border-left-color: #60a5fa; color: #e2e8f0; }
+.log-entry.type-damage { border-left-color: #ef4444; color: #fecaca; background: rgba(239, 68, 68, 0.05); }
+.log-entry.type-victory { border-left-color: #f59e0b; color: #fef3c7; background: rgba(245, 158, 11, 0.05); }
+
+.logs-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.2);
+  margin-top: 50px;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* LOADING OVERLAYS */
 .combat-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--color-bg);
+  position: fixed;
+  inset: 0;
+  background: #0f172a;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
   gap: 20px;
 }
 
 .loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid rgba(255, 255, 255, 0.1);
-  border-top-color: var(--color-primary);
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.05);
+  border-top-color: #60a5fa;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* MEDIA QUERIES MOBILE / TABLETTE : On cache la sidebar */
+@media (max-width: 1024px) {
+  .combat-logs-side {
+    display: none;
+  }
 }

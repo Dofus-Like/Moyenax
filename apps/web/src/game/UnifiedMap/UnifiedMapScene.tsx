@@ -515,19 +515,21 @@ export const UnifiedMapScene = React.memo(({
       </mesh>
       
       <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
+        {/* LA MAP (STATIQUE) ne doit PAS être dans Suspense car les éléments dynamiques comme les persos ou les popups de texte
+            peuvent déclencher un "suspend" (chargement d'assets) et faire disparaitre toute la map brievement. */}
+        {tiles}
+
+        {/* EFFETS DE SURVOL */}
+        {hoveredTile && activeMap && (
+          <TileHoverEffect 
+            x={hoveredTile.x} 
+            y={hoveredTile.y} 
+            terrain={activeMap.grid[hoveredTile.y][hoveredTile.x] as TerrainType} 
+            gridSize={activeMap.width} 
+          />
+        )}
+
         <Suspense fallback={null}>
-          {tiles}
-
-          {/* Hover Effect Layer (Decoupled) */}
-          {hoveredTile && activeMap && (
-            <TileHoverEffect 
-              x={hoveredTile.x} 
-              y={hoveredTile.y} 
-              terrain={activeMap.grid[hoveredTile.y][hoveredTile.x] as TerrainType} 
-              gridSize={activeMap.width} 
-            />
-          )}
-
           {mode === 'combat' && isMyTurn && (
             <CombatHighlightsLayer 
               reachableTiles={selectedSpellId ? [] : reachableTiles} 
@@ -540,14 +542,21 @@ export const UnifiedMapScene = React.memo(({
           {mode === 'farming' && previewPath && !isMoving && <PathPreview path={previewPath} gridSize={activeMap.width} />}
           {mode === 'combat' && isMyTurn && user && !playerPaths[user.id || (user as any)._id] && <PathPreview path={combatPreviewPath} gridSize={activeMap.width} />}
           
+          {/* PERSONNAGES (utilisent des textures, peuvent suspendre) */}
           {renderPlayers()}
+
+          {/* EFFETS VISUELS ET POPUPS (Text/drei peut suspendre pour charger les polices) */}
           {mode === 'combat' && (
             <>
               {vfx.map((v) => (
-                <SpellVFX key={v.id} type={v.type} from={v.from} to={v.to} onComplete={() => setVfx((prev: any[]) => prev.filter((x: any) => x.id !== v.id))} />
+                <Suspense key={v.id} fallback={null}>
+                  <SpellVFX type={v.type} from={v.from} to={v.to} onComplete={() => setVfx((prev: any[]) => prev.filter((x: any) => x.id !== v.id))} />
+                </Suspense>
               ))}
               {popups.map((popup) => (
-                <DamagePopup key={popup.id} position={popup.pos} value={popup.val} onComplete={() => setPopups((prev: any[]) => prev.filter((p: any) => p.id !== popup.id))} />
+                <Suspense key={popup.id} fallback={null}>
+                  <DamagePopup position={popup.pos} value={popup.val} onComplete={() => setPopups((prev: any[]) => prev.filter((p: any) => p.id !== popup.id))} />
+                </Suspense>
               ))}
             </>
           )}

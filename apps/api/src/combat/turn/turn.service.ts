@@ -34,7 +34,8 @@ export class TurnService {
       throw new BadRequestException('Session de combat introuvable');
     }
 
-    if (state.currentTurnPlayerId !== playerId) {
+    // On autorise l'abandon (SURRENDER) même si ce n'est pas notre tour
+    if (action.type !== CombatActionType.SURRENDER && state.currentTurnPlayerId !== playerId) {
       console.warn(`[TurnService] Turn mismatch! CurrentTurnPlayer: "${state.currentTurnPlayerId}", RequesterPlayer: "${playerId}"`);
       throw new BadRequestException(`Ce n'est pas votre tour. Actuel: ${state.currentTurnPlayerId}, Vous: ${playerId}`);
     }
