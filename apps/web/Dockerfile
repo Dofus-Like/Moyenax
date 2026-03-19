@@ -1,6 +1,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc ./
+COPY .yarn ./.yarn
 RUN yarn install --frozen-lockfile
 COPY . .
 RUN npx nx build web --configuration=production
