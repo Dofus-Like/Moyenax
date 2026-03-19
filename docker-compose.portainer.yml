@@ -44,6 +44,8 @@ services:
     image: ghcr.io/roketag33/dofus-like-api:${IMAGE_TAG:-latest}
     container_name: dofus-like-api
     restart: unless-stopped
+    # Executer les migrations Prisma avant de demarrer le serveur
+    command: sh -c "node node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"
     expose:
       - "3000"
     environment:
