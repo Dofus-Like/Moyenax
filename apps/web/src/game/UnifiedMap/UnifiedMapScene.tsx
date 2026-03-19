@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import * as THREE from 'three';
 import { TerrainType, CombatActionType, findPath, GameMap, PathNode, TERRAIN_PROPERTIES } from '@game/shared-types';
-import { useThree, ThreeEvent } from '@react-three/fiber';
+import { useThree, ThreeEvent, useFrame } from '@react-three/fiber';
 import { TerrainTile, TerrainTileProps } from '../ResourceMap/TerrainTile';
 import { TileHoverEffect } from '../ResourceMap/TileHoverEffect';
 import { PlayerPawn } from '../ResourceMap/PlayerPawn';
 import { PathPreview } from '../ResourceMap/PathPreview';
+import { CombatHighlightsLayer } from './CombatHighlights';
 import { SpellVFX } from './overlays/SpellVFX';
 import { DamagePopup } from './overlays/DamagePopup';
 import { canMoveTo, canJumpTo, isInRange, hasLineOfSight } from '@game/game-engine';
@@ -48,6 +50,7 @@ export const UnifiedMapScene = React.memo(({
   const [visualPositions, setVisualPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
   const [mapRotation, setMapRotation] = useState(0);
+  const mapGroupRef = useRef<THREE.Group>(null);
   
   const selectedSpellId = useCombatStore((s) => s.selectedSpellId);
   const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
@@ -74,17 +77,23 @@ export const UnifiedMapScene = React.memo(({
   }, [mode, map, combatState?.map]);
 
   const activeMap = mode === 'combat' ? gameMap : map;
-  const isMyTurn = combatState?.currentTurnPlayerId === user?.id;
+  const isMyTurn = useMemo(() => {
+    if (!combatState || !user) return false;
+    const uid = user.id || (user as any)._id;
+    return combatState.currentTurnPlayerId === uid;
+  }, [combatState, user]);
 
   const performRaycastHover = useCallback(() => {
+    if (!activeMap) return;
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(scene.children, true);
+    const target = mapGroupRef.current || scene;
+    const intersects = raycaster.intersectObjects([target], true);
     // On ignore les objets transparents ou géants pour trouver la tile
     const tileIntersect = intersects.find((i) => (i.object as any).userData?.type === 'terrain-tile');
 
     if (tileIntersect) {
       const { x, y, terrain } = (tileIntersect.object as any).userData as { x: number; y: number; terrain: TerrainType };
-      setHoveredTile({ x, y });
+      setHoveredTile((prev) => (prev?.x === x && prev?.y === y) ? prev : { x, y });
       if (mode === 'farming') {
         onTileHover?.({ x, y, terrain });
       }
@@ -94,11 +103,11 @@ export const UnifiedMapScene = React.memo(({
         onTileHover?.(null);
       }
     }
-  }, [mode, onTileHover, raycaster, mouse, camera, scene]);
+  }, [mode, onTileHover, raycaster, mouse, camera, scene, activeMap]);
 
   const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
-    // Si la caméra bouge OU qu'un bouton de souris est pressé (drag), on ne fait rien
-    if (isCameraMoving || e.buttons > 0) return;
+    // On autorise maintenant le hover même pendant les mouvements de caméra
+    // pour éviter les blocages permanents si le state 'isCameraMoving' se perd.
     
     // Throttle à ~50 FPS pour la perf atomique
     const now = Date.now();
@@ -106,13 +115,23 @@ export const UnifiedMapScene = React.memo(({
     lastRaycastTimeRef.current = now;
 
     performRaycastHover();
-  }, [isCameraMoving, performRaycastHover]);
+  }, [performRaycastHover]);
+
+  useFrame(() => {
+    // Rafraîchissement régulier pour capter les changements de state (fin de move, etc.)
+    // même si la souris ne bouge pas.
+    const now = Date.now();
+    if (now - lastRaycastTimeRef.current > 100) { 
+      performRaycastHover();
+      lastRaycastTimeRef.current = now;
+    }
+  });
 
   // Déclenchement manuel si la caméra ou le perso s'arrête, ou si le perso change de case
   // On ne met AUCUNE condition de blocage ici (contrairement au pointerMove) pour servir de "sécurité"
   useEffect(() => {
     performRaycastHover();
-  }, [isCameraMoving, isMoving, playerPosition, performRaycastHover]);
+  }, [isMoving, playerPosition, playerPaths, isMyTurn, combatState, performRaycastHover]);
 
   useEffect(() => {
     if (mode !== 'combat' || !sseConnection || !combatState) return;
@@ -139,6 +158,20 @@ export const UnifiedMapScene = React.memo(({
     if (mode !== 'combat' || !combatState || !gameMap) return;
     let hasUpdates = false;
     const pathsToAdd: Record<string, PathNode[]> = {};
+    
+    // Nettoyer les chemins des joueurs qui ne sont plus là
+    setPlayerPaths((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const pid in next) {
+        if (!combatState.players[pid]) {
+          delete next[pid];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+
     Object.values(combatState.players).forEach((p) => {
       const visual = visualPositionsRef.current[p.playerId];
       const target = targetPositionsRef.current[p.playerId];
@@ -180,7 +213,8 @@ export const UnifiedMapScene = React.memo(({
 
   const currentPlayer = useMemo(() => {
     if (mode !== 'combat' || !combatState || !user) return null;
-    return combatState.players[user.id] || null;
+    const uid = user.id || (user as any)._id;
+    return combatState.players[uid] || null;
   }, [mode, combatState, user]);
 
   const reachableTiles = useMemo(() => {
@@ -223,6 +257,23 @@ export const UnifiedMapScene = React.memo(({
     if (!closest) return [];
     return findPath(gameMap, currentPlayer.position, closest) ?? [];
   }, [mode, isMyTurn, currentPlayer, hoveredTile, gameMap, selectedSpellId, reachableTiles]);
+
+  const spellRangeTiles = useMemo(() => {
+    if (mode !== 'combat' || !currentPlayer || !selectedSpellId || !combatState?.map?.tiles) return [];
+    const spell = currentPlayer.spells.find((s) => s.id === selectedSpellId);
+    if (!spell) return [];
+    
+    const result: { x: number; y: number }[] = [];
+    for (let y = 0; y < combatState.map.height; y++) {
+      for (let x = 0; x < combatState.map.width; x++) {
+        const inRange = isInRange(currentPlayer.position, { x, y }, spell.minRange, spell.maxRange);
+        if (inRange && (spell.id === 'spell-bond' || hasLineOfSight(currentPlayer.position, { x, y }, combatState.map.tiles))) {
+          result.push({ x, y });
+        }
+      }
+    }
+    return result;
+  }, [mode, currentPlayer, selectedSpellId, combatState?.map?.tiles]);
 
   const handleCombatTileClick = useCallback(
     async (x: number, y: number) => {
@@ -322,25 +373,11 @@ export const UnifiedMapScene = React.memo(({
           gridSize: activeMap.width,
           onTileClick: handleTileClickDispatcher,
         };
-        if (mode === 'combat' && isMyTurn && currentPlayer) {
-          const pathIndex = combatPreviewPath.findIndex((p: { x: number; y: number }) => p.x === x && p.y === y);
-          if (pathIndex !== -1) tileProps.previewColor = '#22c55e';
-          if (selectedSpellId) {
-            const spell = currentPlayer.spells.find((s) => s.id === selectedSpellId);
-            if (spell) {
-              tileProps.isInSpellRange =
-                isInRange(currentPlayer.position, { x, y }, spell.minRange, spell.maxRange) &&
-                (spell.id === 'spell-bond' || (combatState?.map?.tiles && hasLineOfSight(currentPlayer.position, { x, y }, combatState.map.tiles)));
-            }
-          } else {
-            tileProps.isReachable = reachableTiles.some((t: { x: number; y: number }) => t.x === x && t.y === y);
-          }
-        }
         result.push(<TerrainTile key={`${x}-${y}`} {...tileProps} />);
       }
     }
     return result;
-  }, [mode, activeMap, isMyTurn, currentPlayer, selectedSpellId, combatPreviewPath, reachableTiles, combatState?.map?.tiles, handleTileClickDispatcher]);
+  }, [mode, activeMap, handleTileClickDispatcher]);
 
   const renderPlayers = () => {
     if (!activeMap) return null;
@@ -396,7 +433,7 @@ export const UnifiedMapScene = React.memo(({
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
       
-      <group rotation={[0, mapRotation, 0]}>
+      <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
         {tiles}
 
         {/* Hover Effect Layer (Decoupled) */}
@@ -409,8 +446,17 @@ export const UnifiedMapScene = React.memo(({
           />
         )}
 
+        {mode === 'combat' && isMyTurn && (
+          <CombatHighlightsLayer 
+            reachableTiles={selectedSpellId ? [] : reachableTiles} 
+            spellRangeTiles={spellRangeTiles} 
+            pathTarget={combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null}
+            gridSize={activeMap.width} 
+          />
+        )}
+
         {mode === 'farming' && previewPath && !isMoving && <PathPreview path={previewPath} gridSize={activeMap.width} />}
-        {mode === 'combat' && !Object.keys(playerPaths).length && <PathPreview path={combatPreviewPath} gridSize={activeMap.width} />}
+        {mode === 'combat' && isMyTurn && user && !playerPaths[user.id || (user as any)._id] && <PathPreview path={combatPreviewPath} gridSize={activeMap.width} />}
         {renderPlayers()}
         {mode === 'combat' && vfx.map((v) => (
           <SpellVFX key={v.id} type={v.type} from={v.from} to={v.to} onComplete={() => setVfx((prev: any[]) => prev.filter((x: any) => x.id !== v.id))} />

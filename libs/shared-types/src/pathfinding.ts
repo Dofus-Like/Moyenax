@@ -55,6 +55,9 @@ export function findPath(
   const open: AStarNode[] = [];
   const closed = new Set<string>();
 
+  const dx2 = start.x - end.x;
+  const dy2 = start.y - end.y;
+
   const startNode: AStarNode = {
     x: start.x,
     y: start.y,
@@ -91,7 +94,13 @@ export function findPath(
       if (!isWalkable(map.grid[ny][nx])) continue;
 
       const g = current.g + 1;
-      const h = heuristic({ x: nx, y: ny }, end);
+      let h = heuristic({ x: nx, y: ny }, end);
+      
+      const dx1 = nx - end.x;
+      const dy1 = ny - end.y;
+      const cross = Math.abs(dx1 * dy2 - dx2 * dy1);
+      h += cross * 0.0001;
+
       const f = g + h;
 
       const existing = open.find((n) => n.x === nx && n.y === ny);
@@ -121,36 +130,69 @@ export function findPathToAdjacent(
   target: PathNode,
 ): PathNode[] | null {
   const key = (x: number, y: number) => `${x},${y}`;
-  const queue: { x: number; y: number; path: PathNode[] }[] = [];
-  const visited = new Set<string>();
+  const open: AStarNode[] = [];
+  const closed = new Set<string>();
 
-  queue.push({ x: start.x, y: start.y, path: [] });
-  visited.add(key(start.x, start.y));
+  const dx2 = start.x - target.x;
+  const dy2 = start.y - target.y;
 
-  while (queue.length > 0) {
-    const { x, y, path } = queue.shift()!;
+  const startNode: AStarNode = {
+    x: start.x,
+    y: start.y,
+    g: 0,
+    h: heuristic(start, target),
+    f: heuristic(start, target),
+    parent: null,
+  };
+  open.push(startNode);
 
-    // Si on est adjacent à la cible, on a trouvé le chemin le plus court (BFS)
-    const dist = Math.abs(x - target.x) + Math.abs(y - target.y);
+  while (open.length > 0) {
+    open.sort((a, b) => a.f - b.f);
+    const current = open.shift()!;
+    const currentKey = key(current.x, current.y);
+
+    const dist = Math.abs(current.x - target.x) + Math.abs(current.y - target.y);
     if (dist === 1) {
+      const path: PathNode[] = [];
+      let node: AStarNode | null = current;
+      while (node && !(node.x === start.x && node.y === start.y)) {
+        path.unshift({ x: node.x, y: node.y });
+        node = node.parent;
+      }
       return path;
     }
 
+    closed.add(currentKey);
+
     for (const dir of DIRECTIONS) {
-      const nx = x + dir.x;
-      const ny = y + dir.y;
-      const nKey = key(nx, ny);
+      const nx = current.x + dir.x;
+      const ny = current.y + dir.y;
 
       if (nx < 0 || nx >= map.width || ny < 0 || ny >= map.height) continue;
-      if (visited.has(nKey)) continue;
+      if (closed.has(key(nx, ny))) continue;
       if (!isWalkable(map.grid[ny][nx])) continue;
 
-      visited.add(nKey);
-      queue.push({
-        x: nx,
-        y: ny,
-        path: [...path, { x: nx, y: ny }],
-      });
+      const g = current.g + 1;
+      let h = heuristic({ x: nx, y: ny }, target);
+      
+      const dx1 = nx - target.x;
+      const dy1 = ny - target.y;
+      const cross = Math.abs(dx1 * dy2 - dx2 * dy1);
+      h += cross * 0.0001;
+
+      const f = g + h;
+
+      const existing = open.find((n) => n.x === nx && n.y === ny);
+      if (existing) {
+        if (g < existing.g) {
+          existing.g = g;
+          existing.f = f;
+          existing.parent = current;
+        }
+        continue;
+      }
+
+      open.push({ x: nx, y: ny, g, h, f, parent: current });
     }
   }
 

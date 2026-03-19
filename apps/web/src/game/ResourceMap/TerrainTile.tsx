@@ -28,8 +28,6 @@ export interface TerrainTileProps {
   onTileHover?: (info: TileHoverInfo | null) => void;
   
   // Props optionnels pour le mode combat
-  isReachable?: boolean;
-  isInSpellRange?: boolean;
   previewColor?: string | null;
 }
 
@@ -95,7 +93,7 @@ function FlatResource({ position, color }: { position: [number, number, number];
   );
 }
 
-export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, isReachable, isInSpellRange, previewColor }: TerrainTileProps) => {
+export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, previewColor }: TerrainTileProps) => {
   const colors = TERRAIN_COLORS[terrain];
   const props = TERRAIN_PROPERTIES[terrain];
 
@@ -147,29 +145,10 @@ export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, i
       )}
 
       {/* Les effets de survol (hover) ne sont plus ici ! */}
-
       {previewColor && (
         <mesh position={[worldX, 0.02, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[0.3, 16]} />
           <meshBasicMaterial color={previewColor} transparent opacity={0.6} />
-        </mesh>
-      )}
-
-      {isInSpellRange && (
-        <mesh position={[worldX, 0.03, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.92, 0.92]} />
-          <meshBasicMaterial color="#ef4444" transparent opacity={0.4} />
-          <mesh position={[0, 0, 0]}>
-            <ringGeometry args={[0.4, 0.45, 16]} />
-            <meshBasicMaterial color="#ef4444" transparent opacity={0.8} />
-          </mesh>
-        </mesh>
-      )}
-
-      {isReachable && !isInSpellRange && (
-        <mesh position={[worldX, 0.015, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.92, 0.92]} />
-          <meshBasicMaterial color="#3b82f6" transparent opacity={0.3} />
         </mesh>
       )}
     </group>
