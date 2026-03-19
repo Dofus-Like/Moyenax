@@ -1,13 +1,23 @@
 export interface PlayerStats {
-  vit: number;    // Vitalité
-  atk: number;    // Attaque physique
-  mag: number;    // Magie
-  def: number;    // Défense physique
-  res: number;    // Résistance magique
-  ini: number;    // Initiative
-  pa: number;     // Points d'Action
-  pm: number;     // Points de Mouvement
+  vit: number;    // Vitalité effective
+  atk: number;    // Attaque physique effective
+  mag: number;    // Magie effective
+  def: number;    // Défense physique effective
+  res: number;    // Résistance magique effective
+  ini: number;    // Initiative effective
+  pa: number;     // Points d'Action effectifs
+  pm: number;     // Points de Mouvement effectifs
+
+  baseVit: number; // Vitalité de base
+  baseAtk: number;
+  baseMag: number;
+  baseDef: number;
+  baseRes: number;
+  baseIni: number;
+  basePa: number;
+  basePm: number;
 }
+
 
 export interface ItemDefinition {
   id: string;

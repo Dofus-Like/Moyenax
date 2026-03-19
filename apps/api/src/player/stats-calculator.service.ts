@@ -28,17 +28,27 @@ export class StatsCalculatorService {
       },
     });
 
-    // 3. Sommer les bonus
+    // 3. Sommer les bonus en partant des stats de base
     const effectiveStats: PlayerStats = {
-      vit: baseStats.vit,
-      atk: baseStats.atk,
-      mag: baseStats.mag,
-      def: baseStats.def,
-      res: baseStats.res,
-      ini: baseStats.ini,
-      pa: baseStats.pa,
-      pm: baseStats.pm,
+      vit: baseStats.baseVit,
+      atk: baseStats.baseAtk,
+      mag: baseStats.baseMag,
+      def: baseStats.baseDef,
+      res: baseStats.baseRes,
+      ini: baseStats.baseIni,
+      pa: baseStats.basePa,
+      pm: baseStats.basePm,
+      // On recopie aussi les bases pour que l'objet soit complet selon l'interface
+      baseVit: baseStats.baseVit,
+      baseAtk: baseStats.baseAtk,
+      baseMag: baseStats.baseMag,
+      baseDef: baseStats.baseDef,
+      baseRes: baseStats.baseRes,
+      baseIni: baseStats.baseIni,
+      basePa: baseStats.basePa,
+      basePm: baseStats.basePm,
     };
+
 
     slots.forEach((slot: any) => {
       if (slot.inventoryItem?.item.statsBonus) {

@@ -296,8 +296,17 @@ async function main() {
           ini: 10,
           pa: 6,
           pm: 3,
+          baseVit: 100,
+          baseAtk: 5,
+          baseMag: 0,
+          baseDef: 0,
+          baseRes: 0,
+          baseIni: 10,
+          basePa: 6,
+          basePm: 3,
         },
       },
+
       inventory: {
         create: [
           { itemId: epee.id, quantity: 1 },
@@ -328,8 +337,17 @@ async function main() {
           ini: 12,
           pa: 7,
           pm: 3,
+          baseVit: 80,
+          baseAtk: 2,
+          baseMag: 8,
+          baseDef: 0,
+          baseRes: 2,
+          baseIni: 12,
+          basePa: 7,
+          basePm: 3,
         },
       },
+
       inventory: {
         create: [
           { itemId: baton.id, quantity: 1 },
