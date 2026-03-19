@@ -4,8 +4,9 @@ COPY package.json yarn.lock .yarnrc ./
 COPY .yarn ./.yarn
 RUN yarn install --frozen-lockfile
 COPY . .
-RUN npx nx build api --configuration=production
+# Generer les types Prisma AVANT le build NX pour que TypeScript ait acces aux types
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
+RUN npx nx build api --configuration=production
 
 FROM node:22-alpine AS runner
 WORKDIR /app
