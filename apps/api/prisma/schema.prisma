@@ -108,11 +108,12 @@ model InventoryItem {
   playerId      String
   itemId        String
   quantity      Int            @default(1)
+  rank          Int            @default(1)
   player        Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
   item          Item           @relation(fields: [itemId], references: [id])
   equipmentSlot EquipmentSlot?
 
-  @@unique([playerId, itemId])
+  @@unique([playerId, itemId, rank])
 }
 
 model EquipmentSlot {

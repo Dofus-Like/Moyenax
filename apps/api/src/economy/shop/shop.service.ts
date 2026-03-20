@@ -34,7 +34,7 @@ export class ShopService {
       });
 
       const existing = await tx.inventoryItem.findUnique({
-        where: { playerId_itemId: { playerId, itemId } },
+        where: { playerId_itemId_rank: { playerId, itemId, rank: 1 } },
       });
 
       if (existing) {
@@ -46,7 +46,7 @@ export class ShopService {
       }
 
       return tx.inventoryItem.create({
-        data: { playerId, itemId, quantity },
+        data: { playerId, itemId, quantity, rank: 1 },
         include: { item: true },
       });
     });

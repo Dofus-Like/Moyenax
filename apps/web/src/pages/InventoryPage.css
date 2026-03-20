@@ -201,6 +201,15 @@
   box-shadow: 0 5px 15px rgba(255, 140, 0, 0.4);
 }
 
+.equip-button.unequip {
+  background: linear-gradient(135deg, #ff4b2b 0%, #ff416c 100%);
+  color: #fff;
+}
+
+.equip-button.unequip:hover:not(:disabled) {
+  box-shadow: 0 5px 15px rgba(255, 65, 108, 0.4);
+}
+
 .equip-button:disabled {
   opacity: 0.3;
   cursor: not-allowed;

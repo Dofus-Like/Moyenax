@@ -25,19 +25,61 @@
   text-align: center;
 }
 
+.shop-item-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.family-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.family-badge.forge { background: #d32f2f; color: white; }
+.family-badge.arcane { background: #7b1fa2; color: white; }
+.family-badge.nature { background: #388e3c; color: white; }
+
+.seed-badge {
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.seed-badge.warn {
+  background: #ffc107;
+  color: #000;
+}
+
 .shop-item-card {
+  position: relative;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 20px;
+  padding-top: 40px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
-.shop-item-card:hover {
-  border-color: var(--color-accent);
+.shop-item-card.out-of-seed {
+  opacity: 0.7;
+  filter: grayscale(0.5);
+}
+
+.current-seed-info {
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
 }
 
 .shop-item-type {

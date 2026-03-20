@@ -7,8 +7,11 @@ import { EquipmentModule } from './equipment/equipment.module';
 import { PlayerModule } from '../player/player.module';
 import { CombatModule } from '../combat/combat.module';
 
+import { EconomyListenerService } from './economy-listener.service';
+
 @Module({
   imports: [InventoryModule, ItemsModule, ShopModule, CraftingModule, EquipmentModule, PlayerModule, CombatModule],
+  providers: [EconomyListenerService],
   exports: [InventoryModule, ItemsModule, ShopModule, CraftingModule, EquipmentModule],
 })
 export class EconomyModule {}

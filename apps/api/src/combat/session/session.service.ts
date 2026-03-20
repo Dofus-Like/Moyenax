@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { RedisService } from '../../shared/redis/redis.service';
 import { SseService } from '../../shared/sse/sse.service';
-import { CombatState, CombatPlayer, Tile } from '@game/shared-types';
+import { CombatState } from '@game/shared-types';
 import { PlayerStatsService } from '../../player/player-stats.service';
 import { MapService } from '../map/map.service';
 import { calculateInitiativeJet, calculatePlayerSpells } from '@game/game-engine';
@@ -150,6 +150,28 @@ export class SessionService {
     this.sse.emit(sessionId, 'TURN_STARTED', { playerId: firstPlayerId });
 
     return initialState;
+  }
+
+  async endCombat(sessionId: string, winnerId: string) {
+    const session = await this.prisma.combatSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session || session.status === 'FINISHED') return;
+
+    await this.prisma.$transaction([
+      this.prisma.combatSession.update({
+        where: { id: sessionId },
+        data: { status: 'FINISHED', winnerId, endedAt: new Date() },
+      }),
+      this.prisma.player.update({
+        where: { id: winnerId },
+        data: { gold: { increment: 50 } }, // Reward fixed à 50 Or
+      }),
+    ]);
+
+    await this.redis.del(`combat:${sessionId}`);
+    this.sse.emit(sessionId, 'COMBAT_ENDED', { winnerId, reward: 50 });
   }
 
   async getState(sessionId: string): Promise<CombatState> {

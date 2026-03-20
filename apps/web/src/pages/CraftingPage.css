@@ -1,0 +1,161 @@
+.crafting-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: #e0e0e0;
+}
+
+.crafting-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.crafting-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #333;
+  padding-bottom: 1rem;
+}
+
+.crafting-tabs button {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s;
+}
+
+.crafting-tabs button.active {
+  color: var(--color-primary, #ff9800);
+  border-bottom: 2px solid var(--color-primary, #ff9800);
+}
+
+.recipes-grid, .fusion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.recipe-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.recipe-card h3 {
+  margin-top: 0;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rank-badge {
+  background: #444;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.recipe-header {
+  margin-bottom: 1rem;
+}
+
+.recipe-requirements {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.recipe-requirements h4 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 0.8rem;
+}
+
+.cost-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cost-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  padding: 4px 0;
+}
+
+.cost-item.met .res-details {
+  color: #4caf50;
+}
+
+.cost-item.missing .res-details {
+  color: #f44336;
+}
+
+.owned-status {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.cost-item.met .owned-status {
+  color: #2e7d32;
+}
+
+.cost-item.missing .owned-status {
+  color: #832b2b;
+}
+
+.action-button:disabled {
+  background: #444;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.action-button {
+  margin-top: auto;
+  background: var(--color-primary, #ff9800);
+  color: #000;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.action-button:hover {
+  opacity: 0.8;
+}
+
+.message-banner {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.message-banner.success { background: #2e7d32; color: #fff; }
+.message-banner.error { background: #c62828; color: #fff; }
+
+.back-button {
+  background: #333;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}

@@ -23,7 +23,7 @@ export class InventoryService {
     if (!item) throw new NotFoundException(`Ressource introuvable: ${resourceName}`);
 
     const existingInventoryItem = await this.prisma.inventoryItem.findFirst({
-      where: { playerId, itemId: item.id }
+      where: { playerId, itemId: item.id, rank: 1 }
     });
 
     if (existingInventoryItem) {
@@ -37,6 +37,7 @@ export class InventoryService {
           playerId,
           itemId: item.id,
           quantity: 1,
+          rank: 1,
         }
       });
     }

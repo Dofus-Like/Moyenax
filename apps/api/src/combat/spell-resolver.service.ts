@@ -4,36 +4,47 @@ import { EquipmentSlotType } from '@game/shared-types';
 @Injectable()
 export class SpellResolverService {
   resolveSpells(equipment: Record<string, any>): { spellName: string; level: number }[] {
-    const spellLevels: Record<string, number> = {};
+    const spellSources: Record<string, number> = {};
+    const weaponSpells: Record<string, number> = {};
 
-    const addSpell = (name: string) => {
-      spellLevels[name] = Math.min((spellLevels[name] || 0) + 1, 3);
+    const addArchetypeSource = (name: string) => {
+      spellSources[name] = (spellSources[name] || 0) + 1;
     };
 
-    // 1. Spells directs des items
+    const setWeaponSpell = (name: string, level: number) => {
+      weaponSpells[name] = Math.max(weaponSpells[name] || 0, level);
+    };
+
+    // 1. Spells directs des items (Armes)
     Object.values(equipment).forEach((slot) => {
       const s = slot as any;
       if (s?.item?.grantsSpells) {
         const grants = s.item.grantsSpells as string[];
-        grants.forEach((spellName: string) => addSpell(spellName));
+        const rank = s.inventoryItem?.rank || 1;
+        grants.forEach((spellName: string) => setWeaponSpell(spellName, rank));
       }
     });
 
-    // 2. Combos
-    const wpLeft = (equipment[EquipmentSlotType.WEAPON_LEFT] as any)?.item?.name;
-    const wpRight = (equipment[EquipmentSlotType.WEAPON_RIGHT] as any)?.item?.name;
+    // 2. Combos Armes
+    const slotLeft = equipment[EquipmentSlotType.WEAPON_LEFT] as any;
+    const slotRight = equipment[EquipmentSlotType.WEAPON_RIGHT] as any;
+    const wpLeft = slotLeft?.item?.name;
+    const wpRight = slotRight?.item?.name;
 
-    // Épée + Bouclier -> Bond
+    // Épée + Bouclier -> Guerrier
     if (this.hasBoth(wpLeft, wpRight, 'Épée', 'Bouclier')) {
-      addSpell('Bond');
+      addArchetypeSource('Bond');
+      addArchetypeSource('Endurance');
     }
-    // Bâton + Grimoire -> Soin
+    // Bâton + Grimoire -> Mage
     if (this.hasBoth(wpLeft, wpRight, 'Bâton magique', 'Grimoire')) {
-      addSpell('Soin');
+      addArchetypeSource('Menhir');
+      addArchetypeSource('Soin');
     }
-    // Kunaï + Bombe ninja -> Vélocité
+    // Kunaï + Bombe ninja -> Ninja
     if (this.hasBoth(wpLeft, wpRight, 'Kunaï', 'Bombe ninja')) {
-      addSpell('Vélocité');
+      addArchetypeSource('Bombe de Repousse');
+      addArchetypeSource('Vélocité');
     }
 
     // 3. Full Sets
@@ -41,41 +52,51 @@ export class SpellResolverService {
     const chest = (equipment[EquipmentSlotType.ARMOR_CHEST] as any)?.item?.name;
     const legs = (equipment[EquipmentSlotType.ARMOR_LEGS] as any)?.item?.name;
 
-    // Guerrier : Heaume + Armure + Bottes de Fer
-    if (this.isSet(head, chest, legs, 'Heaume', 'Armure', 'Bottes de Fer')) {
-      addSpell('Bond');
-      addSpell('Endurance');
+    // Guerrier
+    if (this.isSet(head, chest, legs, 'Heaume', 'Armure', 'Bottes de fer')) {
+      addArchetypeSource('Bond');
+      addArchetypeSource('Endurance');
     }
-    // Mage : Chapeau de mage + Toge de mage + Bottes de mage
+    // Mage
     if (this.isSet(head, chest, legs, 'Chapeau de mage', 'Toge de mage', 'Bottes de mage')) {
-      addSpell('Menhir');
-      addSpell('Soin');
+      addArchetypeSource('Menhir');
+      addArchetypeSource('Soin');
     }
-    // Ninja : Bandeau + Kimono + Geta
+    // Ninja
     if (this.isSet(head, chest, legs, 'Bandeau', 'Kimono', 'Geta')) {
-      addSpell('Bombe de Repousse');
-      addSpell('Vélocité');
+      addArchetypeSource('Bombe de Repousse');
+      addArchetypeSource('Vélocité');
     }
 
     // 4. Anneaux
     const accessory = (equipment[EquipmentSlotType.ACCESSORY] as any)?.item?.name;
     if (accessory === 'Anneau du Guerrier') {
-      addSpell('Bond');
-      addSpell('Endurance');
+      addArchetypeSource('Bond');
+      addArchetypeSource('Endurance');
     }
     if (accessory === 'Anneau du Mage') {
-      addSpell('Menhir');
-      addSpell('Soin');
+      addArchetypeSource('Menhir');
+      addArchetypeSource('Soin');
     }
     if (accessory === 'Anneau du Ninja') {
-      addSpell('Bombe de Repousse');
-      addSpell('Vélocité');
+      addArchetypeSource('Bombe de Repousse');
+      addArchetypeSource('Vélocité');
     }
 
-    return Object.entries(spellLevels).map(([name, level]) => ({
-      spellName: name,
-      level,
-    }));
+    // Fusionner les résultats
+    const finalSpells: { spellName: string; level: number }[] = [];
+
+    // Ajouter les sorts d'armes
+    Object.entries(weaponSpells).forEach(([name, level]) => {
+      finalSpells.push({ spellName: name, level: Math.min(level, 3) });
+    });
+
+    // Ajouter les sorts d'archétype
+    Object.entries(spellSources).forEach(([name, sources]) => {
+      finalSpells.push({ spellName: name, level: Math.min(sources, 3) });
+    });
+
+    return finalSpells;
   }
 
   private hasBoth(a: string | undefined, b: string | undefined, target1: string, target2: string) {

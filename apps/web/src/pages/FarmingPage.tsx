@@ -1,7 +1,7 @@
 import { CameraControls, OrthographicCamera } from '@react-three/drei';
 import CameraControlsImpl from 'camera-controls';
 import { Canvas } from '@react-three/fiber';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FarmingHUD } from '../game/HUD/FarmingHUD';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
@@ -219,6 +219,9 @@ export function FarmingPage() {
       <header className="resource-map-header">
         <button className="back-button" onClick={() => navigate('/')}>
           Retour
+        </button>
+        <button className="inventory-button" onClick={() => navigate('/inventory')} style={{ marginLeft: '10px', background: '#444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>
+          🎒 Inventaire
         </button>
         <h2>Mode Farming</h2>
         {seedConfig && (

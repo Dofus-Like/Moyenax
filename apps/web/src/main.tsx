@@ -7,6 +7,7 @@ import { LobbyPage } from './pages/LobbyPage';
 import { FarmingPage } from './pages/FarmingPage';
 import { ShopPage } from './pages/ShopPage';
 import { InventoryPage } from './pages/InventoryPage';
+import { CraftingPage } from './pages/CraftingPage';
 import { CombatPage } from './pages/CombatPage';
 import { DebugPage } from './pages/DebugPage';
 import { useAuthStore } from './store/auth.store';
@@ -15,7 +16,7 @@ import './styles/global.css';
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { token, player, initialize } = useAuthStore();
+  const { token, initialize } = useAuthStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ root.render(
           <Route path="/" element={<ProtectedRoute><LobbyPage /></ProtectedRoute>} />
           <Route path="/farming" element={<ProtectedRoute><FarmingPage /></ProtectedRoute>} />
           <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
+          <Route path="/crafting" element={<ProtectedRoute><CraftingPage /></ProtectedRoute>} />
           <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
           <Route path="/combat/:sessionId" element={<ProtectedRoute><CombatPage /></ProtectedRoute>} />
           <Route path="/debug" element={<ProtectedRoute><DebugPage /></ProtectedRoute>} />

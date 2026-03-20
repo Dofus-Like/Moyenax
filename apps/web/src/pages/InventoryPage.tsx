@@ -54,11 +54,21 @@ export function InventoryPage() {
   };
 
   const handleDoubleClick = (inv: InventoryItem) => {
+    // 1. Vérifier si l'objet est DÉJÀ équipé
+    const equippedSlot = Object.entries(equipment?.data || {}).find(
+      ([, equippedItem]) => (equippedItem as InventoryItem)?.id === inv.id
+    )?.[0] as EquipmentSlotType;
+
+    if (equippedSlot) {
+      unequipMutation.mutate(equippedSlot);
+      return;
+    }
+
+    // 2. Sinon, l'équiper
     const type = inv.item.type;
     let targetSlot: EquipmentSlotType | null = null;
 
     if (type === ItemType.WEAPON) {
-      // Priorité à droite si vide, sinon gauche (écrase gauche si les deux sont pleins)
       targetSlot = equipment?.data?.WEAPON_RIGHT 
         ? EquipmentSlotType.WEAPON_LEFT 
         : EquipmentSlotType.WEAPON_RIGHT;
@@ -190,11 +200,11 @@ export function InventoryPage() {
               
               <div className="item-details-footer">
                 <button 
-                  className="equip-button"
+                  className={`equip-button ${Object.values(equipment?.data || {}).some(e => (e as InventoryItem | null)?.id === selectedItem.id) ? 'unequip' : ''}`}
                   onClick={() => handleDoubleClick(selectedItem)}
                   disabled={selectedItem.item.type === ItemType.RESOURCE || selectedItem.item.type === ItemType.CONSUMABLE}
                 >
-                  🚀 Équiper
+                  {Object.values(equipment?.data || {}).some(e => (e as InventoryItem | null)?.id === selectedItem.id) ? '📤 Déséquiper' : '🚀 Équiper'}
                 </button>
               </div>
             </div>

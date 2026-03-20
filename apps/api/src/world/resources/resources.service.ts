@@ -21,7 +21,7 @@ export class ResourcesService {
     }
 
     const existingItem = await this.prisma.inventoryItem.findUnique({
-      where: { playerId_itemId: { playerId, itemId: resourceId } },
+      where: { playerId_itemId_rank: { playerId, itemId: resourceId, rank: 1 } },
     });
 
     if (existingItem) {
@@ -33,7 +33,7 @@ export class ResourcesService {
     }
 
     return this.prisma.inventoryItem.create({
-      data: { playerId, itemId: resourceId, quantity: 1 },
+      data: { playerId, itemId: resourceId, quantity: 1, rank: 1 },
       include: { item: true },
     });
   }
