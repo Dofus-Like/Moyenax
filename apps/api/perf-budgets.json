@@ -1,0 +1,54 @@
+{
+  "startup": {
+    "api_dev_ready_ms": 6000,
+    "api_prod_ready_ms": 6000,
+    "db_migrate_ms": 15000,
+    "db_seed_check_ms": 5000,
+    "event_loop_lag_p95_ms": 50,
+    "rss_mb_at_ready": 300,
+    "heap_mb_at_ready": 150
+  },
+  "client": {
+    "POST /api/v1/auth/login": {
+      "p95_ms": 200,
+      "p99_ms": 250
+    },
+    "GET /api/v1/auth/me": {
+      "p95_ms": 75,
+      "p99_ms": 100
+    },
+    "GET /api/v1/player/stats": {
+      "p95_ms": 100,
+      "p99_ms": 125
+    },
+    "GET /api/v1/inventory": {
+      "p95_ms": 100,
+      "p99_ms": 125
+    },
+    "GET /api/v1/equipment": {
+      "p95_ms": 100,
+      "p99_ms": 125
+    },
+    "GET /api/v1/combat/rooms": {
+      "p95_ms": 100,
+      "p99_ms": 125
+    },
+    "GET /api/v1/map": {
+      "p95_ms": 60,
+      "p99_ms": 90
+    }
+  },
+  "server": {
+    "http_p95_ms": 75,
+    "http_p99_ms": 120,
+    "prisma_p95_ms": 40,
+    "prisma_p99_ms": 75,
+    "redis_p95_ms": 20,
+    "redis_p99_ms": 30,
+    "active_sse_streams_max": 5,
+    "combat_state_payload_bytes_p95": 20000,
+    "combat_sse_events_per_action_p95": 8,
+    "sse_event_fanout_p95": 2,
+    "slow_log_count": 5
+  }
+}

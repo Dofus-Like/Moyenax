@@ -1,45 +1,104 @@
 import { Injectable } from '@nestjs/common';
-import { Subject, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, Subject, defer, finalize } from 'rxjs';
+import { RuntimePerfService } from '../perf/runtime-perf.service';
 
 interface SseMessage {
-  data: any;
+  data: unknown;
   type?: string;
   id?: string;
 }
 
+interface SseStreamEntry {
+  subject: Subject<SseMessage>;
+  subscribers: number;
+}
+
 @Injectable()
 export class SseService {
-  private readonly streams = new Map<string, Subject<SseMessage>>();
+  private readonly streams = new Map<string, SseStreamEntry>();
 
-  getStream(sessionId: string): Observable<any> {
-    if (!this.streams.has(sessionId)) {
-      this.streams.set(sessionId, new Subject<SseMessage>());
-    }
-    // NestJS attend un objet avec { data }
-    return this.streams.get(sessionId)!.asObservable();
-  }
+  constructor(private readonly runtimePerf: RuntimePerfService) {}
 
-  emit(sessionId: string, type: string, data: unknown): void {
-    const subject = this.streams.get(sessionId);
-    if (!subject) {
-      // Si le stream n'existe pas encore, on l'initialise
-      this.getStream(sessionId);
-      this.emit(sessionId, type, data);
-      return;
-    }
-    
-    subject.next({
-      data,
-      type,
+  getStream(sessionId: string): Observable<SseMessage> {
+    return defer(() => {
+      const entry = this.getOrCreateStream(sessionId);
+      entry.subscribers += 1;
+      this.runtimePerf.updateSseCounts(
+        this.streams.size,
+        this.getActiveSubscriberCount(),
+      );
+
+      return entry.subject.asObservable().pipe(
+        finalize(() => {
+          this.releaseSubscriber(sessionId, entry);
+        }),
+      );
     });
   }
 
+  emit(sessionId: string, type: string, data: unknown): void {
+    const entry = this.getOrCreateStream(sessionId);
+    entry.subject.next({
+      data,
+      type,
+    });
+    this.runtimePerf.recordSseEvent(sessionId, type, entry.subscribers);
+  }
+
   removeStream(sessionId: string): void {
-    const subject = this.streams.get(sessionId);
-    if (subject) {
-      subject.complete();
+    const entry = this.streams.get(sessionId);
+    if (entry) {
+      entry.subject.complete();
       this.streams.delete(sessionId);
+      this.runtimePerf.updateSseCounts(
+        this.streams.size,
+        this.getActiveSubscriberCount(),
+      );
     }
+  }
+
+  private getOrCreateStream(sessionId: string): SseStreamEntry {
+    const existing = this.streams.get(sessionId);
+    if (existing) {
+      return existing;
+    }
+
+    const created: SseStreamEntry = {
+      subject: new Subject<SseMessage>(),
+      subscribers: 0,
+    };
+    this.streams.set(sessionId, created);
+    this.runtimePerf.updateSseCounts(
+      this.streams.size,
+      this.getActiveSubscriberCount(),
+    );
+    return created;
+  }
+
+  private releaseSubscriber(sessionId: string, entry: SseStreamEntry): void {
+    const current = this.streams.get(sessionId);
+    if (!current || current !== entry) {
+      return;
+    }
+
+    current.subscribers = Math.max(0, current.subscribers - 1);
+    if (current.subscribers === 0) {
+      this.removeStream(sessionId);
+      return;
+    }
+
+    this.runtimePerf.updateSseCounts(
+      this.streams.size,
+      this.getActiveSubscriberCount(),
+    );
+  }
+
+  private getActiveSubscriberCount(): number {
+    let total = 0;
+    for (const entry of this.streams.values()) {
+      total += entry.subscribers;
+    }
+
+    return total;
   }
 }

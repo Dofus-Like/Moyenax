@@ -40,10 +40,10 @@ services:
     networks:
       - dofus-like-network
 
-  api:
+  api-setup:
     image: ghcr.io/roketag33/dofus-like-api:${IMAGE_TAG:-latest}
-    container_name: dofus-like-api
-    restart: unless-stopped
+    container_name: dofus-like-api-setup
+    restart: "no"
     command:
       - sh
       - -c
@@ -55,9 +55,24 @@ services:
         echo "[startup] Checking seed..."
         node -e 'const {PrismaClient}=require("@prisma/client");const p=new PrismaClient();p.item.count().then(n=>{console.log(n>0?"[seed] DB deja initialisee ("+n+" items), skip.":"[seed] DB vide, lancement du seed...");process.exit(n>0?0:1)}).finally(()=>p.$disconnect())' \
           || TS_NODE_TRANSPILE_ONLY=true node -e 'require("ts-node").register({compilerOptions:{module:"commonjs",esModuleInterop:true,skipLibCheck:true}});require("./prisma/seed.ts")'
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://game_user:${POSTGRES_PASSWORD}@postgres:5432/game_db
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dofus-like-network
 
-        echo "[startup] Starting NestJS API..."
-        exec node dist/main.js
+  api:
+    image: ghcr.io/roketag33/dofus-like-api:${IMAGE_TAG:-latest}
+    container_name: dofus-like-api
+    restart: unless-stopped
+    command:
+      - node
+      - dist/main.js
     expose:
       - "3000"
     environment:
@@ -73,6 +88,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api-setup:
+        condition: service_completed_successfully
     healthcheck:
       # Verifie que le port 3000 repond (TCP) — pas besoin d'endpoint /health dedie
       test: ["CMD-SHELL", "node -e \"require('net').createConnection(3000).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))\""]

@@ -1,7 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { performance } from 'node:perf_hooks';
 import { RedisService } from '../../shared/redis/redis.service';
 import { SseService } from '../../shared/sse/sse.service';
-import { CombatState, CombatAction, CombatActionType, CombatPosition, SpellType, TerrainType, TERRAIN_PROPERTIES } from '@game/shared-types';
+import type { CombatState, CombatAction, CombatPosition } from '@game/shared-types';
+import { CombatActionType, TerrainType, TERRAIN_PROPERTIES } from '@game/shared-types';
 import { 
   canMoveTo, 
   canJumpTo, 
@@ -12,6 +14,8 @@ import {
 } from '@game/game-engine';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GAME_EVENTS } from '@game/shared-types';
+import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
+import { RuntimePerfService } from '../../shared/perf/runtime-perf.service';
 
 @Injectable()
 export class TurnService {
@@ -21,6 +25,8 @@ export class TurnService {
     private readonly redis: RedisService,
     private readonly sse: SseService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly perfLogger: PerfLoggerService,
+    private readonly runtimePerf: RuntimePerfService,
   ) {}
 
   async playAction(
@@ -29,70 +35,110 @@ export class TurnService {
     action: CombatAction,
   ): Promise<CombatState> {
     if (this.sessionLocks.has(sessionId)) {
+      this.perfLogger.logEvent('combat', 'turn.session.locked', {
+        session_id: sessionId,
+        player_id: playerId,
+        action_type: action.type,
+      }, { level: 'warn' });
       throw new BadRequestException('Une action est déjà en cours de traitement');
     }
     this.sessionLocks.add(sessionId);
+    const startedAt = performance.now();
+    const sseEventsBefore = this.runtimePerf.getTotalSseEvents();
 
     try {
-      console.log(`[TurnService] playAction: sessionId=${sessionId}, playerId=${playerId}, actionType=${action.type}`);
-    const state = await this.redis.getJson<CombatState>(`combat:${sessionId}`);
+      const state = await this.redis.getJson<CombatState>(`combat:${sessionId}`);
 
-    if (!state) {
-      console.warn(`[TurnService] Session not found for ID: ${sessionId}`);
-      throw new BadRequestException('Session de combat introuvable');
-    }
+      if (!state) {
+        this.perfLogger.logEvent('combat', 'turn.session.miss', {
+          session_id: sessionId,
+          action_type: action.type,
+        }, { level: 'warn' });
+        throw new BadRequestException('Session de combat introuvable');
+      }
 
-    // On autorise l'abandon (SURRENDER) même si ce n'est pas notre tour
-    if (action.type !== CombatActionType.SURRENDER && state.currentTurnPlayerId !== playerId) {
-      console.warn(`[TurnService] Turn mismatch! CurrentTurnPlayer: "${state.currentTurnPlayerId}", RequesterPlayer: "${playerId}"`);
-      throw new BadRequestException(`Ce n'est pas votre tour. Actuel: ${state.currentTurnPlayerId}, Vous: ${playerId}`);
-    }
+      // On autorise l'abandon (SURRENDER) même si ce n'est pas notre tour
+      if (action.type !== CombatActionType.SURRENDER && state.currentTurnPlayerId !== playerId) {
+        this.perfLogger.logEvent('combat', 'turn.player.mismatch', {
+          session_id: sessionId,
+          player_id: playerId,
+          current_turn_player_id: state.currentTurnPlayerId,
+          action_type: action.type,
+        }, { level: 'warn' });
+        throw new BadRequestException(`Ce n'est pas votre tour. Actuel: ${state.currentTurnPlayerId}, Vous: ${playerId}`);
+      }
 
-    const player = state.players[playerId];
-    if (!player) {
-      console.warn(`[TurnService] Player "${playerId}" not found in session players:`, Object.keys(state.players));
-      throw new BadRequestException(`Joueur introuvable dans la session. ID: ${playerId}`);
-    }
+      const player = state.players[playerId];
+      if (!player) {
+        this.perfLogger.logEvent('combat', 'turn.player.missing', {
+          session_id: sessionId,
+          player_id: playerId,
+          action_type: action.type,
+        }, { level: 'warn' });
+        throw new BadRequestException(`Joueur introuvable dans la session. ID: ${playerId}`);
+      }
 
-    let newState: CombatState;
+      let newState: CombatState;
 
-    switch (action.type) {
-      case CombatActionType.MOVE:
-        console.log(`[TurnService] Handling MOVE for ${playerId} to ${action.targetX},${action.targetY}`);
-        newState = await this.handleMove(state, playerId, action);
-        break;
+      switch (action.type) {
+        case CombatActionType.MOVE:
+          newState = await this.handleMove(state, playerId, action);
+          break;
 
-      case CombatActionType.JUMP:
-        console.log(`[TurnService] Handling JUMP for ${playerId} to ${action.targetX},${action.targetY}`);
-        newState = await this.handleJump(state, playerId, action);
-        break;
+        case CombatActionType.JUMP:
+          newState = await this.handleJump(state, playerId, action);
+          break;
 
-      case CombatActionType.CAST_SPELL:
-        console.log(`[TurnService] Handling CAST_SPELL ${action.spellId} for ${playerId} at ${action.targetX},${action.targetY}`);
-        newState = await this.handleCastSpell(state, playerId, action);
-        break;
+        case CombatActionType.CAST_SPELL:
+          newState = await this.handleCastSpell(state, playerId, action);
+          break;
 
-      case CombatActionType.END_TURN:
-        console.log(`[TurnService] Handling END_TURN for ${playerId}`);
-        newState = await this.handleEndTurn(state, playerId);
-        break;
+        case CombatActionType.END_TURN:
+          newState = await this.handleEndTurn(state, playerId);
+          break;
 
-      case CombatActionType.SURRENDER:
-        console.log(`[TurnService] Handling SURRENDER for ${playerId}`);
-        newState = await this.handleSurrender(state, playerId);
-        break;
+        case CombatActionType.SURRENDER:
+          newState = await this.handleSurrender(state, playerId);
+          break;
 
-      default:
-        throw new BadRequestException('Action invalide');
-    }
+        default:
+          throw new BadRequestException('Action invalide');
+      }
 
       // Vérification de victoire / mort
       await this.checkVictory(newState);
 
       await this.redis.setJson(`combat:${sessionId}`, newState, 3600);
       this.sse.emit(sessionId, 'STATE_UPDATED', newState);
+      const sseEventsEmitted = this.runtimePerf.getTotalSseEvents() - sseEventsBefore;
+
+      this.perfLogger.logDuration('combat', 'turn.play_action', performance.now() - startedAt, {
+        session_id: sessionId,
+        player_id: playerId,
+        action_type: action.type,
+        sse_events_emitted: sseEventsEmitted,
+      });
+      this.perfLogger.logMetric(
+        'combat',
+        'action.sse_events',
+        sseEventsEmitted,
+        {
+          session_id: sessionId,
+          player_id: playerId,
+          action_type: action.type,
+        },
+        { decimals: 0, force: true },
+      );
 
       return newState;
+    } catch (error) {
+      this.perfLogger.logEvent('combat', 'turn.play_action.error', {
+        session_id: sessionId,
+        player_id: playerId,
+        action_type: action.type,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }, { level: 'warn' });
+      throw error;
     } finally {
       this.sessionLocks.delete(sessionId);
     }
@@ -299,7 +345,6 @@ export class TurnService {
 
       if (finalPos.x !== targetPlayer.position.x || finalPos.y !== targetPlayer.position.y) {
           targetPlayer.position = finalPos;
-          this.sse.emit(state.sessionId, 'STATE_UPDATED', state);
       }
   }
 
@@ -344,8 +389,6 @@ export class TurnService {
         heal,
         remainingVit: targetPlayer.currentVit
     });
-
-    this.sse.emit(state.sessionId, 'STATE_UPDATED', state);
   }
 
   private async handleSurrender(state: CombatState, playerId: string): Promise<CombatState> {
@@ -433,6 +476,8 @@ export class TurnService {
     asPlayerId: string,
     action: CombatAction,
   ): Promise<CombatState> {
+    const startedAt = performance.now();
+    const sseEventsBefore = this.runtimePerf.getTotalSseEvents();
     const state = await this.redis.getJson<CombatState>(`combat:${sessionId}`);
     if (!state) throw new BadRequestException('Session introuvable');
 
@@ -455,6 +500,26 @@ export class TurnService {
     await this.checkVictory(newState);
     await this.redis.setJson(`combat:${sessionId}`, newState, 3600);
     this.sse.emit(sessionId, 'STATE_UPDATED', newState);
+    const sseEventsEmitted = this.runtimePerf.getTotalSseEvents() - sseEventsBefore;
+
+    this.perfLogger.logDuration('combat', 'turn.force_play_action', performance.now() - startedAt, {
+      session_id: sessionId,
+      player_id: asPlayerId,
+      action_type: action.type,
+      sse_events_emitted: sseEventsEmitted,
+    });
+    this.perfLogger.logMetric(
+      'combat',
+      'action.sse_events',
+      sseEventsEmitted,
+      {
+        session_id: sessionId,
+        player_id: asPlayerId,
+        action_type: action.type,
+        forced: true,
+      },
+      { decimals: 0, force: true },
+    );
 
     return newState;
   }
