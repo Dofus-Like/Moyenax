@@ -14,6 +14,7 @@ import './styles/global.css';
 const queryClient = new QueryClient();
 const FarmingPage = lazy(() => import('./pages/FarmingPage').then((module) => ({ default: module.FarmingPage })));
 const CombatPage = lazy(() => import('./pages/CombatPage').then((module) => ({ default: module.CombatPage })));
+const CraftingPage = lazy(() => import('./pages/CraftingPage').then((module) => ({ default: module.CraftingPage })));
 
 function PageLoader() {
   return <div className="loading-screen">Chargement...</div>;
@@ -87,6 +88,18 @@ root.render(
                 <ProtectedRoute>
                   <GameTunnelGuard>
                     <InventoryPage />
+                  </GameTunnelGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/crafting"
+              element={
+                <ProtectedRoute>
+                  <GameTunnelGuard>
+                    <LazyPage>
+                      <CraftingPage />
+                    </LazyPage>
                   </GameTunnelGuard>
                 </ProtectedRoute>
               }

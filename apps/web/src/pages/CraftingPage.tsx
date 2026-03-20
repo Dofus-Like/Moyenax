@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { craftingApi } from '../api/crafting.api';
+import { useGameSession } from './GameTunnel';
 import { inventoryApi } from '../api/inventory.api';
 import { itemsApi } from '../api/items.api';
 import './CraftingPage.css';
@@ -29,6 +30,10 @@ interface InventoryItem {
 
 export function CraftingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isDebugMode = searchParams.get('debug') === 'true';
+  const tunnelQuery = isDebugMode ? '?debug=true' : '';
+  const { activeSession } = useGameSession();
   const [activeTab, setActiveTab] = useState<'craft' | 'fusion'>('craft');
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -81,8 +86,25 @@ export function CraftingPage() {
   return (
     <div className="crafting-page">
       <header className="crafting-header">
-        <button className="back-button" onClick={() => navigate('/')}>Retour</button>
-        <h1>Atelier de Forgeron</h1>
+        <div className="crafting-header-nav">
+          <button type="button" className="back-button" onClick={() => navigate('/')}>
+            Lobby
+          </button>
+          <button type="button" className="nav-link-btn" onClick={() => navigate(`/farming${tunnelQuery}`)}>
+            Farming
+          </button>
+          <button type="button" className="nav-link-btn" onClick={() => navigate(`/shop${tunnelQuery}`)}>
+            Boutique
+          </button>
+          <button type="button" className="nav-link-btn" onClick={() => navigate(`/inventory${tunnelQuery}`)}>
+            Inventaire
+          </button>
+        </div>
+        <div className="crafting-header-title">
+          <h1>Atelier de Forgeron</h1>
+          {activeSession && <span className="session-badge">SESSION</span>}
+          {isDebugMode && <span className="session-badge">DEBUG</span>}
+        </div>
       </header>
 
       {message && (

@@ -7,9 +7,56 @@
 
 .crafting-header {
   display: flex;
-  align-items: center;
-  gap: 2rem;
+  flex-direction: column;
+  gap: 1rem;
   margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border, #333);
+}
+
+.crafting-header-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.crafting-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.crafting-header-title h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.crafting-header .back-button,
+.crafting-header .nav-link-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border, #444);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-secondary, #aaa);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.crafting-header .nav-link-btn:hover,
+.crafting-header .back-button:hover {
+  border-color: var(--color-primary, #ff9800);
+  color: var(--color-text, #fff);
+}
+
+.session-badge {
+  background: var(--color-primary, #ff9800);
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  vertical-align: middle;
 }
 
 .crafting-tabs {

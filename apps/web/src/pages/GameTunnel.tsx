@@ -1,4 +1,4 @@
-import React, { useEffect, useState, createContext, useContext } from 'react';
+import React, { useEffect, useState, useRef, useCallback, createContext, useContext } from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { gameSessionApi } from '../api/game-session.api';
 import { useAuthStore } from '../store/auth.store';
@@ -20,39 +20,74 @@ interface GameSession {
 
 interface GameSessionContextType {
   activeSession: GameSession | null;
-  refreshSession: () => Promise<void>;
+  /** silent: ne touche pas à `loading` (évite flash / écran bloqué sur les pages tunnel lors des refresh manuels) */
+  refreshSession: (opts?: { silent?: boolean }) => Promise<void>;
   loading: boolean;
 }
 
 const GameSessionContext = createContext<GameSessionContextType | undefined>(undefined);
 
+/** Pages tunnel « internes » : naviguer entre elles ne doit pas refetch la session (évite courses + éjection du tunnel). */
+const TUNNEL_SWAP_PATHS = ['/farming', '/inventory', '/shop', '/crafting'] as const;
+
+function isTunnelSwapPath(pathname: string): boolean {
+  return TUNNEL_SWAP_PATHS.some((p) => pathname.startsWith(p));
+}
+
+function isInternalTunnelNavigation(prev: string, next: string): boolean {
+  return isTunnelSwapPath(prev) && isTunnelSwapPath(next);
+}
+
 export function GameSessionProvider({ children }: { children: React.ReactNode }) {
   const [activeSession, setActiveSession] = useState<GameSession | null>(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
+  const prevPathnameRef = useRef<string | undefined>(undefined);
 
-  const refreshSession = async () => {
+  const refreshSession = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent ?? false;
+    if (!silent) {
+      setLoading(true);
+    }
+
     const token = useAuthStore.getState().token;
     if (!token) {
       setActiveSession(null);
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
       return;
     }
 
     try {
       const res = await gameSessionApi.getActiveSession();
-      setActiveSession(res.data);
-    } catch (err) {
-      // 401 sera géré par l'intercepteur (logout)
-      setActiveSession(null);
+      setActiveSession(res.data ?? null);
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) {
+        setActiveSession(null);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refreshSession();
-  }, [location.pathname]);
+    const path = location.pathname;
+    const prev = prevPathnameRef.current;
+    prevPathnameRef.current = path;
+
+    if (prev === undefined) {
+      void refreshSession();
+      return;
+    }
+    if (isInternalTunnelNavigation(prev, path)) {
+      return;
+    }
+    void refreshSession();
+  }, [location.pathname, refreshSession]);
 
   // Écouter les mises à jour en temps réel via SSE
   useEffect(() => {
@@ -60,19 +95,25 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
 
     const token = useAuthStore.getState().token;
     const eventSource = new EventSource(`/api/v1/game-session/session/${activeSession.id}/events?token=${token}`);
-    
-    eventSource.onmessage = (event) => {
+
+    // Nest envoie `event: SESSION_UPDATED` — seul addEventListener reçoit ces messages, pas onmessage.
+    const onSessionUpdated = (event: MessageEvent) => {
       try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'SESSION_UPDATED') {
-          setActiveSession(data.payload);
+        const next = JSON.parse(event.data) as GameSession;
+        if (next && typeof next === 'object' && 'id' in next) {
+          setActiveSession((prev) =>
+            prev && prev.id === next.id ? { ...prev, ...next } : next,
+          );
         }
       } catch (err) {
         console.error('Erreur parsing SSE:', err);
       }
     };
 
+    eventSource.addEventListener('SESSION_UPDATED', onSessionUpdated);
+
     return () => {
+      eventSource.removeEventListener('SESSION_UPDATED', onSessionUpdated);
       eventSource.close();
     };
   }, [activeSession?.id]);
@@ -102,12 +143,15 @@ export function GameTunnelGuard({ children }: { children: React.ReactNode }) {
     return <Navigate to="/farming" replace />;
   }
 
-  // Si on est sur une page de jeu sans session ACTIVE, on repart au lobby ?
-  const gamePaths = ['/farming', '/combat', '/inventory', '/shop'];
-  const isGamePath = gamePaths.some(path => location.pathname.startsWith(path));
-  
-  if (isGamePath && (!activeSession || activeSession.status !== 'ACTIVE')) {
-     return <Navigate to="/" replace />;
+  // Pages « tunnel » : partie active ou ?debug=true (même règle que le farming debug)
+  const gamePaths = ['/farming', '/combat', '/inventory', '/shop', '/crafting'];
+  const isGamePath = gamePaths.some((path) => location.pathname.startsWith(path));
+  const isDebugTunnel = new URLSearchParams(location.search).get('debug') === 'true';
+  const tunnelAllowed =
+    (activeSession && activeSession.status === 'ACTIVE') || isDebugTunnel;
+
+  if (isGamePath && !tunnelAllowed) {
+    return <Navigate to="/" replace />;
   }
 
   // Si on n'a PAS de session active, on RESTREINT l'accès aux pages de jeu (farming, combat, etc.) ?

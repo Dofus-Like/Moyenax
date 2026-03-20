@@ -1,7 +1,7 @@
 import { CameraControls, OrthographicCamera } from '@react-three/drei';
 import CameraControlsImpl from 'camera-controls';
 import { Canvas } from '@react-three/fiber';
-import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { FarmingHUD } from '../game/HUD/FarmingHUD';
@@ -239,7 +239,7 @@ export function FarmingPage() {
         if (currentRound > 5) {
           navigate('/lobby'); // Transition vers PvP
         } else {
-          navigate('/crafting'); // Transition vers Shop/Craft
+          navigate(isDebugMode ? '/crafting?debug=true' : '/crafting');
         }
       }
     } catch (e) {
@@ -251,7 +251,7 @@ export function FarmingPage() {
   const handleStartVsAi = useCallback(async () => {
     try {
       await gameSessionApi.startVsAi();
-      await refreshSession();
+      await refreshSession({ silent: true });
       navigate(`/farming`);
     } catch (error) {
       console.error('Erreur lancement combat VS AI:', error);
@@ -265,7 +265,7 @@ export function FarmingPage() {
 
     try {
       await gameSessionApi.endSession(activeSession.id);
-      await refreshSession();
+      await refreshSession({ silent: true });
       navigate('/');
     } catch (error) {
       console.error('Erreur fin de session:', error);
@@ -277,18 +277,32 @@ export function FarmingPage() {
     try {
       const isReady = activeSession.player1Id === currentPlayerId ? activeSession.player1Ready : activeSession.player2Ready;
       await gameSessionApi.toggleReady(!isReady);
-      await refreshSession();
+      await refreshSession({ silent: true });
     } catch (error) {
       console.error('Erreur toggle ready:', error);
     }
   }, [activeSession, refreshSession, currentPlayerId]);
 
+  const combatListRefreshKey = useRef<string | null>(null);
+  // Si phase FIGHTING mais pas encore de combats (SSE partiel / course), recharger une fois par manche
+  useEffect(() => {
+    if (activeSession?.phase !== 'FIGHTING') {
+      combatListRefreshKey.current = null;
+      return;
+    }
+    const combats = activeSession.combats;
+    if (combats && combats.length > 0) return;
+    const key = `${activeSession.id}-${activeSession.currentRound}`;
+    if (combatListRefreshKey.current === key) return;
+    combatListRefreshKey.current = key;
+    void refreshSession({ silent: true });
+  }, [activeSession?.phase, activeSession?.id, activeSession?.currentRound, activeSession?.combats, refreshSession]);
+
   // Redirection automatique vers le combat si la phase change
   useEffect(() => {
     if (activeSession?.phase === 'FIGHTING') {
-      // Trouver le combat actif lié à cette session (ou attendre que matchmaking le crée)
-      // Pour l'instant on va juste attendre que session.combats soit mis à jour
-      const latestCombat = activeSession.combats?.[activeSession.combats.length - 1];
+      const list = activeSession.combats;
+      const latestCombat = list?.length ? list[list.length - 1] : undefined;
       if (latestCombat && latestCombat.status === 'ACTIVE') {
         navigate(`/combat/${latestCombat.id}`);
       }

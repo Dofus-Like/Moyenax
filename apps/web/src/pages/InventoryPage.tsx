@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useGameSession } from './GameTunnel';
 import { inventoryApi } from '../api/inventory.api';
@@ -12,9 +12,13 @@ import './InventoryPage.css';
 
 export function InventoryPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isDebugMode = searchParams.get('debug') === 'true';
+  const tunnelQuery = isDebugMode ? '?debug=true' : '';
   const queryClient = useQueryClient();
   const { player } = useAuthStore();
   const { activeSession } = useGameSession();
+  const showCraftingLink = activeSession?.status === 'ACTIVE' || isDebugMode;
   const [selectedItem, setSelectedItem] = React.useState<InventoryItem | null>(null);
 
   const { data: inventory, isLoading: invLoading } = useQuery({
@@ -102,6 +106,15 @@ export function InventoryPage() {
           <button type="button" className="nav-link-btn" onClick={() => navigate('/farming')}>
             Farming
           </button>
+          {showCraftingLink && (
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => navigate(`/crafting${tunnelQuery}`)}
+            >
+              Forge
+            </button>
+          )}
         </div>
         <div className="inventory-header-info">
           <h2>

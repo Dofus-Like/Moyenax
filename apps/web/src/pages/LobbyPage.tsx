@@ -59,7 +59,7 @@ export function LobbyPage() {
   const handleJoinRoom = async (sessionId: string) => {
     try {
       await gameSessionApi.joinPrivateSession(sessionId);
-      refreshSession();
+      refreshSession({ silent: true });
       navigate(`/farming`);
     } catch (err) {
       console.error('Failed to join room', err);
@@ -69,7 +69,7 @@ export function LobbyPage() {
   const handleStartVsAiCombat = async () => {
     try {
       await gameSessionApi.startVsAi();
-      await refreshSession();
+      await refreshSession({ silent: true });
       navigate(`/farming`);
     } catch (err) {
       console.error('Failed to start VS AI combat', err);
@@ -102,7 +102,7 @@ export function LobbyPage() {
         const res = await gameSessionApi.getActiveSession();
         if (res.data && res.data.status === 'ACTIVE') {
           setIsInQueue(false);
-          await refreshSession();
+          await refreshSession({ silent: true });
           navigate(`/farming`);
         }
       } catch (err) {

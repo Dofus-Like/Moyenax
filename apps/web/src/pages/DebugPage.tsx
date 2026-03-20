@@ -186,6 +186,9 @@ export function DebugPage() {
             <button className="debug-btn secondary" onClick={() => navigate('/inventory')}>
               Inventaire
             </button>
+            <button className="debug-btn secondary" onClick={() => navigate('/crafting?debug=true')}>
+              Forge (craft)
+            </button>
           </div>
         </div>
 

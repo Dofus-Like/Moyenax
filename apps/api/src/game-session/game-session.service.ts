@@ -217,6 +217,14 @@ export class GameSessionService {
           phase: 'FARMING',
           status: isGameOver ? 'FINISHED' : 'ACTIVE',
         },
+        include: {
+          p1: { select: { username: true } },
+          p2: { select: { username: true } },
+          combats: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
+        },
       });
 
       this.sse.emit(`game-session:${session.id}`, 'SESSION_UPDATED', updated);

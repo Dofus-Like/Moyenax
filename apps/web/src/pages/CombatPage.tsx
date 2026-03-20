@@ -37,6 +37,7 @@ export function CombatPage() {
   const navigate = useNavigate();
   
   const combatState = useCombatStore((s) => s.combatState);
+  const winnerId = useCombatStore((s) => s.winnerId);
   const connectToSession = useCombatStore((s) => s.connectToSession);
   const disconnect = useCombatStore((s) => s.disconnect);
   const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
@@ -57,7 +58,7 @@ export function CombatPage() {
 
     try {
       await gameSessionApi.endSession(activeSession.id);
-      await refreshSession();
+      await refreshSession({ silent: true });
       navigate('/');
     } catch (error) {
       console.error('Erreur abandon:', error);
@@ -76,6 +77,37 @@ export function CombatPage() {
       disconnect();
     };
   }, [sessionId, connectToSession, disconnect]);
+
+  const prevGamePhaseRef = React.useRef<string | null>(null);
+
+  // Repli si le SSE game-session arrive en retard : le backend a déjà mis à jour la session
+  useEffect(() => {
+    if (!winnerId) return;
+    void refreshSession({ silent: true });
+  }, [winnerId, refreshSession]);
+
+  // Fin de manche : le serveur repasse la game session en FARMING (manche suivante) → retour farming
+  useEffect(() => {
+    if (!activeSession) {
+      prevGamePhaseRef.current = null;
+      return;
+    }
+    if (activeSession.status === 'FINISHED') {
+      navigate('/', { replace: true });
+      prevGamePhaseRef.current = null;
+      return;
+    }
+    const phase = activeSession.phase;
+    const wasFighting = prevGamePhaseRef.current === 'FIGHTING';
+    const backToFarming =
+      phase === 'FARMING' &&
+      activeSession.status === 'ACTIVE' &&
+      (wasFighting || winnerId != null);
+    if (backToFarming) {
+      navigate('/farming', { replace: true });
+    }
+    prevGamePhaseRef.current = phase ?? null;
+  }, [activeSession, navigate, winnerId]);
 
   // Construire une GameMap fictive à partir de combatState pour UnifiedMapScene
   const gameMap = useMemo(() => {
