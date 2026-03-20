@@ -91,6 +91,19 @@ export class FarmingService {
     return state;
   }
 
+  async nextRound(playerId: string): Promise<FarmingState> {
+    const key = `farming:${playerId}`;
+    const state = await this.redis.getJson<FarmingState>(key);
+    
+    if (!state) throw new BadRequestException('Aucune session de farming active');
+    
+    state.round += 1;
+    state.pips = 4;
+    await this.redis.setJson(key, state, 86400);
+    
+    return state;
+  }
+
   @OnEvent(GAME_EVENTS.COMBAT_ENDED)
   async handleCombatEnded(payload: { winnerId: string; loserId: string; sessionId: string }) {
     console.log(`[FarmingService] Combat ended, incrementing round for players: ${payload.winnerId}, ${payload.loserId}`);

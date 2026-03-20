@@ -28,4 +28,9 @@ export class FarmingController {
   async debugRefillPips(@Request() req: { user: { id: string } }) {
     return this.farmingService.debugRefillPips(req.user.id);
   }
+
+  @Post('next-round')
+  async nextRound(@Request() req: { user: { id: string } }) {
+    return this.farmingService.nextRound(req.user.id);
+  }
 }

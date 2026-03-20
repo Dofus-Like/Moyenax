@@ -20,6 +20,7 @@ interface FarmingState {
   gatherNode: (x: number, y: number) => Promise<void>;
   endPhase: () => Promise<void>;
   debugRefill: () => Promise<void>;
+  nextRound: () => Promise<void>;
   reset: () => void;
 }
 
@@ -91,6 +92,19 @@ export const useFarmingStore = create<FarmingState>((set, get) => ({
       set({ pips: newState.pips });
     } catch (e) {
       console.error('Erreur lors du refill debug', e);
+      throw e;
+    }
+  },
+
+  nextRound: async () => {
+    try {
+      const state = await farmingApi.nextRound();
+      set({ 
+        pips: state.pips, 
+        round: state.round 
+      });
+    } catch (e) {
+      console.error('Erreur lors du passage à la manche suivante', e);
       throw e;
     }
   },

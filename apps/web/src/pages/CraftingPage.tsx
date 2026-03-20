@@ -111,48 +111,69 @@ export function CraftingPage() {
         {loading ? (
           <div className="loading">Chargement...</div>
         ) : activeTab === 'craft' ? (
-          <div className="recipes-grid">
-            {recipes.map(recipe => (
-              <div key={recipe.id} className="recipe-card">
-                <div className="recipe-header">
-                  <h3>{recipe.name}</h3>
-                  <p>{recipe.description}</p>
-                </div>
-                
-                <div className="recipe-requirements">
-                  <h4>Ressources requises :</h4>
-                  <div className="cost-list">
-                    {Object.entries(recipe.craftCost).map(([resId, qty]) => {
-                      const resItem = allItems.find(i => i.id === resId);
-                      const userOwned = inventory.find(i => i.itemId === resId)?.quantity || 0;
-                      const hasEnough = userOwned >= qty;
-                      
-                      return (
-                        <div key={resId} className={`cost-item ${hasEnough ? 'met' : 'missing'}`}>
-                          <span className="res-details">
-                            {resItem?.name || 'Ressource inconnue'} : <strong>{qty}</strong>
-                          </span>
-                          <span className="owned-status">
-                            ({userOwned} possédés)
-                          </span>
+          <div className="recipes-container">
+            {['WEAPON', 'ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS', 'ACCESSORY', 'CONSUMABLE'].map(type => {
+              const categoryRecipes = recipes.filter(r => (r as any).type === type);
+              if (categoryRecipes.length === 0) return null;
+
+              const typeLabels: Record<string, string> = {
+                WEAPON: '⚔️ Armes',
+                ARMOR_HEAD: '🪖 Coiffes',
+                ARMOR_CHEST: '👕 Capes & Plastrons',
+                ARMOR_LEGS: '👢 Bottes',
+                ACCESSORY: '💍 Anneaux',
+                CONSUMABLE: '🧪 Consommables'
+              };
+
+              return (
+                <div key={type} className="recipe-category">
+                  <h2 className="category-title">{typeLabels[type] || type}</h2>
+                  <div className="recipes-grid">
+                    {categoryRecipes.map(recipe => (
+                      <div key={recipe.id} className="recipe-card">
+                        <div className="recipe-header">
+                          <h3>{recipe.name}</h3>
+                          <p>{recipe.description}</p>
                         </div>
-                      );
-                    })}
+                        
+                        <div className="recipe-requirements">
+                          <h4>Ressources :</h4>
+                          <div className="cost-list">
+                            {Object.entries(recipe.craftCost).map(([resId, qty]) => {
+                              const resItem = allItems.find(i => i.id === resId);
+                              const userOwned = inventory.find(i => i.itemId === resId)?.quantity || 0;
+                              const hasEnough = userOwned >= qty;
+                              
+                              return (
+                                <div key={resId} className={`cost-item ${hasEnough ? 'met' : 'missing'}`}>
+                                  <span className="res-details">
+                                    {resItem?.name || 'Ressource'} : <strong>{qty}</strong>
+                                  </span>
+                                  <span className="owned-status">
+                                    ({userOwned})
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <button 
+                          className="action-button" 
+                          onClick={() => handleCraft(recipe.id)}
+                          disabled={Object.entries(recipe.craftCost).some(([resId, qty]) => {
+                            const userOwned = inventory.find(i => i.itemId === resId)?.quantity || 0;
+                            return userOwned < qty;
+                          })}
+                        >
+                          Fabriquer
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                <button 
-                  className="action-button" 
-                  onClick={() => handleCraft(recipe.id)}
-                  disabled={Object.entries(recipe.craftCost).some(([resId, qty]) => {
-                    const userOwned = inventory.find(i => i.itemId === resId)?.quantity || 0;
-                    return userOwned < qty;
-                  })}
-                >
-                  Fabriquer
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="fusion-grid">
