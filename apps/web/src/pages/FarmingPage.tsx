@@ -3,6 +3,7 @@ import CameraControlsImpl from 'camera-controls';
 import { Canvas } from '@react-three/fiber';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { shallow } from 'zustand/shallow';
 import { FarmingHUD } from '../game/HUD/FarmingHUD';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import { useAutoHarvest } from '../game/UnifiedMap/hooks/useAutoHarvest';
@@ -36,23 +37,45 @@ export function FarmingPage() {
   const [movePath, setMovePath] = useState<PathNode[] | null>(null);
   const [isMoving, setIsMoving] = useState(false);
   const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ text: string; type: 'info' | 'error' } | null>(null);
 
   const [searchParams] = useSearchParams();
   const isDebugMode = searchParams.get('debug') === 'true';
 
   const [isCameraMoving, setIsCameraMoving] = useState(false);
-  const { 
-    map, 
-    playerPosition, 
-    movePlayer, 
-    inventory, 
-    fetchState, 
-    gatherNode, 
+  const {
+    map,
+    playerPosition,
+    movePlayer,
+    inventory,
+    fetchState,
+    gatherNode,
     debugRefill,
     nextRound,
-    round
-  } = useFarmingStore();
+    round,
+  } = useFarmingStore(
+    shallow((state) => ({
+      map: state.map,
+      playerPosition: state.playerPosition,
+      movePlayer: state.movePlayer,
+      inventory: state.inventory,
+      fetchState: state.fetchState,
+      gatherNode: state.gatherNode,
+      debugRefill: state.debugRefill,
+      nextRound: state.nextRound,
+      round: state.round,
+    })),
+  );
 
+  const showActionMessage = useCallback((text: string, type: 'info' | 'error' = 'error') => {
+    setActionMessage({ text, type });
+  }, []);
+
+  useEffect(() => {
+    if (!actionMessage) return;
+    const timer = setTimeout(() => setActionMessage(null), 2600);
+    return () => clearTimeout(timer);
+  }, [actionMessage]);
 
   const seedConfig = useMemo(() => {
     if (!map) return null;
@@ -139,7 +162,10 @@ export function FarmingPage() {
 
       if (props.harvestable) {
         if (isAdjacent) {
-          gatherNode(x, y).catch(console.error);
+          gatherNode(x, y).catch((error) => {
+            console.error(error);
+            showActionMessage('Récolte impossible sur cette case.', 'error');
+          });
         } else {
           const adjacentTiles = [
             { x: x + 1, y },
@@ -152,7 +178,10 @@ export function FarmingPage() {
             TERRAIN_PROPERTIES[map.grid[t.y][t.x]].traversable
           );
 
-          if (adjacentTiles.length === 0) return;
+          if (adjacentTiles.length === 0) {
+            showActionMessage('Aucune case accessible autour de cette ressource.', 'error');
+            return;
+          }
 
           const closestTile = adjacentTiles.reduce((prev, curr) => {
             const distPrev = Math.abs(prev.x - currentPlayerPos.x) + Math.abs(prev.y - currentPlayerPos.y);
@@ -166,6 +195,8 @@ export function FarmingPage() {
             setMovePath(bestPath);
             setQueuedAction({ type: 'gather', x, y });
             setIsMoving(true);
+          } else {
+            showActionMessage('Aucun chemin valide vers cette ressource.', 'error');
           }
         }
         return;
@@ -189,13 +220,16 @@ export function FarmingPage() {
       movePlayer({ x: last.x, y: last.y });
       
       if (queuedAction?.type === 'gather') {
-        gatherNode(queuedAction.x, queuedAction.y).catch(console.error);
+        gatherNode(queuedAction.x, queuedAction.y).catch((error) => {
+          console.error(error);
+          showActionMessage('Récolte impossible après déplacement.', 'error');
+        });
       }
     }
     setMovePath(null);
     setQueuedAction(null);
     setIsMoving(false);
-  }, [movePath, movePlayer, queuedAction, gatherNode]);
+  }, [movePath, movePlayer, queuedAction, gatherNode, showActionMessage]);
 
   const handleTileHover = useCallback((info: { x: number; y: number; terrain: TerrainType } | null) => {
     setHoverInfo(info);
@@ -205,6 +239,7 @@ export function FarmingPage() {
     try {
       if (isDebugMode) {
         await debugRefill();
+        showActionMessage('Pips restaurés.', 'info');
       } else {
         await nextRound();
         const currentRound = useFarmingStore.getState().round;
@@ -216,8 +251,9 @@ export function FarmingPage() {
       }
     } catch (e) {
       console.error(e);
+      showActionMessage('Impossible de terminer la manche.', 'error');
     }
-  }, [isDebugMode, debugRefill, nextRound, navigate]);
+  }, [isDebugMode, debugRefill, nextRound, navigate, showActionMessage]);
 
   const currentTerrain = map ? map.grid[currentPlayerPos.y]?.[currentPlayerPos.x] : TerrainType.GROUND;
   useAutoHarvest({
@@ -264,6 +300,11 @@ export function FarmingPage() {
 
       <div className="resource-map-canvas">
         <FarmingHUD />
+        {actionMessage && (
+          <div className={`map-action-toast ${actionMessage.type}`}>
+            {actionMessage.text}
+          </div>
+        )}
         {!map && <div className="map-loading">Chargement de la carte...</div>}
         {map && (
           <Canvas>

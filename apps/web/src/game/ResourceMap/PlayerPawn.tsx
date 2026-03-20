@@ -18,7 +18,7 @@ interface PlayerPawnProps {
   gridSize: number;
   path: PathNode[] | null;
   onPathComplete: () => void;
-  playerData?: CombatPlayer;
+  playerData?: Partial<CombatPlayer> & { username?: string; playerId?: string };
   lookAtPosition?: PathNode | null;
   isJumping?: boolean;
 }
@@ -113,7 +113,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
         uniforms.uSat.value = skinConfig.saturation;
     }, [skinConfig, uniforms]);
 
-    const handleBeforeCompile = (shader: any) => {
+    const handleBeforeCompile = (shader: THREE.Shader) => {
         shader.uniforms.uHue = uniforms.uHue;
         shader.uniforms.uSat = uniforms.uSat;
 
@@ -278,12 +278,11 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
 
     const currentUser = useAuthStore((s) => s.player);
     const showEnemyHp = useCombatStore((s) => s.showEnemyHp);
-    const [isHovered, setIsHovered] = useState(false);
     const initialWorld = toWorld(gridPosition.x, gridPosition.y, gridSize);
 
     const isEnemy = useMemo(() => {
       if (!currentUser || !playerData) return true;
-      const uid = currentUser.id || (currentUser as any)._id;
+      const uid = currentUser.id || (currentUser as { _id?: string })._id;
       return playerData.playerId !== uid;
     }, [currentUser, playerData]);
 

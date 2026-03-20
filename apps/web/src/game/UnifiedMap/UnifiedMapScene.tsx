@@ -1,18 +1,31 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { TerrainType, CombatActionType, findPath, GameMap, PathNode, TERRAIN_PROPERTIES } from '@game/shared-types';
-import { useThree, ThreeEvent, useFrame } from '@react-three/fiber';
-import { TerrainTile, TerrainTileProps } from '../ResourceMap/TerrainTile';
-import { TileHoverEffect } from '../ResourceMap/TileHoverEffect';
-import { PlayerPawn, PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
-import { PathPreview } from '../ResourceMap/PathPreview';
-import { CombatHighlightsLayer } from './CombatHighlights';
-import { SpellVFX } from './overlays/SpellVFX';
-import { DamagePopup } from './overlays/DamagePopup';
-import { canMoveTo, canJumpTo, isInRange, hasLineOfSight } from '@game/game-engine';
+import {
+  CombatActionType,
+  GameMap,
+  PathNode,
+  TERRAIN_PROPERTIES,
+  TerrainType,
+  findPath,
+} from '@game/shared-types';
+import { ThreeEvent, useThree } from '@react-three/fiber';
+import { canJumpTo, canMoveTo, hasLineOfSight, isInRange } from '@game/game-engine';
 import { useCombatStore } from '../../store/combat.store';
 import { useAuthStore } from '../../store/auth.store';
 import { combatApi } from '../../api/combat.api';
+import {
+  HoverLayer,
+  PlayersLayer,
+  TerrainLayer,
+  TransientEffectsLayer,
+  UnifiedMapOverlayLayer,
+} from './UnifiedMapLayers';
+import {
+  buildOccupiedPositionSet,
+  buildTileIndex,
+  toPositionKey,
+} from './unifiedMap.utils';
+import { PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
 
 interface UnifiedMapSceneProps {
   mode: 'combat' | 'farming';
@@ -28,564 +41,630 @@ interface UnifiedMapSceneProps {
   isMoving?: boolean;
 }
 
-export const UnifiedMapScene = React.memo(({
-  mode,
-  map,
-  sessionId,
-  playerPosition,
-  movePath,
-  previewPath,
-  onPathComplete,
-  onTileClick,
-  onTileHover,
-  isCameraMoving = false,
-  isMoving = false,
-}: UnifiedMapSceneProps) => {
-  const { combatState, sseConnection, setCombatState } = useCombatStore();
-  const [popups, setPopups] = useState<{ id: string; pos: [number, number, number]; val: number }[]>([]);
-  const [vfx, setVfx] = useState<{ id: string; type: string; from: { x: number; y: number }; to: { x: number; y: number } }[]>([]);
-  const [playerPaths, setPlayerPaths] = useState<Record<string, { x: number; y: number }[]>>({});
-  const [jumpingPlayers, setJumpingPlayers] = useState<Record<string, boolean>>({});
-  const visualPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
-  const targetPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
-  const [visualPositions, setVisualPositions] = useState<Record<string, { x: number; y: number }>>({});
-  const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
-  const [mapRotation, setMapRotation] = useState(0);
-  const mapGroupRef = useRef<THREE.Group>(null);
-  
-  const selectedSpellId = useCombatStore((s) => s.selectedSpellId);
-  const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
-  
-  const user = useAuthStore((s) => s.player);
-  const rightClickStartTimeRef = useRef<number>(0);
-  const noop = useCallback(() => { /* noop */ }, []);
+function getProjectileType(spellId: string) {
+  return spellId.includes('kunai') ? 'spell-kunai' : 'spell-fireball';
+}
 
-  const { raycaster, mouse, camera, scene } = useThree();
-  const lastRaycastTimeRef = useRef<number>(0);
-  
-  // Dictionnaire de refs pour les personnages
-  const pawnRefs = useRef(new Map<string, PlayerPawnHandle>());
-  const lastSpellCast = useCombatStore((s) => s.lastSpellCast);
+export const UnifiedMapScene = React.memo(
+  ({
+    mode,
+    map,
+    sessionId,
+    playerPosition,
+    movePath,
+    previewPath,
+    onPathComplete,
+    onTileClick,
+    onTileHover,
+    isMoving = false,
+  }: UnifiedMapSceneProps) => {
+    const combatState = useCombatStore((state) => state.combatState);
+    const selectedSpellId = useCombatStore((state) => state.selectedSpellId);
+    const setSelectedSpell = useCombatStore((state) => state.setSelectedSpell);
+    const setCombatState = useCombatStore((state) => state.setCombatState);
+    const lastSpellCast = useCombatStore((state) => state.lastSpellCast);
+    const lastDamageEvent = useCombatStore((state) => state.lastDamageEvent);
+    const lastHealEvent = useCombatStore((state) => state.lastHealEvent);
+    const lastJumpEvent = useCombatStore((state) => state.lastJumpEvent);
+    const setUiMessage = useCombatStore((state) => state.setUiMessage);
 
-  // Écouter les lancers de sorts pour animer les persos
-  useEffect(() => {
-    if (lastSpellCast && combatState) {
-        // 1. Animer le perso (Attaque)
-        if (pawnRefs.current.has(lastSpellCast.casterId)) {
-            pawnRefs.current.get(lastSpellCast.casterId)?.triggerAttack();
+    const user = useAuthStore((state) => state.player);
+
+    const [popups, setPopups] = useState<{ id: string; pos: [number, number, number]; val: number }[]>([]);
+    const [vfx, setVfx] = useState<{ id: string; type: string; from: { x: number; y: number }; to: { x: number; y: number } }[]>([]);
+    const [playerPaths, setPlayerPaths] = useState<Record<string, PathNode[]>>({});
+    const [jumpingPlayers, setJumpingPlayers] = useState<Record<string, boolean>>({});
+    const [visualPositions, setVisualPositions] = useState<Record<string, PathNode>>({});
+    const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
+    const [mapRotation, setMapRotation] = useState(0);
+
+    const visualPositionsRef = useRef<Record<string, PathNode>>({});
+    const targetPositionsRef = useRef<Record<string, PathNode>>({});
+    const mapGroupRef = useRef<THREE.Group>(null);
+    const pawnRefs = useRef(new Map<string, PlayerPawnHandle>());
+    const rightClickStartTimeRef = useRef(0);
+    const lastRaycastTimeRef = useRef(0);
+
+    const { raycaster, mouse, camera, scene } = useThree();
+
+    const currentUserId = user?.id ?? (user as { _id?: string } | null)?._id ?? null;
+
+    const gameMap = useMemo(() => {
+      if (mode === 'farming') return map;
+      if (!combatState?.map?.tiles) return null;
+
+      const grid = Array.from({ length: combatState.map.height }, () =>
+        Array(combatState.map.width).fill(TerrainType.GROUND),
+      );
+
+      combatState.map.tiles.forEach((tile) => {
+        if (grid[tile.y]?.[tile.x] !== undefined) {
+          grid[tile.y][tile.x] = tile.type;
         }
+      });
 
-        // 2. Déclencher le projectile si PROJECTILE
-        const targetX = Number(lastSpellCast.targetX);
-        const targetY = Number(lastSpellCast.targetY);
+      return {
+        width: combatState.map.width,
+        height: combatState.map.height,
+        grid,
+        seedId: 'FORGE',
+      } as GameMap;
+    }, [mode, map, combatState]);
 
-        if (lastSpellCast.visualType === 'PROJECTILE' && !isNaN(targetX) && !isNaN(targetY)) {
-            const caster = combatState.players[lastSpellCast.casterId];
-            if (caster && caster.position) {
-              setVfx((prev: any) => [...prev, {
-                  id: `vfx-${Date.now()}-${Math.random()}`,
-                  type: lastSpellCast.spellId.includes('kunai') ? 'spell-kunai' : 'spell-fireball',
-                  from: { ...caster.position },
-                  to: { x: targetX, y: targetY }
-              }]);
-            }
-        }
-    }
-  }, [lastSpellCast]);
+    const activeMap = mode === 'combat' ? gameMap : map;
+    const combatPlayers = useMemo(
+      () => (mode === 'combat' && combatState ? Object.values(combatState.players) : []),
+      [mode, combatState],
+    );
+    const combatTiles = combatState?.map?.tiles ?? [];
+    const tileIndex = useMemo(() => buildTileIndex(combatTiles), [combatTiles]);
+    const occupiedPositions = useMemo(() => combatPlayers.map((player) => player.position), [combatPlayers]);
+    const occupiedPositionSet = useMemo(
+      () => buildOccupiedPositionSet(occupiedPositions),
+      [occupiedPositions],
+    );
 
-  const gameMap = useMemo(() => {
-    if (mode === 'farming') return map;
-    if (!combatState?.map?.tiles) return null;
-    const grid = Array(combatState.map.height)
-      .fill(0)
-      .map(() => Array(combatState.map.width).fill(TerrainType.GROUND));
-    combatState.map.tiles.forEach((t) => {
-      if (grid[t.y] && grid[t.y][t.x] !== undefined) {
-        grid[t.y][t.x] = t.type;
+    const isMyTurn = useMemo(() => {
+      if (!combatState || !currentUserId) return false;
+      return combatState.currentTurnPlayerId === currentUserId;
+    }, [combatState, currentUserId]);
+
+    const currentPlayer = useMemo(() => {
+      if (!combatState || !currentUserId) return null;
+      return combatState.players[currentUserId] || null;
+    }, [combatState, currentUserId]);
+
+    const performRaycastHover = useCallback(() => {
+      if (!activeMap) return;
+
+      raycaster.setFromCamera(mouse, camera);
+      const target = mapGroupRef.current || scene;
+      const intersects = raycaster.intersectObjects([target], true);
+      const tileIntersect = intersects.find(
+        (intersection) =>
+          typeof intersection.object.userData === 'object' &&
+          intersection.object.userData?.type === 'terrain-tile',
+      );
+
+      if (!tileIntersect) {
+        setHoveredTile(null);
+        if (mode === 'farming') onTileHover?.(null);
+        return;
       }
-    });
-    return { width: combatState.map.width, height: combatState.map.height, grid, seedId: 'FORGE' } as GameMap;
-  }, [mode, map, combatState?.map]);
 
-  const activeMap = mode === 'combat' ? gameMap : map;
-  const isMyTurn = useMemo(() => {
-    if (!combatState || !user) return false;
-    const uid = user.id || (user as any)._id;
-    return combatState.currentTurnPlayerId === uid;
-  }, [combatState, user]);
+      const { x, y, terrain } = tileIntersect.object.userData as {
+        x: number;
+        y: number;
+        terrain: TerrainType;
+      };
 
-  const performRaycastHover = useCallback(() => {
-    if (!activeMap) return;
-    raycaster.setFromCamera(mouse, camera);
-    const target = mapGroupRef.current || scene;
-    const intersects = raycaster.intersectObjects([target], true);
-    // On ignore les objets transparents ou géants pour trouver la tile
-    const tileIntersect = intersects.find((i) => (i.object as any).userData?.type === 'terrain-tile');
+      setHoveredTile((previous) => (previous?.x === x && previous?.y === y ? previous : { x, y }));
 
-    if (tileIntersect) {
-      const { x, y, terrain } = (tileIntersect.object as any).userData as { x: number; y: number; terrain: TerrainType };
-      setHoveredTile((prev) => (prev?.x === x && prev?.y === y) ? prev : { x, y });
       if (mode === 'farming') {
         onTileHover?.({ x, y, terrain });
       }
-    } else {
-      setHoveredTile(null);
-      if (mode === 'farming') {
-        onTileHover?.(null);
-      }
-    }
-  }, [mode, onTileHover, raycaster, mouse, camera, scene, activeMap]);
+    }, [activeMap, camera, mode, mouse, onTileHover, raycaster, scene]);
 
-  const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
-    // On autorise maintenant le hover même pendant les mouvements de caméra
-    // pour éviter les blocages permanents si le state 'isCameraMoving' se perd.
-    
-    // Throttle à ~50 FPS pour la perf atomique
-    const now = Date.now();
-    if (now - lastRaycastTimeRef.current < 20) return;
-    lastRaycastTimeRef.current = now;
-
-    performRaycastHover();
-  }, [performRaycastHover]);
-
-  useFrame(() => {
-    // Rafraîchissement régulier pour capter les changements de state (fin de move, etc.)
-    // même si la souris ne bouge pas.
-    const now = Date.now();
-    if (now - lastRaycastTimeRef.current > 100) { 
-      performRaycastHover();
+    const handlePointerMove = useCallback(() => {
+      const now = Date.now();
+      if (now - lastRaycastTimeRef.current < 32) return;
       lastRaycastTimeRef.current = now;
-    }
-  });
+      performRaycastHover();
+    }, [performRaycastHover]);
 
-  // Déclenchement manuel si la caméra ou le perso s'arrête, ou si le perso change de case
-  // On ne met AUCUNE condition de blocage ici (contrairement au pointerMove) pour servir de "sécurité"
-  useEffect(() => {
-    performRaycastHover();
-  }, [isMoving, playerPosition, playerPaths, isMyTurn, combatState, performRaycastHover]);
+    useEffect(() => {
+      performRaycastHover();
+    }, [performRaycastHover, isMoving, playerPosition, playerPaths, isMyTurn, combatState]);
 
-  useEffect(() => {
-    if (mode !== 'combat' || !sseConnection || !combatState) return;
-    const damageHandler = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-      const player = combatState.players[data.targetId];
-      const gridSize = combatState.map.width;
-      const damageVal = Number(data.damage);
-      
-      if (player && !isNaN(damageVal)) {
-        setPopups((prev) => [
-          ...prev,
+    useEffect(() => {
+      if (!lastSpellCast || !combatState) return;
+
+      pawnRefs.current.get(lastSpellCast.casterId)?.triggerAttack();
+
+      const targetX = Number(lastSpellCast.targetX);
+      const targetY = Number(lastSpellCast.targetY);
+      const caster = combatState.players[lastSpellCast.casterId];
+
+      if (
+        lastSpellCast.visualType === 'PROJECTILE' &&
+        !Number.isNaN(targetX) &&
+        !Number.isNaN(targetY) &&
+        caster
+      ) {
+        setVfx((current) => [
+          ...current,
           {
-            id: `dmg-${Date.now()}-${Math.random()}`,
-            pos: [player.position.x - gridSize / 2 + 0.5, 0.5, player.position.y - gridSize / 2 + 0.5],
-            val: damageVal,
+            id: `vfx-${lastSpellCast.timestamp}`,
+            type: getProjectileType(lastSpellCast.spellId),
+            from: { ...caster.position },
+            to: { x: targetX, y: targetY },
           },
         ]);
       }
-    };
+    }, [combatState, lastSpellCast]);
 
-    const healHandler = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-      const player = combatState.players[data.targetId];
-      const gridSize = combatState.map.width;
-      const healVal = Number(data.heal);
-      
-      if (player && !isNaN(healVal)) {
-        setPopups((prev) => [
-          ...prev,
-          {
-            id: `heal-${Date.now()}-${Math.random()}`,
-            pos: [player.position.x - gridSize / 2 + 0.5, 0.5, player.position.y - gridSize / 2 + 0.5],
-            val: -healVal, // négatif pour couleur verte dans DamagePopup
-          },
-        ]);
-      }
-    };
+    useEffect(() => {
+      if (!lastDamageEvent || !combatState) return;
 
-    const jumpHandler = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-      if (data.playerId) {
-        setJumpingPlayers((prev) => ({ ...prev, [data.playerId]: true }));
-        setPlayerPaths((prev) => ({
-          ...prev,
-          [data.playerId]: [data.from, data.to],
-        }));
-      }
-    };
+      const player = combatState.players[lastDamageEvent.targetId];
+      if (!player) return;
 
-    sseConnection.addEventListener('DAMAGE_DEALT', damageHandler);
-    sseConnection.addEventListener('HEAL_DEALT', healHandler);
-    sseConnection.addEventListener('PLAYER_JUMPED', jumpHandler);
-    return () => {
-      sseConnection.removeEventListener('DAMAGE_DEALT', damageHandler);
-      sseConnection.removeEventListener('HEAL_DEALT', healHandler);
-      sseConnection.removeEventListener('PLAYER_JUMPED', jumpHandler);
-    };
-  }, [mode, sseConnection, combatState]);
+      setPopups((current) => [
+        ...current,
+        {
+          id: `dmg-${lastDamageEvent.timestamp}`,
+          pos: [
+            player.position.x - combatState.map.width / 2 + 0.5,
+            0.5,
+            player.position.y - combatState.map.width / 2 + 0.5,
+          ],
+          val: Number(lastDamageEvent.damage),
+        },
+      ]);
+    }, [combatState, lastDamageEvent]);
 
-  useEffect(() => {
-    if (mode !== 'combat' || !combatState || !gameMap) return;
-    let hasUpdates = false;
-    const pathsToAdd: Record<string, PathNode[]> = {};
-    
-    // Nettoyer les chemins des joueurs qui ne sont plus là
-    setPlayerPaths((prev) => {
-      let changed = false;
-      const next = { ...prev };
-      for (const pid in next) {
-        if (!combatState.players[pid]) {
-          delete next[pid];
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
+    useEffect(() => {
+      if (!lastHealEvent || !combatState) return;
 
-    Object.values(combatState.players).forEach((p) => {
-      const visual = visualPositionsRef.current[p.playerId];
-      const target = targetPositionsRef.current[p.playerId];
-      if (!visual) {
-        visualPositionsRef.current[p.playerId] = p.position;
-        targetPositionsRef.current[p.playerId] = p.position;
-        hasUpdates = true;
-      } else if (target?.x !== p.position.x || target?.y !== p.position.y) {
-        // Ne pas écraser si on est déjà en train de sauter
-        if (jumpingPlayers[p.playerId]) return;
-        
-        targetPositionsRef.current[p.playerId] = p.position;
-        const path = findPath(gameMap, visual, p.position);
-        if (path && path.length > 0) {
-          pathsToAdd[p.playerId] = path;
-        } else {
-          visualPositionsRef.current[p.playerId] = p.position;
-          hasUpdates = true;
-        }
-      }
-    });
-    if (Object.keys(pathsToAdd).length > 0) {
-      setPlayerPaths((prev) => {
+      const player = combatState.players[lastHealEvent.targetId];
+      if (!player) return;
+
+      setPopups((current) => [
+        ...current,
+        {
+          id: `heal-${lastHealEvent.timestamp}`,
+          pos: [
+            player.position.x - combatState.map.width / 2 + 0.5,
+            0.5,
+            player.position.y - combatState.map.width / 2 + 0.5,
+          ],
+          val: -Number(lastHealEvent.heal),
+        },
+      ]);
+    }, [combatState, lastHealEvent]);
+
+    useEffect(() => {
+      if (!lastJumpEvent) return;
+
+      setJumpingPlayers((current) => ({ ...current, [lastJumpEvent.playerId]: true }));
+      setPlayerPaths((current) => ({
+        ...current,
+        [lastJumpEvent.playerId]: [lastJumpEvent.from, lastJumpEvent.to],
+      }));
+    }, [lastJumpEvent]);
+
+    useEffect(() => {
+      if (mode !== 'combat' || !combatState || !gameMap) return;
+
+      let hasVisualUpdates = false;
+      const newPaths: Record<string, PathNode[]> = {};
+
+      setPlayerPaths((current) => {
         let changed = false;
-        const next = { ...prev };
-        for (const pid in pathsToAdd) {
-          if (!next[pid]) {
-            next[pid] = pathsToAdd[pid];
+        const next = { ...current };
+
+        Object.keys(next).forEach((playerId) => {
+          if (!combatState.players[playerId]) {
+            delete next[playerId];
             changed = true;
           }
-        }
-        return changed ? next : prev;
+        });
+
+        return changed ? next : current;
       });
-    }
-    if (hasUpdates) setVisualPositions({ ...visualPositionsRef.current });
-  }, [mode, combatState, gameMap]);
 
-  const occupiedPositions = useMemo(() => {
-    if (mode !== 'combat' || !combatState) return [];
-    return Object.values(combatState.players).map((p) => p.position);
-  }, [mode, combatState]);
+      combatPlayers.forEach((player) => {
+        const visualPosition = visualPositionsRef.current[player.playerId];
+        const targetPosition = targetPositionsRef.current[player.playerId];
 
-  const currentPlayer = useMemo(() => {
-    if (mode !== 'combat' || !combatState || !user) return null;
-    const uid = user.id || (user as any)._id;
-    return combatState.players[uid] || null;
-  }, [mode, combatState, user]);
+        if (!visualPosition) {
+          visualPositionsRef.current[player.playerId] = player.position;
+          targetPositionsRef.current[player.playerId] = player.position;
+          hasVisualUpdates = true;
+          return;
+        }
 
-  const reachableTiles = useMemo(() => {
-    if (mode !== 'combat' || !isMyTurn || !currentPlayer || !gameMap || !combatState) return [];
-    const reachable: { x: number; y: number; dist: number }[] = [];
-    const queue: { x: number; y: number; dist: number }[] = [{ ...currentPlayer.position, dist: 0 }];
-    const visited = new Set<string>();
-    visited.add(`${currentPlayer.position.x},${currentPlayer.position.y}`);
-    while (queue.length > 0) {
-      const current = queue.shift();
-      if (!current) break;
-      if (current.dist > 0) reachable.push(current);
-      if (current.dist < currentPlayer.remainingPm) {
-        for (const dir of [{ x: 0, y: 1 }, { x: 0, y: -1 }, { x: 1, y: 0 }, { x: -1, y: 0 }]) {
-          const next = { x: current.x + dir.x, y: current.y + dir.y };
-          const key = `${next.x},${next.y}`;
-          const tile = combatState.map.tiles.find((t) => t.x === next.x && t.y === next.y);
-          const isOccupied = occupiedPositions.some((p) => p.x === next.x && p.y === next.y);
-          if (next.x >= 0 && next.x < gameMap.width && next.y >= 0 && next.y < gameMap.height && !visited.has(key) && tile && TERRAIN_PROPERTIES[tile.type as TerrainType]?.traversable && !isOccupied) {
+        if (targetPosition?.x === player.position.x && targetPosition?.y === player.position.y) {
+          return;
+        }
+
+        if (jumpingPlayers[player.playerId]) {
+          return;
+        }
+
+        targetPositionsRef.current[player.playerId] = player.position;
+        const path = findPath(gameMap, visualPosition, player.position);
+
+        if (path && path.length > 0) {
+          newPaths[player.playerId] = path;
+          return;
+        }
+
+        visualPositionsRef.current[player.playerId] = player.position;
+        hasVisualUpdates = true;
+      });
+
+      if (Object.keys(newPaths).length > 0) {
+        setPlayerPaths((current) => {
+          const next = { ...current };
+          let changed = false;
+
+          Object.entries(newPaths).forEach(([playerId, path]) => {
+            if (!next[playerId]) {
+              next[playerId] = path;
+              changed = true;
+            }
+          });
+
+          return changed ? next : current;
+        });
+      }
+
+      if (hasVisualUpdates) {
+        setVisualPositions({ ...visualPositionsRef.current });
+      }
+    }, [combatPlayers, combatState, gameMap, jumpingPlayers, mode]);
+
+    const reachableTiles = useMemo(() => {
+      if (mode !== 'combat' || !isMyTurn || !currentPlayer || !gameMap) return [];
+
+      const reachable: { x: number; y: number; dist: number }[] = [];
+      const queue: { x: number; y: number; dist: number }[] = [
+        { ...currentPlayer.position, dist: 0 },
+      ];
+      const visited = new Set([toPositionKey(currentPlayer.position.x, currentPlayer.position.y)]);
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+        if (!current) break;
+
+        if (current.dist > 0) {
+          reachable.push(current);
+        }
+
+        if (current.dist >= currentPlayer.remainingPm) {
+          continue;
+        }
+
+        for (const direction of [
+          { x: 0, y: 1 },
+          { x: 0, y: -1 },
+          { x: 1, y: 0 },
+          { x: -1, y: 0 },
+        ]) {
+          const next = { x: current.x + direction.x, y: current.y + direction.y };
+          const key = toPositionKey(next.x, next.y);
+
+          if (
+            next.x < 0 ||
+            next.x >= gameMap.width ||
+            next.y < 0 ||
+            next.y >= gameMap.height ||
+            visited.has(key)
+          ) {
+            continue;
+          }
+
+          const tile = tileIndex.get(key);
+          const isCurrentPlayerTile =
+            next.x === currentPlayer.position.x && next.y === currentPlayer.position.y;
+          const isOccupied = !isCurrentPlayerTile && occupiedPositionSet.has(key);
+
+          if (tile && TERRAIN_PROPERTIES[tile.type].traversable && !isOccupied) {
             visited.add(key);
             queue.push({ ...next, dist: current.dist + 1 });
           }
         }
       }
-    }
-    return reachable;
-  }, [mode, isMyTurn, currentPlayer, gameMap, occupiedPositions, combatState]);
 
-  const combatPreviewPath = useMemo(() => {
-    if (mode !== 'combat' || !isMyTurn || !currentPlayer || !hoveredTile || !gameMap || selectedSpellId) return [];
-    let closest: { x: number; y: number } | null = null;
-    let minDist = Infinity;
-    for (const t of reachableTiles) {
-      const d = Math.abs(t.x - hoveredTile.x) + Math.abs(t.y - hoveredTile.y);
-      if (d < minDist) {
-        minDist = d;
-        closest = t;
+      return reachable;
+    }, [currentPlayer, gameMap, isMyTurn, mode, occupiedPositionSet, tileIndex]);
+
+    const combatPreviewPath = useMemo(() => {
+      if (mode !== 'combat' || !isMyTurn || !currentPlayer || !hoveredTile || !gameMap || selectedSpellId) {
+        return [];
       }
-    }
-    if (!closest) return [];
-    return findPath(gameMap, currentPlayer.position, closest) ?? [];
-  }, [mode, isMyTurn, currentPlayer, hoveredTile, gameMap, selectedSpellId, reachableTiles]);
 
-  const spellRangeTiles = useMemo(() => {
-    if (mode !== 'combat' || !currentPlayer || !selectedSpellId || !combatState?.map?.tiles) return [];
-    const spell = currentPlayer.spells.find((s) => s.id === selectedSpellId);
-    if (!spell) return [];
-    
-    const result: { x: number; y: number }[] = [];
-    for (let y = 0; y < combatState.map.height; y++) {
-      for (let x = 0; x < combatState.map.width; x++) {
-        const inRange = isInRange(currentPlayer.position, { x, y }, spell.minRange, spell.maxRange);
-        
-        // Restriction lancer en ligne pour la bombe
-        let isLineValid = true;
-        if (spell.id === 'spell-bombe-repousse') {
-          isLineValid = (x === currentPlayer.position.x || y === currentPlayer.position.y);
-        }
+      let closestTile: { x: number; y: number } | null = null;
+      let minDistance = Infinity;
 
-        if (inRange && isLineValid && (spell.id === 'spell-bond' || hasLineOfSight(currentPlayer.position, { x, y }, combatState.map.tiles))) {
-          result.push({ x, y });
+      reachableTiles.forEach((tile) => {
+        const distance = Math.abs(tile.x - hoveredTile.x) + Math.abs(tile.y - hoveredTile.y);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestTile = tile;
         }
+      });
+
+      if (!closestTile) return [];
+
+      return findPath(gameMap, currentPlayer.position, closestTile) ?? [];
+    }, [currentPlayer, gameMap, hoveredTile, isMyTurn, mode, reachableTiles, selectedSpellId]);
+
+    const spellRangeTiles = useMemo(() => {
+      if (mode !== 'combat' || !currentPlayer || !selectedSpellId || !combatState?.map?.tiles) {
+        return [];
       }
-    }
-    return result;
-  }, [mode, currentPlayer, selectedSpellId, combatState?.map?.tiles]);
 
-  const [isProcessingAction, setIsProcessingAction] = useState(false);
+      const spell = currentPlayer.spells.find((candidate) => candidate.id === selectedSpellId);
+      if (!spell) return [];
 
-  const handleCombatTileClick = useCallback(
-    async (x: number, y: number) => {
-      if (mode !== 'combat' || !sessionId || !isMyTurn || !currentPlayer || isProcessingAction) return;
-      
-      setIsProcessingAction(true);
-      try {
-        let res;
-        if (selectedSpellId) {
-          // Si on a un sort sélectionné, on le lance
-          res = await combatApi.playAction(sessionId, { 
-              type: CombatActionType.CAST_SPELL, 
-              spellId: selectedSpellId, 
-              targetX: x, 
-              targetY: y 
-          });
-          setSelectedSpell(null);
-        } else {
-          // Sinon on se déplace
+      const tilesInRange: { x: number; y: number }[] = [];
+
+      for (let y = 0; y < combatState.map.height; y++) {
+        for (let x = 0; x < combatState.map.width; x++) {
           const target = { x, y };
-          if (combatState?.map?.tiles && canMoveTo(target, currentPlayer.remainingPm, currentPlayer.position, combatState.map.tiles, occupiedPositions)) {
-            res = await combatApi.playAction(sessionId, { type: CombatActionType.MOVE, targetX: x, targetY: y });
-          } else if (combatState?.map?.tiles && canJumpTo(target, currentPlayer.remainingPm, currentPlayer.position, combatState.map.tiles, occupiedPositions)) {
-            res = await combatApi.playAction(sessionId, { type: CombatActionType.JUMP, targetX: x, targetY: y });
+          const targetInRange = isInRange(
+            currentPlayer.position,
+            target,
+            spell.minRange,
+            spell.maxRange,
+          );
+
+          if (
+            targetInRange &&
+            (spell.id === 'spell-bond' || hasLineOfSight(currentPlayer.position, target, combatState.map.tiles))
+          ) {
+            tilesInRange.push(target);
           }
         }
-        if (res?.data) {
-          setCombatState(res.data);
+      }
+
+      return tilesInRange;
+    }, [combatState, currentPlayer, mode, selectedSpellId]);
+
+    const handleCombatTileClick = useCallback(
+      async (x: number, y: number) => {
+        if (mode !== 'combat' || !sessionId || !isMyTurn || !currentPlayer || !combatState) return;
+
+        try {
+          let response;
+
+          if (selectedSpellId) {
+            response = await combatApi.playAction(sessionId, {
+              type: CombatActionType.CAST_SPELL,
+              spellId: selectedSpellId,
+              targetX: x,
+              targetY: y,
+            });
+            setSelectedSpell(null);
+          } else {
+            const target = { x, y };
+
+            if (canMoveTo(target, currentPlayer.remainingPm, currentPlayer.position, combatState.map.tiles, occupiedPositions)) {
+              response = await combatApi.playAction(sessionId, {
+                type: CombatActionType.MOVE,
+                targetX: x,
+                targetY: y,
+              });
+            } else if (
+              canJumpTo(target, currentPlayer.remainingPm, currentPlayer.position, combatState.map.tiles, occupiedPositions)
+            ) {
+              response = await combatApi.playAction(sessionId, {
+                type: CombatActionType.JUMP,
+                targetX: x,
+                targetY: y,
+              });
+            } else {
+              setUiMessage('Action impossible sur cette case.', 'error');
+              return;
+            }
+          }
+
+          if (response?.data) {
+            setCombatState(response.data);
+          }
+        } catch (error) {
+          console.error('CombatAction Error:', error);
+          const message =
+            typeof error === 'object' &&
+            error !== null &&
+            'response' in error &&
+            typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+              ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+              : "L'action a échoué.";
+
+          setUiMessage(message ?? "L'action a échoué.", 'error');
         }
-      } catch (err: unknown) {
-        console.error('CombatAction Error:', err);
-      } finally {
-        setIsProcessingAction(false);
-      }
-    },
-    [mode, sessionId, isMyTurn, currentPlayer, selectedSpellId, combatState, occupiedPositions, setSelectedSpell, setCombatState, activeMap, isProcessingAction]
-  );
+      },
+      [
+        combatState,
+        currentPlayer,
+        isMyTurn,
+        mode,
+        occupiedPositions,
+        selectedSpellId,
+        sessionId,
+        setCombatState,
+        setSelectedSpell,
+        setUiMessage,
+      ],
+    );
 
-  const handleTileClickDispatcher = useCallback(
-    (x: number, y: number, terrain: TerrainType) => {
-      if (mode === 'combat') {
-        handleCombatTileClick(x, y);
-      } else {
+    const handleTileClickDispatcher = useCallback(
+      (x: number, y: number, terrain: TerrainType) => {
+        if (mode === 'combat') {
+          void handleCombatTileClick(x, y);
+          return;
+        }
+
         onTileClick?.(x, y, terrain);
+      },
+      [handleCombatTileClick, mode, onTileClick],
+    );
+
+    const handlePointerDown = useCallback((event: ThreeEvent<PointerEvent>) => {
+      if (event.button === 2) {
+        rightClickStartTimeRef.current = Date.now();
       }
-    },
-    [mode, handleCombatTileClick, onTileClick]
-  );
+    }, []);
 
-  const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
-    if (e.button === 2) rightClickStartTimeRef.current = Date.now();
-  }, []);
+    const handlePointerUp = useCallback(
+      (event: ThreeEvent<PointerEvent>) => {
+        if (event.button === 2 && mode === 'combat' && selectedSpellId) {
+          const duration = Date.now() - rightClickStartTimeRef.current;
+          if (duration < 250) {
+            setSelectedSpell(null);
+          }
+        }
+      },
+      [mode, selectedSpellId, setSelectedSpell],
+    );
 
-  const handlePointerUp = useCallback((e: ThreeEvent<PointerEvent>) => {
-    if (e.button === 2 && mode === 'combat' && selectedSpellId) {
-      const duration = Date.now() - rightClickStartTimeRef.current;
-      if (duration < 250) setSelectedSpell(null);
-    }
-  }, [mode, selectedSpellId, setSelectedSpell]);
+    useEffect(() => {
+      let isDragging = false;
+      let previousX = 0;
 
-  useEffect(() => {
-    let isDragging = false;
-    let prevX = 0;
-    const onDown = (e: PointerEvent) => {
-      if (e.button === 0) {
-        isDragging = true;
-        prevX = e.clientX;
+      const onPointerDown = (event: PointerEvent) => {
+        if (event.button === 0) {
+          isDragging = true;
+          previousX = event.clientX;
+        }
+      };
+
+      const onPointerMoveWindow = (event: PointerEvent) => {
+        if (!isDragging) return;
+
+        const delta = event.clientX - previousX;
+        setMapRotation((current) => current + delta * 0.005);
+        previousX = event.clientX;
+      };
+
+      const onPointerUpWindow = (event: PointerEvent) => {
+        if (event.button === 0) {
+          isDragging = false;
+        }
+      };
+
+      window.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', onPointerMoveWindow);
+      window.addEventListener('pointerup', onPointerUpWindow);
+
+      return () => {
+        window.removeEventListener('pointerdown', onPointerDown);
+        window.removeEventListener('pointermove', onPointerMoveWindow);
+        window.removeEventListener('pointerup', onPointerUpWindow);
+      };
+    }, []);
+
+    const setPawnRef = useCallback((playerId: string, handle: PlayerPawnHandle | null) => {
+      if (handle) {
+        pawnRefs.current.set(playerId, handle);
+      } else {
+        pawnRefs.current.delete(playerId);
       }
-    };
-    const onMove = (e: PointerEvent) => {
-      if (isDragging) {
-        const delta = e.clientX - prevX;
-        setMapRotation(r => r + delta * 0.005);
-        prevX = e.clientX;
-      }
-    };
-    const onUp = (e: PointerEvent) => {
-      if (e.button === 0) isDragging = false;
-    };
-    window.addEventListener('pointerdown', onDown);
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    return () => {
-      window.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-  }, []);
+    }, []);
 
-  const tiles = useMemo(() => {
-    if (!activeMap) return [];
-    console.log('Rebuilding main tile grid (static)...');
-    const result: React.ReactElement[] = [];
-    for (let y = 0; y < activeMap.height; y++) {
-      for (let x = 0; x < activeMap.width; x++) {
-        const terrain = activeMap.grid[y][x] as TerrainType;
-        const tileProps: TerrainTileProps = {
-          x,
-          y,
-          terrain,
-          gridSize: activeMap.width,
-          onTileClick: handleTileClickDispatcher,
-        };
-        result.push(<TerrainTile key={`${x}-${y}`} {...tileProps} />);
-      }
-    }
-    return result;
-  }, [mode, activeMap, handleTileClickDispatcher]);
+    const handleCombatPathComplete = useCallback(
+      (playerId: string) => {
+        setJumpingPlayers((current) => {
+          const next = { ...current };
+          delete next[playerId];
+          return next;
+        });
 
-  const renderPlayers = () => {
+        setPlayerPaths((current) => {
+          const next = { ...current };
+          delete next[playerId];
+          return next;
+        });
+
+        const finalPosition = combatState?.players[playerId]?.position;
+        if (finalPosition) {
+          visualPositionsRef.current[playerId] = finalPosition;
+          targetPositionsRef.current[playerId] = finalPosition;
+          setVisualPositions({ ...visualPositionsRef.current });
+        }
+      },
+      [combatState],
+    );
+
+    const removeVfx = useCallback((effectId: string) => {
+      setVfx((current) => current.filter((effect) => effect.id !== effectId));
+    }, []);
+
+    const removePopup = useCallback((popupId: string) => {
+      setPopups((current) => current.filter((popup) => popup.id !== popupId));
+    }, []);
+
     if (!activeMap) return null;
-    if (mode === 'farming' && playerPosition) {
-      return (
-        <PlayerPawn
-          gridPosition={playerPosition}
-          gridSize={activeMap.width}
-          path={movePath || null}
-          onPathComplete={onPathComplete || noop}
-          playerData={{ username: user?.username || 'Joueur' } as any}
-        />
-      );
-    }
-    if (mode === 'combat' && combatState) {
-      const allPlayers = Object.values(combatState.players);
-      return allPlayers.map((p: any) => {
-        const pos = visualPositions[p.playerId] || p.position;
-        // Trouver l'adversaire (pour lui faire face)
-        const opponent = allPlayers.find(opp => opp.playerId !== p.playerId);
-        const opponentPos = opponent ? visualPositions[opponent.playerId] || opponent.position : null;
+    if (mode === 'combat' && !combatState) return null;
 
-        return (
-          <PlayerPawn
-            key={p.playerId}
-            ref={(el) => {
-              if (el) pawnRefs.current.set(p.playerId, el);
-              else pawnRefs.current.delete(p.playerId);
-            }}
-            gridPosition={pos}
-            gridSize={activeMap!.width}
-            path={playerPaths[p.playerId] || null}
-            playerData={p}
-            lookAtPosition={opponentPos}
-            isJumping={!!jumpingPlayers[p.playerId]}
-            onPathComplete={() => {
-              setJumpingPlayers((prev) => {
-                const next = { ...prev };
-                delete next[p.playerId];
-                return next;
-              });
-              setPlayerPaths((prev) => {
-                const next = { ...prev };
-                delete next[p.playerId];
-                return next;
-              });
-              visualPositionsRef.current[p.playerId] = combatState.players[p.playerId].position;
-              targetPositionsRef.current[p.playerId] = combatState.players[p.playerId].position;
-              setVisualPositions({ ...visualPositionsRef.current });
-            }}
-          />
-        );
-      });
-    }
-    return null;
-  };
-
-  if (!activeMap) return null;
-  if (mode === 'combat' && !combatState) return null;
-
-  return (
-    <>
-      <group 
+    return (
+      <group
         onPointerMove={handlePointerMove}
-        onPointerDown={handlePointerDown} 
-        onPointerUp={handlePointerUp} 
-        onContextMenu={(e) => e.nativeEvent.preventDefault()}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onContextMenu={(event) => event.nativeEvent.preventDefault()}
       >
-        {/* Mesh de fond pour capturer tous les pointerMoves même hors tiles */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
           <planeGeometry args={[1000, 1000]} />
           <meshBasicMaterial transparent opacity={0} />
         </mesh>
-        
-        <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
-          {tiles}
 
-          {hoveredTile && activeMap && (
-            <TileHoverEffect 
-              x={hoveredTile.x} 
-              y={hoveredTile.y} 
-              terrain={activeMap.grid[hoveredTile.y][hoveredTile.x] as TerrainType} 
-              gridSize={activeMap.width} 
+        <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
+          <TerrainLayer map={activeMap} onTileClick={handleTileClickDispatcher} />
+          <HoverLayer hoveredTile={hoveredTile} map={activeMap} />
+
+          <UnifiedMapOverlayLayer
+            mode={mode}
+            isMyTurn={isMyTurn}
+            selectedSpellId={selectedSpellId}
+            reachableTiles={reachableTiles}
+            spellRangeTiles={spellRangeTiles}
+            combatPreviewPath={combatPreviewPath}
+            previewPath={previewPath}
+            isMoving={isMoving}
+            map={activeMap}
+            currentUserId={currentUserId ?? undefined}
+            playerPaths={playerPaths}
+          />
+
+          <PlayersLayer
+            mode={mode}
+            mapWidth={activeMap.width}
+            playerPosition={playerPosition}
+            movePath={movePath}
+            onPathComplete={onPathComplete}
+            farmingPlayerName={user?.username || 'Joueur'}
+            combatPlayers={combatPlayers}
+            visualPositions={visualPositions}
+            playerPaths={playerPaths}
+            jumpingPlayers={jumpingPlayers}
+            setPawnRef={setPawnRef}
+            onCombatPathComplete={handleCombatPathComplete}
+          />
+
+          {mode === 'combat' && (
+            <TransientEffectsLayer
+              vfx={vfx}
+              popups={popups}
+              onRemoveVfx={removeVfx}
+              onRemovePopup={removePopup}
             />
           )}
-
-          <Suspense fallback={null}>
-            {mode === 'combat' && isMyTurn && (
-              <CombatHighlightsLayer 
-                reachableTiles={selectedSpellId ? [] : reachableTiles} 
-                spellRangeTiles={spellRangeTiles} 
-                pathTarget={combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null}
-                gridSize={activeMap.width} 
-              />
-            )}
-
-            {mode === 'farming' && previewPath && !isMoving && <PathPreview path={previewPath} gridSize={activeMap.width} />}
-            {mode === 'combat' && isMyTurn && user && !playerPaths[user.id || (user as any)._id] && <PathPreview path={combatPreviewPath} gridSize={activeMap.width} />}
-            
-            {renderPlayers()}
-
-            {mode === 'combat' && (
-              <>
-                {vfx.map((v) => (
-                  <Suspense key={v.id} fallback={null}>
-                    <SpellVFX 
-                        type={v.type} 
-                        from={v.from} 
-                        to={v.to} 
-                        onComplete={() => setVfx((prev: any[]) => prev.filter((x: any) => x.id !== v.id))} 
-                    />
-                  </Suspense>
-                ))}
-                {popups.map((popup) => (
-                  <Suspense key={popup.id} fallback={null}>
-                    <DamagePopup position={popup.pos} value={popup.val} onComplete={() => setPopups((prev: any[]) => prev.filter((p: any) => p.id !== popup.id))} />
-                  </Suspense>
-                ))}
-              </>
-            )}
-          </Suspense>
         </group>
       </group>
-    </>
-  );
-});
+    );
+  },
+);

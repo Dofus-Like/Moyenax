@@ -31,6 +31,23 @@ const SPELL_ICONS: Record<string, string> = {
   'spell-velocite': '/assets/pack/spells/velocite.png'
 };
 
+function getCombatErrorMessage(error: unknown, fallback: string) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+  ) {
+    return (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export function CombatHUD() {
   const combatState = useCombatStore((s) => s.combatState);
   const sessionId = useCombatStore((s) => s.sessionId);
@@ -42,6 +59,8 @@ export function CombatHUD() {
   const toggleShowEnemyHp = useCombatStore((s) => s.toggleShowEnemyHp);
   const surrender = useCombatStore((s) => s.surrender);
   const disconnect = useCombatStore((s) => s.disconnect);
+  const uiMessage = useCombatStore((s) => s.uiMessage);
+  const setUiMessage = useCombatStore((s) => s.setUiMessage);
   const [hoveredSpellId, setHoveredSpellId] = React.useState<string | null>(null);
   const user = useAuthStore((s) => s.player);
   const navigate = useNavigate();
@@ -64,6 +83,12 @@ export function CombatHUD() {
     }
     turnRef.current = isMyTurn;
   }, [isMyTurn]);
+
+  React.useEffect(() => {
+    if (!uiMessage) return;
+    const timer = setTimeout(() => setUiMessage(null), 2600);
+    return () => clearTimeout(timer);
+  }, [setUiMessage, uiMessage]);
 
   if (!combatState || !user || !currentPlayer) return null;
 
@@ -89,8 +114,9 @@ export function CombatHUD() {
       const res = await combatApi.playAction(sessionId, { type: CombatActionType.END_TURN });
       if (res?.data) setCombatState(res.data);
       setSelectedSpell(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('CombatHUD: End turn failed', err);
+      setUiMessage(getCombatErrorMessage(err, 'Impossible de terminer le tour.'), 'error');
     }
   };
 
@@ -99,6 +125,12 @@ export function CombatHUD() {
 
   return (
     <div className="combat-hud">
+      {uiMessage && (
+        <div className={`combat-toast ${uiMessage.type}`}>
+          {uiMessage.text}
+        </div>
+      )}
+
       {/* HUD de fin de combat */}
       {showCombatEnd && (
         <div className={`combat-end-overlay ${isWinner ? 'victory' : 'defeat'}`}>

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CombatState, CombatAction, CombatActionType } from '@game/shared-types';
+import { CombatState } from '@game/shared-types';
 import { combatApi } from '../api/combat.api';
 import { useAuthStore } from './auth.store';
 
@@ -9,6 +9,42 @@ interface CombatLog {
   type: 'damage' | 'info' | 'victory';
 }
 
+interface SpellCastEvent {
+  casterId: string;
+  spellId: string;
+  visualType: string;
+  targetX: number;
+  targetY: number;
+  timestamp: number;
+}
+
+interface DamageEvent {
+  targetId: string;
+  damage: number;
+  remainingVit?: number;
+  timestamp: number;
+}
+
+interface HealEvent {
+  targetId: string;
+  heal: number;
+  remainingVit?: number;
+  timestamp: number;
+}
+
+interface JumpEvent {
+  playerId: string;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  timestamp: number;
+}
+
+interface UiMessage {
+  id: string;
+  text: string;
+  type: 'info' | 'error';
+}
+
 interface CombatStore {
   combatState: CombatState | null;
   sessionId: string | null;
@@ -16,9 +52,13 @@ interface CombatStore {
   selectedSpellId: string | null;
   isSelectingTarget: boolean;
   logs: CombatLog[];
-  lastSpellCast: { casterId: string; spellId: string; visualType: string; targetX: number; targetY: number; timestamp: number } | null;
+  lastSpellCast: SpellCastEvent | null;
+  lastDamageEvent: DamageEvent | null;
+  lastHealEvent: HealEvent | null;
+  lastJumpEvent: JumpEvent | null;
   winnerId: string | null;
   showEnemyHp: boolean;
+  uiMessage: UiMessage | null;
   _currentConnectionId: string | null;
   
   setCombatState: (state: CombatState) => void;
@@ -27,7 +67,31 @@ interface CombatStore {
   connectToSession: (sessionId: string) => Promise<void>;
   disconnect: () => void;
   addLog: (message: string, type: CombatLog['type']) => void;
+  setUiMessage: (text: string | null, type?: UiMessage['type']) => void;
   surrender: () => Promise<void>;
+}
+
+function createId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof (error as { response?: unknown }).response === 'object' &&
+    (error as { response?: { data?: unknown } }).response?.data &&
+    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string'
+  ) {
+    return (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
 }
 
 export const useCombatStore = create<CombatStore>((set, get) => ({
@@ -38,14 +102,21 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   isSelectingTarget: false,
   logs: [],
   lastSpellCast: null,
+  lastDamageEvent: null,
+  lastHealEvent: null,
+  lastJumpEvent: null,
   winnerId: null,
   showEnemyHp: true, // Toujours afficher par défaut comme demandé
+  uiMessage: null,
   _currentConnectionId: null,
   
   toggleShowEnemyHp: () => set((s) => ({ showEnemyHp: !s.showEnemyHp })),
 
   setCombatState: (state: CombatState) => {
-    set({ combatState: { ...state }, winnerId: state.winnerId || null });
+    set({
+      combatState: { ...state },
+      winnerId: state.winnerId || null,
+    });
   },
 
   setSelectedSpell: (spellId: string | null) => {
@@ -64,6 +135,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     });
   },
 
+  setUiMessage: (text, type = 'info') => {
+    set({
+      uiMessage: text ? { id: createId('combat-ui'), text, type } : null,
+    });
+  },
+
   connectToSession: async (sessionId: string) => {
     // Si on est déjà branché sur cette session et qu'on a une connexion, on ne fait rien
     if (get().sessionId === sessionId && get().sseConnection) return;
@@ -77,7 +154,18 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
 
     // On marque la session immédiatement et on vide les logs
-    set({ sessionId, logs: [], winnerId: null, sseConnection: null, _currentConnectionId: connectionId });
+    set({
+      sessionId,
+      logs: [],
+      winnerId: null,
+      sseConnection: null,
+      lastSpellCast: null,
+      lastDamageEvent: null,
+      lastHealEvent: null,
+      lastJumpEvent: null,
+      uiMessage: null,
+      _currentConnectionId: connectionId,
+    });
 
     try {
         const response = await combatApi.getState(sessionId);
@@ -85,11 +173,15 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         // Sécurité: si entre-temps le disconnect a été appelé ou une autre connexion lancée
         if (get()._currentConnectionId !== connectionId) return;
 
-        set({ combatState: response.data, lastSpellCast: null });
+        set({
+          combatState: response.data,
+          winnerId: response.data.winnerId || null,
+        });
         get().addLog('Combat initialisé', 'info');
     } catch (err) {
         console.error('Failed to fetch initial state', err);
         if (get()._currentConnectionId !== connectionId) return;
+        get().setUiMessage(getErrorMessage(err, 'Impossible de charger le combat.'), 'error');
     }
 
     const token = useAuthStore.getState().token;
@@ -97,13 +189,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const eventSource = new EventSource(sseUrl);
 
     // Closure-safe handlers that check connection ID
-    const withConnectionGuard = (handler: (data: any) => void) => (event: MessageEvent) => {
+    const withConnectionGuard = <T,>(handler: (data: T) => void) => (event: MessageEvent) => {
         if (get()._currentConnectionId !== connectionId) {
             eventSource.close();
             return;
         }
         try {
-            const data = JSON.parse(event.data);
+            const data = JSON.parse(event.data) as T;
             handler(data);
         } catch (e) {
             console.error('SSE Parse error', e);
@@ -111,7 +203,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     };
 
     eventSource.addEventListener('STATE_UPDATED', withConnectionGuard((data) => {
-        set({ combatState: data });
+        set({ combatState: data, winnerId: data.winnerId || null });
     }));
 
     eventSource.addEventListener('SPELL_CAST', withConnectionGuard((data) => {
@@ -126,10 +218,19 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }));
 
     eventSource.addEventListener('DAMAGE_DEALT', withConnectionGuard((data) => {
+        set({ lastDamageEvent: { ...data, timestamp: Date.now() } });
         const player = get().combatState?.players[data.targetId];
         const isSelf = data.targetId === useAuthStore.getState().player?.id;
         const displayName = player?.username || (isSelf ? 'Vous' : 'Adversaire');
         get().addLog(`-${data.damage} PV sur ${displayName}`, 'damage');
+    }));
+
+    eventSource.addEventListener('HEAL_DEALT', withConnectionGuard((data) => {
+        set({ lastHealEvent: { ...data, timestamp: Date.now() } });
+    }));
+
+    eventSource.addEventListener('PLAYER_JUMPED', withConnectionGuard((data) => {
+        set({ lastJumpEvent: { ...data, timestamp: Date.now() } });
     }));
 
     eventSource.addEventListener('COMBAT_ENDED', withConnectionGuard((data) => {
@@ -144,6 +245,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     eventSource.onerror = (err) => {
       if (get()._currentConnectionId === connectionId) {
         console.error('SSE connection error', err);
+        get().setUiMessage('La connexion temps réel a été interrompue.', 'error');
       } else {
         eventSource.close();
       }
@@ -165,6 +267,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       isSelectingTarget: false, 
       logs: [], 
       winnerId: null,
+      lastSpellCast: null,
+      lastDamageEvent: null,
+      lastHealEvent: null,
+      lastJumpEvent: null,
+      uiMessage: null,
       _currentConnectionId: null // Très important pour stopper les listeners en cours
     });
   },
@@ -174,8 +281,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     if (!sessionId || !combatState) return;
 
     if (window.confirm('Voulez-vous vraiment abandonner ?')) {
-        await combatApi.playAction(sessionId, { type: 'SURRENDER' as any });
+      try {
+        const response = await combatApi.playAction(sessionId, { type: 'SURRENDER' as const });
+        if (response?.data) {
+          get().setCombatState(response.data);
+        }
+      } catch (error) {
+        get().setUiMessage(getErrorMessage(error, "Impossible d'abandonner le combat."), 'error');
+      }
     }
   },
 }));
-

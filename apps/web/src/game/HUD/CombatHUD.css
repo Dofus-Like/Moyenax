@@ -55,6 +55,36 @@
   pointer-events: auto;
 }
 
+.combat-toast {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 260px;
+  max-width: 520px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+  z-index: 140;
+}
+
+.combat-toast.info {
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+.combat-toast.error {
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
 /* TOP LEFT BLOCK */
 .hud-character-block {
   position: absolute;
