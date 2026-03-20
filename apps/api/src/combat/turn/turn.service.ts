@@ -15,6 +15,8 @@ import { GAME_EVENTS } from '@game/shared-types';
 
 @Injectable()
 export class TurnService {
+  private readonly sessionLocks = new Set<string>();
+
   constructor(
     private readonly redis: RedisService,
     private readonly sse: SseService,
@@ -26,7 +28,13 @@ export class TurnService {
     playerId: string,
     action: CombatAction,
   ): Promise<CombatState> {
-    console.log(`[TurnService] playAction: sessionId=${sessionId}, playerId=${playerId}, actionType=${action.type}`);
+    if (this.sessionLocks.has(sessionId)) {
+      throw new BadRequestException('Une action est déjà en cours de traitement');
+    }
+    this.sessionLocks.add(sessionId);
+
+    try {
+      console.log(`[TurnService] playAction: sessionId=${sessionId}, playerId=${playerId}, actionType=${action.type}`);
     const state = await this.redis.getJson<CombatState>(`combat:${sessionId}`);
 
     if (!state) {
@@ -78,13 +86,16 @@ export class TurnService {
         throw new BadRequestException('Action invalide');
     }
 
-    // Vérification de victoire / mort
-    await this.checkVictory(newState);
+      // Vérification de victoire / mort
+      await this.checkVictory(newState);
 
-    await this.redis.setJson(`combat:${sessionId}`, newState, 3600);
-    this.sse.emit(sessionId, 'STATE_UPDATED', newState);
+      await this.redis.setJson(`combat:${sessionId}`, newState, 3600);
+      this.sse.emit(sessionId, 'STATE_UPDATED', newState);
 
-    return newState;
+      return newState;
+    } finally {
+      this.sessionLocks.delete(sessionId);
+    }
   }
 
   private async handleMove(

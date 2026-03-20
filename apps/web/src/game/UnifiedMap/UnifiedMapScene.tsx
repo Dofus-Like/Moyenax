@@ -84,6 +84,8 @@ export const UnifiedMapScene = React.memo(
     const pawnRefs = useRef(new Map<string, PlayerPawnHandle>());
     const rightClickStartTimeRef = useRef(0);
     const lastRaycastTimeRef = useRef(0);
+    const processedTimestampsRef = useRef(new Set<number>());
+    const inputProcessingLock = useRef(false);
 
     const { raycaster, mouse, camera, scene } = useThree();
 
@@ -178,6 +180,8 @@ export const UnifiedMapScene = React.memo(
 
     useEffect(() => {
       if (!lastSpellCast || !combatState) return;
+      if (processedTimestampsRef.current.has(lastSpellCast.timestamp)) return;
+      processedTimestampsRef.current.add(lastSpellCast.timestamp);
 
       pawnRefs.current.get(lastSpellCast.casterId)?.triggerAttack();
 
@@ -205,6 +209,8 @@ export const UnifiedMapScene = React.memo(
 
     useEffect(() => {
       if (!lastDamageEvent || !combatState) return;
+      if (processedTimestampsRef.current.has(lastDamageEvent.timestamp)) return;
+      processedTimestampsRef.current.add(lastDamageEvent.timestamp);
 
       const player = combatState.players[lastDamageEvent.targetId];
       if (!player) return;
@@ -225,6 +231,8 @@ export const UnifiedMapScene = React.memo(
 
     useEffect(() => {
       if (!lastHealEvent || !combatState) return;
+      if (processedTimestampsRef.current.has(lastHealEvent.timestamp)) return;
+      processedTimestampsRef.current.add(lastHealEvent.timestamp);
 
       const player = combatState.players[lastHealEvent.targetId];
       if (!player) return;
@@ -245,6 +253,8 @@ export const UnifiedMapScene = React.memo(
 
     useEffect(() => {
       if (!lastJumpEvent) return;
+      if (processedTimestampsRef.current.has(lastJumpEvent.timestamp)) return;
+      processedTimestampsRef.current.add(lastJumpEvent.timestamp);
 
       setJumpingPlayers((current) => ({ ...current, [lastJumpEvent.playerId]: true }));
       setPlayerPaths((current) => ({
@@ -436,8 +446,10 @@ export const UnifiedMapScene = React.memo(
     const handleCombatTileClick = useCallback(
       async (x: number, y: number) => {
         if (mode !== 'combat' || !sessionId || !isMyTurn || !currentPlayer || !combatState) return;
+        if (inputProcessingLock.current) return;
 
         try {
+          inputProcessingLock.current = true;
           let response;
 
           if (selectedSpellId) {
@@ -485,6 +497,8 @@ export const UnifiedMapScene = React.memo(
               : "L'action a échoué.";
 
           setUiMessage(message ?? "L'action a échoué.", 'error');
+        } finally {
+          inputProcessingLock.current = false;
         }
       },
       [
