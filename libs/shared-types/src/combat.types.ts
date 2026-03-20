@@ -47,6 +47,7 @@ export interface CombatPlayer {
   remainingPm: number;
   currentVit: number;      // Pour suivre les dégâts séparément des stats de base
   spellCooldowns: Record<string, number>;
+  skin?: string;
 }
 
 export enum CombatActionType {
@@ -54,6 +55,7 @@ export enum CombatActionType {
   JUMP = 'JUMP',
   CAST_SPELL = 'CAST_SPELL',
   END_TURN = 'END_TURN',
+  SURRENDER = 'SURRENDER',
 }
 
 export interface CombatAction {
@@ -73,4 +75,5 @@ export interface CombatState {
     height: number;
     tiles: Tile[];
   };
+  winnerId?: string; // Ajout du gagnant
 }

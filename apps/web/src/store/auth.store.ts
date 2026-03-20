@@ -6,6 +6,7 @@ interface PlayerProfile {
   username: string;
   email: string;
   gold: number;
+  skin: string;
 }
 
 interface AuthState {
@@ -13,6 +14,7 @@ interface AuthState {
   player: PlayerProfile | null;
   setToken: (token: string) => void;
   setPlayer: (player: PlayerProfile) => void;
+  setSkin: (skin: string) => Promise<void>;
   logout: () => void;
   initialize: () => Promise<void>;
 }
@@ -28,6 +30,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setPlayer: (player: PlayerProfile) => {
     set({ player });
+  },
+
+  setSkin: async (skin: string) => {
+    try {
+      await authApi.updateSkin(skin);
+      const player = get().player;
+      if (player) {
+         set({ player: { ...player, skin } });
+      }
+    } catch (err) {
+      console.error('Failed to update skin', err);
+    }
   },
 
   logout: () => {

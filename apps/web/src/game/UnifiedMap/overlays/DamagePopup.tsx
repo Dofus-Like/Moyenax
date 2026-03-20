@@ -37,14 +37,9 @@ export function DamagePopup({ position, value, onComplete }: DamagePopupProps) {
         outlineWidth={0.06}
         outlineColor="black"
         renderOrder={1000}
+        fillOpacity={opacity}
       >
         {Math.abs(value)}
-        <meshBasicMaterial 
-           transparent 
-           opacity={opacity} 
-           depthTest={false} 
-           color={value > 0 ? "#ef4444" : "#22c55e"}
-        />
       </Text>
     </Billboard>
   );

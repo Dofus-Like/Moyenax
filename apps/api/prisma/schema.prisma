@@ -51,6 +51,7 @@ model Player {
   email        String          @unique
   passwordHash String
   gold         Int             @default(100)
+  skin         String          @default("soldier-classic")
   stats        PlayerStats?
   inventory    InventoryItem[]
   spells       PlayerSpell[]

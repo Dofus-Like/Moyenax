@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef, Suspense } from 'react';
 import * as THREE from 'three';
 import { TerrainType, CombatActionType, findPath, GameMap, PathNode, TERRAIN_PROPERTIES } from '@game/shared-types';
 import { useThree, ThreeEvent, useFrame } from '@react-three/fiber';
@@ -45,6 +45,7 @@ export const UnifiedMapScene = React.memo(({
   const [popups, setPopups] = useState<{ id: string; pos: [number, number, number]; val: number }[]>([]);
   const [vfx, setVfx] = useState<{ id: string; type: string; from: { x: number; y: number }; to: { x: number; y: number } }[]>([]);
   const [playerPaths, setPlayerPaths] = useState<Record<string, { x: number; y: number }[]>>({});
+  const [jumpingPlayers, setJumpingPlayers] = useState<Record<string, boolean>>({});
   const visualPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
   const targetPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
   const [visualPositions, setVisualPositions] = useState<Record<string, { x: number; y: number }>>({});
@@ -68,22 +69,24 @@ export const UnifiedMapScene = React.memo(({
 
   // Écouter les lancers de sorts pour animer les persos
   useEffect(() => {
-    if (lastSpellCast) {
+    if (lastSpellCast && combatState) {
         // 1. Animer le perso (Attaque)
         if (pawnRefs.current.has(lastSpellCast.casterId)) {
-            console.log('Triggering attack animation for:', lastSpellCast.casterId);
             pawnRefs.current.get(lastSpellCast.casterId)?.triggerAttack();
         }
 
         // 2. Déclencher le projectile si PROJECTILE
-        if (lastSpellCast.visualType === 'PROJECTILE') {
-            const caster = combatState?.players[lastSpellCast.casterId];
-            if (caster) {
+        const targetX = Number(lastSpellCast.targetX);
+        const targetY = Number(lastSpellCast.targetY);
+
+        if (lastSpellCast.visualType === 'PROJECTILE' && !isNaN(targetX) && !isNaN(targetY)) {
+            const caster = combatState.players[lastSpellCast.casterId];
+            if (caster && caster.position) {
               setVfx((prev: any) => [...prev, {
                   id: `vfx-${Date.now()}-${Math.random()}`,
                   type: lastSpellCast.spellId.includes('kunai') ? 'spell-kunai' : 'spell-fireball',
-                  from: caster.position,
-                  to: { x: lastSpellCast.targetX, y: lastSpellCast.targetY }
+                  from: { ...caster.position },
+                  to: { x: targetX, y: targetY }
               }]);
             }
         }
@@ -167,13 +170,15 @@ export const UnifiedMapScene = React.memo(({
       const data = JSON.parse(event.data);
       const player = combatState.players[data.targetId];
       const gridSize = combatState.map.width;
-      if (player) {
+      const damageVal = Number(data.damage);
+      
+      if (player && !isNaN(damageVal)) {
         setPopups((prev) => [
           ...prev,
           {
-            id: Math.random().toString(),
+            id: `dmg-${Date.now()}-${Math.random()}`,
             pos: [player.position.x - gridSize / 2 + 0.5, 0.5, player.position.y - gridSize / 2 + 0.5],
-            val: data.damage,
+            val: damageVal,
           },
         ]);
       }
@@ -183,23 +188,38 @@ export const UnifiedMapScene = React.memo(({
       const data = JSON.parse(event.data);
       const player = combatState.players[data.targetId];
       const gridSize = combatState.map.width;
-      if (player) {
+      const healVal = Number(data.heal);
+      
+      if (player && !isNaN(healVal)) {
         setPopups((prev) => [
           ...prev,
           {
-            id: Math.random().toString(),
+            id: `heal-${Date.now()}-${Math.random()}`,
             pos: [player.position.x - gridSize / 2 + 0.5, 0.5, player.position.y - gridSize / 2 + 0.5],
-            val: -data.heal, // négatif pour couleur verte
+            val: -healVal, // négatif pour couleur verte dans DamagePopup
           },
         ]);
       }
     };
 
+    const jumpHandler = (event: MessageEvent) => {
+      const data = JSON.parse(event.data);
+      if (data.playerId) {
+        setJumpingPlayers((prev) => ({ ...prev, [data.playerId]: true }));
+        setPlayerPaths((prev) => ({
+          ...prev,
+          [data.playerId]: [data.from, data.to],
+        }));
+      }
+    };
+
     sseConnection.addEventListener('DAMAGE_DEALT', damageHandler);
     sseConnection.addEventListener('HEAL_DEALT', healHandler);
+    sseConnection.addEventListener('PLAYER_JUMPED', jumpHandler);
     return () => {
       sseConnection.removeEventListener('DAMAGE_DEALT', damageHandler);
       sseConnection.removeEventListener('HEAL_DEALT', healHandler);
+      sseConnection.removeEventListener('PLAYER_JUMPED', jumpHandler);
     };
   }, [mode, sseConnection, combatState]);
 
@@ -229,6 +249,9 @@ export const UnifiedMapScene = React.memo(({
         targetPositionsRef.current[p.playerId] = p.position;
         hasUpdates = true;
       } else if (target?.x !== p.position.x || target?.y !== p.position.y) {
+        // Ne pas écraser si on est déjà en train de sauter
+        if (jumpingPlayers[p.playerId]) return;
+        
         targetPositionsRef.current[p.playerId] = p.position;
         const path = findPath(gameMap, visual, p.position);
         if (path && path.length > 0) {
@@ -433,8 +456,13 @@ export const UnifiedMapScene = React.memo(({
       );
     }
     if (mode === 'combat' && combatState) {
-      return Object.values(combatState.players).map((p: any) => {
+      const allPlayers = Object.values(combatState.players);
+      return allPlayers.map((p: any) => {
         const pos = visualPositions[p.playerId] || p.position;
+        // Trouver l'adversaire (pour lui faire face)
+        const opponent = allPlayers.find(opp => opp.playerId !== p.playerId);
+        const opponentPos = opponent ? visualPositions[opponent.playerId] || opponent.position : null;
+
         return (
           <PlayerPawn
             key={p.playerId}
@@ -446,7 +474,14 @@ export const UnifiedMapScene = React.memo(({
             gridSize={activeMap!.width}
             path={playerPaths[p.playerId] || null}
             playerData={p}
+            lookAtPosition={opponentPos}
+            isJumping={!!jumpingPlayers[p.playerId]}
             onPathComplete={() => {
+              setJumpingPlayers((prev) => {
+                const next = { ...prev };
+                delete next[p.playerId];
+                return next;
+              });
               setPlayerPaths((prev) => {
                 const next = { ...prev };
                 delete next[p.playerId];
@@ -467,50 +502,68 @@ export const UnifiedMapScene = React.memo(({
   if (mode === 'combat' && !combatState) return null;
 
   return (
-    <group 
-      onPointerMove={handlePointerMove}
-      onPointerDown={handlePointerDown} 
-      onPointerUp={handlePointerUp} 
-      onContextMenu={(e) => e.nativeEvent.preventDefault()}
-    >
-      {/* Mesh de fond pour capturer tous les pointerMoves même hors tiles */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-        <planeGeometry args={[1000, 1000]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
-      
-      <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
-        {tiles}
+    <>
+      <group 
+        onPointerMove={handlePointerMove}
+        onPointerDown={handlePointerDown} 
+        onPointerUp={handlePointerUp} 
+        onContextMenu={(e) => e.nativeEvent.preventDefault()}
+      >
+        {/* Mesh de fond pour capturer tous les pointerMoves même hors tiles */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+          <planeGeometry args={[1000, 1000]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+        
+        <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
+          {tiles}
 
-        {/* Hover Effect Layer (Decoupled) */}
-        {hoveredTile && activeMap && (
-          <TileHoverEffect 
-            x={hoveredTile.x} 
-            y={hoveredTile.y} 
-            terrain={activeMap.grid[hoveredTile.y][hoveredTile.x] as TerrainType} 
-            gridSize={activeMap.width} 
-          />
-        )}
+          {hoveredTile && activeMap && (
+            <TileHoverEffect 
+              x={hoveredTile.x} 
+              y={hoveredTile.y} 
+              terrain={activeMap.grid[hoveredTile.y][hoveredTile.x] as TerrainType} 
+              gridSize={activeMap.width} 
+            />
+          )}
 
-        {mode === 'combat' && isMyTurn && (
-          <CombatHighlightsLayer 
-            reachableTiles={selectedSpellId ? [] : reachableTiles} 
-            spellRangeTiles={spellRangeTiles} 
-            pathTarget={combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null}
-            gridSize={activeMap.width} 
-          />
-        )}
+          <Suspense fallback={null}>
+            {mode === 'combat' && isMyTurn && (
+              <CombatHighlightsLayer 
+                reachableTiles={selectedSpellId ? [] : reachableTiles} 
+                spellRangeTiles={spellRangeTiles} 
+                pathTarget={combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null}
+                gridSize={activeMap.width} 
+              />
+            )}
 
-        {mode === 'farming' && previewPath && !isMoving && <PathPreview path={previewPath} gridSize={activeMap.width} />}
-        {mode === 'combat' && isMyTurn && user && !playerPaths[user.id || (user as any)._id] && <PathPreview path={combatPreviewPath} gridSize={activeMap.width} />}
-        {renderPlayers()}
-        {mode === 'combat' && vfx.map((v) => (
-          <SpellVFX key={v.id} type={v.type} from={v.from} to={v.to} onComplete={() => setVfx((prev: any[]) => prev.filter((x: any) => x.id !== v.id))} />
-        ))}
-        {mode === 'combat' && popups.map((popup) => (
-          <DamagePopup key={popup.id} position={popup.pos} value={popup.val} onComplete={() => setPopups((prev: any[]) => prev.filter((p: any) => p.id !== popup.id))} />
-        ))}
+            {mode === 'farming' && previewPath && !isMoving && <PathPreview path={previewPath} gridSize={activeMap.width} />}
+            {mode === 'combat' && isMyTurn && user && !playerPaths[user.id || (user as any)._id] && <PathPreview path={combatPreviewPath} gridSize={activeMap.width} />}
+            
+            {renderPlayers()}
+
+            {mode === 'combat' && (
+              <>
+                {vfx.map((v) => (
+                  <Suspense key={v.id} fallback={null}>
+                    <SpellVFX 
+                        type={v.type} 
+                        from={v.from} 
+                        to={v.to} 
+                        onComplete={() => setVfx((prev: any[]) => prev.filter((x: any) => x.id !== v.id))} 
+                    />
+                  </Suspense>
+                ))}
+                {popups.map((popup) => (
+                  <Suspense key={popup.id} fallback={null}>
+                    <DamagePopup position={popup.pos} value={popup.val} onComplete={() => setPopups((prev: any[]) => prev.filter((p: any) => p.id !== popup.id))} />
+                  </Suspense>
+                ))}
+              </>
+            )}
+          </Suspense>
+        </group>
       </group>
-    </group>
+    </>
   );
 });

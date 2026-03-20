@@ -20,7 +20,106 @@
 .lobby-user-info {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+}
+
+.user-profile-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.lobby-skin-tag {
+  font-size: 0.75rem;
+  color: #f59e0b;
+  font-weight: bold;
+  opacity: 0.8;
+}
+
+/* Skins Section */
+.lobby-skins {
+  margin-bottom: 40px;
+}
+
+.skins-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.skin-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.skin-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.skin-card.active {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: #f59e0b;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+
+.skin-preview-container {
+  width: 60px;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.skin-sprite-icon {
+  width: 48px;
+  height: 48px;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.skin-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.skin-name {
+  font-weight: bold;
+  color: white;
+}
+
+.skin-desc {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.2;
+}
+
+.skin-current-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #f59e0b;
+  color: black;
+  font-size: 0.6rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-bottom-left-radius: 8px;
 }
 
 .lobby-gold {

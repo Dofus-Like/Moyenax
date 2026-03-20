@@ -34,7 +34,8 @@ export class TurnService {
       throw new BadRequestException('Session de combat introuvable');
     }
 
-    if (state.currentTurnPlayerId !== playerId) {
+    // On autorise l'abandon (SURRENDER) même si ce n'est pas notre tour
+    if (action.type !== CombatActionType.SURRENDER && state.currentTurnPlayerId !== playerId) {
       console.warn(`[TurnService] Turn mismatch! CurrentTurnPlayer: "${state.currentTurnPlayerId}", RequesterPlayer: "${playerId}"`);
       throw new BadRequestException(`Ce n'est pas votre tour. Actuel: ${state.currentTurnPlayerId}, Vous: ${playerId}`);
     }
@@ -66,6 +67,11 @@ export class TurnService {
       case CombatActionType.END_TURN:
         console.log(`[TurnService] Handling END_TURN for ${playerId}`);
         newState = await this.handleEndTurn(state, playerId);
+        break;
+
+      case CombatActionType.SURRENDER:
+        console.log(`[TurnService] Handling SURRENDER for ${playerId}`);
+        newState = await this.handleSurrender(state, playerId);
         break;
 
       default:
@@ -116,8 +122,15 @@ export class TurnService {
       throw new BadRequestException('Saut impossible (distance 2 requise, obstacle/eau obligatoire entre les deux)');
     }
 
+    const from = { ...player.position };
     player.position = target;
     player.remainingPm -= 1;
+
+    this.sse.emit(state.sessionId, 'PLAYER_JUMPED', {
+        playerId: player.playerId,
+        from,
+        to: target
+    });
 
     return state;
   }
@@ -170,7 +183,13 @@ export class TurnService {
             if (!tile || !(TERRAIN_PROPERTIES[tile.type as TerrainType]?.traversable ?? false)) {
                 throw new BadRequestException('Terrain invalide');
             }
+            const from = { ...player.position };
             player.position = targetPos;
+            this.sse.emit(state.sessionId, 'PLAYER_JUMPED', {
+                playerId: player.playerId,
+                from,
+                to: targetPos
+            });
             break;
         }
         case 'spell-soin':
@@ -228,6 +247,14 @@ export class TurnService {
     this.sse.emit(state.sessionId, 'STATE_UPDATED', state);
   }
 
+  private async handleSurrender(state: CombatState, playerId: string): Promise<CombatState> {
+    const player = state.players[playerId];
+    if (player) {
+      player.currentVit = 0;
+    }
+    return state;
+  }
+
   private async checkVictory(state: CombatState) {
       for (const player of Object.values(state.players)) {
           if (player.currentVit <= 0) {
@@ -235,20 +262,23 @@ export class TurnService {
               const winner = Object.values(state.players).find(p => p.playerId !== loserId);
               const winnerId = winner?.playerId;
 
+              state.winnerId = winnerId; // Marquer l'état comme fini pour le front
+
               this.sse.emit(state.sessionId, 'COMBAT_ENDED', { winnerId, loserId });
               
-              // Notifier l'équipe A
+              // Notifier l'équipe A (Prisma, etc.)
               this.eventEmitter.emit(GAME_EVENTS.COMBAT_ENDED, {
                   sessionId: state.sessionId,
                   winnerId,
                   loserId
               });
 
-              // Cleanup
-              await this.redis.del(`combat:${state.sessionId}`);
-              this.sse.removeStream(state.sessionId);
+              // On NE SUPPRIME PLUS du redis immédiatement pour laisser le front lire le winnerId
+              // Le TTL de 3600s fera le nettoyage tout seul
+              return true;
           }
       }
+      return false;
   }
 
   private async handleEndTurn(

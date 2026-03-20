@@ -8,5 +8,8 @@ export const authApi = {
     apiClient.post<{ accessToken: string }>('/auth/login', dto),
 
   getMe: () =>
-    apiClient.get<{ id: string; username: string; email: string; gold: number }>('/auth/me'),
+    apiClient.get<{ id: string; username: string; email: string; gold: number; skin: string }>('/auth/me'),
+
+  updateSkin: (skin: string) =>
+    apiClient.post<{ skin: string }>('/auth/skin', { skin }),
 };

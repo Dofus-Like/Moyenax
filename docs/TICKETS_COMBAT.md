@@ -68,7 +68,7 @@ Ce document regroupe les tickets de développement et les user stories pour l'é
 - Formule Soins : `Soin de base + (MAG * 0.5)`.
 - La fonction retourne un delta (dégâts, effets statuts) qui sera appliqué sur l'état **Redis** par le contrôleur API.
 
-### [COMBAT-007] Implémentation des 3 Sorts de Dégâts Communs
+### [COMBAT-007] Implémentation des 3 Sorts de Dégâts Communs [DONE]
 **Description :** Intégrer les attaques classiques dans le moteur de sorts, selon leur rang (R1 à R3).
 **Critères d'acceptation :**
 - **Frappe** : Dégâts physiques au CaC. Ignore de l'armure au rang 3.
@@ -101,7 +101,7 @@ Ce document regroupe les tickets de développement et les user stories pour l'é
 - (Optionnel) Émettre `COMBAT_PLAYER_DIED` au cas où ça pop up côté stats/log admin.
 - Fermer le scope temps réel, détruire l'état dans **Redis** et clore la session SSE des deux clients.
 
-### [COMBAT-011] Frontend de Combat (Zustand & Three.js)
+### [COMBAT-011] Frontend de Combat (Zustand & Three.js) [DONE]
 **Description :** Connecter l'interface de combat côté web au Stream SSE.
 **Critères d'acceptation :**
 - Initialiser un Store Zustand (`useCombatStore`) qui se branche aux événements émis depuis le back (Server-Sent Events).
@@ -109,3 +109,21 @@ Ce document regroupe les tickets de développement et les user stories pour l'é
 - Pousser l'état Zustand vers la `CombatMapScene` sous `@react-three/fiber` (Rendu isométrique 3D de l'arène).
 - Utiliser la lib partagée `@game/game-engine` pour pré-calculer la ligne de vue (Highlight Rouge vs Highlight Vert) sur l'UI côté front sans requête backend.
 - Lancer les actions formelles (déplacement, attack) via des requêtes HTTP (ex: Axios POST `/combat/action`) qui mettront à jour le serveur, lequel relancera un point d'entrée SSE.
+
+---
+
+## ÉPIC 5 : Polissage et Cosmétique
+
+### [COMBAT-012] Système de Sélection de Skins [DONE]
+**Description :** Permettre aux joueurs de choisir une apparence personnalisée dans le lobby.
+**Critères d'acceptation :**
+- Implémenter une grille de sélection de skins (Guerriers et Orcs) dans le Lobby.
+- Sauvegarder le choix en BDD (Prisma) et le synchroniser dans le `CombatState`.
+- Appliquer des filtres CSS dynamiques (teinte, saturation) sur les sprites 3D et les portraits du HUD.
+
+### [COMBAT-013] Calibration des Projectiles (VFX) [DONE]
+**Description :** Assurer la fidélité visuelle des effets de sorts.
+**Critères d'acceptation :**
+- Développer un outil de calibration (VFX Calibrator) pour ajuster les offsets de rotation des projectiles.
+- Calibrer définitivement la flèche du Kunaï à un angle de -0.80 rad pour un rendu réaliste.
+- Supprimer les outils de debug après validation.
