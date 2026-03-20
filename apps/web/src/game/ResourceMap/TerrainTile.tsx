@@ -1,6 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 import { ThreeEvent } from '@react-three/fiber';
 import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
+import { Bush } from './Bush';
+import { Tree } from './Tree';
+import { GrassTile } from './GrassTile';
+import { Suspense } from 'react';
 
 const TERRAIN_COLORS: Record<TerrainType, { base: string; hover: string }> = {
   [TerrainType.GROUND]: { base: '#374151', hover: '#4b5563' },
@@ -29,6 +33,12 @@ export interface TerrainTileProps {
   
   // Props optionnels pour le mode combat
   previewColor?: string | null;
+  neighbors?: {
+    top: boolean;
+    right: boolean;
+    bottom: boolean;
+    left: boolean;
+  };
 }
 
 function WallObstacle({
@@ -36,25 +46,42 @@ function WallObstacle({
   color,
   height,
   terrain,
+  neighbors,
 }: {
   position: [number, number, number];
   color: string;
   height: number;
   terrain: TerrainType;
+  neighbors?: TerrainTileProps['neighbors'];
 }) {
-  const isWood = terrain === TerrainType.WOOD;
   const isMetal = terrain === TerrainType.IRON || terrain === TerrainType.GOLD;
   const isCrystal = terrain === TerrainType.CRYSTAL;
 
   const metalness = isMetal ? 0.8 : (isCrystal ? 0.3 : 0.1);
   const roughness = isMetal ? 0.4 : (isCrystal ? 0.2 : 0.7);
 
+  const [x, y, z] = position;
+
+  // Calcul des dimensions dynamiques pour unifier les murs
+  const leftEdge = neighbors?.left ? -0.5 : -0.35;
+  const rightEdge = neighbors?.right ? 0.5 : 0.35;
+  const topEdge = neighbors?.top ? -0.5 : -0.35; // top is -Z in Three.js
+  const bottomEdge = neighbors?.bottom ? 0.5 : 0.35; // bottom is +Z
+
+  const width = rightEdge - leftEdge;
+  const depth = bottomEdge - topEdge;
+  const offsetX = (leftEdge + rightEdge) / 2;
+  const offsetZ = (topEdge + bottomEdge) / 2;
+
+  const hasNeighbors = !!(neighbors?.top || neighbors?.bottom || neighbors?.left || neighbors?.right);
+  const isWood = terrain === TerrainType.WOOD;
+
   return (
-    <mesh position={[position[0], height / 2, position[2]]} castShadow receiveShadow>
-      {isWood ? (
+    <mesh position={[x + offsetX, height / 2, z + offsetZ]} castShadow receiveShadow>
+      {isWood && !hasNeighbors ? (
         <cylinderGeometry args={[0.35, 0.35, height, 8]} />
       ) : (
-        <boxGeometry args={[0.7, height, 0.7]} />
+        <boxGeometry args={[width, height, depth]} />
       )}
       <meshStandardMaterial 
         color={color} 
@@ -93,7 +120,7 @@ function FlatResource({ position, color }: { position: [number, number, number];
   );
 }
 
-export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, previewColor }: TerrainTileProps) => {
+export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, previewColor, neighbors }: TerrainTileProps) => {
   const colors = TERRAIN_COLORS[terrain];
   const props = TERRAIN_PROPERTIES[terrain];
 
@@ -107,26 +134,60 @@ export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, p
 
   return (
     <group>
-      <mesh
-        position={[worldX, 0, worldZ]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        receiveShadow
-        userData={{ x, y, terrain, type: 'terrain-tile' }}
-        onClick={(e: ThreeEvent<MouseEvent>) => {
-          e.stopPropagation();
-          if (onTileClick) onTileClick(x, y, terrain);
-        }}
-      >
-        <planeGeometry args={[0.92, 0.92]} />
-        <meshStandardMaterial color={baseColor} />
-      </mesh>
+      {/* Sol : mod├¿le GLB grass.glb, avec fallback sur le plan color├® */}
+      <Suspense fallback={
+        <mesh
+          position={[worldX, 0, worldZ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+          userData={{ x, y, terrain, type: 'terrain-tile' }}
+          onClick={(e: ThreeEvent<MouseEvent>) => {
+            e.stopPropagation();
+            if (onTileClick) onTileClick(x, y, terrain);
+          }}
+        >
+          <planeGeometry args={[0.92, 0.92]} />
+          <meshStandardMaterial color={baseColor} />
+        </mesh>
+      }>
+        <GrassTile
+          position={[worldX, 0, worldZ]}
+          seed={x * 1000 + y}
+          scale={1.0}
+        />
+        {/* Mesh invisible pour les interactions (click/hover) */}
+        <mesh
+          position={[worldX, 0.001, worldZ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          userData={{ x, y, terrain, type: 'terrain-tile' }}
+          onClick={(e: ThreeEvent<MouseEvent>) => {
+            e.stopPropagation();
+            if (onTileClick) onTileClick(x, y, terrain);
+          }}
+        >
+          <planeGeometry args={[1, 1]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+      </Suspense>
 
-      {props.combatType === CombatTerrainType.WALL && (
+      {props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD && (
+        <Suspense fallback={
+          <mesh position={[worldX, 0.5, worldZ]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.35, 0.35, 1.0, 8]} />
+            <meshStandardMaterial color={colors.base} />
+          </mesh>
+        }>
+          <Tree position={[worldX, 0, worldZ]} scale={0.35} seed={x * 1000 + y} />
+        </Suspense>
+      )}
+
+      {props.combatType === CombatTerrainType.WALL && terrain !== TerrainType.WOOD && (
         <WallObstacle
           position={pos}
           color={colors.base}
-          height={terrain === TerrainType.WOOD ? 1.0 : 0.6}
+          height={0.6}
           terrain={terrain}
+          neighbors={neighbors}
         />
       )}
 
@@ -138,10 +199,21 @@ export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, p
       )}
 
       {props.combatType === CombatTerrainType.FLAT && props.harvestable && (
-        <FlatResource
-          position={pos}
-          color={colors.base}
-        />
+        terrain === TerrainType.HERB ? (
+          <Suspense fallback={
+            <mesh position={[worldX, 0.04, worldZ]} castShadow>
+              <boxGeometry args={[0.4, 0.08, 0.4]} />
+              <meshStandardMaterial color="#4ade80" />
+            </mesh>
+          }>
+            <Bush position={[worldX, 0, worldZ]} scale={1.0} />
+          </Suspense>
+        ) : (
+          <FlatResource
+            position={pos}
+            color={colors.base}
+          />
+        )
       )}
 
       {/* Les effets de survol (hover) ne sont plus ici ! */}

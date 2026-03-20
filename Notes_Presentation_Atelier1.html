@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Notes de présentation — Atelier 1 · Analyse de Marché</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222222;
+    max-width: 820px;
+    margin: 40px auto;
+    padding: 0 24px;
+    line-height: 1.6;
+  }
+  /* Cover */
+  .cover {
+    text-align: center;
+    padding: 48px 0 32px;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 32px;
+  }
+  .cover .emoji { font-size: 48pt; display: block; margin-bottom: 16px; }
+  .cover h1 { font-size: 26pt; color: #C1133A; margin: 0 0 8px; letter-spacing: 1px; text-transform: uppercase; }
+  .cover h2 { font-size: 17pt; color: #1a1a1a; margin: 0 0 8px; font-weight: bold; }
+  .cover .subtitle { font-size: 13pt; color: #B8880A; font-style: italic; margin: 0 0 24px; }
+  .cover .meta { font-size: 10pt; color: #777; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 10px 0; }
+
+  /* Headings */
+  h1 { font-size: 17pt; color: #C1133A; margin: 40px 0 4px; padding-top: 24px; border-top: 2px solid #f0f0f0; }
+  h1 .slide-num { color: #C1133A; }
+  h2 { font-size: 10pt; color: #C1133A; text-transform: uppercase; letter-spacing: 1px; margin: 24px 0 6px; }
+  h3 { font-size: 11pt; color: #1a1a1a; margin: 12px 0 4px; }
+
+  /* Timing */
+  .timing { font-size: 9.5pt; color: #999; font-style: italic; margin: 0 0 16px; }
+
+  /* Tagline / accroche */
+  .tagline {
+    border-left: 4px solid #B8880A;
+    background: #FFFBF0;
+    padding: 10px 16px;
+    margin: 8px 0 16px;
+    font-style: italic;
+    color: #444;
+    font-size: 11pt;
+  }
+
+  /* Callout */
+  .callout {
+    border: 1px solid #C1133A;
+    border-left: 5px solid #C1133A;
+    background: #FFF3F3;
+    padding: 10px 16px;
+    margin: 16px 0;
+    color: #8B0000;
+    font-weight: bold;
+    font-size: 10.5pt;
+  }
+
+  /* Transition */
+  .transition {
+    border-left: 4px solid #4A9EF8;
+    background: #F0F4FF;
+    padding: 10px 16px;
+    margin: 16px 0 32px;
+    font-style: italic;
+    color: #333;
+    font-size: 11pt;
+  }
+  .transition::before { content: "→  "; font-weight: bold; color: #4A9EF8; }
+
+  /* Key point (label: value) */
+  .keypoint { margin: 8px 0; }
+  .keypoint strong { color: #1a1a1a; }
+  .keypoint span { color: #555; }
+
+  /* Lists */
+  ul { margin: 6px 0 6px 0; padding-left: 22px; }
+  ul li { margin: 4px 0; color: #222; }
+
+  /* Section divider */
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 12px 0; }
+
+  /* FAQ section */
+  .faq-block { border: 1px solid #e0e0e0; border-radius: 4px; padding: 12px 16px; margin: 16px 0; background: #fafafa; }
+  .faq-block .question { font-weight: bold; color: #1a1a1a; margin-bottom: 4px; }
+  .faq-block .answer { color: #444; }
+
+  /* Page break hint (ignored in browser, used for import) */
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ COVER ══════════════════════════ -->
+<div class="cover">
+  <span class="emoji">⚔️</span>
+  <h1>Notes de Présentation</h1>
+  <h2>Atelier 1 — Analyse de Marché</h2>
+  <p class="subtitle">Jeu Dofus-like PvP sur Navigateur</p>
+  <p class="meta">SupDeVinci Bordeaux &nbsp;·&nbsp; B2 2025–2026 &nbsp;·&nbsp; Cours Benchmark &amp; Modèle Économique</p>
+</div>
+
+<h2>Comment utiliser ces notes</h2>
+<p>Chaque section correspond à une slide du diaporama. Vous y trouverez :</p>
+<ul>
+  <li>La <strong>phrase d'accroche</strong> pour entrer dans la slide</li>
+  <li>Les <strong>points clés</strong> à développer à l'oral</li>
+  <li>Les <strong>chiffres et arguments académiques</strong> à citer</li>
+  <li>La <strong>phrase de transition</strong> pour passer à la slide suivante</li>
+</ul>
+<div class="callout">💡 Durée totale estimée : 10–15 minutes de présentation orale pour l'Atelier 1.</div>
+
+<hr>
+
+<!-- ══════════════════════════ SLIDE 1 ══════════════════════════ -->
+<h1>📌 Slide 1 — Page de titre</h1>
+<p class="timing">⏱ 30 secondes — posture de départ, ton confiant</p>
+
+<h2>Phrase d'ouverture</h2>
+<div class="tagline">
+  "Aujourd'hui nous allons vous présenter l'analyse de marché d'un jeu de stratégie au tour par tour sur navigateur, inspiré de Dofus — un projet full-stack développé en deux équipes dans le cadre de cette année de B2."
+</div>
+
+<h2>Points à dire</h2>
+<ul>
+  <li>Présentez-vous rapidement (équipe, rôles si utile)</li>
+  <li>Annoncez le plan : périmètre du marché → PESTEL → taille du marché → concurrents</li>
+  <li>Posez le contexte : jeu web accessible sans installation, PvP au tour par tour</li>
+  <li>Soulignez l'aspect académique : méthode du cours appliquée (PESTEL, TAM/SAM/SOM)</li>
+  <li>Restez posés — le diaporama est votre support, ne le lisez pas, commentez-le</li>
+</ul>
+
+<div class="transition">Commençons par vous présenter le projet lui-même, avant d'entrer dans l'analyse de marché.</div>
+
+<!-- ══════════════════════════ SLIDE 2 ══════════════════════════ -->
+<h1>🎮 Slide 2 — Notre Projet — Les 3 phases de jeu</h1>
+<p class="timing">⏱ 1 min 30 — slide de cadrage produit</p>
+
+<h2>Phrase d'entrée</h2>
+<div class="tagline">
+  "Notre projet est un RPG tactique inspiré de Dofus, entièrement jouable sur navigateur. Il s'articule autour de trois phases de jeu séquentielles."
+</div>
+
+<h2>Développez chaque phase</h2>
+<p class="keypoint"><strong>Phase 1 — Collecte :</strong> <span>Le joueur explore une carte monde pour récolter des ressources (bois, minerai, plantes). Les ressources ont un délai de respawn — ça crée une tension économique dès le début.</span></p>
+<p class="keypoint"><strong>Phase 2 — Économie :</strong> <span>Avec ces ressources, le joueur craft des équipements, apprend des sorts et peut acheter/vendre en boutique. L'économie n'est pas anecdotique : elle conditionne directement la puissance en combat.</span></p>
+<p class="keypoint"><strong>Phase 3 — Combat PvP :</strong> <span>Deux joueurs s'affrontent sur une grille isométrique. Combat au tour par tour avec Points d'Action (PA) et Points de Mouvement (PM). C'est le cœur compétitif du jeu.</span></p>
+
+<h2>Stack technique (si demandé)</h2>
+<ul>
+  <li>Frontend : React 18 + Phaser 3 (moteur de jeu browser natif)</li>
+  <li>Backend : NestJS + Prisma + PostgreSQL</li>
+  <li>Temps réel : Redis pour l'état de combat + SSE pour les notifications</li>
+  <li>Architecture : monorepo NX, TypeScript strict — deux équipes avec contrats partagés</li>
+</ul>
+
+<div class="callout">💡 Insistez sur le fait que l'accessibilité navigateur est un choix stratégique, pas une contrainte technique — c'est notre réponse à une faille de marché identifiée.</div>
+
+<div class="transition">Ce projet posé, voyons maintenant comment nous avons délimité notre marché.</div>
+
+<!-- ══════════════════════════ SLIDE 3 ══════════════════════════ -->
+<h1>🗺️ Slide 3 — Périmètre du marché — Géo, Produit, Cible</h1>
+<p class="timing">⏱ 1 min 30 — poser les limites avant le PESTEL</p>
+
+<h2>Phrase d'entrée</h2>
+<div class="tagline">
+  "Avant de faire notre PESTEL, la méthode impose de délimiter précisément son marché. Nous avons retenu trois dimensions."
+</div>
+
+<h2>Dimension géographique</h2>
+<ul>
+  <li>Cœur de cible : France, Belgique, Québec — communautés Dofus historiquement ancrées dans ces pays</li>
+  <li>Phase 2 : expansion Europe anglophone et Amérique du Nord</li>
+  <li>Avantage technique : un jeu navigateur n'a pas de contrainte géographique de distribution — pas de Steam, pas d'App Store</li>
+</ul>
+
+<h2>Dimension produit</h2>
+<ul>
+  <li>RPG tactique au tour par tour — positionnement précis, pas un MMORPG classique ni un jeu de cartes</li>
+  <li>Browser-based et free-to-play — accessibilité maximale, zéro friction à l'entrée</li>
+  <li>Boucle de jeu : collecte → craft → combat PvP — profondeur économique intégrée</li>
+</ul>
+
+<h2>Cible</h2>
+<ul>
+  <li><strong>Primaire :</strong> 15–35 ans, joueurs nostalgiques des JRPGs années 2000 (Dofus, Wakfu, FFXI)</li>
+  <li><strong>Secondaire :</strong> gamers compétitifs attirés par le PvP tactique réfléchi</li>
+  <li><strong>Tertiaire :</strong> joueurs occasionnels séduits par l'accessibilité navigateur</li>
+</ul>
+
+<div class="callout">💡 Cette segmentation est volontairement précise — un benchmark sans périmètre clairement défini ne vaut rien stratégiquement.</div>
+
+<div class="transition">Cette délimitation établie, analysons maintenant les forces macro-environnementales avec le PESTEL.</div>
+
+<!-- ══════════════════════════ SLIDE 4 ══════════════════════════ -->
+<h1>🔍 Slide 4 — PESTEL : Politique · Économique · Sociologique</h1>
+<p class="timing">⏱ 2 minutes — cœur académique, citez les chiffres</p>
+
+<h2>Phrase d'entrée</h2>
+<div class="tagline">
+  "L'analyse PESTEL nous permet d'identifier les forces macro-environnementales qui jouent en notre faveur ou représentent des risques. Commençons par les trois premières dimensions."
+</div>
+
+<h2>Politique</h2>
+<ul>
+  <li>Le CNC subventionne les jeux vidéo français — jusqu'à <strong>500 K€ par projet éligible</strong>. Notre ancrage français nous rend potentiellement éligibles.</li>
+  <li>Enjeu réglementaire : la Belgique et les Pays-Bas ont banni les loot boxes — la France surveille. Notre <strong>monétisation cosmétique uniquement</strong> est une décision stratégique anticipant cette réglementation.</li>
+  <li>Les plans numériques européens favorisent les solutions RGPD-compliant — avantage concurrentiel face aux éditeurs asiatiques.</li>
+</ul>
+
+<h2>Économique</h2>
+<ul>
+  <li>Marché mondial du jeu vidéo : <strong>184 milliards de dollars en 2024</strong>, croissance de +8% par an (source : Newzoo 2024).</li>
+  <li>Segment F2P le plus dynamique post-COVID. Dans un contexte de crise du pouvoir d'achat, les joueurs se tournent vers les jeux gratuits — notre modèle est parfaitement aligné.</li>
+  <li>Les microtransactions cosmétiques représentent <strong>54 milliards de dollars mondiaux</strong> — preuve que les joueurs acceptent de payer pour du cosmétique sans pay-to-win.</li>
+</ul>
+
+<h2>Sociologique</h2>
+<ul>
+  <li><strong>3,3 milliards de gamers mondiaux</strong> en 2024 — le jeu vidéo n'est plus un loisir de niche.</li>
+  <li>Vague nostalgie forte pour les JRPGs et MMOs des années 2000. Les communautés Dofus et Wakfu restent actives sur Reddit, Discord, YouTube.</li>
+  <li><strong>58% des joueurs européens</strong> déclarent préférer jouer directement dans le navigateur pour éviter les installations.</li>
+</ul>
+
+<div class="callout">💡 À l'oral : insistez que ces facteurs créent un contexte favorable. Ce ne sont pas des justifications post-hoc, c'est la réalité du marché.</div>
+
+<div class="transition">Voyons maintenant les trois autres dimensions du PESTEL : technologique, environnemental et légal.</div>
+
+<!-- ══════════════════════════ SLIDE 5 ══════════════════════════ -->
+<h1>⚙️ Slide 5 — PESTEL : Technologique · Environnemental · Légal</h1>
+<p class="timing">⏱ 1 min 30 — dimensions plus spécifiques à notre projet</p>
+
+<h2>Phrase d'entrée</h2>
+<div class="tagline">
+  "Les trois dimensions suivantes sont particulièrement pertinentes pour un projet de jeu web : elles valident à la fois nos choix techniques et notre positionnement stratégique."
+</div>
+
+<h2>Technologique — point fort</h2>
+<ul>
+  <li><strong>WebGL 2.0 et WebAssembly</strong> permettent aujourd'hui de faire tourner des jeux complexes en natif dans le navigateur. Phaser 3, notre moteur, est une preuve de maturité de cet écosystème.</li>
+  <li>Notre stack (NestJS + Redis + SSE) permet du quasi-temps-réel sans la complexité de WebSockets. Pour un jeu au tour par tour, SSE est parfaitement suffisant et plus robuste.</li>
+  <li><strong>TypeScript strict + NX Monorepo</strong> : contrat inter-équipes solide. Si une interface change, le compilateur casse aux deux endroits simultanément.</li>
+</ul>
+
+<h2>Environnemental — argument RSE</h2>
+<ul>
+  <li>Un jeu navigateur a une empreinte carbone réduite : pas de matériel dédié, pas de disque dur, pas de GPU gaming requis.</li>
+  <li>Pour une cible Gen Z engagée sur les enjeux climatiques, un positionnement "gaming accessible et léger" est une opportunité de différenciation RSE.</li>
+</ul>
+
+<h2>Légal — risques maîtrisés</h2>
+<ul>
+  <li><strong>RGPD :</strong> collecte de données joueurs intégrée dès le MVP — consentement, droit à l'effacement, stockage sécurisé.</li>
+  <li><strong>Propriété intellectuelle :</strong> inspiration de Dofus, mais gameplay distinct. Grille isométrique et PA/PM sont des mécaniques génériques de RPG tactique, non brevetables.</li>
+  <li><strong>PEGI 12</strong> envisagé — restrictions achats in-app pour les mineurs, compatible avec les législations européennes.</li>
+</ul>
+
+<div class="callout">💡 Point important : le PESTEL montre que notre environnement est globalement favorable. Les risques légaux et réglementaires sont identifiés et anticipés dès maintenant.</div>
+
+<div class="transition">Maintenant que nous comprenons notre environnement macro, estimons la taille de ce marché avec la méthode TAM / SAM / SOM.</div>
+
+<!-- ══════════════════════════ SLIDE 6 ══════════════════════════ -->
+<h1>📊 Slide 6 — Taille du marché — TAM / SAM / SOM</h1>
+<p class="timing">⏱ 2 minutes — soyez précis sur les chiffres et leur justification</p>
+
+<h2>Phrase d'entrée</h2>
+<div class="tagline">
+  "Pour estimer la taille de notre marché, nous avons utilisé une approche top-down en partant du marché global pour affiner vers notre part atteignable. Trois niveaux."
+</div>
+
+<h2>TAM — Total Addressable Market : 15 milliards $</h2>
+<ul>
+  <li>C'est l'ensemble du marché RPG en ligne mondial — tous types confondus (MMORPG, RPG tactique, browser RPG, mobile RPG).</li>
+  <li>Source : <strong>Grand View Research 2024</strong>. Ce chiffre est le point de départ de notre entonnoir.</li>
+  <li>Attention : le TAM ne représente pas notre marché réel — c'est le plafond théorique.</li>
+</ul>
+
+<h2>SAM — Serviceable Addressable Market : 1,8 milliard $</h2>
+<ul>
+  <li>On restreint au segment accessible : RPG tactique au tour par tour sur navigateur ou PC, en Europe et Amérique du Nord.</li>
+  <li>Source : <strong>Newzoo 2024</strong>. Ce segment représente environ 12% du TAM.</li>
+  <li>C'est le marché dans lequel nous nous positionnons directement.</li>
+</ul>
+
+<h2>SOM — Serviceable Obtainable Market : 2 à 5 millions $</h2>
+<ul>
+  <li>Notre part réaliste à horizon 3 ans. Hypothèse de pénétration : <strong>0,03% du SAM</strong>.</li>
+  <li>Calcul : 50 000 à 120 000 joueurs actifs mensuels × ARPU estimé à <strong>~40 $/an</strong>.</li>
+  <li>Cohérent avec les débuts de jeux similaires (Shakes &amp; Fidget à leur lancement, Dofus V1 en 2004–2005).</li>
+</ul>
+
+<div class="callout">💡 Si on vous demande comment vous justifiez les 40$/an : combinaison d'un abonnement léger (~3$/mois) et d'achats cosmétiques ponctuels. Référence : benchmark Shakes &amp; Fidget.</div>
+
+<div class="transition">Ces estimations de marché posées, identifions maintenant qui occupe ce marché aujourd'hui — nos concurrents directs.</div>
+
+<!-- ══════════════════════════ SLIDE 7 ══════════════════════════ -->
+<h1>⚔️ Slide 7 — 5 concurrents directs</h1>
+<p class="timing">⏱ 2 minutes — ne récitez pas le tableau, commentez les failles</p>
+
+<h2>Phrase d'entrée</h2>
+<div class="tagline">
+  "Nous avons identifié 5 concurrents directs — des acteurs qui répondent au même besoin sur le même segment. Ce qui est frappant, c'est que chacun présente des failles exploitables."
+</div>
+
+<h2>Dofus — Ankama (FR)</h2>
+<ul>
+  <li>Le modèle de référence. <strong>5 millions de joueurs</strong>, 20 ans de communauté. C'est notre benchmark principal.</li>
+  <li><strong>Faille :</strong> vieillissant, lourd à installer, barrière d'entrée élevée. Les jeunes joueurs de 2026 ne veulent plus télécharger un client de 2 Go.</li>
+</ul>
+
+<h2>Wakfu — Ankama (FR)</h2>
+<ul>
+  <li>Successeur de Dofus, gameplay tactique moderne, 3D. F2P avec abonnement.</li>
+  <li><strong>Faille :</strong> serveurs instables historiquement, évolutions lentes, une partie de la base Dofus est déçue et cherche une alternative.</li>
+</ul>
+
+<h2>Shakes &amp; Fidget — Playa Games (DE)</h2>
+<ul>
+  <li><strong>50 millions de joueurs</strong>, accessibilité maximale, zéro friction. Preuve que le browser gaming peut toucher une audience massive.</li>
+  <li><strong>Faille :</strong> gameplay ultra-casual, aucune profondeur tactique, pas de PvP réel.</li>
+</ul>
+
+<h2>Crystal Saga — R2Games (CN)</h2>
+<ul>
+  <li>Browser RPG tactique avec monétisation agressive.</li>
+  <li><strong>Faille :</strong> pay-to-win assumé, réputation toxique en Occident. Notre modèle F2P éthique se différencie directement.</li>
+</ul>
+
+<h2>Battlerite — Stunlock Studios (SE)</h2>
+<ul>
+  <li>PvP arena tactique, excellent équilibrage, potentiel eSport.</li>
+  <li><strong>Faille majeure :</strong> jeu <strong>officiellement mort depuis 2023</strong>. Sa communauté est en recherche active d'une alternative — opportunité de captation directe.</li>
+</ul>
+
+<div class="callout">💡 Message clé : les concurrents sont soit trop vieux (Dofus), soit casual sans profondeur (Shakes &amp; Fidget), soit toxiques dans leur modèle (Crystal Saga), soit morts (Battlerite). Il y a une place.</div>
+
+<div class="transition">Ajoutons à cette analyse deux concurrents indirects qui se disputent le temps et le budget gaming de notre cible.</div>
+
+<!-- ══════════════════════════ SLIDE 8 ══════════════════════════ -->
+<h1>🃏 Slide 8 — 2 concurrents indirects</h1>
+<p class="timing">⏱ 1 minute — soyez concis, l'essentiel est la logique</p>
+
+<h2>Phrase d'entrée</h2>
+<div class="tagline">
+  "Les concurrents indirects ne proposent pas le même produit, mais répondent au même besoin sous-jacent ou capturent le même temps de jeu."
+</div>
+
+<h2>Hearthstone — Blizzard Entertainment</h2>
+<ul>
+  <li><strong>150 millions de comptes.</strong> Le duel stratégique PvP au tour par tour est notre proposition de valeur — mais via des cartes, pas une grille tactique.</li>
+  <li>Un joueur qui joue à Hearthstone 45 minutes ne jouera pas à notre jeu en même temps : <strong>compétition sur le budget temps.</strong></li>
+  <li>Ce que ça prouve : le besoin de duel tactique asynchrone est massif et validé. Hearthstone nous donne une preuve de concept à 150 millions d'utilisateurs.</li>
+</ul>
+
+<h2>League of Legends — Riot Games</h2>
+<ul>
+  <li><strong>180 millions de comptes.</strong> Même cible démographique : joueurs compétitifs 15–30 ans.</li>
+  <li>LoL est chronophage (40 min minimum par partie). Notre jeu est conçu pour des sessions plus courtes et asynchrones — <strong>moins exigeant en temps.</strong></li>
+  <li>Argument à valoriser : notre jeu peut attirer des joueurs LoL qui cherchent une expérience compétitive moins stressante et plus stratégique.</li>
+</ul>
+
+<div class="callout">💡 Le fait que Hearthstone et LoL dominent leur segment prouve que notre cible est réelle, solvable et habituée à dépenser dans des jeux F2P. C'est rassurant pour le modèle économique.</div>
+
+<div class="transition">Terminons par une synthèse des opportunités identifiées grâce à cette analyse de marché.</div>
+
+<!-- ══════════════════════════ SLIDE 9 ══════════════════════════ -->
+<h1>🏁 Slide 9 — Synthèse &amp; Opportunités</h1>
+<p class="timing">⏱ 1 min 30 — conclusion forte, finissez sur une conviction</p>
+
+<h2>Phrase d'entrée</h2>
+<div class="tagline">
+  "L'ensemble de notre analyse de marché converge vers une conclusion claire : il existe une zone blanche réelle sur ce segment."
+</div>
+
+<h2>La zone blanche</h2>
+<p>Aucun acteur ne propose aujourd'hui un RPG tactique au tour par tour, free-to-play, accessible en un clic depuis le navigateur, avec une boucle économique complète (collecte → craft → combat), ciblant les gamers francophones et internationaux. <strong>C'est exactement ce que nous construisons.</strong></p>
+
+<h2>Les 4 leviers de différenciation</h2>
+<p class="keypoint"><strong>01 — Accessibilité maximale :</strong> <span>Zéro téléchargement, zéro installation. Un lien = vous jouez. Dofus a perdu des joueurs sur ce point seul.</span></p>
+<p class="keypoint"><strong>02 — Nostalgie + Modernité :</strong> <span>On s'adresse à une génération qui connaît Dofus mais veut une UX 2024. React, Phaser 3, design soigné — on modernise sans trahir l'ADN tactique.</span></p>
+<p class="keypoint"><strong>03 — Modèle F2P éthique :</strong> <span>Aucun pay-to-win. Monétisation cosmétique uniquement. C'est une promesse qui attire une cible lassée par Crystal Saga et ses mécaniques prédatrices.</span></p>
+<p class="keypoint"><strong>04 — Marché en croissance :</strong> <span>RPG tactique +15%/an. SAM de 1,8 Md$. Un SOM de 2 à 5 millions $ est atteignable à horizon 3 ans avec 50 000 à 120 000 joueurs actifs.</span></p>
+
+<div class="callout">💡 Phrase de conclusion recommandée : "Notre projet n'est pas une énième copie de Dofus — c'est la réponse à ce que Dofus n'a pas réussi à rester : accessible, moderne, et éthique dans son modèle économique."</div>
+
+<hr>
+
+<!-- ══════════════════════════ FAQ ══════════════════════════ -->
+<h1>❓ Questions fréquentes du jury</h1>
+
+<div class="faq-block">
+  <p class="question">Pourquoi pas mobile ?</p>
+  <p class="answer">La décision est stratégique : les app stores prennent 30% de commission, imposent leurs règles de monétisation et ralentissent les mises à jour. Le navigateur est un canal direct, sans intermédiaire.</p>
+</div>
+
+<div class="faq-block">
+  <p class="question">Votre SOM semble faible face au SAM ?</p>
+  <p class="answer">0,03% sur un SAM de 1,8 Md$ est une hypothèse de pénétration prudente et réaliste pour un jeu indépendant sans budget marketing massif. C'est cohérent avec les débuts de Dofus (2004) et de nombreux jeux indie.</p>
+</div>
+
+<div class="faq-block">
+  <p class="question">Dofus existe encore, pourquoi un concurrent ?</p>
+  <p class="answer">Dofus a 22 ans. Sa base est fidèle mais vieillissante — il ne fait plus de nouveaux joueurs. Il y a une génération entière de gamers 15–25 ans qui n'a jamais joué à Dofus et qui serait prête à adopter une expérience similaire, plus accessible.</p>
+</div>
+
+<div class="faq-block">
+  <p class="question">Propriété intellectuelle vs Ankama ?</p>
+  <p class="answer">Le gameplay (grille, PA/PM, tour par tour) est une mécanique générique non brevetable. Nous ne reprenons ni les personnages, ni le lore, ni les assets visuels d'Ankama. Notre jeu est une œuvre originale inspirée d'un genre, pas une copie.</p>
+</div>
+
+<br><br>
+<p style="text-align:center; color:#C1133A; font-size:14pt; font-weight:bold;">Bonne présentation ! ⚔️</p>
+
+</body>
+</html>
