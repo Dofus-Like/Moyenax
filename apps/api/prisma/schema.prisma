@@ -45,6 +45,11 @@ enum SessionStatus {
   FINISHED
 }
 
+enum GamePhase {
+  FARMING
+  FIGHTING
+}
+
 model Player {
   id           String          @id @default(uuid())
   username     String          @unique
@@ -54,12 +59,14 @@ model Player {
   skin         String          @default("soldier-classic")
   stats        PlayerStats?
   inventory    InventoryItem[]
-  spells       PlayerSpell[]
-  equipmentSlots EquipmentSlot[]
-  combatsAsP1  CombatSession[] @relation("Player1")
-  combatsAsP2  CombatSession[] @relation("Player2")
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  spells           PlayerSpell[]
+  equipmentSlots   EquipmentSlot[]
+  combatsAsP1      CombatSession[] @relation("Player1")
+  combatsAsP2      CombatSession[] @relation("Player2")
+  gameSessionsAsP1 GameSession[]   @relation("GSP1")
+  gameSessionsAsP2 GameSession[]   @relation("GSP2")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 }
 
 model PlayerStats {
@@ -93,15 +100,16 @@ model PlayerStats {
 model Item {
   id           String          @id @default(uuid())
   name         String          @unique
-  description  String?         // Une description "goofy"
+  description  String?
   type         ItemType
-  family       String?         // FORGE, ARCANE, NATURE, SPECIAL
+  family       String?
   rank         Int             @default(1)
   statsBonus   Json?
-  grantsSpells Json?           
+  grantsSpells Json?
   craftCost    Json?
   shopPrice    Int?
   inventory    InventoryItem[]
+  sessionItems SessionItem[]
 }
 
 
@@ -156,12 +164,14 @@ model PlayerSpell {
 model CombatSession {
   id        String        @id @default(uuid())
   status    SessionStatus @default(WAITING)
-  player1Id String
-  player2Id String?
-  winnerId  String?
-  player1   Player        @relation("Player1", fields: [player1Id], references: [id])
-  player2   Player?       @relation("Player2", fields: [player2Id], references: [id])
-  turns     CombatTurn[]
+  player1Id     String
+  player2Id     String?
+  gameSessionId String?
+  winnerId      String?
+  player1     Player        @relation("Player1", fields: [player1Id], references: [id])
+  player2     Player?       @relation("Player2", fields: [player2Id], references: [id])
+  gameSession GameSession?  @relation(fields: [gameSessionId], references: [id])
+  turns       CombatTurn[]
   createdAt DateTime      @default(now())
   endedAt   DateTime?
 }
@@ -174,4 +184,37 @@ model CombatTurn {
   playerId   String
   actions    Json
   createdAt  DateTime      @default(now())
+}
+
+model GameSession {
+  id           String          @id @default(uuid())
+  status       SessionStatus   @default(WAITING)
+  phase        GamePhase       @default(FARMING)
+  currentRound Int             @default(1)
+  player1Wins  Int             @default(0)
+  player2Wins  Int             @default(0)
+  player1Ready Boolean         @default(false)
+  player2Ready Boolean         @default(false)
+  gold         Int             @default(500) // Augmenté pour le start
+  player1Id    String
+  player2Id    String?
+  p1           Player          @relation("GSP1", fields: [player1Id], references: [id])
+  p2           Player?         @relation("GSP2", fields: [player2Id], references: [id])
+  inventory    SessionItem[]
+  combats      CombatSession[]
+  createdAt    DateTime        @default(now())
+  endedAt      DateTime?
+}
+
+model SessionItem {
+  id        String      @id @default(uuid())
+  sessionId String
+  playerId  String
+  itemId    String
+  quantity  Int         @default(1)
+  equipped  Boolean     @default(false)
+  session   GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  item      Item        @relation(fields: [itemId], references: [id])
+
+  @@unique([sessionId, playerId, itemId])
 }

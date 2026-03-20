@@ -6,6 +6,7 @@ export const GAME_EVENTS = {
   // Émis par Équipe B, consommés par Équipe A
   COMBAT_ENDED: 'combat.ended',
   COMBAT_PLAYER_DIED: 'combat.player.died',
+  TURN_STARTED: 'combat.turn.started',
 } as const;
 
 export type GameEventKey = keyof typeof GAME_EVENTS;

@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/auth.store';
+import { useGameSession } from './GameTunnel';
 import { shopApi } from '../api/shop.api';
 import { useFarmingStore } from '../store/farming.store';
 import { SEED_CONFIGS, SeedId } from '@game/shared-types';
@@ -8,11 +10,23 @@ import './ShopPage.css';
 
 export function ShopPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { player } = useAuthStore();
+  const { activeSession } = useGameSession();
   const { fetchState, seedId } = useFarmingStore();
-  
+
   const { data: items, isLoading } = useQuery({
     queryKey: ['shop-items'],
     queryFn: () => shopApi.getItems(),
+  });
+
+  const buyMutation = useMutation({
+    mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
+      shopApi.buyItem(itemId, quantity),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['shop-items'] });
+    },
   });
 
   useEffect(() => {
@@ -26,11 +40,28 @@ export function ShopPage() {
     return seedConfig.families.includes(family as any);
   };
 
+  const currentGold = activeSession ? activeSession.gold : (player?.gold ?? 0);
+
   return (
     <div className="shop-container">
       <header className="shop-header">
-        <button className="back-button" onClick={() => navigate('/')}>← Retour</button>
-        <h2>🏪 Boutique</h2>
+        <div className="shop-header-nav">
+          <button type="button" className="back-button" onClick={() => navigate('/')}>
+            Lobby
+          </button>
+          <button type="button" className="nav-link-btn" onClick={() => navigate('/inventory')}>
+            Inventaire
+          </button>
+          <button type="button" className="nav-link-btn" onClick={() => navigate('/farming')}>
+            Farming
+          </button>
+        </div>
+        <div className="shop-header-info">
+          <h2>
+            🏪 Boutique {activeSession && <span className="session-badge">SESSION</span>}
+          </h2>
+          <span className="shop-gold">💰 {currentGold} or</span>
+        </div>
         {seedConfig && (
           <div className="current-seed-info">
             Saison : <strong>{seedConfig.label}</strong> ({seedConfig.dominantBuild})
@@ -42,16 +73,26 @@ export function ShopPage() {
         {isLoading && <p className="shop-loading">Chargement...</p>}
         {items?.data?.map((item: any) => {
           const inSeed = isSeedItem(item.family);
+          const price = item.shopPrice ?? 0;
           return (
             <div key={item.id} className={`shop-item-card ${!inSeed ? 'out-of-seed' : ''}`}>
               <div className="shop-item-badges">
-                {item.family && <span className={`family-badge ${item.family.toLowerCase()}`}>{item.family}</span>}
+                {item.family && (
+                  <span className={`family-badge ${item.family.toLowerCase()}`}>{item.family}</span>
+                )}
                 {!inSeed && <span className="seed-badge warn">HORS-SEED (-50% efficacité)</span>}
               </div>
               <div className="shop-item-type">{item.type}</div>
               <h3 className="shop-item-name">{item.name}</h3>
               <p className="shop-item-price">💰 {item.shopPrice} or</p>
-              <button className="shop-buy-button">Acheter</button>
+              <button
+                type="button"
+                className="shop-buy-button"
+                onClick={() => buyMutation.mutate({ itemId: item.id, quantity: 1 })}
+                disabled={buyMutation.isPending || currentGold < price}
+              >
+                {buyMutation.isPending ? 'Achat...' : 'Acheter'}
+              </button>
             </div>
           );
         })}

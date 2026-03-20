@@ -7,11 +7,60 @@
 
 .inventory-header {
   display: flex;
-  align-items: center;
-  gap: 2rem;
-  margin-bottom: 3rem;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 1rem;
+  width: 100%;
+}
+
+.inventory-header-nav {
+  display: flex;
+  gap: 12px;
+}
+
+.inventory-header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.session-badge {
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.inventory-gold {
+  font-weight: 700;
+  color: var(--color-accent);
+  font-size: 1.1rem;
+}
+
+.back-button,
+.nav-link-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-button:hover,
+.nav-link-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.05);
 }
 
 .inventory-main-content {
@@ -83,7 +132,6 @@
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
 }
 
-
 .stat-item:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.1);
@@ -104,6 +152,10 @@
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
+.inventory-loading {
+  color: var(--color-text-secondary);
+  text-align: center;
+}
 
 .item-details-column {
   flex: 0 0 280px;
@@ -237,7 +289,6 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-
 .inventory-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -308,5 +359,3 @@
   overflow-y: auto;
   padding-right: 10px;
 }
-
-

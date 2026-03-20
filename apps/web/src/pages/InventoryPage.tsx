@@ -1,6 +1,8 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/auth.store';
+import { useGameSession } from './GameTunnel';
 import { inventoryApi } from '../api/inventory.api';
 import { equipmentApi } from '../api/equipment.api';
 import { playerApi } from '../api/player.api';
@@ -8,17 +10,17 @@ import { Mannequin } from '../components/Mannequin';
 import { EquipmentSlotType, InventoryItem, ItemType } from '@game/shared-types';
 import './InventoryPage.css';
 
-
 export function InventoryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { player } = useAuthStore();
+  const { activeSession } = useGameSession();
   const [selectedItem, setSelectedItem] = React.useState<InventoryItem | null>(null);
 
   const { data: inventory, isLoading: invLoading } = useQuery({
     queryKey: ['inventory'],
     queryFn: () => inventoryApi.getInventory(),
   });
-
 
   const { data: equipment, isLoading: eqLoading } = useQuery({
     queryKey: ['equipment'],
@@ -31,7 +33,7 @@ export function InventoryPage() {
   });
 
   const equipMutation = useMutation({
-    mutationFn: ({ slot, id }: { slot: EquipmentSlotType; id: string }) => 
+    mutationFn: ({ slot, id }: { slot: EquipmentSlotType; id: string }) =>
       equipmentApi.equip(slot, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
@@ -54,9 +56,8 @@ export function InventoryPage() {
   };
 
   const handleDoubleClick = (inv: InventoryItem) => {
-    // 1. Vérifier si l'objet est DÉJÀ équipé
     const equippedSlot = Object.entries(equipment?.data || {}).find(
-      ([, equippedItem]) => (equippedItem as InventoryItem)?.id === inv.id
+      ([, equippedItem]) => (equippedItem as InventoryItem)?.id === inv.id,
     )?.[0] as EquipmentSlotType;
 
     if (equippedSlot) {
@@ -64,13 +65,12 @@ export function InventoryPage() {
       return;
     }
 
-    // 2. Sinon, l'équiper
     const type = inv.item.type;
     let targetSlot: EquipmentSlotType | null = null;
 
     if (type === ItemType.WEAPON) {
-      targetSlot = equipment?.data?.WEAPON_RIGHT 
-        ? EquipmentSlotType.WEAPON_LEFT 
+      targetSlot = equipment?.data?.WEAPON_RIGHT
+        ? EquipmentSlotType.WEAPON_LEFT
         : EquipmentSlotType.WEAPON_RIGHT;
     } else if (type === ItemType.ARMOR_HEAD) {
       targetSlot = EquipmentSlotType.ARMOR_HEAD;
@@ -87,12 +87,29 @@ export function InventoryPage() {
     }
   };
 
+  const currentGold = activeSession ? activeSession.gold : (player?.gold ?? 0);
 
   return (
     <div className="inventory-page">
       <header className="inventory-header">
-        <button className="back-button" onClick={() => navigate('/')}>← Retour</button>
-        <h2>🎒 Équipement & Inventaire</h2>
+        <div className="inventory-header-nav">
+          <button type="button" className="back-button" onClick={() => navigate('/')}>
+            Lobby
+          </button>
+          <button type="button" className="nav-link-btn" onClick={() => navigate('/shop')}>
+            Boutique
+          </button>
+          <button type="button" className="nav-link-btn" onClick={() => navigate('/farming')}>
+            Farming
+          </button>
+        </div>
+        <div className="inventory-header-info">
+          <h2>
+            🎒 Équipement & inventaire{' '}
+            {activeSession && <span className="session-badge">SESSION</span>}
+          </h2>
+          <span className="inventory-gold">💰 {currentGold} or</span>
+        </div>
       </header>
 
       <div className="inventory-main-content">
@@ -115,14 +132,15 @@ export function InventoryPage() {
                     { label: 'PM', current: stats?.data.pm ?? 3, base: stats?.data.basePm ?? 3, className: 'stat-pm' },
                   ] as { label: string; current: number; base: number; className?: string }[]
                 ).map((stat) => (
-
                   <div key={stat.label} className="stat-item">
                     <span>{stat.label}</span>
                     <div className="stat-value-container">
                       <strong className={stat.className || ''}>{stat.current}</strong>
                       {stat.current !== stat.base && (
                         <span className="stat-delta">
-                          {stat.current > stat.base ? `(+${stat.current - stat.base})` : `(${stat.current - stat.base})`}
+                          {stat.current > stat.base
+                            ? `(+${stat.current - stat.base})`
+                            : `(${stat.current - stat.base})`}
                         </span>
                       )}
                     </div>
@@ -136,8 +154,8 @@ export function InventoryPage() {
             {eqLoading ? (
               <p>Chargement...</p>
             ) : (
-              <Mannequin 
-                equipment={equipment?.data || {}} 
+              <Mannequin
+                equipment={equipment?.data || {}}
                 onEquip={(slot, id) => equipMutation.mutate({ slot, id })}
                 onUnequip={(slot) => unequipMutation.mutate(slot)}
               />
@@ -145,23 +163,19 @@ export function InventoryPage() {
           </div>
         </aside>
 
-
-
-
         <main className="inventory-list-section">
           <h3>Inventaire</h3>
           <div className="inventory-grid">
             {invLoading && <p className="inventory-loading">Chargement...</p>}
             {inventory?.data?.map((inv: InventoryItem) => (
-              <div 
-                key={inv.id} 
+              <div
+                key={inv.id}
                 className={`inventory-card ${selectedItem?.id === inv.id ? 'selected' : ''}`}
                 draggable
                 onDragStart={(e) => handleDragStart(e, inv.id)}
                 onClick={() => setSelectedItem(inv)}
                 onDoubleClick={() => handleDoubleClick(inv)}
               >
-
                 <div className="item-icon">{inv.item.type[0]}</div>
                 <div className="item-info">
                   <span className="item-name">{inv.item.name}</span>
@@ -182,9 +196,11 @@ export function InventoryPage() {
                 <h4>{selectedItem.item.name}</h4>
                 <p className="item-details-type">{selectedItem.item.type}</p>
               </div>
-              
+
               <div className="item-details-description">
-                <p>"{selectedItem.item.description || 'Un objet mystérieux sans description...'}"</p>
+                <p>
+                  &quot;{selectedItem.item.description || 'Un objet mystérieux sans description...'}&quot;
+                </p>
               </div>
 
               {selectedItem.item.statsBonus && (
@@ -192,19 +208,27 @@ export function InventoryPage() {
                   <h5>Bonus</h5>
                   <ul>
                     {Object.entries(selectedItem.item.statsBonus).map(([stat, val]) => (
-                      <li key={stat}><strong>{stat.toUpperCase()}</strong> : +{val}</li>
+                      <li key={stat}>
+                        <strong>{stat.toUpperCase()}</strong> : +{String(val)}
+                      </li>
                     ))}
                   </ul>
                 </div>
               )}
-              
+
               <div className="item-details-footer">
-                <button 
-                  className={`equip-button ${Object.values(equipment?.data || {}).some(e => (e as InventoryItem | null)?.id === selectedItem.id) ? 'unequip' : ''}`}
+                <button
+                  type="button"
+                  className={`equip-button ${Object.values(equipment?.data || {}).some((e) => (e as InventoryItem | null)?.id === selectedItem.id) ? 'unequip' : ''}`}
                   onClick={() => handleDoubleClick(selectedItem)}
-                  disabled={selectedItem.item.type === ItemType.RESOURCE || selectedItem.item.type === ItemType.CONSUMABLE}
+                  disabled={
+                    selectedItem.item.type === ItemType.RESOURCE ||
+                    selectedItem.item.type === ItemType.CONSUMABLE
+                  }
                 >
-                  {Object.values(equipment?.data || {}).some(e => (e as InventoryItem | null)?.id === selectedItem.id) ? '📤 Déséquiper' : '🚀 Équiper'}
+                  {Object.values(equipment?.data || {}).some((e) => (e as InventoryItem | null)?.id === selectedItem.id)
+                    ? '📤 Déséquiper'
+                    : '🚀 Équiper'}
                 </button>
               </div>
             </div>
@@ -214,10 +238,7 @@ export function InventoryPage() {
             </div>
           )}
         </aside>
-
       </div>
     </div>
   );
 }
-
-

@@ -17,6 +17,11 @@ export class SessionController {
     return this.sessionService.startTestCombat(req.user.id);
   }
 
+  @Post('vs-ai')
+  async startVsAiCombat(@Request() req: { user: { id: string } }) {
+    return this.sessionService.startVsAiCombat(req.user.id);
+  }
+
   @Get('rooms')
   async getRooms() {
     return this.sessionService.getRooms();

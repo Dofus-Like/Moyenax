@@ -1,32 +1,91 @@
 .lobby-container {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 40px 24px;
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .lobby-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 40px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 48px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+}
+
+.lobby-title-group {
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
 .lobby-header h1 {
-  font-size: 1.5rem;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+  background: linear-gradient(to right, #fff, #888);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vs-ai-btn {
+  background: linear-gradient(135deg, #ff4d4d, #ff0000);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-weight: 900;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vs-ai-btn:hover {
+  transform: scale(1.08) rotate(-2deg);
+  box-shadow: 0 8px 30px rgba(255, 0, 0, 0.6);
+}
+
+.hot-badge {
+  background: white;
+  color: #ff0000;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 900;
 }
 
 .lobby-user-info {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 16px;
+  border-radius: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-profile-summary {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+}
+
+.lobby-gold {
+  color: #ffd700;
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
 }
 
 .lobby-skin-tag {
@@ -36,7 +95,27 @@
   opacity: 0.8;
 }
 
-/* Skins Section */
+.lobby-username {
+  color: #fff;
+  font-weight: 600;
+}
+
+.lobby-logout {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.lobby-logout:hover {
+  background: rgba(255, 68, 68, 0.2);
+  color: #ff4444;
+}
+
 .lobby-skins {
   margin-bottom: 40px;
 }
@@ -136,36 +215,114 @@
   border-bottom-left-radius: 8px;
 }
 
-.lobby-gold {
-  color: var(--color-accent);
-  font-weight: 600;
+/* Matchmaking */
+.lobby-matchmaking {
+  margin-bottom: 24px;
 }
 
-.lobby-username {
-  color: var(--color-text-secondary);
+.matchmaking-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 20px;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
 }
 
-.lobby-logout {
-  padding: 6px 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--color-text-secondary);
+.matchmaking-info h3 {
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+  color: #fff;
+}
+
+.matchmaking-info p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+}
+
+.join-queue-btn {
+  background: linear-gradient(to right, #6366f1, #a855f7);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  white-space: nowrap;
+}
+
+.join-queue-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+}
+
+.join-queue-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.queue-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 180px;
+}
+
+.queue-status span {
   font-size: 0.85rem;
-  transition: all 0.2s;
+  color: #a855f7;
+  font-weight: 700;
 }
 
-.lobby-logout:hover {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
+.leave-queue-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
 }
 
+.leave-queue-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.loader-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.loader-dots span {
+  width: 8px;
+  height: 8px;
+  background: #6366f1;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loader-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loader-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1.0); }
+}
+
+/* Combat Section */
 .lobby-combat {
-  margin-bottom: 40px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  padding: 24px;
+  margin-bottom: 48px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 32px;
 }
 
 .lobby-section-header {
@@ -176,140 +333,131 @@
 }
 
 .lobby-section-header h2 {
-  font-size: 1.25rem;
-  color: var(--color-text);
-}
-
-.lobby-combat-actions {
-    display: flex;
-    gap: 12px;
-}
-
-.lobby-btn {
-    padding: 8px 16px;
-    border-radius: var(--radius);
-    font-weight: 600;
-    font-size: 0.9rem;
-    transition: all 0.2s;
-    cursor: pointer;
+  font-size: 1.5rem;
+  letter-spacing: -0.5px;
 }
 
 .lobby-btn.action {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-}
-
-.lobby-btn.secondary {
-    background: transparent;
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
-}
-
-.lobby-btn:hover {
-    transform: translateY(-1px);
-    opacity: 0.9;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
 }
 
 .rooms-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
 }
 
 .room-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: border-color 0.2s;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s;
 }
 
 .room-card:hover {
-    border-color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .room-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  display: flex;
+  flex-direction: column;
 }
 
 .room-host {
-    font-weight: 600;
-    color: var(--color-text);
+  font-weight: 800;
+  color: #fff;
+  font-size: 1.1rem;
 }
 
 .room-date {
-    font-size: 0.75rem;
-    color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .room-join-btn {
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.room-join-btn:disabled {
-    background: var(--color-border);
-    cursor: not-allowed;
+.room-join-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
 }
 
 .no-rooms {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 32px;
-    color: var(--color-text-secondary);
-    font-style: italic;
-    background: rgba(255, 255, 255, 0.01);
-    border-radius: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 1rem;
 }
 
-.lobby-nav {
+/* Nav Grid */
+.lobby-nav-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
 }
 
 .lobby-nav-card {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 20px;
   padding: 24px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
   color: var(--color-text);
-  transition: all 0.2s;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  cursor: pointer;
+  text-align: left;
 }
 
 .lobby-nav-card:hover {
   border-color: var(--color-primary);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
-.lobby-nav-icon {
-  font-size: 2rem;
+.nav-card-icon {
+  font-size: 3rem;
+  filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
 }
 
-.lobby-nav-title {
-  font-size: 1rem;
-  font-weight: 600;
+.nav-card-content {
+  display: flex;
+  flex-direction: column;
 }
 
-.lobby-nav-desc {
-  color: var(--color-text-secondary);
-  font-size: 0.75rem;
-  text-align: center;
+.nav-card-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
 }
+
+.nav-card-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+}
+
+.lobby-nav-card.farming:hover { border-color: #4ade80; }
+.lobby-nav-card.inventory:hover { border-color: #f472b6; }
+.lobby-nav-card.shop:hover { border-color: #fbbf24; }
+.lobby-nav-card.debug:hover { border-color: #60a5fa; }

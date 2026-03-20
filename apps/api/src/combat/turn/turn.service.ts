@@ -420,6 +420,7 @@ export class TurnService {
     }
 
     this.sse.emit(state.sessionId, 'TURN_STARTED', { playerId: nextPlayerId });
+    this.eventEmitter.emit(GAME_EVENTS.TURN_STARTED, { sessionId: state.sessionId, playerId: nextPlayerId });
 
     return state;
   }

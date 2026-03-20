@@ -8,6 +8,10 @@ import { FarmingHUD } from '../game/HUD/FarmingHUD';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import { useAutoHarvest } from '../game/UnifiedMap/hooks/useAutoHarvest';
 import { useFarmingStore } from '../store/farming.store';
+import { combatApi } from '../api/combat.api';
+import { gameSessionApi } from '../api/game-session.api';
+import { useGameSession } from './GameTunnel';
+import { useAuthStore } from '../store/auth.store';
 import {
   TerrainType,
   TERRAIN_PROPERTIES,
@@ -33,6 +37,8 @@ function findSpawnPosition(grid: TerrainType[][]): PathNode {
 
 export function FarmingPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const currentPlayerId = user?.id;
   const [hoverInfo, setHoverInfo] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
   const [movePath, setMovePath] = useState<PathNode[] | null>(null);
   const [isMoving, setIsMoving] = useState(false);
@@ -242,6 +248,45 @@ export function FarmingPage() {
     }
   }, [isDebugMode, debugRefill, nextRound, navigate, showActionMessage]);
 
+  const handleStartVsAi = useCallback(async () => {
+    try {
+      const response = await combatApi.startVsAiCombat();
+      const initialState = response.data;
+      navigate(`/combat/${initialState.sessionId}`);
+    } catch (error) {
+      console.error('Erreur lancement combat VS AI:', error);
+    }
+  }, [navigate]);
+
+  const { activeSession, refreshSession } = useGameSession();
+
+  const handleToggleReady = useCallback(async () => {
+    if (!activeSession) return;
+    try {
+      const isReady = activeSession.player1Id === currentPlayerId ? activeSession.player1Ready : activeSession.player2Ready;
+      await gameSessionApi.toggleReady(!isReady);
+      await refreshSession();
+    } catch (error) {
+      console.error('Erreur toggle ready:', error);
+    }
+  }, [activeSession, refreshSession, currentPlayerId]);
+
+  // Redirection automatique vers le combat si la phase change
+  useEffect(() => {
+    if (activeSession?.phase === 'FIGHTING') {
+      // Trouver le combat actif lié à cette session (ou attendre que matchmaking le crée)
+      // Pour l'instant on va juste attendre que session.combats soit mis à jour
+      const latestCombat = activeSession.combats?.[activeSession.combats.length - 1];
+      if (latestCombat && latestCombat.status === 'ACTIVE') {
+        navigate(`/combat/${latestCombat.id}`);
+      }
+    }
+  }, [activeSession?.phase, activeSession?.combats, navigate]);
+
+  const p1IsMe = activeSession?.player1Id === currentPlayerId;
+  const amIReady = p1IsMe ? activeSession?.player1Ready : activeSession?.player2Ready;
+  const isOpponentReady = p1IsMe ? activeSession?.player2Ready : activeSession?.player1Ready;
+
   const currentTerrain = map ? map.grid[currentPlayerPos.y]?.[currentPlayerPos.x] : TerrainType.GROUND;
   useAutoHarvest({
     currentPosition: currentPlayerPos,
@@ -256,11 +301,90 @@ export function FarmingPage() {
     <div className="resource-map-container">
       <header className="resource-map-header">
         <button className="back-button" onClick={() => navigate('/')}>
-          Retour
+          Lobby
         </button>
-        <button className="inventory-button" onClick={() => navigate('/inventory')} style={{ marginLeft: '10px', background: '#444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>
-          🎒 Inventaire
+        <button className="nav-link-btn" onClick={() => navigate('/inventory')}>
+          Inventaire
         </button>
+        <button className="nav-link-btn" onClick={() => navigate('/shop')}>
+          Boutique
+        </button>
+
+        {activeSession && (
+          <div className="session-round-info" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            background: 'rgba(0,0,0,0.3)', 
+            padding: '4px 12px', 
+            borderRadius: '20px',
+            marginLeft: '12px',
+            fontSize: '0.9rem',
+            border: '1px solid var(--color-accent)'
+          }}>
+            <span style={{ fontWeight: 'bold', color: 'var(--color-accent)', marginRight: '8px' }}>
+              MANCHE {activeSession.currentRound}
+            </span>
+            <span style={{ color: 'white' }}>
+              {activeSession.player1Wins} - {activeSession.player2Wins}
+            </span>
+          </div>
+        )}
+
+        {activeSession && activeSession.player2Id && (
+          <button 
+            className={`ready-btn ${amIReady ? 'ready' : ''}`}
+            onClick={handleToggleReady}
+            style={{ 
+              background: amIReady ? '#22c55e' : 'var(--color-accent)', 
+              color: 'white', 
+              border: 'none', 
+              padding: '8px 16px', 
+              borderRadius: '4px', 
+              cursor: 'pointer', 
+              fontWeight: 'bold',
+              marginLeft: '12px',
+              opacity: isOpponentReady ? 1 : 0.8
+            }}
+          >
+            {amIReady ? '✓ PRÊT !' : 'PRÊT ?'}
+            {isOpponentReady && !amIReady && ' (Adversaire prêt !)'}
+          </button>
+        )}
+
+        <button 
+          className="vs-ai-btn" 
+          onClick={handleStartVsAi}
+          style={{ 
+            background: 'var(--color-accent)', 
+            color: 'white', 
+            border: 'none', 
+            padding: '8px 16px', 
+            borderRadius: '4px', 
+            cursor: 'pointer', 
+            fontWeight: 'bold',
+            marginLeft: '12px'
+          }}
+        >
+          ⚔️ VS AI
+        </button>
+        {activeSession && (
+          <button 
+            className="end-session-btn" 
+            onClick={handleEndSession}
+            style={{ 
+              background: '#ef4444', 
+              color: 'white', 
+              border: 'none', 
+              padding: '8px 16px', 
+              borderRadius: '4px', 
+              cursor: 'pointer', 
+              fontWeight: 'bold',
+              marginLeft: '12px'
+            }}
+          >
+            ⏹ Terminer Session
+          </button>
+        )}
         <h2>Mode Farming</h2>
         {seedConfig && (
           <div className="seed-badge">

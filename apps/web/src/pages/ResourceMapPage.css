@@ -31,8 +31,21 @@
   transition: border-color 0.2s;
 }
 
-.back-button:hover {
+.back-button:hover, .nav-link-btn:hover {
   border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.nav-link-btn {
+  padding: 6px 12px;
+  border: 1px solid #2d3748;
+  border-radius: 8px;
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 8px;
 }
 
 .seed-badge {

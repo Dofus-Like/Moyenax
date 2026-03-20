@@ -6,6 +6,8 @@ import { CombatState } from '@game/shared-types';
 import { PlayerStatsService } from '../../player/player-stats.service';
 import { MapService } from '../map/map.service';
 import { calculateInitiativeJet, calculatePlayerSpells } from '@game/game-engine';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GAME_EVENTS } from '@game/shared-types';
 
 @Injectable()
 export class SessionService {
@@ -15,7 +17,50 @@ export class SessionService {
     private readonly sse: SseService,
     private readonly playerStatsService: PlayerStatsService,
     private readonly mapService: MapService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  /** Utilisé par GameSession (VS AI dans le tunnel). */
+  async getOrCreateBotPlayer() {
+    return this.getOrCreateBot();
+  }
+
+  private async getOrCreateBot() {
+    let bot = await this.prisma.player.findUnique({
+      where: { username: 'Bot' },
+    });
+
+    if (!bot) {
+      bot = await this.prisma.player.create({
+        data: {
+          username: 'Bot',
+          email: 'bot@game.internal',
+          passwordHash: 'bot-password-never-log-in',
+          stats: {
+            create: {
+              vit: 100,
+              pa: 6,
+              pm: 3,
+              atk: 5,
+              def: 5,
+              mag: 0,
+              res: 5,
+            },
+          },
+        },
+      });
+      
+      // Lui donner un sort de base
+      const punch = await this.prisma.spell.findFirst({ where: { name: 'Frappe' } });
+      if (punch) {
+        await this.prisma.playerSpell.create({
+          data: { playerId: bot.id, spellId: punch.id },
+        });
+      }
+    }
+
+    return bot;
+  }
 
   async challenge(challengerId: string, targetId?: string) {
     if (targetId && challengerId === targetId) {
@@ -154,6 +199,7 @@ export class SessionService {
     // Émettre les événements SSE
     this.sse.emit(sessionId, 'STATE_UPDATED', initialState);
     this.sse.emit(sessionId, 'TURN_STARTED', { playerId: firstPlayerId });
+    this.eventEmitter.emit(GAME_EVENTS.TURN_STARTED, { sessionId, playerId: firstPlayerId });
 
     return initialState;
   }
@@ -212,15 +258,59 @@ export class SessionService {
       throw new BadRequestException('Aucun autre joueur trouvé pour le test. Lancez le seed !');
     }
 
+    const activeSession = await this.prisma.gameSession.findFirst({
+      where: {
+        OR: [{ player1Id: challengerId }, { player2Id: challengerId }],
+        status: 'ACTIVE',
+      },
+    });
+
     const session = await this.prisma.combatSession.create({
       data: {
         player1Id: challengerId,
         player2Id: target.id,
         status: 'WAITING',
+        gameSessionId: activeSession?.id,
       },
     });
 
     // Accepter automatiquement pour le test
+    return this.accept(session.id);
+  }
+
+  async startVsAiCombat(challengerId: string) {
+    const bot = await this.getOrCreateBot();
+
+    const activeSession = await this.prisma.gameSession.findFirst({
+      where: {
+        OR: [{ player1Id: challengerId }, { player2Id: challengerId }],
+        status: 'ACTIVE',
+      },
+    });
+
+    const session = await this.prisma.combatSession.create({
+      data: {
+        player1Id: challengerId,
+        player2Id: bot.id,
+        status: 'WAITING',
+        gameSessionId: activeSession?.id,
+      },
+    });
+
+    // Accepter automatiquement
+    return this.accept(session.id);
+  }
+
+  async startSessionCombat(player1Id: string, player2Id: string, gameSessionId: string) {
+    const session = await this.prisma.combatSession.create({
+      data: {
+        player1Id,
+        player2Id,
+        status: 'WAITING',
+        gameSessionId,
+      },
+    });
+
     return this.accept(session.id);
   }
 
