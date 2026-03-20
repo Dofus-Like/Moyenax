@@ -10,6 +10,7 @@ interface FarmingState {
   pips: number;
   round: number;
   seedId: SeedId | null;
+  isLoading: boolean;
   
   // Actions
   harvestResource: (resourceId: string, amount: number) => void;
@@ -32,6 +33,7 @@ export const useFarmingStore = create<FarmingState>((set, get) => ({
   pips: 4,
   round: 1,
   seedId: null,
+  isLoading: false,
 
   harvestResource: (resourceId, amount) =>
     set((state) => ({
@@ -43,19 +45,26 @@ export const useFarmingStore = create<FarmingState>((set, get) => ({
   setHarvesting: (harvesting) => set({ isHarvesting: harvesting }),
 
   fetchState: async () => {
+    set({ isLoading: true });
     try {
       const state = await farmingApi.getState();
       const MAP_SIZE = 20;
       const grid: TerrainType[][] = Array.from({ length: MAP_SIZE }, () => Array(MAP_SIZE).fill(TerrainType.GROUND));
-      state.map.forEach(cell => { grid[cell.y][cell.x] = cell.terrain; });
+      state.map.forEach(cell => { 
+        if (grid[cell.y] && cell.x < MAP_SIZE) {
+          grid[cell.y][cell.x] = cell.terrain; 
+        }
+      });
       set({ 
         pips: state.pips, 
         round: state.round, 
         seedId: state.seedId,
-        map: { width: MAP_SIZE, height: MAP_SIZE, grid, seedId: state.seedId }
+        map: { width: MAP_SIZE, height: MAP_SIZE, grid, seedId: state.seedId },
+        isLoading: false
       });
     } catch (e) {
       console.error('Error fetching farming state', e);
+      set({ isLoading: false });
     }
   },
 
@@ -118,5 +127,6 @@ export const useFarmingStore = create<FarmingState>((set, get) => ({
       pips: 4,
       round: 1,
       seedId: null,
+      isLoading: false,
     }),
 }));

@@ -1,4 +1,4 @@
-import { PrismaClient, ItemType, SpellType, SpellVisualType } from '@prisma/client';
+import { PrismaClient, ItemType, SpellType, SpellVisualType, EquipmentSlotType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -268,7 +268,8 @@ async function main() {
     data: {
       name: 'Anneau du Guerrier',
       type: ItemType.ACCESSORY,
-      statsBonus: { def: 3, pm: 1 },
+      statsBonus: { vit: 100, atk: 20, def: 10, pa: 1 },
+      grantsSpells: ['spell-frappe', 'spell-bond', 'spell-endurance'],
       craftCost: { [fer.id]: 2, [or.id]: 2 },
       shopPrice: 5,
     },
@@ -278,7 +279,8 @@ async function main() {
     data: {
       name: 'Anneau du Mage',
       type: ItemType.ACCESSORY,
-      statsBonus: { mag: 3, pa: 1 },
+      statsBonus: { vit: 50, mag: 30, res: 15, pa: 1 },
+      grantsSpells: ['spell-boule-de-feu', 'spell-soin', 'spell-menhir'],
       craftCost: { [cristal.id]: 2, [or.id]: 2 },
       shopPrice: 5,
     },
@@ -288,9 +290,21 @@ async function main() {
     data: {
       name: 'Anneau du Ninja',
       type: ItemType.ACCESSORY,
-      statsBonus: { ini: 3, pm: 1 },
+      statsBonus: { vit: 50, atk: 15, mag: 5, ini: 500, pm: 1 },
+      grantsSpells: ['spell-kunai', 'spell-bombe-repousse', 'spell-velocite'],
       craftCost: { [cuir.id]: 1, [bois.id]: 1, [or.id]: 2 },
       shopPrice: 5,
+    },
+  });
+
+  const anneauPenien = await prisma.item.create({
+    data: {
+      name: 'Anneau pénien',
+      type: ItemType.ACCESSORY,
+      description: "Un anneau moulé directement sur l'artisan le plus expérimenté de Vergeronce",
+      statsBonus: { vit: 9999, atk: 999, mag: 999, def: 100, res: 100, pa: 12, pm: 12 },
+      grantsSpells: ['*'],
+      shopPrice: 69,
     },
   });
 
@@ -338,22 +352,8 @@ async function main() {
       gold: 100,
       stats: {
         create: {
-          vit: 100,
-          atk: 5,
-          mag: 0,
-          def: 0,
-          res: 0,
-          ini: 10,
-          pa: 6,
-          pm: 3,
-          baseVit: 100,
-          baseAtk: 5,
-          baseMag: 0,
-          baseDef: 0,
-          baseRes: 0,
-          baseIni: 10,
-          basePa: 6,
-          basePm: 3,
+          vit: 100, atk: 10, mag: 10, def: 5, res: 5, ini: 100, pa: 6, pm: 3,
+          baseVit: 100, baseAtk: 10, baseMag: 10, baseDef: 5, baseRes: 5, baseIni: 100, basePa: 6, basePm: 3,
         },
       },
 
@@ -365,15 +365,16 @@ async function main() {
           { itemId: armure.id, quantity: 1 },
           { itemId: bottesFer.id, quantity: 1 },
           { itemId: anneauGuerrier.id, quantity: 1 },
+          { itemId: anneauPenien.id, quantity: 1 },
         ],
       },
-      spells: {
-        create: [
-          { spellId: frappe.id },
-          { spellId: kunaiSpell.id },
-        ]
-      }
     },
+  });
+
+  // Seul l'anneau est équipé
+  const warriorInv = await prisma.inventoryItem.findMany({ where: { playerId: warrior.id } });
+  await prisma.equipmentSlot.create({
+    data: { playerId: warrior.id, slot: EquipmentSlotType.ACCESSORY, inventoryItemId: warriorInv.find(i => i.itemId === anneauGuerrier.id)?.id }
   });
 
   const mage = await prisma.player.create({
@@ -384,22 +385,8 @@ async function main() {
       gold: 100,
       stats: {
         create: {
-          vit: 80,
-          atk: 2,
-          mag: 8,
-          def: 0,
-          res: 2,
-          ini: 12,
-          pa: 7,
-          pm: 3,
-          baseVit: 80,
-          baseAtk: 2,
-          baseMag: 8,
-          baseDef: 0,
-          baseRes: 2,
-          baseIni: 12,
-          basePa: 7,
-          basePm: 3,
+          vit: 100, atk: 10, mag: 10, def: 5, res: 5, ini: 100, pa: 6, pm: 3,
+          baseVit: 100, baseAtk: 10, baseMag: 10, baseDef: 5, baseRes: 5, baseIni: 100, basePa: 6, basePm: 3,
         },
       },
 
@@ -413,19 +400,79 @@ async function main() {
           { itemId: anneauMage.id, quantity: 1 },
         ],
       },
-      spells: {
-        create: [
-          { spellId: fireball.id },
-          { spellId: heal.id },
-        ]
-      }
     },
+  });
+
+  const mageInv = await prisma.inventoryItem.findMany({ where: { playerId: mage.id } });
+  await prisma.equipmentSlot.create({
+    data: { playerId: mage.id, slot: EquipmentSlotType.ACCESSORY, inventoryItemId: mageInv.find(i => i.itemId === anneauMage.id)?.id }
+  });
+
+  const ninja = await prisma.player.create({
+    data: {
+      username: 'Ninja',
+      email: 'ninja@test.com',
+      passwordHash,
+      gold: 100,
+      stats: {
+        create: {
+          vit: 100, atk: 10, mag: 10, def: 5, res: 5, ini: 100, pa: 6, pm: 3,
+          baseVit: 100, baseAtk: 10, baseMag: 10, baseDef: 5, baseRes: 5, baseIni: 100, basePa: 6, basePm: 3,
+        },
+      },
+      inventory: {
+        create: [
+          { itemId: kunai.id, quantity: 1 },
+          { itemId: bombe.id, quantity: 1 },
+          { itemId: bandeau.id, quantity: 1 },
+          { itemId: kimono.id, quantity: 1 },
+          { itemId: geta.id, quantity: 1 },
+          { itemId: anneauNinja.id, quantity: 1 },
+        ],
+      },
+    },
+  });
+
+  const ninjaInv = await prisma.inventoryItem.findMany({ where: { playerId: ninja.id } });
+  await prisma.equipmentSlot.create({
+    data: { playerId: ninja.id, slot: EquipmentSlotType.ACCESSORY, inventoryItemId: ninjaInv.find(i => i.itemId === anneauNinja.id)?.id }
+  });
+
+  const troll = await prisma.player.create({
+    data: {
+      username: 'Troll pénien',
+      email: 'troll@test.com',
+      passwordHash,
+      gold: 100,
+      skin: 'orc-blood',
+      stats: {
+        create: {
+          vit: 100, atk: 10, mag: 10, def: 5, res: 5, ini: 100, pa: 6, pm: 3,
+          baseVit: 100, baseAtk: 10, baseMag: 10, baseDef: 5, baseRes: 5, baseIni: 100, basePa: 6, basePm: 3,
+        },
+      },
+      inventory: {
+        create: [
+          { itemId: anneauPenien.id, quantity: 1 },
+          { itemId: or.id, quantity: 69 },
+        ],
+      },
+    },
+  });
+
+  const trollInv = await prisma.inventoryItem.findMany({ where: { playerId: troll.id } });
+  await prisma.equipmentSlot.create({
+    data: { 
+      playerId: troll.id, 
+      slot: EquipmentSlotType.ACCESSORY, 
+      inventoryItemId: trollInv.find(i => i.itemId === anneauPenien.id)?.id 
+    }
   });
 
   const itemCount = await prisma.item.count();
   console.log('✅ Seed completed!');
-  console.log(`   Items: ${itemCount} (7 resources + 6 weapons + 9 armors + 3 rings + 3 consumables)`);
-  console.log(`   Players: ${warrior.username}, ${mage.username}`);
+  console.log(`   Items: ${itemCount}`);
+  console.log(`   Players: Warrior, Mage, Ninja, Troll pénien`);
 }
 
 main()

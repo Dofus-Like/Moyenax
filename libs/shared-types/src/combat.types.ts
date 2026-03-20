@@ -37,16 +37,24 @@ export interface Tile {
   type: TerrainType;
 }
 
+export interface Buff {
+  type: 'PA' | 'PM' | 'DEF' | 'RES' | 'VIT_MAX';
+  value: number;
+  remainingTurns: number;
+}
+
 export interface CombatPlayer {
   playerId: string;
   username: string;
+  type: 'PLAYER' | 'SUMMON';
   stats: PlayerStats;
   position: CombatPosition;
   spells: SpellDefinition[];
   remainingPa: number;
   remainingPm: number;
-  currentVit: number;      // Pour suivre les dégâts séparément des stats de base
+  currentVit: number;      
   spellCooldowns: Record<string, number>;
+  buffs: Buff[];
   skin?: string;
 }
 

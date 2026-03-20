@@ -9,6 +9,7 @@ export function LoginPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedClass, setSelectedClass] = useState('warrior');
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { setToken, setPlayer } = useAuthStore();
@@ -20,7 +21,7 @@ export function LoginPage() {
     try {
       let response;
       if (isRegister) {
-        response = await authApi.register({ username, email, password });
+        response = await authApi.register({ username, email, password, selectedClass });
       } else {
         response = await authApi.login({ email, password });
       }
@@ -86,6 +87,32 @@ export function LoginPage() {
             required
             minLength={8}
           />
+
+          {isRegister && (
+            <div className="class-selector">
+              <p className="selector-title">Choisis ta classe :</p>
+              <div className="class-options">
+                {[
+                  { id: 'warrior', name: 'Guerrier', emoji: '🛡️', desc: 'HP+ et Dégâts Physiques' },
+                  { id: 'mage', name: 'Mage', emoji: '🧙', desc: 'Portée et Sorts Utiles' },
+                  { id: 'ninja', name: 'Ninja', emoji: '🥷', desc: 'Mobilité et Initiative' }
+                ].map(cls => (
+                  <div 
+                    key={cls.id}
+                    className={`class-option ${selectedClass === cls.id ? 'active' : ''}`}
+                    onClick={() => setSelectedClass(cls.id)}
+                  >
+                    <span className="class-emoji">{cls.emoji}</span>
+                    <div className="class-info">
+                      <strong>{cls.name}</strong>
+                      <small>{cls.desc}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {error && <p className="login-error">{error}</p>}
           <button type="submit" className="login-button">
             {isRegister ? 'Créer un compte' : 'Se connecter'}
@@ -96,42 +123,32 @@ export function LoginPage() {
             <div className="quick-login">
                 <p className="quick-login-title">⚡ Test: Connexion Rapide</p>
                 <div className="quick-login-buttons">
-                    <button 
-                        type="button"
-                        className="quick-btn warrior"
-                        onClick={async () => {
-                            try {
-                                const res = await authApi.login({ email: 'warrior@test.com', password: 'password123' });
-                                setToken(res.data.accessToken);
-                                const me = await authApi.getMe();
-                                setPlayer(me.data);
-                                navigate('/');
-                            } catch (e) { 
-                                console.error('Quick login error:', e);
-                                setError('Seed non effectuée ou API hors ligne ?'); 
-                            }
-                        }}
-                    >
-                        🛡️ Warrior
-                    </button>
-                    <button 
-                        type="button"
-                        className="quick-btn mage"
-                        onClick={async () => {
-                            try {
-                                const res = await authApi.login({ email: 'mage@test.com', password: 'password123' });
-                                setToken(res.data.accessToken);
-                                const me = await authApi.getMe();
-                                setPlayer(me.data);
-                                navigate('/');
-                            } catch (e) { 
-                                console.error('Quick login error:', e);
-                                setError('Seed non effectuée ou API hors ligne ?'); 
-                            }
-                        }}
-                    >
-                        🧙 Mage
-                    </button>
+                    {[
+                        { name: 'Warrior', emoji: '🛡️', email: 'warrior@test.com', class: 'warrior' },
+                        { name: 'Mage', emoji: '🧙', email: 'mage@test.com', class: 'mage' },
+                        { name: 'Ninja', emoji: '🥷', email: 'ninja@test.com', class: 'ninja' },
+                        { name: 'Troll', emoji: '👺', email: 'troll@test.com', class: 'troll' },
+                    ].map(user => (
+                        <button 
+                            key={user.email}
+                            type="button"
+                            className={`quick-btn ${user.class}`}
+                            onClick={async () => {
+                                try {
+                                    const res = await authApi.login({ email: user.email, password: 'password123' });
+                                    setToken(res.data.accessToken);
+                                    const me = await authApi.getMe();
+                                    setPlayer(me.data);
+                                    navigate('/');
+                                } catch (e) { 
+                                    console.error('Quick login error:', e);
+                                    setError('Seed non effectuée ou API hors ligne ?'); 
+                                }
+                            }}
+                        >
+                            {user.emoji} {user.name}
+                        </button>
+                    ))}
                 </div>
                 <p className="quick-login-tip">💡 Pour jouer à deux, utilisez un <strong>onglet navigation privée</strong> pour la 2ème instance.</p>
             </div>

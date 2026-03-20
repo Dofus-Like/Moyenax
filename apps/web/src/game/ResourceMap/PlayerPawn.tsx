@@ -51,17 +51,25 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
     const toRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
 
     const skinConfig = useMemo(() => {
+      if (playerData?.skin === 'menhir') return { id: 'menhir', name: 'Menhir', type: 'menhir', hue: 0, saturation: 1 };
       return getSkinById(playerData?.skin || 'soldier-classic');
     }, [playerData?.skin]);
 
     const spriteType = skinConfig.type;
+    const isSummon = playerData?.type === 'SUMMON';
 
-    // Charger et isoler les textures
-    const texIdle = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/idle.png`);
-    const texWalk = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/walk.png`);
-    const texAttack = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/attack.png`);
+    // Charger et isoler les textures (Seulement si ce n'est pas une invocation sans sprites)
+    const skipSprites = isSummon && spriteType === 'menhir';
+    
+    // On utilise un try/catch ou un fallback pour le loader en React-Three-Fiber est complexe, 
+    // on va plutôt utiliser des chemins valides (soldier par défaut) si on skip.
+    const pathPrefix = skipSprites ? 'soldier' : spriteType;
+    const texIdle = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/idle.png`);
+    const texWalk = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/walk.png`);
+    const texAttack = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/attack.png`);
 
     const { textureIdle, textureWalk, textureAttack } = useMemo(() => {
+      if (skipSprites) return { textureIdle: texIdle, textureWalk: texWalk, textureAttack: texAttack };
       const tIdle = texIdle.clone();
       const tWalk = texWalk.clone();
       const tAttack = texAttack.clone();
@@ -100,40 +108,55 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
         uSat: { value: skinConfig.saturation }
     }), [skinConfig]);
 
+    // Memoïser le matériau pour éviter les fuites WebGL et les recompilations massives
+    const spriteMaterial = useMemo(() => {
+        const mat = new THREE.SpriteMaterial({
+            map: textureIdle,
+            transparent: true,
+            alphaTest: 0.5,
+            precision: 'highp',
+        });
+        
+        mat.onBeforeCompile = (shader: any) => {
+            shader.uniforms.uHue = uniforms.uHue;
+            shader.uniforms.uSat = uniforms.uSat;
+
+            shader.fragmentShader = `
+                uniform float uHue;
+                uniform float uSat;
+                vec3 applyHue(vec3 rgb, float hueOffset) {
+                    const vec3 k = vec3(0.57735, 0.57735, 0.57735);
+                    float cosAngle = cos(hueOffset);
+                    return rgb * cosAngle + cross(k, rgb) * sin(hueOffset) + k * dot(k, rgb) * (1.0 - cosAngle);
+                }
+                vec3 applySat(vec3 rgb, float sat) {
+                    float intensity = dot(rgb, vec3(0.299, 0.587, 0.114));
+                    return mix(vec3(intensity), rgb, sat);
+                }
+                ${shader.fragmentShader}
+            `.replace(
+                '#include <map_fragment>',
+                `
+                #ifdef USE_MAP
+                    vec4 texelColor = texture2D( map, vMapUv );
+                    texelColor.rgb = applyHue(texelColor.rgb, uHue);
+                    texelColor.rgb = applySat(texelColor.rgb, uSat);
+                    diffuseColor *= texelColor;
+                #endif
+                `
+            );
+        };
+        mat.customProgramCacheKey = () => `pawn-mat-${skinConfig.id}`;
+        return mat;
+    }, [textureIdle, skinConfig.id, uniforms]);
+
+    // Update du map du mat en fonction de l'état (marche/attaque)
     useEffect(() => {
-        uniforms.uHue.value = (skinConfig.hue * Math.PI) / 180;
-        uniforms.uSat.value = skinConfig.saturation;
-    }, [skinConfig, uniforms]);
-
-    const handleBeforeCompile = (shader: THREE.Shader) => {
-        shader.uniforms.uHue = uniforms.uHue;
-        shader.uniforms.uSat = uniforms.uSat;
-
-        shader.fragmentShader = `
-            uniform float uHue;
-            uniform float uSat;
-            vec3 applyHue(vec3 rgb, float hueOffset) {
-                const vec3 k = vec3(0.57735, 0.57735, 0.57735);
-                float cosAngle = cos(hueOffset);
-                return rgb * cosAngle + cross(k, rgb) * sin(hueOffset) + k * dot(k, rgb) * (1.0 - cosAngle);
-            }
-            vec3 applySat(vec3 rgb, float sat) {
-                float intensity = dot(rgb, vec3(0.299, 0.587, 0.114));
-                return mix(vec3(intensity), rgb, sat);
-            }
-            ${shader.fragmentShader}
-        `.replace(
-            '#include <map_fragment>',
-            `
-            #ifdef USE_MAP
-                vec4 texelColor = texture2D( map, vMapUv );
-                texelColor.rgb = applyHue(texelColor.rgb, uHue);
-                texelColor.rgb = applySat(texelColor.rgb, uSat);
-                diffuseColor *= texelColor;
-            #endif
-            `
-        );
-    };
+        if (isAttacking) spriteMaterial.map = textureAttack;
+        else if (isMoving) spriteMaterial.map = textureWalk;
+        else spriteMaterial.map = textureIdle;
+        spriteMaterial.needsUpdate = true;
+    }, [isAttacking, isMoving, textureIdle, textureWalk, textureAttack, spriteMaterial]);
 
     // Exposer triggerAttack
     React.useImperativeHandle(ref, () => ({
@@ -280,8 +303,8 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
 
     // Calcul de la vie pour la barre
     const hpPercent = useMemo(() => {
-        if (!playerData || !playerData.stats.vit) return 1;
-        return Math.max(0, Math.min(1, playerData.currentVit / playerData.stats.vit));
+        if (!playerData?.stats?.vit) return 1;
+        return Math.max(0, Math.min(1, (playerData.currentVit ?? 100) / playerData.stats.vit));
     }, [playerData]);
 
     return (
@@ -299,20 +322,24 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
           <meshBasicMaterial color="black" transparent opacity={0.5} />
         </mesh>
 
-        <sprite 
-          ref={spriteRef} 
-          position={[0, 0.45, 0]} 
-          scale={[6, 6, 1]}
-        >
-          <spriteMaterial 
-              map={textureIdle} 
-              transparent={true} 
-              alphaTest={0.5}
-              precision="highp"
-              onBeforeCompile={handleBeforeCompile}
-              key={`${skinConfig.id}-${spriteType}`}
-          />
-        </sprite>
+        {isSummon && spriteType === 'menhir' ? (
+          <mesh position={[0, 0.4, 0]}>
+             <capsuleGeometry args={[0.3, 0.4, 4, 8]} />
+             <meshStandardMaterial color="#64748b" roughness={0.9} />
+          </mesh>
+        ) : (
+          <sprite 
+            ref={spriteRef} 
+            position={[0, 0.45, 0]} 
+            scale={[6, 6, 1]}
+          >
+            <primitive 
+                object={spriteMaterial} 
+                attach="material" 
+                key={`${skinConfig.id}-${spriteType}`}
+            />
+          </sprite>
+        )}
 
         {/* BARRE DE VIE (Contrôlée par l'option globale) */}
         {showEnemyHp && isEnemy && playerData && (
@@ -346,7 +373,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
               outlineWidth={0.025}
               outlineColor="black"
             >
-              {`${Math.ceil(playerData.currentVit)} / ${playerData.stats.vit} PV`}
+              {`${Math.ceil(playerData.currentVit ?? 100)} / ${playerData?.stats?.vit ?? 100} PV`}
             </Text>
           </Billboard>
         )}

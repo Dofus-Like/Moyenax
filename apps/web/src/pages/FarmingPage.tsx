@@ -1,9 +1,9 @@
 import { CameraControls, OrthographicCamera } from '@react-three/drei';
 import CameraControlsImpl from 'camera-controls';
 import { Canvas } from '@react-three/fiber';
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 import { FarmingHUD } from '../game/HUD/FarmingHUD';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import { useAutoHarvest } from '../game/UnifiedMap/hooks/useAutoHarvest';
@@ -43,29 +43,16 @@ export function FarmingPage() {
   const isDebugMode = searchParams.get('debug') === 'true';
 
   const [isCameraMoving, setIsCameraMoving] = useState(false);
-  const {
-    map,
-    playerPosition,
-    movePlayer,
-    inventory,
-    fetchState,
-    gatherNode,
-    debugRefill,
-    nextRound,
-    round,
-  } = useFarmingStore(
-    shallow((state) => ({
-      map: state.map,
-      playerPosition: state.playerPosition,
-      movePlayer: state.movePlayer,
-      inventory: state.inventory,
-      fetchState: state.fetchState,
-      gatherNode: state.gatherNode,
-      debugRefill: state.debugRefill,
-      nextRound: state.nextRound,
-      round: state.round,
-    })),
-  );
+  const map = useFarmingStore((s) => s.map);
+  const playerPosition = useFarmingStore((s) => s.playerPosition);
+  const movePlayer = useFarmingStore((s) => s.movePlayer);
+  const inventory = useFarmingStore((s) => s.inventory);
+  const fetchState = useFarmingStore((s) => s.fetchState);
+  const gatherNode = useFarmingStore((s) => s.gatherNode);
+  const debugRefill = useFarmingStore((s) => s.debugRefill);
+  const nextRound = useFarmingStore((s) => s.nextRound);
+  const round = useFarmingStore((s) => s.round);
+  const isLoading = useFarmingStore((s) => s.isLoading);
 
   const showActionMessage = useCallback((text: string, type: 'info' | 'error' = 'error') => {
     setActionMessage({ text, type });
@@ -324,18 +311,20 @@ export function FarmingPage() {
             <hemisphereLight args={['#87CEEB', '#654321', 0.6]} />
             <directionalLight position={[10, 20, 10]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} />
             <color attach="background" args={['#0a0e17']} />
-            <UnifiedMapScene 
-              mode="farming" 
-              map={map} 
-              playerPosition={playerPosition || undefined}
-              movePath={movePath}
-              previewPath={previewPath}
-              onPathComplete={handlePathComplete}
-              onTileClick={handleTileClick}
-              onTileHover={handleTileHover}
-              isCameraMoving={isCameraMoving}
-              isMoving={isMoving}
-            />
+            <Suspense fallback={null}>
+              <UnifiedMapScene 
+                mode="farming" 
+                map={map} 
+                playerPosition={playerPosition || undefined}
+                movePath={movePath}
+                previewPath={previewPath}
+                onPathComplete={handlePathComplete}
+                onTileClick={handleTileClick}
+                onTileHover={handleTileHover}
+                isCameraMoving={isCameraMoving}
+                isMoving={isMoving}
+              />
+            </Suspense>
           </Canvas>
         )}
 

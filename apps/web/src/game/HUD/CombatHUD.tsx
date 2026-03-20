@@ -120,7 +120,7 @@ export function CombatHUD() {
     }
   };
 
-  const hpPercent = (currentPlayer.currentVit / currentPlayer.stats.vit) * 100;
+  const hpPercent = (currentPlayer.currentVit / (currentPlayer.stats?.vit || 1)) * 100;
   const avatarClass = skinConfig.type;
 
   return (

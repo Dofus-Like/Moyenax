@@ -147,12 +147,14 @@ export function CombatPage() {
             </Suspense>
 
             {gameMap && (
-              <UnifiedMapScene 
-                mode="combat" 
-                map={gameMap} 
-                sessionId={sessionId} 
-                isCameraMoving={isCameraMoving} 
-              />
+              <Suspense fallback={null}>
+                <UnifiedMapScene 
+                  mode="combat" 
+                  map={gameMap} 
+                  sessionId={sessionId} 
+                  isCameraMoving={isCameraMoving} 
+                />
+              </Suspense>
             )}
           </Canvas>
 

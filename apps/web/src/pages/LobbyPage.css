@@ -75,22 +75,36 @@
 }
 
 .skin-preview-container {
-  width: 60px;
-  height: 60px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  width: 80px;
+  height: 80px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .skin-sprite-icon {
-  width: 48px;
-  height: 48px;
+  width: 100%;
+  height: 100%;
   background-repeat: no-repeat;
   image-rendering: pixelated;
+  transform-origin: center;
+}
+
+.skin-sprite-icon.avatar-soldier,
+.skin-sprite-icon.avatar-orc {
+  background-size: 1600px auto;
+  background-position: -98px -88px;
+  animation: lobby-portrait-idle 0.8s steps(6) infinite;
+}
+
+@keyframes lobby-portrait-idle {
+  from { background-position-x: -98px; }
+  to { background-position-x: -1698px; }
 }
 
 .skin-info {
