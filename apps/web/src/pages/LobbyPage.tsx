@@ -109,12 +109,10 @@ export function LobbyPage() {
              >
                 <div className="skin-preview-container">
                   <div 
-                    className={`skin-sprite-icon type-${skin.type}`} 
+                    className={`skin-sprite-icon type-${skin.type} avatar-${skin.type === 'soldier' ? 'soldier' : 'orc'}`} 
                     style={{ 
                       filter: `hue-rotate(${skin.hue}deg) saturate(${skin.saturation})`,
                       backgroundImage: `url(/assets/sprites/${skin.type}/idle.png)`,
-                      backgroundSize: '600% 100%',
-                      backgroundPosition: '0% 0%'
                     }}
                   />
                 </div>

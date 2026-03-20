@@ -339,7 +339,14 @@ export const UnifiedMapScene = React.memo(({
     for (let y = 0; y < combatState.map.height; y++) {
       for (let x = 0; x < combatState.map.width; x++) {
         const inRange = isInRange(currentPlayer.position, { x, y }, spell.minRange, spell.maxRange);
-        if (inRange && (spell.id === 'spell-bond' || hasLineOfSight(currentPlayer.position, { x, y }, combatState.map.tiles))) {
+        
+        // Restriction lancer en ligne pour la bombe
+        let isLineValid = true;
+        if (spell.id === 'spell-bombe-repousse') {
+          isLineValid = (x === currentPlayer.position.x || y === currentPlayer.position.y);
+        }
+
+        if (inRange && isLineValid && (spell.id === 'spell-bond' || hasLineOfSight(currentPlayer.position, { x, y }, combatState.map.tiles))) {
           result.push({ x, y });
         }
       }
@@ -347,15 +354,26 @@ export const UnifiedMapScene = React.memo(({
     return result;
   }, [mode, currentPlayer, selectedSpellId, combatState?.map?.tiles]);
 
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
+
   const handleCombatTileClick = useCallback(
     async (x: number, y: number) => {
-      if (mode !== 'combat' || !sessionId || !isMyTurn || !currentPlayer) return;
+      if (mode !== 'combat' || !sessionId || !isMyTurn || !currentPlayer || isProcessingAction) return;
+      
+      setIsProcessingAction(true);
       try {
         let res;
         if (selectedSpellId) {
-          res = await combatApi.playAction(sessionId, { type: CombatActionType.CAST_SPELL, spellId: selectedSpellId, targetX: x, targetY: y });
+          // Si on a un sort sélectionné, on le lance
+          res = await combatApi.playAction(sessionId, { 
+              type: CombatActionType.CAST_SPELL, 
+              spellId: selectedSpellId, 
+              targetX: x, 
+              targetY: y 
+          });
           setSelectedSpell(null);
         } else {
+          // Sinon on se déplace
           const target = { x, y };
           if (combatState?.map?.tiles && canMoveTo(target, currentPlayer.remainingPm, currentPlayer.position, combatState.map.tiles, occupiedPositions)) {
             res = await combatApi.playAction(sessionId, { type: CombatActionType.MOVE, targetX: x, targetY: y });
@@ -363,12 +381,16 @@ export const UnifiedMapScene = React.memo(({
             res = await combatApi.playAction(sessionId, { type: CombatActionType.JUMP, targetX: x, targetY: y });
           }
         }
-        if (res?.data) setCombatState(res.data);
+        if (res?.data) {
+          setCombatState(res.data);
+        }
       } catch (err: unknown) {
         console.error('CombatAction Error:', err);
+      } finally {
+        setIsProcessingAction(false);
       }
     },
-    [mode, sessionId, isMyTurn, currentPlayer, selectedSpellId, combatState, occupiedPositions, setSelectedSpell, setCombatState, activeMap]
+    [mode, sessionId, isMyTurn, currentPlayer, selectedSpellId, combatState, occupiedPositions, setSelectedSpell, setCombatState, activeMap, isProcessingAction]
   );
 
   const handleTileClickDispatcher = useCallback(

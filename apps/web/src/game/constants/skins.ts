@@ -10,11 +10,11 @@ export interface SkinConfig {
 export const SKINS: SkinConfig[] = [
   { 
     id: 'soldier-classic', 
-    name: 'Guerrier (Base)', 
+    name: 'Guerrier de Chair', 
     type: 'soldier', 
     hue: 0, 
     saturation: 1,
-    description: 'L\'équipement standard de la garde royale.'
+    description: 'L\'équipement standard du garde des fôrets de Chair.'
   },
   { 
     id: 'soldier-royal', 

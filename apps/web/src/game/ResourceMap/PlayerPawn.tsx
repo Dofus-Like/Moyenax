@@ -51,17 +51,25 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
     const toRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
 
     const skinConfig = useMemo(() => {
+      if (playerData?.skin === 'menhir') return { id: 'menhir', name: 'Menhir', type: 'menhir', hue: 0, saturation: 1 };
       return getSkinById(playerData?.skin || 'soldier-classic');
     }, [playerData?.skin]);
 
     const spriteType = skinConfig.type;
+    const isSummon = playerData?.type === 'SUMMON';
 
-    // Charger et isoler les textures
-    const texIdle = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/idle.png`);
-    const texWalk = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/walk.png`);
-    const texAttack = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/attack.png`);
+    // Charger et isoler les textures (Seulement si ce n'est pas une invocation sans sprites)
+    const skipSprites = isSummon && spriteType === 'menhir';
+    
+    // On utilise un try/catch ou un fallback pour le loader en React-Three-Fiber est complexe, 
+    // on va plutôt utiliser des chemins valides (soldier par défaut) si on skip.
+    const pathPrefix = skipSprites ? 'soldier' : spriteType;
+    const texIdle = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/idle.png`);
+    const texWalk = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/walk.png`);
+    const texAttack = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/attack.png`);
 
     const { textureIdle, textureWalk, textureAttack } = useMemo(() => {
+      if (skipSprites) return { textureIdle: texIdle, textureWalk: texWalk, textureAttack: texAttack };
       const tIdle = texIdle.clone();
       const tWalk = texWalk.clone();
       const tAttack = texAttack.clone();
@@ -300,20 +308,27 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
           <meshBasicMaterial color="black" transparent opacity={0.5} />
         </mesh>
 
-        <sprite 
-          ref={spriteRef} 
-          position={[0, 0.45, 0]} 
-          scale={[6, 6, 1]}
-        >
-          <spriteMaterial 
-              map={textureIdle} 
-              transparent={true} 
-              alphaTest={0.5}
-              precision="highp"
-              onBeforeCompile={handleBeforeCompile}
-              key={`${skinConfig.id}-${spriteType}`}
-          />
-        </sprite>
+        {isSummon && spriteType === 'menhir' ? (
+          <mesh position={[0, 0.4, 0]}>
+             <capsuleGeometry args={[0.3, 0.4, 4, 8]} />
+             <meshStandardMaterial color="#64748b" roughness={0.9} />
+          </mesh>
+        ) : (
+          <sprite 
+            ref={spriteRef} 
+            position={[0, 0.45, 0]} 
+            scale={[6, 6, 1]}
+          >
+            <spriteMaterial 
+                map={textureIdle} 
+                transparent={true} 
+                alphaTest={0.5}
+                precision="highp"
+                onBeforeCompile={handleBeforeCompile}
+                key={`${skinConfig.id}-${spriteType}`}
+            />
+          </sprite>
+        )}
 
         {/* BARRE DE VIE (Contrôlée par l'option globale) */}
         {showEnemyHp && isEnemy && playerData && (
