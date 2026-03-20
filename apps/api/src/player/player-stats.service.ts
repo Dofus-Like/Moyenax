@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../shared/prisma/prisma.service';
-import { PlayerStats, ItemType } from '@game/shared-types';
+import type { PlayerStats } from '@game/shared-types';
+import { ItemType } from '@game/shared-types';
 import { StatsCalculatorService } from './stats-calculator.service';
 
 @Injectable()

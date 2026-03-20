@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { TurnService } from './turn.service';
-import { CombatAction } from '@game/shared-types';
+import type { CombatAction } from '@game/shared-types';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @Controller('combat/action')

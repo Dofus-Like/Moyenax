@@ -1,16 +1,19 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { performance } from 'node:perf_hooks';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 
 import { EquipmentSlotType } from '@game/shared-types';
 import { StatsCalculatorService } from '../../player/stats-calculator.service';
 import { SpellResolverService } from '../../combat/spell-resolver.service';
+import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 
 @Injectable()
 export class EquipmentService {
   constructor(
-    private prisma: PrismaService,
-    private statsCalculator: StatsCalculatorService,
-    private spellResolver: SpellResolverService
+    private readonly prisma: PrismaService,
+    private readonly statsCalculator: StatsCalculatorService,
+    private readonly spellResolver: SpellResolverService,
+    private readonly perfLogger: PerfLoggerService,
   ) {}
 
   async getEquipment(playerId: string) {
@@ -73,9 +76,7 @@ export class EquipmentService {
       },
     });
 
-    await this.updatePlayerStatsAndSpells(playerId);
-
-    return this.getEquipment(playerId);
+    return this.updatePlayerStatsAndSpells(playerId);
   }
 
   async unequip(playerId: string, slot: EquipmentSlotType) {
@@ -88,44 +89,56 @@ export class EquipmentService {
       },
     });
 
-    await this.updatePlayerStatsAndSpells(playerId);
-
-    return this.getEquipment(playerId);
+    return this.updatePlayerStatsAndSpells(playerId);
   }
 
   private async updatePlayerStatsAndSpells(playerId: string) {
-    // 1. Stats
-    const stats = await this.statsCalculator.computeEffectiveStats(playerId);
-    await this.prisma.playerStats.update({
-      where: { playerId },
-      data: stats,
-    });
+    const startedAt = performance.now();
+    const [stats, equipment, allSpells] = await Promise.all([
+      this.statsCalculator.computeEffectiveStats(playerId),
+      this.getEquipment(playerId),
+      this.prisma.spell.findMany({
+        select: { id: true, name: true },
+      }),
+    ]);
 
-    // 2. Spells
-    const equipment = await this.getEquipment(playerId);
     const resolvedSpells = this.spellResolver.resolveSpells(equipment);
+    const playerSpellsData: Array<{ playerId: string; spellId: string; level: number }> = [];
 
-    // On récupère tous les spells de la DB pour mapper les noms aux IDs
-    const allSpells = await this.prisma.spell.findMany();
-
-    // Vider les anciens spells (simplification : on remplace tout)
-    await this.prisma.playerSpell.deleteMany({
-      where: { playerId },
-    });
-
-    // Créer les nouveaux
     for (const rs of resolvedSpells) {
       const dbSpell = allSpells.find((s) => s.name === rs.spellName);
       if (dbSpell) {
-        await this.prisma.playerSpell.create({
-          data: {
-            playerId,
-            spellId: dbSpell.id,
-            level: rs.level,
-          },
+        playerSpellsData.push({
+          playerId,
+          spellId: dbSpell.id,
+          level: rs.level,
         });
       }
     }
+
+    await this.prisma.$transaction([
+      this.prisma.playerStats.update({
+        where: { playerId },
+        data: stats,
+      }),
+      this.prisma.playerSpell.deleteMany({
+        where: { playerId },
+      }),
+      ...(playerSpellsData.length > 0
+        ? [
+            this.prisma.playerSpell.createMany({
+              data: playerSpellsData,
+            }),
+          ]
+        : []),
+    ]);
+
+    this.perfLogger.logDuration('player', 'equipment.recompute', performance.now() - startedAt, {
+      player_id: playerId,
+      spell_count: playerSpellsData.length,
+    });
+
+    return equipment;
   }
 
   private validateSlotCompatibility(itemType: string, slot: EquipmentSlotType) {

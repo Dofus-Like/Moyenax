@@ -4,6 +4,7 @@ import { RedisService } from '../../shared/redis/redis.service';
 import { MapGeneratorService } from '../map/map-generator.service';
 import { InventoryService } from '../../economy/inventory/inventory.service';
 import { FarmingState, SeedId, TERRAIN_PROPERTIES, TerrainType, GAME_EVENTS } from '@game/shared-types';
+import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 
 @Injectable()
 export class FarmingService {
@@ -11,6 +12,7 @@ export class FarmingService {
     private readonly redis: RedisService,
     private readonly mapGenerator: MapGeneratorService,
     private readonly inventory: InventoryService,
+    private readonly perfLogger: PerfLoggerService,
   ) {}
 
   async getOrCreateInstance(playerId: string, seedId?: SeedId): Promise<FarmingState> {
@@ -106,7 +108,12 @@ export class FarmingService {
 
   @OnEvent(GAME_EVENTS.COMBAT_ENDED)
   async handleCombatEnded(payload: { winnerId: string; loserId: string; sessionId: string }) {
-    console.log(`[FarmingService] Combat ended, incrementing round for players: ${payload.winnerId}, ${payload.loserId}`);
+    this.perfLogger.logEvent('world', 'farming.combat_ended', {
+      session_id: payload.sessionId,
+      winner_id: payload.winnerId,
+      loser_id: payload.loserId,
+    });
+
     for (const playerId of [payload.winnerId, payload.loserId]) {
       if (!playerId) continue;
       const key = `farming:${playerId}`;

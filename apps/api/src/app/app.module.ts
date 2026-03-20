@@ -1,6 +1,8 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { PerfModule } from '../shared/perf/perf.module';
+import { RequestContextMiddleware } from '../shared/perf/request-context.middleware';
 import { PrismaModule } from '../shared/prisma/prisma.module';
 import { RedisModule } from '../shared/redis/redis.module';
 import { AuthModule } from '../auth/auth.module';
@@ -14,6 +16,7 @@ import { SseModule } from '../shared/sse/sse.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     EventEmitterModule.forRoot(),
+    PerfModule,
     PrismaModule,
     RedisModule,
     SseModule,
@@ -24,4 +27,8 @@ import { SseModule } from '../shared/sse/sse.module';
     CombatModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
+  }
+}

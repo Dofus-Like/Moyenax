@@ -97,11 +97,21 @@ game-monorepo/
 | `yarn build` | Build tous les projets |
 | `yarn lint` | Lint tous les projets |
 | `yarn test` | Tests tous les projets |
+| `yarn perf:api:start` | Mesure le démarrage local de l'API et écrit le résumé dans `tmp/perf/` |
+| `yarn perf:api:baseline` | Lance une baseline perf locale read-only et écrit les résultats dans `tmp/perf/` |
+| `yarn perf:api:report` | Affiche le dernier résumé perf local |
+| `yarn perf:api:compare` | Compare la dernière baseline aux budgets versionnés |
 | `yarn db:migrate` | Exécute les migrations Prisma |
 | `yarn db:studio` | Ouvre Prisma Studio |
 | `yarn db:seed` | Seed la base de données |
 | `yarn docker:dev` | Lance PostgreSQL + Redis |
 | `yarn docker:prod` | Lance toute la stack en production |
+
+## 📈 Profiling Backend
+
+- Les artefacts bruts de perf ne sont jamais versionnés et vivent uniquement dans `tmp/perf/`.
+- Les budgets versionnés sont stockés dans `apps/api/perf-budgets.json`.
+- Les scripts perf lot 1 sont majoritairement read-only et utilisent les comptes seedés existants.
 
 ## 🛠️ Stack Technique
 

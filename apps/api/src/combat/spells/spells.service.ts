@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CombatState, CombatPlayer, SpellDefinition } from '@game/shared-types';
+import type { CombatState, CombatPlayer, SpellDefinition } from '@game/shared-types';
 
 @Injectable()
 export class SpellsService {

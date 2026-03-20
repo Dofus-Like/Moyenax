@@ -1,0 +1,36 @@
+{
+  "startup": {
+    "api_dev_ready_ms": 6000,
+    "rss_mb_at_ready": 300,
+    "heap_mb_at_ready": 150
+  },
+  "client": {
+    "POST /api/v1/auth/login": {
+      "p95_ms": 200
+    },
+    "GET /api/v1/auth/me": {
+      "p95_ms": 75
+    },
+    "GET /api/v1/player/stats": {
+      "p95_ms": 100
+    },
+    "GET /api/v1/inventory": {
+      "p95_ms": 100
+    },
+    "GET /api/v1/equipment": {
+      "p95_ms": 100
+    },
+    "GET /api/v1/combat/rooms": {
+      "p95_ms": 100
+    },
+    "GET /api/v1/map": {
+      "p95_ms": 60
+    }
+  },
+  "server": {
+    "http_p95_ms": 75,
+    "prisma_p95_ms": 40,
+    "redis_p95_ms": 20,
+    "slow_log_count": 5
+  }
+}
