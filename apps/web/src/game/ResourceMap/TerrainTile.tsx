@@ -1,9 +1,8 @@
-﻿import React from 'react';
+import React from 'react';
 import { ThreeEvent } from '@react-three/fiber';
 import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
 import { Bush } from './Bush';
 import { Tree } from './Tree';
-import { GrassTile } from './GrassTile';
 import { Suspense } from 'react';
 
 const TERRAIN_COLORS: Record<TerrainType, { base: string; hover: string }> = {
@@ -134,41 +133,26 @@ export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, p
 
   return (
     <group>
-      {/* Sol : mod├¿le GLB grass.glb, avec fallback sur le plan color├® */}
-      <Suspense fallback={
-        <mesh
-          position={[worldX, 0, worldZ]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          receiveShadow
-          userData={{ x, y, terrain, type: 'terrain-tile' }}
-          onClick={(e: ThreeEvent<MouseEvent>) => {
-            e.stopPropagation();
-            if (onTileClick) onTileClick(x, y, terrain);
-          }}
-        >
-          <planeGeometry args={[0.92, 0.92]} />
-          <meshStandardMaterial color={baseColor} />
-        </mesh>
-      }>
-        <GrassTile
-          position={[worldX, 0, worldZ]}
-          seed={x * 1000 + y}
-          scale={1.0}
-        />
-        {/* Mesh invisible pour les interactions (click/hover) */}
-        <mesh
-          position={[worldX, 0.001, worldZ]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          userData={{ x, y, terrain, type: 'terrain-tile' }}
-          onClick={(e: ThreeEvent<MouseEvent>) => {
-            e.stopPropagation();
-            if (onTileClick) onTileClick(x, y, terrain);
-          }}
-        >
-          <planeGeometry args={[1, 1]} />
-          <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-      </Suspense>
+      {/* Sol épais en 3D (box) au lieu de plat */}
+      <mesh
+        position={[worldX, -0.2, worldZ]}
+        receiveShadow
+        userData={{ x, y, terrain, type: 'terrain-tile' }}
+        onClick={(e: ThreeEvent<MouseEvent>) => {
+          e.stopPropagation();
+          if (onTileClick) onTileClick(x, y, terrain);
+        }}
+      >
+        <boxGeometry args={[0.92, 0.4, 0.92]} />
+        {/* Les 6 faces du cube de sol : 
+            0: droite, 1: gauche, 2: dessus, 3: dessous, 4: devant, 5: derrière */}
+        <meshStandardMaterial attach="material-0" color="#3c2415" />
+        <meshStandardMaterial attach="material-1" color="#3c2415" />
+        <meshStandardMaterial attach="material-2" color={baseColor} />
+        <meshStandardMaterial attach="material-3" color="#3c2415" />
+        <meshStandardMaterial attach="material-4" color="#3c2415" />
+        <meshStandardMaterial attach="material-5" color="#3c2415" />
+      </mesh>
 
       {props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD && (
         <Suspense fallback={
@@ -206,7 +190,7 @@ export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, p
               <meshStandardMaterial color="#4ade80" />
             </mesh>
           }>
-            <Bush position={[worldX, 0, worldZ]} scale={1.0} />
+            <Bush position={[worldX, 0, worldZ]} scale={1.0} seed={x * 1000 + y} />
           </Suspense>
         ) : (
           <FlatResource

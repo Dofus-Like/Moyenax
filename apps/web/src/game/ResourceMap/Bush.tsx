@@ -1,70 +1,83 @@
-import React, { useMemo, useRef } from 'react';
-import { useGLTF } from '@react-three/drei';
+import React, { useMemo } from 'react';
+import { useFBX, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
 export interface BushProps {
   position: [number, number, number];
   scale?: number;
-  rotation?: [number, number, number];
+  seed?: number;
 }
 
-export function Bush({ 
-  position, 
-  scale = 1.0, 
-  rotation = [0, 0, 0] 
-}: BushProps) {
-  const { scene } = useGLTF('/assets/models/bushes.glb');
-  const groupRef = useRef<THREE.Group>(null);
+const BUSH_URL = '/assets/models/Bush_03.fbx';
+const TEXTURE_PATH = '/assets/models/SimpleNature_Texture.png';
 
-  const clonedBush = useMemo(() => {
-    const fullClone = scene.clone(true);
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed + 1) * 43758.5453123;
+  return x - Math.floor(x);
+}
 
-    // Extraction du buisson le plus à gauche parmi les enfants
-    // Certains GLB compressent tout dans un seul groupe 'Scene'
-    const topLevel = fullClone.children.filter(
-      (c) => c.type === 'Group' || c.type === 'Object3D' || (c as THREE.Mesh).isMesh
-    );
+/**
+ * BushModel – Affiche le buisson (modèle 03) avec texture et centrage
+ */
+function BushModel({ url, rotationY, texture }: { url: string; rotationY: number; texture: THREE.Texture }) {
+  const fbx = useFBX(url);
 
-    let selectedObject: THREE.Object3D | null = null;
+  const { clonedBush, offset } = useMemo(() => {
+    const clone = fbx.clone(true);
+    
+    // Calcul de la Bounding Box pour centrer au pied
+    const box = new THREE.Box3().setFromObject(clone);
+    const center = box.getCenter(new THREE.Vector3());
+    const bottom = box.min.y;
 
-    if (topLevel.length >= 3) {
-      topLevel.sort((a, b) => a.position.x - b.position.x);
-      selectedObject = topLevel[0];
-    } else if (topLevel.length === 1) {
-      const subChildren = topLevel[0].children.filter(
-        (c) => c.type === 'Group' || c.type === 'Object3D' || (c as THREE.Mesh).isMesh
-      );
-      if (subChildren.length >= 3) {
-        subChildren.sort((a, b) => a.position.x - b.position.x);
-        selectedObject = subChildren[0];
+    // Correction des ombres et des matériaux
+    clone.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        
+        if (mesh.material) {
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          mats.forEach(m => {
+            if ('map' in m) {
+              (m as any).map = texture;
+              (m as any).map.colorSpace = THREE.SRGBColorSpace;
+              (m as any).color.setHex(0xffffff);
+            }
+            if ('shininess' in m) (m as any).shininess = 0;
+            m.needsUpdate = true;
+          });
+        }
       }
-    }
+    });
 
-    const result = new THREE.Group();
-    if (selectedObject) {
-      const child = selectedObject.clone(true);
-      child.position.set(0, 0, 0);
-      result.add(child);
-    } else {
-      // Fallback si la détection échoue
-      fullClone.position.set(0, 0, 0);
-      result.add(fullClone);
-    }
+    return { 
+      clonedBush: clone, 
+      offset: [-center.x, -bottom, -center.z] as [number, number, number] 
+    };
+  }, [fbx, texture]);
 
-    return result;
-  }, [scene]);
-
+  // FBX scale multiplier
   return (
-    <group 
-      ref={groupRef} 
-      position={position} 
-      scale={scale} 
-      rotation={rotation}
-    >
-      <primitive object={clonedBush} />
+    <group rotation={[0, rotationY, 0]} scale={0.01}>
+      <primitive object={clonedBush} position={offset} />
     </group>
   );
 }
 
-// Pré-chargement
-useGLTF.preload('/assets/models/bushes.glb');
+export function Bush({ position, scale = 1.0, seed = 0 }: BushProps) {
+  const texture = useTexture(TEXTURE_PATH);
+  
+  // On utilise uniquement le buisson 3 comme demandé
+  const rotationY = seededRandom(seed * 3) * Math.PI * 2;
+
+  return (
+    <group position={position} scale={scale}>
+      <BushModel url={BUSH_URL} rotationY={rotationY} texture={texture} />
+    </group>
+  );
+}
+
+useFBX.preload(BUSH_URL);
+useTexture.preload(TEXTURE_PATH);
