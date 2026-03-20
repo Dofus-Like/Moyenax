@@ -79,7 +79,7 @@ export class AuthService {
   async validateUser(id: string) {
     const player = await this.prisma.player.findUnique({
       where: { id },
-      select: { id: true, username: true, email: true, gold: true },
+      select: { id: true, username: true, email: true, gold: true, skin: true },
     });
 
     if (!player) {
@@ -87,5 +87,13 @@ export class AuthService {
     }
 
     return player;
+  }
+
+  async updateSkin(id: string, skin: string) {
+    return this.prisma.player.update({
+      where: { id },
+      data: { skin },
+      select: { id: true, username: true, skin: true },
+    });
   }
 }

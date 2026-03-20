@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { combatApi } from '../api/combat.api';
+import { SKINS, getSkinById } from '../game/constants/skins';
 import './LobbyPage.css';
 
 interface Room {
@@ -15,7 +16,7 @@ interface Room {
 
 
 export function LobbyPage() {
-  const { player, logout, initialize } = useAuthStore();
+  const { player, logout, initialize, setSkin } = useAuthStore();
   const navigate = useNavigate();
   const [rooms, setRooms] = React.useState<Room[]>([]);
   const [loadingRooms, setLoadingRooms] = React.useState(true);
@@ -80,17 +81,52 @@ export function LobbyPage() {
   };
 
 
-
   return (
     <div className="lobby-container">
       <header className="lobby-header">
         <h1>⚔️ Lobby</h1>
         <div className="lobby-user-info">
           <span className="lobby-gold">💰 {player?.gold ?? 0} or</span>
-          <span className="lobby-username">{player?.username ?? 'Joueur'}</span>
+          <div className="user-profile-summary">
+            <span className="lobby-username">{player?.username ?? 'Joueur'}</span>
+            <span className="lobby-skin-tag">{getSkinById(player?.skin || 'soldier-classic').name}</span>
+          </div>
           <button className="lobby-logout" onClick={handleLogout}>Déconnexion</button>
         </div>
       </header>
+
+      {/* SECTION CHOIX DU SKIN */}
+      <section className="lobby-skins">
+        <div className="lobby-section-header">
+          <h2>🎭 Choisissez votre Apparence</h2>
+        </div>
+        <div className="skins-grid">
+           {SKINS.map(skin => (
+             <div 
+                key={skin.id} 
+                className={`skin-card ${player?.skin === skin.id ? 'active' : ''}`}
+                onClick={() => setSkin(skin.id)}
+             >
+                <div className="skin-preview-container">
+                  <div 
+                    className={`skin-sprite-icon type-${skin.type}`} 
+                    style={{ 
+                      filter: `hue-rotate(${skin.hue}deg) saturate(${skin.saturation})`,
+                      backgroundImage: `url(/assets/sprites/${skin.type}/idle.png)`,
+                      backgroundSize: '600% 100%',
+                      backgroundPosition: '0% 0%'
+                    }}
+                  />
+                </div>
+                <div className="skin-info">
+                  <span className="skin-name">{skin.name}</span>
+                  <span className="skin-desc">{skin.description}</span>
+                </div>
+                {player?.skin === skin.id && <div className="skin-current-badge">ACTIF</div>}
+             </div>
+           ))}
+        </div>
+      </section>
 
       <section className="lobby-combat">
         <div className="lobby-section-header">

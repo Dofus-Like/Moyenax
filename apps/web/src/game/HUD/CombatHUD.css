@@ -255,7 +255,14 @@
   background-repeat: no-repeat;
 }
 
-.portrait-circle.avatar-orc {
+.portrait-image {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  transition: all var(--trans-med);
+}
+
+.portrait-image.avatar-orc {
   background-image: url('/assets/sprites/orc/idle.png');
   background-size: 1600px auto; 
   background-position: -98px -88px;
@@ -263,7 +270,7 @@
   image-rendering: pixelated;
 }
 
-.portrait-circle.avatar-soldier {
+.portrait-image.avatar-soldier {
   background-image: url('/assets/sprites/soldier/idle.png');
   background-size: 1600px auto;
   background-position: -98px -88px;
@@ -791,8 +798,8 @@
   }
 
   /* Ajustement sprites portrait mobile */
-  .portrait-circle.avatar-orc, 
-  .portrait-circle.avatar-soldier {
+  .portrait-image.avatar-orc, 
+  .portrait-image.avatar-soldier {
     background-size: 1200px auto; /* Redimensionné */
     background-position: -73px -67px;
   }

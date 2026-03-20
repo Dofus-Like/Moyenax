@@ -47,6 +47,7 @@ export interface CombatPlayer {
   remainingPm: number;
   currentVit: number;      // Pour suivre les dégâts séparément des stats de base
   spellCooldowns: Record<string, number>;
+  skin?: string;
 }
 
 export enum CombatActionType {

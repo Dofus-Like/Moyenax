@@ -4,6 +4,7 @@ import { useCombatStore } from '../../store/combat.store';
 import { useAuthStore } from '../../store/auth.store';
 import { combatApi } from '../../api/combat.api';
 import { CombatActionType } from '@game/shared-types';
+import { getSkinById } from '../../game/constants/skins';
 import './CombatHUD.css';
 
 const SPELL_FAMILIES: Record<string, 'warrior' | 'mage' | 'ninja'> = {
@@ -48,6 +49,10 @@ export function CombatHUD() {
   const currentPlayer = (combatState && user) ? combatState.players[user.id] : null;
   const isMyTurn = (combatState && user) ? combatState.currentTurnPlayerId === user.id : false;
 
+  const skinConfig = React.useMemo(() => {
+    return getSkinById(currentPlayer?.skin || 'soldier-classic');
+  }, [currentPlayer?.skin]);
+
   const [isClosing, setIsClosing] = React.useState(false);
   const turnRef = React.useRef(isMyTurn);
 
@@ -90,8 +95,7 @@ export function CombatHUD() {
   };
 
   const hpPercent = (currentPlayer.currentVit / currentPlayer.stats.vit) * 100;
-  const name = (user.username || '').toLowerCase();
-  const avatarClass = (name.includes('mage') || name.includes('orc')) ? 'orc' : 'soldier';
+  const avatarClass = skinConfig.type;
 
   return (
     <div className="combat-hud">
@@ -114,7 +118,12 @@ export function CombatHUD() {
       <div className="hud-character-block">
         <div className="hud-portrait-container">
           <div className="portrait-badge-wrapper">
-            <div className={`portrait-circle avatar-${avatarClass} ${isMyTurn ? 'is-my-turn' : 'not-my-turn'}`}></div>
+            <div className={`portrait-circle ${isMyTurn ? 'is-my-turn' : 'not-my-turn'}`}>
+               <div 
+                className={`portrait-image avatar-${avatarClass}`}
+                style={{ filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` }}
+               />
+            </div>
             <div className="avatar-resources-group">
               <div className="res-item">
                 <div className="res-circle pa">{currentPlayer.remainingPa}</div>

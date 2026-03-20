@@ -3,6 +3,7 @@ import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import { Billboard, Text, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { PathNode, CombatPlayer } from '@game/shared-types';
+import { getSkinById } from '../../game/constants/skins';
 import { useAuthStore } from '../../store/auth.store';
 import { useCombatStore } from '../../store/combat.store';
 
@@ -49,12 +50,11 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
     const fromRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
     const toRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
 
-    const spriteType = useMemo(() => {
-      if (!playerData) return 'soldier';
-      const name = (playerData.username || '').toLowerCase();
-      if (name.includes('mage') || name.includes('orc')) return 'orc';
-      return 'soldier';
-    }, [playerData]);
+    const skinConfig = useMemo(() => {
+      return getSkinById(playerData?.skin || 'soldier-classic');
+    }, [playerData?.skin]);
+
+    const spriteType = skinConfig.type;
 
     // Charger et isoler les textures
     const texIdle = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/idle.png`);
@@ -93,6 +93,47 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
       
       return { textureIdle: tIdle, textureWalk: tWalk, textureAttack: tAttack };
     }, [texIdle, texWalk, texAttack]);
+
+    // Uniforms pour le shader de couleur
+    const uniforms = useMemo(() => ({
+        uHue: { value: (skinConfig.hue * Math.PI) / 180 },
+        uSat: { value: skinConfig.saturation }
+    }), [skinConfig]);
+
+    useEffect(() => {
+        uniforms.uHue.value = (skinConfig.hue * Math.PI) / 180;
+        uniforms.uSat.value = skinConfig.saturation;
+    }, [skinConfig, uniforms]);
+
+    const handleBeforeCompile = (shader: any) => {
+        shader.uniforms.uHue = uniforms.uHue;
+        shader.uniforms.uSat = uniforms.uSat;
+
+        shader.fragmentShader = `
+            uniform float uHue;
+            uniform float uSat;
+            vec3 applyHue(vec3 rgb, float hueOffset) {
+                const vec3 k = vec3(0.57735, 0.57735, 0.57735);
+                float cosAngle = cos(hueOffset);
+                return rgb * cosAngle + cross(k, rgb) * sin(hueOffset) + k * dot(k, rgb) * (1.0 - cosAngle);
+            }
+            vec3 applySat(vec3 rgb, float sat) {
+                float intensity = dot(rgb, vec3(0.299, 0.587, 0.114));
+                return mix(vec3(intensity), rgb, sat);
+            }
+            ${shader.fragmentShader}
+        `.replace(
+            '#include <map_fragment>',
+            `
+            #ifdef USE_MAP
+                vec4 texelColor = texture2D( map, vMapUv );
+                texelColor.rgb = applyHue(texelColor.rgb, uHue);
+                texelColor.rgb = applySat(texelColor.rgb, uSat);
+                diffuseColor *= texelColor;
+            #endif
+            `
+        );
+    };
 
     // Exposer triggerAttack
     React.useImperativeHandle(ref, () => ({
@@ -269,6 +310,8 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
               transparent={true} 
               alphaTest={0.5}
               precision="highp"
+              onBeforeCompile={handleBeforeCompile}
+              key={`${skinConfig.id}-${spriteType}`}
           />
         </sprite>
 

@@ -502,66 +502,68 @@ export const UnifiedMapScene = React.memo(({
   if (mode === 'combat' && !combatState) return null;
 
   return (
-    <group 
-      onPointerMove={handlePointerMove}
-      onPointerDown={handlePointerDown} 
-      onPointerUp={handlePointerUp} 
-      onContextMenu={(e) => e.nativeEvent.preventDefault()}
-    >
-      {/* Mesh de fond pour capturer tous les pointerMoves même hors tiles */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-        <planeGeometry args={[1000, 1000]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
-      
-      <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
-        {/* LA MAP (STATIQUE) ne doit PAS être dans Suspense car les éléments dynamiques comme les persos ou les popups de texte
-            peuvent déclencher un "suspend" (chargement d'assets) et faire disparaitre toute la map brievement. */}
-        {tiles}
+    <>
+      <group 
+        onPointerMove={handlePointerMove}
+        onPointerDown={handlePointerDown} 
+        onPointerUp={handlePointerUp} 
+        onContextMenu={(e) => e.nativeEvent.preventDefault()}
+      >
+        {/* Mesh de fond pour capturer tous les pointerMoves même hors tiles */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+          <planeGeometry args={[1000, 1000]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+        
+        <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
+          {tiles}
 
-        {/* EFFETS DE SURVOL */}
-        {hoveredTile && activeMap && (
-          <TileHoverEffect 
-            x={hoveredTile.x} 
-            y={hoveredTile.y} 
-            terrain={activeMap.grid[hoveredTile.y][hoveredTile.x] as TerrainType} 
-            gridSize={activeMap.width} 
-          />
-        )}
-
-        <Suspense fallback={null}>
-          {mode === 'combat' && isMyTurn && (
-            <CombatHighlightsLayer 
-              reachableTiles={selectedSpellId ? [] : reachableTiles} 
-              spellRangeTiles={spellRangeTiles} 
-              pathTarget={combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null}
+          {hoveredTile && activeMap && (
+            <TileHoverEffect 
+              x={hoveredTile.x} 
+              y={hoveredTile.y} 
+              terrain={activeMap.grid[hoveredTile.y][hoveredTile.x] as TerrainType} 
               gridSize={activeMap.width} 
             />
           )}
 
-          {mode === 'farming' && previewPath && !isMoving && <PathPreview path={previewPath} gridSize={activeMap.width} />}
-          {mode === 'combat' && isMyTurn && user && !playerPaths[user.id || (user as any)._id] && <PathPreview path={combatPreviewPath} gridSize={activeMap.width} />}
-          
-          {/* PERSONNAGES (utilisent des textures, peuvent suspendre) */}
-          {renderPlayers()}
+          <Suspense fallback={null}>
+            {mode === 'combat' && isMyTurn && (
+              <CombatHighlightsLayer 
+                reachableTiles={selectedSpellId ? [] : reachableTiles} 
+                spellRangeTiles={spellRangeTiles} 
+                pathTarget={combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null}
+                gridSize={activeMap.width} 
+              />
+            )}
 
-          {/* EFFETS VISUELS ET POPUPS (Text/drei peut suspendre pour charger les polices) */}
-          {mode === 'combat' && (
-            <>
-              {vfx.map((v) => (
-                <Suspense key={v.id} fallback={null}>
-                  <SpellVFX type={v.type} from={v.from} to={v.to} onComplete={() => setVfx((prev: any[]) => prev.filter((x: any) => x.id !== v.id))} />
-                </Suspense>
-              ))}
-              {popups.map((popup) => (
-                <Suspense key={popup.id} fallback={null}>
-                  <DamagePopup position={popup.pos} value={popup.val} onComplete={() => setPopups((prev: any[]) => prev.filter((p: any) => p.id !== popup.id))} />
-                </Suspense>
-              ))}
-            </>
-          )}
-        </Suspense>
+            {mode === 'farming' && previewPath && !isMoving && <PathPreview path={previewPath} gridSize={activeMap.width} />}
+            {mode === 'combat' && isMyTurn && user && !playerPaths[user.id || (user as any)._id] && <PathPreview path={combatPreviewPath} gridSize={activeMap.width} />}
+            
+            {renderPlayers()}
+
+            {mode === 'combat' && (
+              <>
+                {vfx.map((v) => (
+                  <Suspense key={v.id} fallback={null}>
+                    <SpellVFX 
+                        type={v.type} 
+                        from={v.from} 
+                        to={v.to} 
+                        onComplete={() => setVfx((prev: any[]) => prev.filter((x: any) => x.id !== v.id))} 
+                    />
+                  </Suspense>
+                ))}
+                {popups.map((popup) => (
+                  <Suspense key={popup.id} fallback={null}>
+                    <DamagePopup position={popup.pos} value={popup.val} onComplete={() => setPopups((prev: any[]) => prev.filter((p: any) => p.id !== popup.id))} />
+                  </Suspense>
+                ))}
+              </>
+            )}
+          </Suspense>
+        </group>
       </group>
-    </group>
+    </>
   );
 });

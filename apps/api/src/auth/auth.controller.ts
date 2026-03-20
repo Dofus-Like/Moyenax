@@ -23,4 +23,10 @@ export class AuthController {
   async me(@Request() req: { user: { id: string } }) {
     return this.authService.validateUser(req.user.id);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('skin')
+  async updateSkin(@Request() req: { user: { id: string } }, @Body() dto: { skin: string }) {
+    return this.authService.updateSkin(req.user.id, dto.skin);
+  }
 }

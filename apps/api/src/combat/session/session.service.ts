@@ -99,7 +99,7 @@ export class SessionService {
     console.log(`[SessionService] Spells P1:`, spellsP1.map(s => s.name));
     console.log(`[SessionService] Spells P2:`, spellsP2.map(s => s.name));
 
-    // Récupérer les données de profil (pour le username)
+    // Récupérer les données de profil (pour le username et le skin)
     const p1 = await this.prisma.player.findUnique({ where: { id: session.player1Id } });
     const p2 = await this.prisma.player.findUnique({ where: { id: session.player2Id } });
 
@@ -118,6 +118,7 @@ export class SessionService {
           remainingPa: statsP1.pa,
           remainingPm: statsP1.pm,
           spellCooldowns: {},
+          skin: p1?.skin || 'soldier-classic',
         },
         [session.player2Id]: {
           playerId: session.player2Id,
@@ -129,6 +130,7 @@ export class SessionService {
           remainingPa: statsP2.pa,
           remainingPm: statsP2.pm,
           spellCooldowns: {},
+          skin: p2?.skin || 'soldier-classic',
         },
       },
       map: {

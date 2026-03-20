@@ -146,7 +146,14 @@ export function CombatPage() {
                <CombatPreloader />
             </Suspense>
 
-            {gameMap && <UnifiedMapScene mode="combat" map={gameMap} sessionId={sessionId} isCameraMoving={isCameraMoving} />}
+            {gameMap && (
+              <UnifiedMapScene 
+                mode="combat" 
+                map={gameMap} 
+                sessionId={sessionId} 
+                isCameraMoving={isCameraMoving} 
+              />
+            )}
           </Canvas>
 
           <CombatHUD />
