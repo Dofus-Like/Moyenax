@@ -160,7 +160,8 @@ En tant que joueur, je veux cliquer sur un node pour recolter et consommer un pi
 En tant que joueur, je veux passer a la manche suivante et acceder au shop/craft entre les manches.
 
 **Tasks :**
-
+Lien vers la documentation précise: 
+https://docs.google.com/spreadsheets/d/1U8QDxftGqVoJ07w--pSgFkm8C_LyNPRy/edit?gid=550822847#gid=550822847
 - T3.3.1 : Tracker le numero de manche par instance (1 -> 5)
 - T3.3.2 : Bouton "Terminer la manche" : recharge les 4 pips, incremente la manche, redirige vers shop/craft
 - T3.3.3 : A la manche 5 apres le farming : rediriger vers le combat PvP

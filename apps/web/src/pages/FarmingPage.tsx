@@ -1,7 +1,7 @@
 import { CameraControls, OrthographicCamera } from '@react-three/drei';
 import CameraControlsImpl from 'camera-controls';
 import { Canvas } from '@react-three/fiber';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FarmingHUD } from '../game/HUD/FarmingHUD';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
@@ -41,7 +41,17 @@ export function FarmingPage() {
   const isDebugMode = searchParams.get('debug') === 'true';
 
   const [isCameraMoving, setIsCameraMoving] = useState(false);
-  const { map, playerPosition, movePlayer, inventory, fetchState, gatherNode, endPhase, debugRefill } = useFarmingStore();
+  const { 
+    map, 
+    playerPosition, 
+    movePlayer, 
+    inventory, 
+    fetchState, 
+    gatherNode, 
+    debugRefill,
+    nextRound,
+    round
+  } = useFarmingStore();
 
 
   const seedConfig = useMemo(() => {
@@ -191,18 +201,23 @@ export function FarmingPage() {
     setHoverInfo(info);
   }, []);
 
-  const handleEndHarvest = useCallback(async () => {
+  const handleNextRound = useCallback(async () => {
     try {
       if (isDebugMode) {
         await debugRefill();
       } else {
-        await endPhase();
-        navigate('/');
+        await nextRound();
+        const currentRound = useFarmingStore.getState().round;
+        if (currentRound > 5) {
+          navigate('/lobby'); // Transition vers PvP
+        } else {
+          navigate('/crafting'); // Transition vers Shop/Craft
+        }
       }
     } catch (e) {
       console.error(e);
     }
-  }, [isDebugMode, debugRefill, endPhase, navigate]);
+  }, [isDebugMode, debugRefill, nextRound, navigate]);
 
   const currentTerrain = map ? map.grid[currentPlayerPos.y]?.[currentPlayerPos.x] : TerrainType.GROUND;
   useAutoHarvest({
@@ -220,6 +235,9 @@ export function FarmingPage() {
         <button className="back-button" onClick={() => navigate('/')}>
           Retour
         </button>
+        <button className="inventory-button" onClick={() => navigate('/inventory')} style={{ marginLeft: '10px', background: '#444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>
+          🎒 Inventaire
+        </button>
         <h2>Mode Farming</h2>
         {seedConfig && (
           <div className="seed-badge">
@@ -236,8 +254,11 @@ export function FarmingPage() {
           <span className="legend-item legend-herb">Herbe</span>
           <span className="legend-item legend-gold">Or</span>
         </div>
-        <button className="harvest-end-btn" onClick={handleEndHarvest} style={{ marginLeft: 'auto', background: 'var(--color-primary)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-          {isDebugMode ? 'Fin de la récolte (Refill Debug)' : 'Fin de la récolte'}
+        <div className="round-info" style={{ marginLeft: '20px', fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+          Manche {round} / 5
+        </div>
+        <button className="harvest-end-btn" onClick={handleNextRound} style={{ marginLeft: 'auto', background: 'var(--color-primary)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+          {isDebugMode ? 'Debug Refill' : 'Terminer la manche'}
         </button>
       </header>
 

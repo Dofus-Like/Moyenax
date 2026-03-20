@@ -162,11 +162,33 @@ export function LobbyPage() {
       </section>
 
       <nav className="lobby-nav">
+        <button className="lobby-nav-card" onClick={() => navigate('/farming')}>
+          <span className="lobby-nav-icon">🗺️</span>
+          <span className="lobby-nav-title">Aventure</span>
+          <span className="lobby-nav-desc">Récoltez des ressources</span>
+        </button>
 
-        <button className="lobby-nav-card" onClick={() => navigate('/debug')}>
+        <button className="lobby-nav-card" onClick={() => navigate('/shop')}>
+          <span className="lobby-nav-icon">🛒</span>
+          <span className="lobby-nav-title">Boutique</span>
+          <span className="lobby-nav-desc">Achetez et vendez</span>
+        </button>
+
+        <button className="lobby-nav-card" onClick={() => navigate('/crafting')}>
+          <span className="lobby-nav-icon">🔨</span>
+          <span className="lobby-nav-title">Atelier</span>
+          <span className="lobby-nav-desc">Craft et Fusion</span>
+        </button>
+
+        <button className="lobby-nav-card" onClick={() => navigate('/inventory')}>
+          <span className="lobby-nav-icon">🎒</span>
+          <span className="lobby-nav-title">Inventaire</span>
+          <span className="lobby-nav-desc">Gérez votre équipement</span>
+        </button>
+
+        <button className="lobby-nav-card debug" onClick={() => navigate('/debug')}>
           <span className="lobby-nav-icon">🛠️</span>
-          <span className="lobby-nav-title">Debug Panel</span>
-          <span className="lobby-nav-desc">Testez combat et farming séparément</span>
+          <span className="lobby-nav-title">Debug</span>
         </button>
       </nav>
     </div>

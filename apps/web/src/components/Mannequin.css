@@ -1,0 +1,91 @@
+.mannequin-wrapper {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 300px;
+}
+
+.mannequin-grid {
+  position: relative;
+  width: 250px;
+  height: 400px;
+  display: grid;
+  grid-template-areas: 
+    ". head ."
+    "w-l chest w-r"
+    ". legs ."
+    ". acc .";
+  gap: 15px;
+}
+
+.equipment-slot {
+  width: 70px;
+  height: 70px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 2;
+}
+
+.equipment-slot:hover {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.equipment-slot.filled {
+  border-color: #ffd700;
+  color: #fff;
+  background: rgba(255, 215, 0, 0.2);
+}
+
+.slot-label {
+  margin-bottom: 5px;
+}
+
+.item-name {
+  font-weight: bold;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.mannequin-silhouette {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.mannequin-silhouette img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: contrast(1.1) brightness(0.9);
+}
+
+
+/* Grille spécifique */
+.slot-head { grid-area: head; }
+.slot-chest { grid-area: chest; }
+.slot-legs { grid-area: legs; }
+.slot-weapon-left { grid-area: w-l; }
+.slot-weapon-right { grid-area: w-r; }
+.slot-accessory { grid-area: acc; }

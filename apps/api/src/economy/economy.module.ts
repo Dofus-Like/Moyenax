@@ -3,9 +3,17 @@ import { InventoryModule } from './inventory/inventory.module';
 import { ItemsModule } from './items/items.module';
 import { ShopModule } from './shop/shop.module';
 import { CraftingModule } from './crafting/crafting.module';
+import { EquipmentModule } from './equipment/equipment.module';
+import { PlayerModule } from '../player/player.module';
+import { CombatModule } from '../combat/combat.module';
+
+import { EconomyListenerService } from './economy-listener.service';
 
 @Module({
-  imports: [InventoryModule, ItemsModule, ShopModule, CraftingModule],
-  exports: [InventoryModule, ItemsModule, ShopModule, CraftingModule],
+  imports: [InventoryModule, ItemsModule, ShopModule, CraftingModule, EquipmentModule, PlayerModule, CombatModule],
+  providers: [EconomyListenerService],
+  exports: [InventoryModule, ItemsModule, ShopModule, CraftingModule, EquipmentModule],
 })
 export class EconomyModule {}
+
+

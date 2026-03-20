@@ -1,64 +1,47 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../shared/prisma/prisma.service';
-import { PlayerStats, ItemDefinition, ItemType } from '@game/shared-types';
-import { calculateEffectiveStats } from '@game/game-engine';
+import { PlayerStats, ItemType } from '@game/shared-types';
+import { StatsCalculatorService } from './stats-calculator.service';
 
 @Injectable()
 export class PlayerStatsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly statsCalculator: StatsCalculatorService
+  ) {}
 
   async getEffectiveStats(playerId: string): Promise<PlayerStats> {
-    const playerStats = await this.prisma.playerStats.findUnique({
-      where: { playerId },
-    });
-
-    if (!playerStats) {
-      throw new NotFoundException('Stats du joueur introuvables');
-    }
-
-    const equippedItems = await this.prisma.inventoryItem.findMany({
-      where: { playerId, equipped: true },
-      include: { item: true },
-    });
-
-    const baseStats: PlayerStats = {
-      vit: playerStats.vit,
-      atk: playerStats.atk,
-      mag: playerStats.mag,
-      def: playerStats.def,
-      res: playerStats.res,
-      ini: playerStats.ini,
-      pa: playerStats.pa,
-      pm: playerStats.pm,
-    };
-
-    const itemDefinitions: ItemDefinition[] = equippedItems.map((inv) => ({
-      id: inv.item.id,
-      name: inv.item.name,
-      type: inv.item.type as ItemType,
-      statsBonus: inv.item.statsBonus as Partial<PlayerStats> | null,
-      craftCost: inv.item.craftCost as Record<string, number> | null,
-      shopPrice: inv.item.shopPrice,
-      rank: inv.item.rank,
-    }));
-
-    return calculateEffectiveStats(baseStats, itemDefinitions);
+    return this.statsCalculator.computeEffectiveStats(playerId);
   }
 
-  async getEquippedItems(playerId: string): Promise<ItemDefinition[]> {
-    const equippedItems = await this.prisma.inventoryItem.findMany({
-      where: { playerId, equipped: true },
-      include: { item: true },
+  async getEquippedItems(playerId: string) {
+    const slots = await this.prisma.equipmentSlot.findMany({
+      where: { 
+        playerId,
+        NOT: { inventoryItemId: null } 
+      },
+      include: {
+        inventoryItem: {
+          include: {
+            item: true
+          }
+        }
+      }
     });
 
-    return equippedItems.map((inv) => ({
-      id: inv.item.id,
-      name: inv.item.name,
-      type: inv.item.type as ItemType,
-      statsBonus: inv.item.statsBonus as Partial<PlayerStats> | null,
-      craftCost: inv.item.craftCost as Record<string, number> | null,
-      shopPrice: inv.item.shopPrice,
-      rank: inv.item.rank,
+    return slots.map(s => ({
+      id: s.inventoryItem!.item.id,
+      name: s.inventoryItem!.item.name,
+      description: s.inventoryItem!.item.description,
+      type: s.inventoryItem!.item.type as ItemType,
+
+      family: s.inventoryItem!.item.family,
+      statsBonus: s.inventoryItem!.item.statsBonus as Partial<PlayerStats> | null,
+      grantsSpells: s.inventoryItem!.item.grantsSpells as string[] | null,
+      craftCost: s.inventoryItem!.item.craftCost as Record<string, number> | null,
+      shopPrice: s.inventoryItem!.item.shopPrice,
+      rank: s.inventoryItem!.item.rank
     }));
+
   }
 }

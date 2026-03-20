@@ -155,6 +155,7 @@ export interface SeedConfig {
   id: SeedId;
   label: string;
   resources: TerrainType[];
+  families: ResourceFamily[];
   dominantBuild: string;
   counterBuild: string;
 }
@@ -164,6 +165,7 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
     id: 'FORGE',
     label: '🔴 FORGE',
     resources: [TerrainType.IRON, TerrainType.LEATHER, TerrainType.HERB, TerrainType.GOLD],
+    families: [ResourceFamily.FORGE, ResourceFamily.NATURE, ResourceFamily.SPECIAL],
     dominantBuild: 'Guerrier',
     counterBuild: 'Mage (full shop)',
   },
@@ -171,6 +173,7 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
     id: 'ARCANE',
     label: '🟣 ARCANE',
     resources: [TerrainType.CRYSTAL, TerrainType.FABRIC, TerrainType.HERB, TerrainType.GOLD],
+    families: [ResourceFamily.ARCANE, ResourceFamily.NATURE, ResourceFamily.SPECIAL],
     dominantBuild: 'Mage',
     counterBuild: 'Ninja alchimiste',
   },
@@ -178,6 +181,7 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
     id: 'NATURE',
     label: '🟢 NATURE',
     resources: [TerrainType.WOOD, TerrainType.HERB, TerrainType.LEATHER, TerrainType.GOLD],
+    families: [ResourceFamily.NATURE, ResourceFamily.FORGE, ResourceFamily.SPECIAL],
     dominantBuild: 'Ninja (sans Kunaï)',
     counterBuild: 'Guerrier (Fer shop)',
   },
@@ -188,6 +192,7 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
       TerrainType.IRON, TerrainType.LEATHER, TerrainType.WOOD,
       TerrainType.HERB, TerrainType.GOLD,
     ],
+    families: [ResourceFamily.FORGE, ResourceFamily.NATURE, ResourceFamily.SPECIAL],
     dominantBuild: 'Ninja / Guerrier',
     counterBuild: '—',
   },
@@ -198,6 +203,7 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
       TerrainType.CRYSTAL, TerrainType.FABRIC, TerrainType.WOOD,
       TerrainType.HERB, TerrainType.LEATHER, TerrainType.GOLD,
     ],
+    families: [ResourceFamily.ARCANE, ResourceFamily.NATURE, ResourceFamily.SPECIAL],
     dominantBuild: 'Mage / Ninja',
     counterBuild: '—',
   },
@@ -208,6 +214,7 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
       TerrainType.IRON, TerrainType.LEATHER, TerrainType.CRYSTAL,
       TerrainType.FABRIC, TerrainType.GOLD,
     ],
+    families: [ResourceFamily.FORGE, ResourceFamily.ARCANE, ResourceFamily.SPECIAL],
     dominantBuild: 'Guerrier / Mage',
     counterBuild: '—',
   },

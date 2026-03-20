@@ -13,4 +13,7 @@ export const farmingApi = {
 
   debugRefill: () =>
     apiClient.post<FarmingState>('/farming/debug-refill').then((res) => res.data),
+
+  nextRound: () =>
+    apiClient.post<FarmingState>('/farming/next-round').then((res) => res.data),
 };

@@ -1,14 +1,11 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-// binaryTargets : Alpine (node:22-alpine) utilise musl + OpenSSL 3.x.
-// Sans cette declaration, prisma generate defaulte sur openssl-1.1.x
-// et le moteur natif crash au runtime avec "libssl.so.1.1 not found".
-generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 enum ItemType {
@@ -19,6 +16,15 @@ enum ItemType {
   ACCESSORY
   CONSUMABLE
   RESOURCE
+}
+
+enum EquipmentSlotType {
+  WEAPON_LEFT
+  WEAPON_RIGHT
+  ARMOR_HEAD
+  ARMOR_CHEST
+  ARMOR_LEGS
+  ACCESSORY
 }
 
 enum SpellType {
@@ -49,6 +55,7 @@ model Player {
   stats        PlayerStats?
   inventory    InventoryItem[]
   spells       PlayerSpell[]
+  equipmentSlots EquipmentSlot[]
   combatsAsP1  CombatSession[] @relation("Player1")
   combatsAsP2  CombatSession[] @relation("Player2")
   createdAt    DateTime        @default(now())
@@ -59,6 +66,8 @@ model PlayerStats {
   id       String @id @default(uuid())
   playerId String @unique
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  
+  // Statistiques effectives (Base + Equipement)
   vit      Int    @default(100)
   atk      Int    @default(5)
   mag      Int    @default(0)
@@ -67,29 +76,56 @@ model PlayerStats {
   ini      Int    @default(10)
   pa       Int    @default(6)
   pm       Int    @default(3)
+
+  // Statistiques de base (Immuables par l'équipement)
+  baseVit  Int    @default(100)
+  baseAtk  Int    @default(5)
+  baseMag  Int    @default(0)
+  baseDef  Int    @default(0)
+  baseRes  Int    @default(0)
+  baseIni  Int    @default(10)
+  basePa   Int    @default(6)
+  basePm   Int    @default(3)
 }
+
 
 model Item {
-  id         String          @id @default(uuid())
-  name       String          @unique
-  type       ItemType
-  rank       Int             @default(1)
-  statsBonus Json?
-  craftCost  Json?
-  shopPrice  Int?
-  inventory  InventoryItem[]
+  id           String          @id @default(uuid())
+  name         String          @unique
+  description  String?         // Une description "goofy"
+  type         ItemType
+  family       String?         // FORGE, ARCANE, NATURE, SPECIAL
+  rank         Int             @default(1)
+  statsBonus   Json?
+  grantsSpells Json?           
+  craftCost    Json?
+  shopPrice    Int?
+  inventory    InventoryItem[]
 }
 
-model InventoryItem {
-  id       String  @id @default(uuid())
-  playerId String
-  itemId   String
-  quantity Int     @default(1)
-  equipped Boolean @default(false)
-  player   Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  item     Item    @relation(fields: [itemId], references: [id])
 
-  @@unique([playerId, itemId])
+model InventoryItem {
+  id            String         @id @default(uuid())
+  playerId      String
+  itemId        String
+  quantity      Int            @default(1)
+  rank          Int            @default(1)
+  player        Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  item          Item           @relation(fields: [itemId], references: [id])
+  equipmentSlot EquipmentSlot?
+
+  @@unique([playerId, itemId, rank])
+}
+
+model EquipmentSlot {
+  id              String            @id @default(uuid())
+  playerId        String
+  slot            EquipmentSlotType
+  inventoryItemId String?           @unique
+  player          Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  inventoryItem   InventoryItem?    @relation(fields: [inventoryItemId], references: [id])
+
+  @@unique([playerId, slot])
 }
 
 model Spell {

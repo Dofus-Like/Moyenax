@@ -1,5 +1,8 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+
+
+
 import { PrismaService } from '../../shared/prisma/prisma.service';
 
 @Injectable()
@@ -31,7 +34,7 @@ export class ShopService {
       });
 
       const existing = await tx.inventoryItem.findUnique({
-        where: { playerId_itemId: { playerId, itemId } },
+        where: { playerId_itemId_rank: { playerId, itemId, rank: 1 } },
       });
 
       if (existing) {
@@ -43,7 +46,7 @@ export class ShopService {
       }
 
       return tx.inventoryItem.create({
-        data: { playerId, itemId, quantity },
+        data: { playerId, itemId, quantity, rank: 1 },
         include: { item: true },
       });
     });
@@ -70,6 +73,7 @@ export class ShopService {
         where: { id: playerId },
         data: { gold: { increment: sellPrice } },
       });
+
 
       if (inventoryItem.quantity === quantity) {
         await tx.inventoryItem.delete({ where: { id: inventoryItemId } });
