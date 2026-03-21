@@ -53,8 +53,8 @@ services:
         node node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma
 
         echo "[startup] Checking seed..."
-        node -e 'const {PrismaClient}=require("@prisma/client");const p=new PrismaClient();p.item.count().then(n=>{console.log(n>0?"[seed] DB deja initialisee ("+n+" items), skip.":"[seed] DB vide, lancement du seed...");process.exit(n>0?0:1)}).finally(()=>p.$$disconnect())' \
-          || TS_NODE_TRANSPILE_ONLY=true node -e 'require("ts-node").register({compilerOptions:{module:"commonjs",esModuleInterop:true,skipLibCheck:true}});require("./prisma/seed.ts")'
+        node -e 'const {PrismaClient}=require("@prisma/client");const p=new PrismaClient();p.item.count().then(n=>{console.log(n>0?"[seed] DB deja initialisee ("+n+" items), skip.":"[seed] DB vide, lancement du seed...");process.exit(n>0?0:1)}).finally(()=>p.$disconnect())' \
+          || node seed.js
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://game_user:${POSTGRES_PASSWORD}@postgres:5432/game_db
