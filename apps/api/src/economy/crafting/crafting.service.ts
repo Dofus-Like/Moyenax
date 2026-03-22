@@ -10,9 +10,8 @@ export class CraftingService {
   ) {}
 
   async getRecipes() {
-    return this.prisma.item.findMany({
-      where: { NOT: { craftCost: null } },
-    });
+    const items = await this.prisma.item.findMany();
+    return items.filter((item) => item.craftCost != null);
   }
 
   async craft(playerId: string, itemId: string) {
