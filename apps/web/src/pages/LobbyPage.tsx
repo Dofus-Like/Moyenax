@@ -191,7 +191,7 @@ export function LobbyPage() {
     <div className="lobby-container">
       <header className="lobby-header">
         <div className="lobby-title-group">
-          <h1>RokeTag Arena</h1>
+          <h1>⚔️ RokeTag Arena</h1>
           <button type="button" className="vs-ai-btn" onClick={handleStartVsAiCombat} disabled={hasOpenSession || isInQueue}>
             VS AI <span className="hot-badge">PROG</span>
           </button>
@@ -203,14 +203,14 @@ export function LobbyPage() {
             <span className="lobby-skin-tag">{getSkinById(player?.skin || 'soldier-classic').name}</span>
           </div>
           <button type="button" className="lobby-logout" onClick={handleLogout}>
-            Deconnexion
+            Déconnexion
           </button>
         </div>
       </header>
 
       <section className="lobby-skins">
         <div className="lobby-section-header">
-          <h2>Choisissez votre apparence</h2>
+          <h2>🎭 Choisissez votre apparence</h2>
         </div>
         <div className="skins-grid">
           {SKINS.map((skin) => (
@@ -241,7 +241,7 @@ export function LobbyPage() {
       <section className="lobby-matchmaking">
         <div className="matchmaking-card">
           <div className="matchmaking-info">
-            <h3>Match aleatoire</h3>
+            <h3>🎮 Match aléatoire</h3>
             <p>Affrontez un adversaire dans le tunnel de jeu.</p>
           </div>
           {isInQueue ? (
@@ -258,7 +258,7 @@ export function LobbyPage() {
             </div>
           ) : isWaitingPrivateSession ? (
             <div className="queue-status">
-              <span>Votre room privee est en attente d&apos;un adversaire.</span>
+              <span>Votre room privée est en attente d&apos;un adversaire.</span>
               <button type="button" className="leave-queue-btn" onClick={handleCancelOpenSession}>
                 Annuler la room
               </button>
@@ -278,7 +278,7 @@ export function LobbyPage() {
 
       <section className="lobby-combat">
         <div className="lobby-section-header">
-          <h2>Rooms personnalisees</h2>
+          <h2>⚔️ Rooms personnalisées</h2>
           <div className="lobby-combat-actions">
             <button
               type="button"
@@ -286,7 +286,7 @@ export function LobbyPage() {
               onClick={isWaitingPrivateSession ? handleCancelOpenSession : handleCreateRoom}
               disabled={isInQueue || (hasOpenSession && !isWaitingPrivateSession)}
             >
-              {isWaitingPrivateSession ? 'Annuler la room' : 'Creer une room'}
+              {isWaitingPrivateSession ? 'Annuler la room' : 'Créer une room'}
             </button>
           </div>
         </div>
@@ -295,7 +295,7 @@ export function LobbyPage() {
           {loadingRooms ? (
             <div className="no-rooms">Chargement des rooms...</div>
           ) : rooms.length === 0 ? (
-            <div className="no-rooms">Aucune room ouverte. Creez-en une !</div>
+            <div className="no-rooms">Aucune room ouverte. Créez-en une !</div>
           ) : (
             rooms.map((room) => (
               <div key={room.id} className="room-card">
@@ -319,31 +319,31 @@ export function LobbyPage() {
 
       <nav className="lobby-nav-grid">
         <button type="button" className="lobby-nav-card farming" onClick={() => navigate('/farming')}>
-          <div className="nav-card-icon">F</div>
+          <div className="nav-card-icon">🌲</div>
           <div className="nav-card-content">
             <span className="nav-card-title">Farming</span>
-            <span className="nav-card-desc">Recoltez des ressources</span>
+            <span className="nav-card-desc">Récoltez des ressources</span>
           </div>
         </button>
 
         <button type="button" className="lobby-nav-card inventory" onClick={() => navigate('/inventory')}>
-          <div className="nav-card-icon">I</div>
+          <div className="nav-card-icon">🎒</div>
           <div className="nav-card-content">
             <span className="nav-card-title">Inventaire</span>
-            <span className="nav-card-desc">Gerez votre equipement</span>
+            <span className="nav-card-desc">Gérez votre équipement</span>
           </div>
         </button>
 
         <button type="button" className="lobby-nav-card shop" onClick={() => navigate('/shop')}>
-          <div className="nav-card-icon">S</div>
+          <div className="nav-card-icon">🏪</div>
           <div className="nav-card-content">
             <span className="nav-card-title">Shop</span>
-            <span className="nav-card-desc">Achetez des equipements</span>
+            <span className="nav-card-desc">Achetez des équipements</span>
           </div>
         </button>
 
         <button type="button" className="lobby-nav-card debug" onClick={() => navigate('/debug')}>
-          <div className="nav-card-icon">D</div>
+          <div className="nav-card-icon">🛠️</div>
           <div className="nav-card-content">
             <span className="nav-card-title">Debug</span>
             <span className="nav-card-desc">Tests techniques</span>
