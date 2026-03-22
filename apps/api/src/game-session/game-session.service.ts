@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { OnEvent as NestOnEvent } from '@nestjs/event-emitter';
 import { GAME_EVENTS } from '@game/shared-types';
 import { SessionService } from '../combat/session/session.service';
@@ -33,26 +33,39 @@ export class GameSessionService {
       await this.sessionSecurity.assertPlayerAvailableForPublicRoom(player2Id);
     }
 
-    return (this.prisma as any).gameSession.create({
-      data: {
-        player1Id,
-        player2Id,
-        status: player2Id ? 'ACTIVE' : 'WAITING',
-        phase: 'FARMING',
-        gold: 0,
-        player1Po: 0,
-        player2Po: 0,
-        player2Ready: isVsAi,
-      },
-      include: {
-        p1: { select: { username: true } },
-        p2: { select: { username: true } },
-        combats: {
-          orderBy: { createdAt: 'desc' },
-          take: 5,
+    try {
+      return await (this.prisma as any).gameSession.create({
+        data: {
+          player1Id,
+          player2Id,
+          status: player2Id ? 'ACTIVE' : 'WAITING',
+          phase: 'FARMING',
+          gold: 0,
+          player1Po: 0,
+          player2Po: 0,
+          player2Ready: isVsAi,
         },
-      },
-    });
+        include: {
+          p1: { select: { username: true } },
+          p2: { select: { username: true } },
+          combats: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
+        },
+      });
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Vous avez deja une room ouverte');
+      }
+
+      throw error;
+    }
   }
 
   async getWaitingSessions() {

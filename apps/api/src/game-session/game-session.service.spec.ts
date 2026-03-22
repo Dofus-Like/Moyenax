@@ -1,9 +1,13 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { GameSessionService } from './game-session.service';
 
 describe('GameSessionService', () => {
   const prisma = {
+    player: {
+      findUnique: jest.fn(),
+    },
     gameSession: {
+      create: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
@@ -34,6 +38,7 @@ describe('GameSessionService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    prisma.player.findUnique.mockResolvedValue(null);
     service = new GameSessionService(
       prisma as any,
       sse as any,
@@ -65,5 +70,13 @@ describe('GameSessionService', () => {
 
     await expect(service.joinPrivateSession('session-1', 'player-2')).resolves.toEqual(updatedSession);
     expect(sse.emit).toHaveBeenCalledWith('game-session:session-1', 'SESSION_UPDATED', updatedSession);
+  });
+
+  it('maps a unique constraint collision to a room conflict error', async () => {
+    const uniqueConstraintError = { code: 'P2002' };
+    sessionSecurity.assertPlayerAvailableForPublicRoom.mockResolvedValue(undefined);
+    prisma.gameSession.create.mockRejectedValue(uniqueConstraintError);
+
+    await expect(service.createSession('player-1', null)).rejects.toBeInstanceOf(ConflictException);
   });
 });
