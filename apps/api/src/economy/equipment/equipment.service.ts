@@ -37,7 +37,7 @@ export class EquipmentService {
 
     const equipment: Record<string, any> = {};
     Object.values(EquipmentSlotType).forEach((slot: any) => {
-      const row = slots.find((s) => s.slot === slot);
+      const row = slots.find((s: any) => s.slot === slot);
       if (row?.inventoryItem) {
         equipment[slot] = row.inventoryItem;
       } else if (row?.sessionItem) {
@@ -172,7 +172,7 @@ export class EquipmentService {
     const playerSpellsData: Array<{ playerId: string; spellId: string; level: number }> = [];
 
     for (const rs of resolvedSpells) {
-      const dbSpell = allSpells.find((s) => s.name === rs.spellName);
+      const dbSpell = allSpells.find((s: any) => s.name === rs.spellName);
       if (dbSpell) {
         playerSpellsData.push({
           playerId,

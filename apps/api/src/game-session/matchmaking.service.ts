@@ -1,48 +1,67 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from '../shared/redis/redis.service';
+import {
+  MATCHMAKING_QUEUE_KEY,
+  MATCHMAKING_QUEUE_LOCK_KEY,
+} from '../shared/security/security.constants';
+import { SessionSecurityService } from '../shared/security/session-security.service';
 import { GameSessionService } from './game-session.service';
 
 @Injectable()
 export class MatchmakingService {
-  private readonly QUEUE_KEY = 'matchmaking:queue';
-
   constructor(
     private readonly redis: RedisService,
     private readonly gameSessionService: GameSessionService,
+    private readonly sessionSecurity: SessionSecurityService,
   ) {}
 
   async joinQueue(playerId: string) {
-    // Vérifier si déjà en queue
-    const queue = await this.redis.getJson<string[]>(this.QUEUE_KEY) || [];
-    if (queue.includes(playerId)) return { status: 'already_in_queue' };
+    await this.sessionSecurity.assertPlayerAvailableForPublicRoom(playerId);
 
-    // Ajouter à la queue
-    queue.push(playerId);
-    
-    if (queue.length >= 2) {
-      // On a un match !
-      const p1 = queue.shift();
-      const p2 = queue.shift();
-      
-      if (!p1 || !p2) {
-        await this.redis.setJson(this.QUEUE_KEY, queue);
+    const existingScore = await this.redis.zScore(MATCHMAKING_QUEUE_KEY, playerId);
+    if (existingScore !== null) {
+      return { status: 'already_in_queue' };
+    }
+
+    const lockAcquired = await this.redis.setIfNotExists(
+      MATCHMAKING_QUEUE_LOCK_KEY,
+      playerId,
+      5,
+    );
+
+    if (!lockAcquired) {
+      return { status: 'searching' };
+    }
+
+    try {
+      await this.redis.zAdd(MATCHMAKING_QUEUE_KEY, Date.now(), playerId);
+
+      const queueSize = await this.redis.zCard(MATCHMAKING_QUEUE_KEY);
+      if (queueSize < 2) {
         return { status: 'searching' };
       }
 
-      await this.redis.setJson(this.QUEUE_KEY, queue);
-      
+      const [p1, p2] = await this.redis.zRange(MATCHMAKING_QUEUE_KEY, 0, 1);
+      if (!p1 || !p2) {
+        return { status: 'searching' };
+      }
+
+      await this.redis.zRem(MATCHMAKING_QUEUE_KEY, p1, p2);
       const session = await this.gameSessionService.createSession(p1, p2);
       return { status: 'matched', sessionId: session.id };
+    } finally {
+      await this.redis.del(MATCHMAKING_QUEUE_LOCK_KEY);
     }
-
-    await this.redis.setJson(this.QUEUE_KEY, queue);
-    return { status: 'searching' };
   }
 
   async leaveQueue(playerId: string) {
-    let queue = await this.redis.getJson<string[]>(this.QUEUE_KEY) || [];
-    queue = queue.filter(id => id !== playerId);
-    await this.redis.setJson(this.QUEUE_KEY, queue);
+    await this.redis.zRem(MATCHMAKING_QUEUE_KEY, playerId);
     return { status: 'left' };
+  }
+
+  async getQueueStatus(playerId: string) {
+    return {
+      queued: await this.sessionSecurity.isPlayerQueued(playerId),
+    };
   }
 }

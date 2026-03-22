@@ -1,9 +1,10 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../shared/prisma/prisma.service';
-import { RegisterDto } from './dto/register.dto';
+import { DEFAULT_SKIN_BY_CLASS } from '../shared/security/security.constants';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,62 +14,74 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<{ accessToken: string }> {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+
     const existing = await this.prisma.player.findFirst({
-      where: { OR: [{ email: dto.email }, { username: dto.username }] },
+      where: { OR: [{ email: normalizedEmail }, { username: dto.username }] },
     });
 
     if (existing) {
-      throw new ConflictException('Un joueur avec cet email ou pseudo existe déjà');
+      throw new ConflictException('Un joueur avec cet email ou pseudo existe deja');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
+    const skin = DEFAULT_SKIN_BY_CLASS[dto.selectedClass as keyof typeof DEFAULT_SKIN_BY_CLASS];
 
-    // 1. Déterminer le skin de départ
-    let skin = 'soldier-classic';
-    if (dto.selectedClass === 'mage') skin = 'soldier-royal';
-    if (dto.selectedClass === 'ninja') skin = 'soldier-dark';
-
-    // 2. Créer le joueur avec ses stats de base (identiques pour tous)
     const player = await this.prisma.player.create({
       data: {
         username: dto.username,
-        email: dto.email,
+        email: normalizedEmail,
         passwordHash,
         skin,
         stats: {
           create: {
-             vit: 100, atk: 10, mag: 10, def: 5, res: 5, ini: 100, pa: 6, pm: 3,
-             baseVit: 100, baseAtk: 10, baseMag: 10, baseDef: 5, baseRes: 5, baseIni: 100, basePa: 6, basePm: 3,
+            vit: 100,
+            atk: 10,
+            mag: 10,
+            def: 5,
+            res: 5,
+            ini: 100,
+            pa: 6,
+            pm: 3,
+            baseVit: 100,
+            baseAtk: 10,
+            baseMag: 10,
+            baseDef: 5,
+            baseRes: 5,
+            baseIni: 100,
+            basePa: 6,
+            basePm: 3,
           },
         },
       },
     });
 
-    // 3. Ajouter les 3 anneaux à l'inventaire
     const ringNames = ['Anneau du Guerrier', 'Anneau du Mage', 'Anneau du Ninja'];
     const rings = await this.prisma.item.findMany({
-      where: { name: { in: ringNames } }
+      where: { name: { in: ringNames } },
     });
 
-    // On crée les items en inventaire
-    const inventoryItems = await Promise.all(rings.map(ring => 
-      this.prisma.inventoryItem.create({
-        data: {
-          playerId: player.id,
-          itemId: ring.id,
-          quantity: 1,
-          rank: 3
-        }
-      })
-    ));
+    const inventoryItems = await Promise.all(
+      rings.map((ring: { id: string }) =>
+        this.prisma.inventoryItem.create({
+          data: {
+            playerId: player.id,
+            itemId: ring.id,
+            quantity: 1,
+            rank: 3,
+          },
+        }),
+      ),
+    );
 
-    // 4. Équiper l'anneau correspondant à la classe choisie
     let targetRingName = 'Anneau du Guerrier';
     if (dto.selectedClass === 'mage') targetRingName = 'Anneau du Mage';
     if (dto.selectedClass === 'ninja') targetRingName = 'Anneau du Ninja';
 
-    const selectedInventoryItem = inventoryItems.find(inv => {
-      const ring = rings.find(r => r.id === inv.itemId);
+    const selectedInventoryItem = inventoryItems.find((inventoryItem: { itemId: string }) => {
+      const ring = rings.find(
+        (candidate: { id: string; name: string }) => candidate.id === inventoryItem.itemId,
+      );
       return ring?.name === targetRingName;
     });
 
@@ -77,8 +90,8 @@ export class AuthService {
         data: {
           playerId: player.id,
           slot: 'ACCESSORY',
-          inventoryItemId: selectedInventoryItem.id
-        }
+          inventoryItemId: selectedInventoryItem.id,
+        },
       });
     }
 
@@ -92,8 +105,9 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<{ accessToken: string }> {
+    const normalizedEmail = dto.email.trim().toLowerCase();
     const player = await this.prisma.player.findUnique({
-      where: { email: dto.email },
+      where: { email: normalizedEmail },
     });
 
     if (!player) {

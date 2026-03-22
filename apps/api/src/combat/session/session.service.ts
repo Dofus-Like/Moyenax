@@ -1,15 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { calculateInitiativeJet, calculatePlayerSpells } from '@game/game-engine';
+import { GAME_EVENTS } from '@game/shared-types';
+import type { CombatState } from '@game/shared-types';
 import { performance } from 'node:perf_hooks';
+import { PlayerStatsService } from '../../player/player-stats.service';
+import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { RedisService } from '../../shared/redis/redis.service';
+import { SessionSecurityService } from '../../shared/security/session-security.service';
+import { SseTicketService } from '../../shared/security/sse-ticket.service';
 import { SseService } from '../../shared/sse/sse.service';
-import type { CombatState } from '@game/shared-types';
-import { PlayerStatsService } from '../../player/player-stats.service';
 import { MapService } from '../map/map.service';
-import { calculateInitiativeJet, calculatePlayerSpells } from '@game/game-engine';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { GAME_EVENTS } from '@game/shared-types';
-import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 
 @Injectable()
 export class SessionService {
@@ -21,9 +23,10 @@ export class SessionService {
     private readonly mapService: MapService,
     private readonly eventEmitter: EventEmitter2,
     private readonly perfLogger: PerfLoggerService,
+    private readonly sessionSecurity: SessionSecurityService,
+    private readonly sseTickets: SseTicketService,
   ) {}
 
-  /** Utilisé par GameSession (VS AI dans le tunnel). */
   async getOrCreateBotPlayer() {
     return this.getOrCreateBot();
   }
@@ -52,8 +55,7 @@ export class SessionService {
           },
         },
       });
-      
-      // Lui donner un sort de base
+
       const punch = await this.prisma.spell.findFirst({ where: { name: 'Frappe' } });
       if (punch) {
         await this.prisma.playerSpell.create({
@@ -67,65 +69,82 @@ export class SessionService {
 
   async challenge(challengerId: string, targetId?: string) {
     if (targetId && challengerId === targetId) {
-      throw new BadRequestException('Impossible de se défier soi-même');
+      throw new BadRequestException('Impossible de se defier soi-meme');
+    }
+
+    await this.sessionSecurity.assertPlayerAvailableForPublicRoom(challengerId);
+
+    if (targetId) {
+      await this.sessionSecurity.assertPlayerAvailableForPublicRoom(targetId);
     }
 
     const data: any = {
       player1Id: challengerId,
       status: 'WAITING',
     };
-    
+
     if (targetId) {
       data.player2Id = targetId;
     }
 
-    const session = await this.prisma.combatSession.create({ data });
-
-    return session;
+    return this.prisma.combatSession.create({ data });
   }
 
   async getRooms() {
     return this.prisma.combatSession.findMany({
-        where: { 
-            status: 'WAITING',
-            player2Id: null
-        } as any,
-        include: {
-            player1: {
-                select: { username: true }
-            }
+      where: {
+        status: 'WAITING',
+        player2Id: null,
+        gameSessionId: null,
+      } as any,
+      include: {
+        player1: {
+          select: { username: true },
         },
-        orderBy: { createdAt: 'desc' }
+      },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async accept(sessionId: string, player2Id?: string) {
+  async accept(sessionId: string, player2Id: string) {
     const startedAt = performance.now();
-    let session = await this.prisma.combatSession.findUnique({
+    const requestedSession = await this.sessionSecurity.assertCanAcceptCombatSession(sessionId, player2Id);
+
+    if (!requestedSession.player2Id) {
+      const linked = await this.prisma.combatSession.updateMany({
+        where: {
+          id: sessionId,
+          status: 'WAITING',
+          player2Id: null,
+        },
+        data: { player2Id },
+      });
+
+      if (linked.count !== 1) {
+        throw new BadRequestException('Cette session ne peut plus etre acceptee');
+      }
+    }
+
+    const activated = await this.prisma.combatSession.updateMany({
+      where: {
+        id: sessionId,
+        status: 'WAITING',
+        player2Id,
+      },
+      data: { status: 'ACTIVE' },
+    });
+
+    if (activated.count !== 1) {
+      throw new BadRequestException('Cette session ne peut plus etre acceptee');
+    }
+
+    const session = await this.prisma.combatSession.findUnique({
       where: { id: sessionId },
     });
 
-    if (!session) {
-      throw new NotFoundException('Session introuvable');
+    if (!session?.player2Id) {
+      throw new BadRequestException('Echec de liaison du joueur 2');
     }
-
-    if (session.status !== 'WAITING') {
-      throw new BadRequestException('Cette session ne peut plus être acceptée');
-    }
-
-    // Si la session n'a pas de player2, le joueur qui accepte devient le player2
-    if (!session.player2Id) {
-        if (!player2Id) throw new BadRequestException('ID du joueur 2 manquant');
-        if (session.player1Id === player2Id) throw new BadRequestException('Impossible de rejoindre sa propre room');
-        
-        session = await this.prisma.combatSession.update({
-            where: { id: sessionId },
-            data: { player2Id }
-        });
-    }
-
-    // Sécurité: vérifier que player2Id est maintenant bien présent
-    if (!session.player2Id) throw new Error('Échec de liaison du joueur 2');
 
     const [loadoutP1, loadoutP2, p1, p2] = await Promise.all([
       this.playerStatsService.getCombatLoadout(session.player1Id),
@@ -139,12 +158,12 @@ export class SessionService {
         select: { username: true, skin: true },
       }),
     ]);
+
     const statsP1 = loadoutP1.stats;
     const statsP2 = loadoutP2.stats;
     const itemsP1 = loadoutP1.items;
     const itemsP2 = loadoutP2.items;
 
-    // Déterminer l'initiative
     const init1 = calculateInitiativeJet(statsP1);
     const init2 = calculateInitiativeJet(statsP2);
     const firstPlayerId = init1 >= init2 ? session.player1Id : session.player2Id;
@@ -193,14 +212,8 @@ export class SessionService {
       },
     };
 
-    await this.prisma.combatSession.update({
-      where: { id: sessionId },
-      data: { status: 'ACTIVE' },
-    });
-
     await this.redis.setJson(`combat:${sessionId}`, initialState, 3600);
 
-    // Émettre les événements SSE
     this.sse.emit(sessionId, 'STATE_UPDATED', initialState);
     this.sse.emit(sessionId, 'TURN_STARTED', { playerId: firstPlayerId });
     this.eventEmitter.emit(GAME_EVENTS.TURN_STARTED, { sessionId, playerId: firstPlayerId });
@@ -292,12 +305,17 @@ export class SessionService {
   async getState(sessionId: string): Promise<CombatState> {
     const startedAt = performance.now();
     const state = await this.redis.getJson<CombatState>(`combat:${sessionId}`);
-    
+
     if (!state) {
-      this.perfLogger.logEvent('combat', 'session.state.miss', {
-        session_id: sessionId,
-      }, { level: 'warn' });
-      throw new NotFoundException('État de combat introuvable');
+      this.perfLogger.logEvent(
+        'combat',
+        'session.state.miss',
+        {
+          session_id: sessionId,
+        },
+        { level: 'warn' },
+      );
+      throw new NotFoundException('Etat de combat introuvable');
     }
 
     this.perfLogger.logDuration('combat', 'session.get_state', performance.now() - startedAt, {
@@ -308,23 +326,36 @@ export class SessionService {
     return state;
   }
 
+  async getStateForParticipant(sessionId: string, userId: string) {
+    await this.sessionSecurity.getCombatSessionForParticipantOrThrow(sessionId, userId);
+    return this.getState(sessionId);
+  }
+
+  async issueStreamTicket(sessionId: string, userId: string) {
+    await this.sessionSecurity.getCombatSessionForParticipantOrThrow(sessionId, userId);
+    return this.sseTickets.issueTicket({
+      userId,
+      resourceId: sessionId,
+      resourceType: 'combat',
+    });
+  }
+
   async startTestCombat(challengerId: string) {
-    // Trouver un adversaire (Mage par défaut ou n'importe qui d'autre)
     let target = await this.prisma.player.findFirst({
       where: {
         id: { not: challengerId },
-        username: 'Mage'
-      }
+        username: 'Mage',
+      },
     });
 
     if (!target) {
       target = await this.prisma.player.findFirst({
-        where: { id: { not: challengerId } }
+        where: { id: { not: challengerId } },
       });
     }
 
     if (!target) {
-      throw new BadRequestException('Aucun autre joueur trouvé pour le test. Lancez le seed !');
+      throw new BadRequestException('Aucun autre joueur trouve pour le test. Lancez le seed !');
     }
 
     const activeSession = await this.prisma.gameSession.findFirst({
@@ -343,19 +374,21 @@ export class SessionService {
       },
     });
 
-    // Accepter automatiquement pour le test
-    return this.accept(session.id);
+    return this.accept(session.id, target.id);
   }
 
   async startVsAiCombat(challengerId: string) {
     const bot = await this.getOrCreateBot();
-
     const activeSession = await this.prisma.gameSession.findFirst({
       where: {
         OR: [{ player1Id: challengerId }, { player2Id: challengerId }],
         status: 'ACTIVE',
       },
     });
+
+    if (!activeSession) {
+      await this.sessionSecurity.assertPlayerAvailableForPublicRoom(challengerId);
+    }
 
     const session = await this.prisma.combatSession.create({
       data: {
@@ -366,8 +399,7 @@ export class SessionService {
       },
     });
 
-    // Accepter automatiquement
-    return this.accept(session.id);
+    return this.accept(session.id, bot.id);
   }
 
   async startSessionCombat(player1Id: string, player2Id: string, gameSessionId: string) {
@@ -380,7 +412,7 @@ export class SessionService {
       },
     });
 
-    return this.accept(session.id);
+    return this.accept(session.id, player2Id);
   }
 
   async getHistory(playerId: string) {

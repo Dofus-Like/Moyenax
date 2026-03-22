@@ -1,24 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../shared/prisma/prisma.service';
 import type { PlayerStats } from '@game/shared-types';
 import { ItemType } from '@game/shared-types';
 import { StatsCalculatorService } from './stats-calculator.service';
 
-type EquippedSlotWithItem = Prisma.EquipmentSlotGetPayload<{
-  include: {
-    inventoryItem: {
-      include: {
-        item: true;
-      };
-    };
-    sessionItem: {
-      include: {
-        item: true;
-      };
-    };
-  };
-}>;
+type EquippedSlotWithItem = any;
 
 @Injectable()
 export class PlayerStatsService {

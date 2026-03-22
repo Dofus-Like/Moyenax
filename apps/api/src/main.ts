@@ -1,7 +1,8 @@
-import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { performance } from 'node:perf_hooks';
 import { AppModule } from './app/app.module';
 import { PerfLoggerService } from './shared/perf/perf-logger.service';
@@ -21,6 +22,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.use(helmet());
 
   perfLogger.logDuration('bootstrap', 'nest_factory.create', performance.now() - bootstrapStartedAt, {
     stage: 'create',
@@ -28,23 +30,33 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
 
+  const allowedOrigins = (configService.get<string>('FRONTEND_URL', 'http://localhost:5173') ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: configService.get<string>('FRONTEND_URL', 'http://localhost:5173'),
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Dofus-like API')
-    .setDescription('API pour le jeu de stratégie au tour par tour')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  const swaggerEnabled = configService.get<string>('ENABLE_SWAGGER', 'false') === 'true';
+  if (swaggerEnabled) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Dofus-like API')
+      .setDescription('API pour le jeu de strategie au tour par tour')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
-  const swaggerStartedAt = performance.now();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
-  perfLogger.logDuration('bootstrap', 'swagger.setup', performance.now() - swaggerStartedAt, {
-    stage: 'swagger',
-  });
+    const swaggerStartedAt = performance.now();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document);
+    perfLogger.logDuration('bootstrap', 'swagger.setup', performance.now() - swaggerStartedAt, {
+      stage: 'swagger',
+    });
+  }
 
   const port = configService.get<number>('PORT', 3000);
   const listenStartedAt = performance.now();
@@ -69,8 +81,10 @@ async function bootstrap() {
     },
     { force: true },
   );
-  console.log(`🚀 API running on http://localhost:${port}`);
-  console.log(`📚 Swagger docs on http://localhost:${port}/api/docs`);
+  console.log(`API running on http://localhost:${port}`);
+  if (swaggerEnabled) {
+    console.log(`Swagger docs on http://localhost:${port}/api/docs`);
+  }
 }
 
 bootstrap();
