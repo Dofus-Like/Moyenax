@@ -10,7 +10,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor(private readonly perfLogger: PerfLoggerService) {
     super();
 
-    this.$use(async (params, next) => {
+    this.$use(async (params: any, next: any) => {
       const startedAt = performance.now();
       try {
         return await next(params);

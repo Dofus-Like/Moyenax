@@ -59,6 +59,12 @@
           "buildTarget": "api:build:production"
         }
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --config apps/api/jest.config.cts --runInBand"
+      }
     }
   },
   "tags": []

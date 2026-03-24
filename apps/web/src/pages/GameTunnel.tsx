@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef, useCallback, createContext, useContext } from 'react';
-import { useLocation, Navigate } from 'react-router-dom';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { gameSessionApi } from '../api/game-session.api';
 import { useAuthStore } from '../store/auth.store';
 
 interface GameSession {
   id: string;
-  status: string;
+  status: 'WAITING' | 'ACTIVE' | 'FINISHED';
   phase: 'FARMING' | 'FIGHTING';
   currentRound: number;
   player1Wins: number;
@@ -14,7 +14,6 @@ interface GameSession {
   player2Ready: boolean;
   player1Id: string;
   player2Id: string | null;
-  /** @deprecated Préférer player1Po / player2Po */
   gold: number;
   player1Po: number;
   player2Po: number;
@@ -23,22 +22,32 @@ interface GameSession {
 
 interface GameSessionContextType {
   activeSession: GameSession | null;
-  /** silent: ne touche pas à `loading` (évite flash / écran bloqué sur les pages tunnel lors des refresh manuels) */
   refreshSession: (opts?: { silent?: boolean }) => Promise<void>;
   loading: boolean;
 }
 
 const GameSessionContext = createContext<GameSessionContextType | undefined>(undefined);
-
-/** Pages tunnel « internes » : naviguer entre elles ne doit pas refetch la session (évite courses + éjection du tunnel). */
 const TUNNEL_SWAP_PATHS = ['/farming', '/inventory', '/shop', '/crafting'] as const;
 
 function isTunnelSwapPath(pathname: string): boolean {
-  return TUNNEL_SWAP_PATHS.some((p) => pathname.startsWith(p));
+  return TUNNEL_SWAP_PATHS.some((path) => pathname.startsWith(path));
 }
 
 function isInternalTunnelNavigation(prev: string, next: string): boolean {
   return isTunnelSwapPath(prev) && isTunnelSwapPath(next);
+}
+
+function getErrorStatus(error: unknown): number | undefined {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof (error as { response?: { status?: unknown } }).response?.status === 'number'
+  ) {
+    return (error as { response?: { status?: number } }).response?.status;
+  }
+
+  return undefined;
 }
 
 export function GameSessionProvider({ children }: { children: React.ReactNode }) {
@@ -63,11 +72,10 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
     }
 
     try {
-      const res = await gameSessionApi.getActiveSession();
-      setActiveSession(res.data ?? null);
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 401) {
+      const response = await gameSessionApi.getActiveSession();
+      setActiveSession(response.data ?? null);
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 401) {
         setActiveSession(null);
       }
     } finally {
@@ -86,38 +94,107 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
       void refreshSession();
       return;
     }
+
     if (isInternalTunnelNavigation(prev, path)) {
       return;
     }
+
     void refreshSession();
   }, [location.pathname, refreshSession]);
 
-  // Écouter les mises à jour en temps réel via SSE
   useEffect(() => {
     if (!activeSession) return;
 
-    const token = useAuthStore.getState().token;
-    const eventSource = new EventSource(`/api/v1/game-session/session/${activeSession.id}/events?token=${token}`);
+    let closed = false;
+    let eventSource: EventSource | null = null;
+    let reconnectTimer: number | null = null;
 
-    // Nest envoie `event: SESSION_UPDATED` — seul addEventListener reçoit ces messages, pas onmessage.
     const onSessionUpdated = (event: MessageEvent) => {
       try {
         const next = JSON.parse(event.data) as GameSession;
-        if (next && typeof next === 'object' && 'id' in next) {
-          setActiveSession((prev) =>
-            prev && prev.id === next.id ? { ...prev, ...next } : next,
-          );
+        if (!next || typeof next !== 'object' || !('id' in next)) {
+          return;
         }
-      } catch (err) {
-        console.error('Erreur parsing SSE:', err);
+
+        if (next.status === 'FINISHED') {
+          setActiveSession(null);
+          return;
+        }
+
+        setActiveSession((prev) => (prev && prev.id === next.id ? { ...prev, ...next } : next));
+      } catch (error) {
+        console.error('Erreur parsing SSE:', error);
       }
     };
 
-    eventSource.addEventListener('SESSION_UPDATED', onSessionUpdated);
+    const scheduleReconnect = () => {
+      if (closed || reconnectTimer !== null) {
+        return;
+      }
 
-    return () => {
+      reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null;
+        void connect();
+      }, 1500);
+    };
+
+    const cleanupSource = () => {
+      if (!eventSource) {
+        return;
+      }
+
       eventSource.removeEventListener('SESSION_UPDATED', onSessionUpdated);
       eventSource.close();
+      eventSource = null;
+    };
+
+    const connect = async () => {
+      try {
+        const ticketResponse = await gameSessionApi.getStreamTicket(activeSession.id);
+        if (closed) {
+          return;
+        }
+
+        cleanupSource();
+
+        const ticket = encodeURIComponent(ticketResponse.data.ticket);
+        eventSource = new EventSource(
+          `/api/v1/game-session/session/${activeSession.id}/events?ticket=${ticket}`,
+        );
+        eventSource.addEventListener('SESSION_UPDATED', onSessionUpdated);
+        eventSource.onerror = (error) => {
+          if (closed) {
+            cleanupSource();
+            return;
+          }
+
+          console.error('Erreur SSE session:', error);
+          cleanupSource();
+          scheduleReconnect();
+        };
+      } catch (error) {
+        if (closed) {
+          return;
+        }
+
+        const status = getErrorStatus(error);
+        if (status === 401 || status === 403) {
+          setActiveSession(null);
+          return;
+        }
+
+        scheduleReconnect();
+      }
+    };
+
+    void connect();
+
+    return () => {
+      closed = true;
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+      }
+      cleanupSource();
     };
   }, [activeSession?.id]);
 
@@ -140,26 +217,18 @@ export function GameTunnelGuard({ children }: { children: React.ReactNode }) {
 
   if (loading) return <div className="loading-screen">Chargement de la session...</div>;
 
-  // Si on a une session ACTIVE, on RESTREINT l'accès au Lobby (/)
   if (activeSession && activeSession.status === 'ACTIVE' && location.pathname === '/') {
-    // Rediriger vers la map de farming par défaut dans le tunnel
     return <Navigate to="/farming" replace />;
   }
 
-  // Pages « tunnel » : partie active ou ?debug=true (même règle que le farming debug)
   const gamePaths = ['/farming', '/combat', '/inventory', '/shop', '/crafting'];
   const isGamePath = gamePaths.some((path) => location.pathname.startsWith(path));
   const isDebugTunnel = new URLSearchParams(location.search).get('debug') === 'true';
-  const tunnelAllowed =
-    (activeSession && activeSession.status === 'ACTIVE') || isDebugTunnel;
+  const tunnelAllowed = (activeSession && activeSession.status === 'ACTIVE') || isDebugTunnel;
 
   if (isGamePath && !tunnelAllowed) {
     return <Navigate to="/" replace />;
   }
 
-  // Si on n'a PAS de session active, on RESTREINT l'accès aux pages de jeu (farming, combat, etc.) ?
-  // En fait, le user veut qu'on rentre dans le tunnel via matchmaking.
-  // Pour l'instant on va juste bloquer le lobby si session active.
-  
   return <>{children}</>;
 }

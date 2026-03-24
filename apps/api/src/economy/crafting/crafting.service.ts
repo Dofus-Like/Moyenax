@@ -1,6 +1,4 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { GameSessionService } from '../../game-session/game-session.service';
 
@@ -12,9 +10,8 @@ export class CraftingService {
   ) {}
 
   async getRecipes() {
-    return this.prisma.item.findMany({
-      where: { craftCost: { not: Prisma.DbNull } },
-    });
+    const items = await this.prisma.item.findMany();
+    return items.filter((item) => item.craftCost != null);
   }
 
   async craft(playerId: string, itemId: string) {
@@ -31,7 +28,7 @@ export class CraftingService {
       return this.craftSession(playerId, session.id, itemId, craftCost);
     }
 
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return this.prisma.$transaction(async (tx: any) => {
       for (const [resourceItemId, requiredQty] of Object.entries(craftCost)) {
         const inventoryItem = await tx.inventoryItem.findFirst({
           where: { playerId, itemId: resourceItemId, rank: 1 },
@@ -82,7 +79,7 @@ export class CraftingService {
     itemId: string,
     craftCost: Record<string, number>,
   ) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: any) => {
       for (const [resourceItemId, requiredQty] of Object.entries(craftCost)) {
         const row = await (tx as any).sessionItem.findUnique({
           where: {
@@ -159,7 +156,7 @@ export class CraftingService {
       throw new BadRequestException('Impossible de fusionner un objet équipé');
     }
 
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return this.prisma.$transaction(async (tx: any) => {
       if (inventoryItem.quantity === 2) {
         await tx.inventoryItem.delete({ where: { id: inventoryItem.id } });
       } else {

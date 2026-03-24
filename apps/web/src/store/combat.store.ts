@@ -1,5 +1,5 @@
+import { CombatActionType, CombatState } from '@game/shared-types';
 import { create } from 'zustand';
-import { CombatState } from '@game/shared-types';
 import { combatApi } from '../api/combat.api';
 import { useAuthStore } from './auth.store';
 
@@ -60,7 +60,7 @@ interface CombatStore {
   showEnemyHp: boolean;
   uiMessage: UiMessage | null;
   _currentConnectionId: string | null;
-  
+
   setCombatState: (state: CombatState) => void;
   setSelectedSpell: (spellId: string | null) => void;
   toggleShowEnemyHp: () => void;
@@ -80,8 +80,6 @@ function getErrorMessage(error: unknown, fallback: string) {
     typeof error === 'object' &&
     error !== null &&
     'response' in error &&
-    typeof (error as { response?: unknown }).response === 'object' &&
-    (error as { response?: { data?: unknown } }).response?.data &&
     typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string'
   ) {
     return (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback;
@@ -106,11 +104,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   lastHealEvent: null,
   lastJumpEvent: null,
   winnerId: null,
-  showEnemyHp: true, // Toujours afficher par défaut comme demandé
+  showEnemyHp: true,
   uiMessage: null,
   _currentConnectionId: null,
-  
-  toggleShowEnemyHp: () => set((s) => ({ showEnemyHp: !s.showEnemyHp })),
+
+  toggleShowEnemyHp: () => set((state) => ({ showEnemyHp: !state.showEnemyHp })),
 
   setCombatState: (state: CombatState) => {
     set({
@@ -124,13 +122,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   addLog: (message: string, type: CombatLog['type']) => {
-    const newLog = { id: `${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, message, type };
+    const newLog = { id: createId('combat-log'), message, type };
     set((state) => {
-      // Éviter de rajouter EXACTEMENT le même message si le dernier log est identique (sécurité supplémentaire)
       const lastLog = state.logs[0];
       if (lastLog && lastLog.message === message && lastLog.type === type) {
-          return { logs: state.logs };
+        return { logs: state.logs };
       }
+
       return { logs: [newLog, ...state.logs].slice(0, 50) };
     });
   },
@@ -142,18 +140,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   connectToSession: async (sessionId: string) => {
-    // Si on est déjà branché sur cette session et qu'on a une connexion, on ne fait rien
     if (get().sessionId === sessionId && get().sseConnection) return;
 
-    const connectionId = Math.random().toString(36).substr(2, 9);
-    
-    // On ferme l'ancienne si besoin AVANT de lancer la nouvelle
+    const connectionId = Math.random().toString(36).slice(2, 11);
     const existing = get().sseConnection;
     if (existing) {
       existing.close();
     }
 
-    // On marque la session immédiatement et on vide les logs
     set({
       sessionId,
       logs: [],
@@ -168,90 +162,160 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     });
 
     try {
-        const response = await combatApi.getState(sessionId);
-        
-        // Sécurité: si entre-temps le disconnect a été appelé ou une autre connexion lancée
-        if (get()._currentConnectionId !== connectionId) return;
+      const response = await combatApi.getState(sessionId);
+      if (get()._currentConnectionId !== connectionId) return;
 
-        set({
-          combatState: response.data,
-          winnerId: response.data.winnerId || null,
-        });
-        get().addLog('Combat initialisé', 'info');
-    } catch (err) {
-        console.error('Failed to fetch initial state', err);
-        if (get()._currentConnectionId !== connectionId) return;
-        get().setUiMessage(getErrorMessage(err, 'Impossible de charger le combat.'), 'error');
+      set({
+        combatState: response.data,
+        winnerId: response.data.winnerId || null,
+      });
+      get().addLog('Combat initialise', 'info');
+    } catch (error) {
+      console.error('Failed to fetch initial state', error);
+      if (get()._currentConnectionId !== connectionId) return;
+      get().setUiMessage(getErrorMessage(error, 'Impossible de charger le combat.'), 'error');
+      return;
     }
 
-    const token = useAuthStore.getState().token;
-    const sseUrl = `${window.location.origin}/api/v1/combat/session/${sessionId}/events?token=${token}`;
-    const eventSource = new EventSource(sseUrl);
+    let reconnectTimer: number | null = null;
 
-    // Closure-safe handlers that check connection ID
-    const withConnectionGuard = <T,>(handler: (data: T) => void) => (event: MessageEvent) => {
-        if (get()._currentConnectionId !== connectionId) {
-            eventSource.close();
-            return;
-        }
-        try {
-            const data = JSON.parse(event.data) as T;
-            handler(data);
-        } catch (e) {
-            console.error('SSE Parse error', e);
-        }
-    };
-
-    eventSource.addEventListener('STATE_UPDATED', withConnectionGuard((data) => {
-        set({ combatState: data, winnerId: data.winnerId || null });
-    }));
-
-    eventSource.addEventListener('SPELL_CAST', withConnectionGuard((data) => {
-        set({ lastSpellCast: { ...data, timestamp: Date.now() } });
-    }));
-
-    eventSource.addEventListener('TURN_STARTED', withConnectionGuard((data) => {
-        const player = get().combatState?.players[data.playerId];
-        const isSelf = data.playerId === useAuthStore.getState().player?.id;
-        const displayName = player?.username || (isSelf ? 'Vous' : 'Adversaire');
-        get().addLog(`Debut du tour de ${displayName}`, 'info');
-    }));
-
-    eventSource.addEventListener('DAMAGE_DEALT', withConnectionGuard((data) => {
-        set({ lastDamageEvent: { ...data, timestamp: Date.now() } });
-        const player = get().combatState?.players[data.targetId];
-        const isSelf = data.targetId === useAuthStore.getState().player?.id;
-        const displayName = player?.username || (isSelf ? 'Vous' : 'Adversaire');
-        get().addLog(`-${data.damage} PV sur ${displayName}`, 'damage');
-    }));
-
-    eventSource.addEventListener('HEAL_DEALT', withConnectionGuard((data) => {
-        set({ lastHealEvent: { ...data, timestamp: Date.now() } });
-    }));
-
-    eventSource.addEventListener('PLAYER_JUMPED', withConnectionGuard((data) => {
-        set({ lastJumpEvent: { ...data, timestamp: Date.now() } });
-    }));
-
-    eventSource.addEventListener('COMBAT_ENDED', withConnectionGuard((data) => {
-        const player = get().combatState?.players[data.winnerId];
-        const isMe = data.winnerId === useAuthStore.getState().player?.id;
-        const displayName = player?.username || (isMe ? 'Vous' : 'Adversaire');
-        
-        get().addLog(`Combat fini. Vainqueur : ${displayName}`, 'victory');
-        set({ winnerId: data.winnerId });
-    }));
-
-    eventSource.onerror = (err) => {
-      if (get()._currentConnectionId === connectionId) {
-        console.error('SSE connection error', err);
-        get().setUiMessage('La connexion temps réel a été interrompue.', 'error');
-      } else {
-        eventSource.close();
+    const clearReconnectTimer = () => {
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
       }
     };
 
-    set({ sseConnection: eventSource });
+    const scheduleReconnect = () => {
+      if (reconnectTimer !== null || get()._currentConnectionId !== connectionId) {
+        return;
+      }
+
+      reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null;
+        void openStream();
+      }, 1500);
+    };
+
+    const openStream = async () => {
+      if (get()._currentConnectionId !== connectionId) {
+        return;
+      }
+
+      try {
+        const ticketResponse = await combatApi.getStreamTicket(sessionId);
+        if (get()._currentConnectionId !== connectionId) {
+          return;
+        }
+
+        const ticket = encodeURIComponent(ticketResponse.data.ticket);
+        const eventSource = new EventSource(
+          `${window.location.origin}/api/v1/combat/session/${sessionId}/events?ticket=${ticket}`,
+        );
+
+        const withConnectionGuard =
+          <T,>(handler: (data: T) => void) =>
+          (event: MessageEvent) => {
+            if (get()._currentConnectionId !== connectionId) {
+              eventSource.close();
+              return;
+            }
+
+            try {
+              const data = JSON.parse(event.data) as T;
+              handler(data);
+            } catch (error) {
+              console.error('SSE parse error', error);
+            }
+          };
+
+        eventSource.addEventListener(
+          'STATE_UPDATED',
+          withConnectionGuard<CombatState>((data) => {
+            set({ combatState: data, winnerId: data.winnerId || null });
+          }),
+        );
+
+        eventSource.addEventListener(
+          'SPELL_CAST',
+          withConnectionGuard<Omit<SpellCastEvent, 'timestamp'>>((data) => {
+            set({ lastSpellCast: { ...data, timestamp: Date.now() } });
+          }),
+        );
+
+        eventSource.addEventListener(
+          'TURN_STARTED',
+          withConnectionGuard<{ playerId: string }>((data) => {
+            const player = get().combatState?.players[data.playerId];
+            const isSelf = data.playerId === useAuthStore.getState().player?.id;
+            const displayName = player?.username || (isSelf ? 'Vous' : 'Adversaire');
+            get().addLog(`Debut du tour de ${displayName}`, 'info');
+          }),
+        );
+
+        eventSource.addEventListener(
+          'DAMAGE_DEALT',
+          withConnectionGuard<Omit<DamageEvent, 'timestamp'>>((data) => {
+            set({ lastDamageEvent: { ...data, timestamp: Date.now() } });
+            const player = get().combatState?.players[data.targetId];
+            const isSelf = data.targetId === useAuthStore.getState().player?.id;
+            const displayName = player?.username || (isSelf ? 'Vous' : 'Adversaire');
+            get().addLog(`-${data.damage} PV sur ${displayName}`, 'damage');
+          }),
+        );
+
+        eventSource.addEventListener(
+          'HEAL_DEALT',
+          withConnectionGuard<Omit<HealEvent, 'timestamp'>>((data) => {
+            set({ lastHealEvent: { ...data, timestamp: Date.now() } });
+          }),
+        );
+
+        eventSource.addEventListener(
+          'PLAYER_JUMPED',
+          withConnectionGuard<Omit<JumpEvent, 'timestamp'>>((data) => {
+            set({ lastJumpEvent: { ...data, timestamp: Date.now() } });
+          }),
+        );
+
+        eventSource.addEventListener(
+          'COMBAT_ENDED',
+          withConnectionGuard<{ winnerId: string }>((data) => {
+            const player = get().combatState?.players[data.winnerId];
+            const isMe = data.winnerId === useAuthStore.getState().player?.id;
+            const displayName = player?.username || (isMe ? 'Vous' : 'Adversaire');
+            get().addLog(`Combat fini. Vainqueur : ${displayName}`, 'victory');
+            set({ winnerId: data.winnerId });
+          }),
+        );
+
+        eventSource.onerror = (error) => {
+          if (get()._currentConnectionId !== connectionId) {
+            eventSource.close();
+            return;
+          }
+
+          console.error('SSE connection error', error);
+          eventSource.close();
+          set({ sseConnection: null });
+          get().setUiMessage('La connexion temps reel a ete interrompue.', 'error');
+          scheduleReconnect();
+        };
+
+        clearReconnectTimer();
+        set({ sseConnection: eventSource });
+      } catch (error) {
+        if (get()._currentConnectionId !== connectionId) {
+          return;
+        }
+
+        console.error('Failed to open combat SSE', error);
+        get().setUiMessage(getErrorMessage(error, 'Impossible d ouvrir le flux temps reel.'), 'error');
+        scheduleReconnect();
+      }
+    };
+
+    await openStream();
   },
 
   disconnect: () => {
@@ -259,20 +323,21 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     if (connection) {
       connection.close();
     }
-    set({ 
-      combatState: null, 
-      sessionId: null, 
-      sseConnection: null, 
-      selectedSpellId: null, 
-      isSelectingTarget: false, 
-      logs: [], 
+
+    set({
+      combatState: null,
+      sessionId: null,
+      sseConnection: null,
+      selectedSpellId: null,
+      isSelectingTarget: false,
+      logs: [],
       winnerId: null,
       lastSpellCast: null,
       lastDamageEvent: null,
       lastHealEvent: null,
       lastJumpEvent: null,
       uiMessage: null,
-      _currentConnectionId: null // Très important pour stopper les listeners en cours
+      _currentConnectionId: null,
     });
   },
 
@@ -282,7 +347,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     if (window.confirm('Voulez-vous vraiment abandonner ?')) {
       try {
-        const response = await combatApi.playAction(sessionId, { type: 'SURRENDER' as const });
+        const response = await combatApi.playAction(sessionId, { type: CombatActionType.SURRENDER });
         if (response?.data) {
           get().setCombatState(response.data);
         }

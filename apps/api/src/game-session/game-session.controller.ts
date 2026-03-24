@@ -1,23 +1,25 @@
 import {
-  Controller,
-  Post,
-  Get,
-  UseGuards,
-  Request,
-  Body,
   BadRequestException,
-  Sse,
+  Body,
+  Controller,
+  Get,
   Param,
+  Post,
+  Request,
+  Sse,
+  UseGuards,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { MatchmakingService } from './matchmaking.service';
-import { GameSessionService } from './game-session.service';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { SseService } from '../shared/sse/sse.service';
 import { SessionService } from '../combat/session/session.service';
+import { SseTicketGuard } from '../shared/security/sse-ticket.guard';
+import { SseTicketResource } from '../shared/security/sse-ticket.decorator';
+import { SseService } from '../shared/sse/sse.service';
+import { GameSessionService } from './game-session.service';
+import { MatchmakingService } from './matchmaking.service';
 
 @Controller('game-session')
-@UseGuards(JwtAuthGuard)
 export class GameSessionController {
   constructor(
     private readonly matchmakingService: MatchmakingService,
@@ -26,52 +28,77 @@ export class GameSessionController {
     private readonly sessionService: SessionService,
   ) {}
 
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 20, ttl: seconds(60) } })
   @Post('join-queue')
   async joinQueue(@Request() req: { user: { id: string } }) {
     return this.matchmakingService.joinQueue(req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 20, ttl: seconds(60) } })
   @Post('leave-queue')
   async leaveQueue(@Request() req: { user: { id: string } }) {
     return this.matchmakingService.leaveQueue(req.user.id);
   }
 
-  @Get('active')
-  async getActiveSession(@Request() req: { user: { id: string } }) {
-    return this.gameSessionService.getActiveSession(req.user.id);
+  @UseGuards(JwtAuthGuard)
+  @Get('queue-status')
+  async getQueueStatus(@Request() req: { user: { id: string } }) {
+    return this.matchmakingService.getQueueStatus(req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('active')
+  async getActiveSession(@Request() req: { user: { id: string } }) {
+    return this.gameSessionService.getCurrentSession(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('inventory')
   async getInventory(@Request() req: { user: { id: string } }) {
-    const session = await this.gameSessionService.getActiveSession(req.user.id);
-    if (!session) return [];
+    const session = await this.gameSessionService.getCurrentSession(req.user.id);
+    if (!session || session.status !== 'ACTIVE') return [];
     return this.gameSessionService.getSessionInventory(session.id, req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 30, ttl: seconds(60) } })
   @Post('ready')
   async toggleReady(
     @Request() req: { user: { id: string } },
     @Body() body: { ready?: boolean; sessionId?: string },
   ) {
-    const ready = body.ready;
-    if (typeof ready !== 'boolean') {
-      throw new BadRequestException('Champ ready (booléen) requis');
+    if (typeof body.ready !== 'boolean') {
+      throw new BadRequestException('Champ ready (booleen) requis');
     }
-    const session = await this.gameSessionService.getActiveSession(req.user.id, body.sessionId);
-    if (!session) throw new BadRequestException('Aucune session active');
-    return this.gameSessionService.setReady(session.id, req.user.id, ready);
+
+    const session = body.sessionId
+      ? await this.gameSessionService.getCurrentSession(req.user.id, body.sessionId)
+      : await this.gameSessionService.getCurrentSession(req.user.id);
+
+    if (!session || session.status !== 'ACTIVE') {
+      throw new BadRequestException('Aucune session active');
+    }
+
+    return this.gameSessionService.setReady(session.id, req.user.id, body.ready);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @Post('create-private')
   async createPrivateSession(@Request() req: { user: { id: string } }) {
     return this.gameSessionService.createSession(req.user.id, null);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('waiting')
   async getWaitingSessions() {
     return this.gameSessionService.getWaitingSessions();
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @Post('join/:sessionId')
   async joinPrivateSession(
     @Param('sessionId') sessionId: string,
@@ -80,18 +107,36 @@ export class GameSessionController {
     return this.gameSessionService.joinPrivateSession(sessionId, req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @Post('vs-ai')
   async startVsAi(@Request() req: { user: { id: string } }) {
     const bot = await this.sessionService.getOrCreateBotPlayer();
     return this.gameSessionService.createSession(req.user.id, bot.id, { vsAi: true });
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @Post('end/:id')
-  async endSession(@Param('id') id: string) {
-    return this.gameSessionService.endSession(id);
+  async endSession(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.gameSessionService.endSession(id, req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('session/:id/stream-ticket')
+  async issueStreamTicket(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.gameSessionService.issueStreamTicket(id, req.user.id);
+  }
+
+  @UseGuards(SseTicketGuard)
   @Sse('session/:id/events')
+  @SseTicketResource('game-session')
   events(@Param('id') id: string): Observable<any> {
     return this.sseService.getStream(`game-session:${id}`);
   }

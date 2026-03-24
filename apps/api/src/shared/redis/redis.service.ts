@@ -34,6 +34,15 @@ export class RedisService {
     await this.measure('del', key, () => this.client.del(key).then(() => undefined));
   }
 
+  async setIfNotExists(key: string, value: string, ttlSeconds?: number): Promise<boolean> {
+    return this.measure('setnx', key, async () => {
+      const response = ttlSeconds
+        ? await this.client.set(key, value, 'EX', ttlSeconds, 'NX')
+        : await this.client.set(key, value, 'NX');
+      return response === 'OK';
+    });
+  }
+
   async getJson<T>(key: string): Promise<T | null> {
     const raw = await this.get(key);
     return raw ? (JSON.parse(raw) as T) : null;
@@ -56,6 +65,33 @@ export class RedisService {
     }
 
     await this.set(key, payload, ttlSeconds);
+  }
+
+  async zAdd(key: string, score: number, member: string): Promise<void> {
+    await this.measure('zadd', key, () => this.client.zadd(key, score, member).then(() => undefined));
+  }
+
+  async zRange(key: string, start: number, stop: number): Promise<string[]> {
+    return this.measure('zrange', key, () => this.client.zrange(key, start, stop));
+  }
+
+  async zRem(key: string, ...members: string[]): Promise<number> {
+    if (members.length === 0) {
+      return 0;
+    }
+
+    return this.measure('zrem', key, () => this.client.zrem(key, ...members));
+  }
+
+  async zScore(key: string, member: string): Promise<number | null> {
+    return this.measure('zscore', key, async () => {
+      const score = await this.client.zscore(key, member);
+      return score == null ? null : Number(score);
+    });
+  }
+
+  async zCard(key: string): Promise<number> {
+    return this.measure('zcard', key, () => this.client.zcard(key));
   }
 
   private async measure<T>(operation: string, key: string, callback: () => Promise<T>): Promise<T> {

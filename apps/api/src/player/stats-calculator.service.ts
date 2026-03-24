@@ -1,24 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { performance } from 'node:perf_hooks';
-import type { PlayerStats as PlayerStatsModel, Prisma } from '@prisma/client';
 import { PrismaService } from '../shared/prisma/prisma.service';
 import type { PlayerStats } from '@game/shared-types';
 import { PerfLoggerService } from '../shared/perf/perf-logger.service';
 
-type EquippedSlotWithItem = Prisma.EquipmentSlotGetPayload<{
-  include: {
-    inventoryItem: {
-      include: {
-        item: true;
-      };
-    };
-    sessionItem: {
-      include: {
-        item: true;
-      };
-    };
-  };
-}>;
+type EquippedSlotWithItem = any;
+type PlayerStatsModel = {
+  baseVit: number;
+  baseAtk: number;
+  baseMag: number;
+  baseDef: number;
+  baseRes: number;
+  baseIni: number;
+  basePa: number;
+  basePm: number;
+};
 
 @Injectable()
 export class StatsCalculatorService {
