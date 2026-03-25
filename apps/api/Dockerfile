@@ -42,6 +42,7 @@ COPY --from=builder /app/dist/apps/api ./dist
 COPY --from=builder /app/api-runtime/node_modules ./node_modules
 COPY --from=builder /app/apps/api/prisma ./prisma
 # seed.js compile depuis seed.ts — utilise par api-setup au premier demarrage
-COPY --from=builder /tmp/seed/apps/api/prisma/seed.js ./seed.js
+# TypeScript ecrit seed.js a la racine de /tmp/seed pour cette compilation fichier unique
+COPY --from=builder /tmp/seed/seed.js ./seed.js
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
