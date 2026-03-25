@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { createDefaultPlayerStats } from '../player/default-player-stats';
 import { PrismaService } from '../shared/prisma/prisma.service';
 import { DEFAULT_SKIN_BY_CLASS } from '../shared/security/security.constants';
 import { LoginDto } from './dto/login.dto';
@@ -34,24 +35,7 @@ export class AuthService {
         passwordHash,
         skin,
         stats: {
-          create: {
-            vit: 100,
-            atk: 10,
-            mag: 10,
-            def: 5,
-            res: 5,
-            ini: 100,
-            pa: 6,
-            pm: 3,
-            baseVit: 100,
-            baseAtk: 10,
-            baseMag: 10,
-            baseDef: 5,
-            baseRes: 5,
-            baseIni: 100,
-            basePa: 6,
-            basePm: 3,
-          },
+          create: createDefaultPlayerStats(),
         },
       },
     });

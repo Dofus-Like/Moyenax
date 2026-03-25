@@ -1,5 +1,6 @@
 import { PrismaClient, ItemType, SpellType, SpellVisualType, EquipmentSlotType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { createDefaultPlayerStats } from '../src/player/default-player-stats';
 
 const prisma = new PrismaClient();
 
@@ -352,10 +353,7 @@ async function main() {
       passwordHash,
       gold: 100,
       stats: {
-        create: {
-          vit: 100, atk: 10, mag: 10, def: 5, res: 5, ini: 100, pa: 6, pm: 3,
-          baseVit: 100, baseAtk: 10, baseMag: 10, baseDef: 5, baseRes: 5, baseIni: 100, basePa: 6, basePm: 3,
-        },
+        create: createDefaultPlayerStats(),
       },
 
       inventory: {
@@ -385,10 +383,7 @@ async function main() {
       passwordHash,
       gold: 100,
       stats: {
-        create: {
-          vit: 100, atk: 10, mag: 10, def: 5, res: 5, ini: 100, pa: 6, pm: 3,
-          baseVit: 100, baseAtk: 10, baseMag: 10, baseDef: 5, baseRes: 5, baseIni: 100, basePa: 6, basePm: 3,
-        },
+        create: createDefaultPlayerStats(),
       },
 
       inventory: {
@@ -416,10 +411,7 @@ async function main() {
       passwordHash,
       gold: 100,
       stats: {
-        create: {
-          vit: 100, atk: 10, mag: 10, def: 5, res: 5, ini: 100, pa: 6, pm: 3,
-          baseVit: 100, baseAtk: 10, baseMag: 10, baseDef: 5, baseRes: 5, baseIni: 100, basePa: 6, basePm: 3,
-        },
+        create: createDefaultPlayerStats(),
       },
       inventory: {
         create: [
@@ -447,10 +439,7 @@ async function main() {
       gold: 100,
       skin: 'orc-blood',
       stats: {
-        create: {
-          vit: 100, atk: 10, mag: 10, def: 5, res: 5, ini: 100, pa: 6, pm: 3,
-          baseVit: 100, baseAtk: 10, baseMag: 10, baseDef: 5, baseRes: 5, baseIni: 100, basePa: 6, basePm: 3,
-        },
+        create: createDefaultPlayerStats(),
       },
       inventory: {
         create: [
