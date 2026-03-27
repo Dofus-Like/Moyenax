@@ -49,6 +49,9 @@ services:
       - -c
       - |
         set -e
+        echo "[startup] Repairing duplicate open sessions before migrations..."
+        node node_modules/prisma/build/index.js db execute --file ./prisma/pre_migrate_repair.sql --schema=./prisma/schema.prisma
+
         echo "[startup] Applying Prisma migrations..."
         node node_modules/prisma/build/index.js migrate deploy --schema=./prisma/schema.prisma
 
