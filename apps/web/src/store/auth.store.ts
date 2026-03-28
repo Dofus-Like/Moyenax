@@ -15,6 +15,7 @@ interface AuthState {
   setToken: (token: string) => void;
   setPlayer: (player: PlayerProfile) => void;
   setSkin: (skin: string) => Promise<void>;
+  refreshPlayer: () => Promise<void>;
   logout: () => void;
   initialize: () => Promise<void>;
 }
@@ -41,6 +42,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (err) {
       console.error('Failed to update skin', err);
+    }
+  },
+
+  refreshPlayer: async () => {
+    const { token } = get();
+    if (!token) return;
+
+    try {
+      const response = await authApi.getMe();
+      set({ player: response.data });
+    } catch (err) {
+      console.error('Failed to refresh player', err);
     }
   },
 

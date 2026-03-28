@@ -113,6 +113,7 @@ interface PlayersLayerProps {
   movePath?: PathNode[] | null;
   onPathComplete?: () => void;
   farmingPlayerName: string;
+  farmingPlayerSkin?: string;
   combatPlayers: CombatPlayer[];
   visualPositions: Record<string, PathNode>;
   playerPaths: Record<string, PathNode[]>;
@@ -129,6 +130,7 @@ export const PlayersLayer = React.memo(
     movePath,
     onPathComplete,
     farmingPlayerName,
+    farmingPlayerSkin,
     combatPlayers,
     visualPositions,
     playerPaths,
@@ -143,7 +145,7 @@ export const PlayersLayer = React.memo(
           gridSize={mapWidth}
           path={movePath || null}
           onPathComplete={onPathComplete ?? (() => undefined)}
-          playerData={{ username: farmingPlayerName }}
+          playerData={{ username: farmingPlayerName, skin: farmingPlayerSkin }}
         />
       );
     }

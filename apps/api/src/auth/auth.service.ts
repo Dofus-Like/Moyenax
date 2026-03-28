@@ -33,6 +33,7 @@ export class AuthService {
         username: dto.username,
         email: normalizedEmail,
         passwordHash,
+        gold: 100,
         skin,
         stats: {
           create: createDefaultPlayerStats(),

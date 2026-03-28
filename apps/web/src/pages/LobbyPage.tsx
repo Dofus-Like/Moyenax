@@ -65,6 +65,10 @@ export function LobbyPage() {
   }, [fetchLobbyState, initialize]);
 
   React.useEffect(() => {
+    void fetchLobbyState();
+  }, [activeSession?.id, activeSession?.status, fetchLobbyState]);
+
+  React.useEffect(() => {
     if (!activeSession) {
       return;
     }
@@ -186,6 +190,10 @@ export function LobbyPage() {
     activeSession?.status === 'WAITING' &&
     activeSession.player1Id === player?.id &&
     activeSession.player2Id == null;
+  const visibleRooms = React.useMemo(
+    () => rooms.filter((room) => room.status === 'WAITING' && room.player2Id == null),
+    [rooms],
+  );
 
   return (
     <div className="lobby-container">
@@ -294,10 +302,10 @@ export function LobbyPage() {
         <div className="rooms-grid">
           {loadingRooms ? (
             <div className="no-rooms">Chargement des rooms...</div>
-          ) : rooms.length === 0 ? (
+          ) : visibleRooms.length === 0 ? (
             <div className="no-rooms">Aucune room ouverte. Créez-en une !</div>
           ) : (
-            rooms.map((room) => (
+            visibleRooms.map((room) => (
               <div key={room.id} className="room-card">
                 <div className="room-info">
                   <span className="room-host">{room.p1.username}</span>

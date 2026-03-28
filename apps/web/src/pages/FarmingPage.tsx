@@ -302,7 +302,7 @@ export function FarmingPage() {
   useEffect(() => {
     if (activeSession?.phase === 'FIGHTING') {
       const list = activeSession.combats;
-      const latestCombat = list?.length ? list[list.length - 1] : undefined;
+      const latestCombat = list?.length ? list[0] : undefined;
       if (latestCombat && latestCombat.status === 'ACTIVE') {
         navigate(`/combat/${latestCombat.id}`);
       }
@@ -317,6 +317,9 @@ export function FarmingPage() {
   useAutoHarvest({
     currentPosition: currentPlayerPos,
     terrain: currentTerrain,
+    onHarvest: async (x, y) => {
+      await gatherNode(x, y);
+    },
   });
 
   const totalResources = useMemo(() => {

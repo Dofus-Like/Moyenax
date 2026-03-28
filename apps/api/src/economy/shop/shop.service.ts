@@ -43,9 +43,12 @@ export class ShopService {
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       if (session) {
+        const isPlayer1 = session.player1Id === playerId;
         await (tx as any).gameSession.update({
           where: { id: session.id },
-          data: { gold: { decrement: totalCost } },
+          data: isPlayer1
+            ? { player1Po: { decrement: totalCost } }
+            : { player2Po: { decrement: totalCost } },
         });
       } else {
         await tx.player.update({

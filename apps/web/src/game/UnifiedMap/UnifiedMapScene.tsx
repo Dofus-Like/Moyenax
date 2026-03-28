@@ -661,6 +661,7 @@ export const UnifiedMapScene = React.memo(
             movePath={movePath}
             onPathComplete={onPathComplete}
             farmingPlayerName={user?.username || 'Joueur'}
+            farmingPlayerSkin={user?.skin}
             combatPlayers={combatPlayers}
             visualPositions={visualPositions}
             playerPaths={playerPaths}
