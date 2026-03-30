@@ -18,10 +18,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U game_user -d game_db"]
+      # On s'assure que postgres accepte vraiment les requetes (pas juste pg_isready)
+      # pour eviter de demarrer api-setup pendant une recovery WAL post-restart
+      test: ["CMD-SHELL", "pg_isready -U game_user -d game_db && psql -U game_user -d game_db -c 'SELECT 1' -q"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     networks:
       - dofus-like-network
 
@@ -44,6 +47,8 @@ services:
     image: ghcr.io/roketag33/dofus-like-api:${IMAGE_TAG:-latest}
     container_name: ${STACK_CONTAINER_PREFIX:-dofus-like}-api-setup
     restart: "no"
+    # Migrations uniquement — pas de set -e fragile, pas de scripts inline complexes.
+    # Le seed est gere separement si besoin (la DB est deja initialisee en prod).
     command:
       - node
       - scripts/api-setup.cjs
@@ -83,7 +88,6 @@ services:
       api-setup:
         condition: service_completed_successfully
     healthcheck:
-      # Verifie que le port 3000 repond (TCP) — pas besoin d'endpoint /health dedie
       test: ["CMD-SHELL", "node -e \"require('net').createConnection(3000).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))\""]
       interval: 30s
       timeout: 10s
