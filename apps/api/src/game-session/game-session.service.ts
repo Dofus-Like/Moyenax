@@ -2,7 +2,10 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { OnEvent as NestOnEvent } from '@nestjs/event-emitter';
 import { GAME_EVENTS } from '@game/shared-types';
 import { SessionService } from '../combat/session/session.service';
+import { SpellResolverService } from '../combat/spell-resolver.service';
+import { StatsCalculatorService } from '../player/stats-calculator.service';
 import { PrismaService } from '../shared/prisma/prisma.service';
+import { RedisService } from '../shared/redis/redis.service';
 import { SessionSecurityService } from '../shared/security/session-security.service';
 import { SseTicketService } from '../shared/security/sse-ticket.service';
 import { SseService } from '../shared/sse/sse.service';
@@ -11,10 +14,13 @@ import { SseService } from '../shared/sse/sse.service';
 export class GameSessionService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
     private readonly sse: SseService,
     private readonly sessionService: SessionService,
     private readonly sessionSecurity: SessionSecurityService,
     private readonly sseTickets: SseTicketService,
+    private readonly statsCalculator: StatsCalculatorService,
+    private readonly spellResolver: SpellResolverService,
   ) {}
 
   async createSession(
@@ -210,7 +216,22 @@ export class GameSessionService {
   }
 
   async endSession(sessionId: string, userId: string) {
-    await this.sessionSecurity.assertCanEndGameSession(sessionId, userId);
+    const sessionToEnd = await this.sessionSecurity.assertCanEndGameSession(sessionId, userId);
+
+    const activeCombat = await this.prisma.combatSession.findFirst({
+      where: {
+        gameSessionId: sessionId,
+        status: 'ACTIVE',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (activeCombat?.player2Id) {
+      const winnerId = activeCombat.player1Id === userId ? activeCombat.player2Id : activeCombat.player1Id;
+      await this.sessionService.endCombat(activeCombat.id, winnerId, userId);
+    }
+
+    await this.cleanupSessionArtifacts(sessionId, [sessionToEnd.player1Id, sessionToEnd.player2Id]);
 
     const session = await (this.prisma as any).gameSession.update({
       where: { id: sessionId },
@@ -289,6 +310,107 @@ export class GameSessionService {
       },
     });
 
+    if (isGameOver) {
+      await this.cleanupSessionArtifacts(session.id, [session.player1Id, session.player2Id]);
+    }
+
     this.sse.emit(`game-session:${session.id}`, 'SESSION_UPDATED', updated);
+  }
+
+  private async cleanupSessionArtifacts(sessionId: string, playerIds: Array<string | null | undefined>) {
+    const uniquePlayerIds = [...new Set(playerIds.filter((playerId): playerId is string => Boolean(playerId)))];
+
+    await Promise.all(uniquePlayerIds.map((playerId) => this.redis.del(`farming:${playerId}`)));
+
+    const sessionItems = await (this.prisma as any).sessionItem.findMany({
+      where: { sessionId },
+      select: { id: true },
+    });
+    const sessionItemIds = sessionItems.map((item: { id: string }) => item.id);
+
+    if (sessionItemIds.length > 0) {
+      await this.prisma.equipmentSlot.updateMany({
+        where: {
+          playerId: { in: uniquePlayerIds },
+          sessionItemId: { in: sessionItemIds },
+        },
+        data: { sessionItemId: null },
+      });
+
+      await (this.prisma as any).sessionItem.deleteMany({
+        where: { sessionId },
+      });
+    }
+
+    await Promise.all(uniquePlayerIds.map((playerId) => this.recomputePersistentLoadout(playerId)));
+  }
+
+  private async recomputePersistentLoadout(playerId: string) {
+    const [baseStats, slots, allSpells] = await Promise.all([
+      this.prisma.playerStats.findUnique({
+        where: { playerId },
+      }),
+      this.prisma.equipmentSlot.findMany({
+        where: { playerId },
+        include: {
+          inventoryItem: {
+            include: {
+              item: true,
+            },
+          },
+          sessionItem: {
+            include: {
+              item: true,
+            },
+          },
+        },
+      }),
+      this.prisma.spell.findMany({
+        select: { id: true, name: true },
+      }),
+    ]);
+
+    if (!baseStats) {
+      return;
+    }
+
+    const effectiveStats = this.statsCalculator.computeEffectiveStatsFromSnapshot(baseStats, slots as any[]);
+    const equipment = (slots as Array<any>).reduce<Record<string, any>>((accumulator, slot) => {
+      accumulator[slot.slot] = slot.inventoryItem ?? slot.sessionItem ?? null;
+      return accumulator;
+    }, {});
+
+    const resolvedSpells = this.spellResolver.resolveSpells(equipment);
+    const playerSpellsData = resolvedSpells
+      .map((spell) => {
+        const dbSpell = allSpells.find((entry) => entry.name === spell.spellName);
+        if (!dbSpell) {
+          return null;
+        }
+
+        return {
+          playerId,
+          spellId: dbSpell.id,
+          level: spell.level,
+        };
+      })
+      .filter((entry): entry is { playerId: string; spellId: string; level: number } => entry !== null);
+
+    await this.prisma.$transaction([
+      this.prisma.playerStats.update({
+        where: { playerId },
+        data: effectiveStats,
+      }),
+      this.prisma.playerSpell.deleteMany({
+        where: { playerId },
+      }),
+      ...(playerSpellsData.length > 0
+        ? [
+            this.prisma.playerSpell.createMany({
+              data: playerSpellsData,
+            }),
+          ]
+        : []),
+    ]);
   }
 }

@@ -172,6 +172,7 @@ export class SessionSecurityService {
     if (!isBot) {
       await this.assertPlayerAvailableForPublicRoom(userId, {
         ignoreCombatSessionId: sessionId,
+        ...(session.gameSessionId ? { ignoreGameSessionId: session.gameSessionId } : {}),
       });
     }
 

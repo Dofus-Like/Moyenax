@@ -73,4 +73,27 @@ describe('SessionSecurityService', () => {
       ignoreCombatSessionId: 'combat-1',
     });
   });
+
+  it('ignores the linked game session when accepting an internal combat created from ready state', async () => {
+    const session = {
+      id: 'combat-1',
+      status: 'WAITING',
+      player1Id: 'challenger',
+      player2Id: 'invited-player',
+      gameSessionId: 'game-session-1',
+    };
+    prisma.combatSession.findUnique.mockResolvedValue(session);
+
+    const availabilitySpy = jest
+      .spyOn(service, 'assertPlayerAvailableForPublicRoom')
+      .mockResolvedValue(undefined);
+
+    await expect(service.assertCanAcceptCombatSession('combat-1', 'invited-player')).resolves.toEqual(
+      session,
+    );
+    expect(availabilitySpy).toHaveBeenCalledWith('invited-player', {
+      ignoreCombatSessionId: 'combat-1',
+      ignoreGameSessionId: 'game-session-1',
+    });
+  });
 });

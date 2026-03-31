@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { Navigate, useLocation } from 'react-router-dom';
 import { gameSessionApi } from '../api/game-session.api';
 import { useAuthStore } from '../store/auth.store';
+import { useCombatStore } from '../store/combat.store';
+import { useFarmingStore } from '../store/farming.store';
 
 interface GameSession {
   id: string;
@@ -55,6 +57,7 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const prevPathnameRef = useRef<string | undefined>(undefined);
+  const prevSessionIdRef = useRef<string | null>(null);
 
   const refreshSession = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent ?? false;
@@ -101,6 +104,49 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
 
     void refreshSession();
   }, [location.pathname, refreshSession]);
+
+  useEffect(() => {
+    if (!activeSession?.id) {
+      return;
+    }
+
+    const refreshSilently = () => {
+      void refreshSession({ silent: true });
+    };
+
+    const pollTimer = window.setInterval(refreshSilently, 4000);
+    const handleWindowFocus = () => refreshSilently();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshSilently();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(pollTimer);
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [activeSession?.id, refreshSession]);
+
+  useEffect(() => {
+    const nextSessionId = activeSession?.id ?? null;
+
+    if (prevSessionIdRef.current !== nextSessionId) {
+      useCombatStore.getState().disconnect();
+      useFarmingStore.getState().reset();
+      prevSessionIdRef.current = nextSessionId;
+      return;
+    }
+
+    if (activeSession?.status === 'FINISHED' || nextSessionId === null) {
+      useCombatStore.getState().disconnect();
+      useFarmingStore.getState().reset();
+    }
+  }, [activeSession?.id, activeSession?.status]);
 
   useEffect(() => {
     if (!activeSession) return;
