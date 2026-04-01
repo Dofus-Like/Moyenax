@@ -14,28 +14,53 @@ services:
   api-setup:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
-    image: ${DEV_LOCAL_API_IMAGE:-dofus-like-api:dev-local}
+      dockerfile: Dockerfile.dev-container
+    image: ${DEV_LOCAL_WORKSPACE_IMAGE:-dofus-like-workspace:dev-local}
     container_name: dofus-like-api-setup-dev
+    working_dir: /workspace
+    command:
+      - sh
+      - -lc
+      - |
+        if [ ! -x /workspace/node_modules/.bin/nx ] || [ ! -d /workspace/node_modules/eslint ]; then
+          yarn install --frozen-lockfile
+        fi
+        npx prisma generate --schema=apps/api/prisma/schema.prisma
+        node apps/api/scripts/api-setup.cjs
     environment:
+      NODE_ENV: development
+      YARN_PRODUCTION: 'false'
       DATABASE_URL: postgresql://game_user:${POSTGRES_PASSWORD:-game_password}@postgres:5432/game_db
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-minimum-32-chars}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    volumes:
+      - .:/workspace
+      - dev_workspace_node_modules:/workspace/node_modules
 
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
-    image: ${DEV_LOCAL_API_IMAGE:-dofus-like-api:dev-local}
+      dockerfile: Dockerfile.dev-container
+    image: ${DEV_LOCAL_WORKSPACE_IMAGE:-dofus-like-workspace:dev-local}
     container_name: dofus-like-api-dev
+    working_dir: /workspace
+    command: ['sh', '/workspace/scripts/dev/run-api-dev.sh']
     ports:
       - "${DEV_API_PORT:-13000}:3000"
     environment:
+      NODE_ENV: development
+      YARN_PRODUCTION: 'false'
       DATABASE_URL: postgresql://game_user:${POSTGRES_PASSWORD:-game_password}@postgres:5432/game_db
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-minimum-32-chars}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       FRONTEND_URL: ${FRONTEND_URL:-http://127.0.0.1:18080}
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: ${DEV_WATCH_INTERVAL_MS:-1000}
+      WATCHPACK_POLLING: 'true'
+    volumes:
+      - .:/workspace
+      - dev_workspace_node_modules:/workspace/node_modules
     networks:
       - dofus-like-network
     labels: []
@@ -43,16 +68,41 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
-      args:
-        VITE_API_URL: /api/v1
-    image: ${DEV_LOCAL_WEB_IMAGE:-dofus-like-web:dev-local}
+      dockerfile: Dockerfile.dev-container
+    image: ${DEV_LOCAL_WORKSPACE_IMAGE:-dofus-like-workspace:dev-local}
     container_name: dofus-like-web-dev
+    working_dir: /workspace
+    command:
+      - sh
+      - -lc
+      - |
+        if [ ! -x /workspace/node_modules/.bin/nx ] || [ ! -d /workspace/node_modules/eslint ]; then
+          yarn install --frozen-lockfile
+        fi
+        cd /workspace/apps/web
+        exec npx vite --host "${VITE_HOST:-0.0.0.0}" --port "${VITE_PORT:-5173}"
     ports:
-      - "${DEV_WEB_PORT:-18080}:80"
+      - "${DEV_WEB_PORT:-18080}:5173"
+    environment:
+      NODE_ENV: development
+      YARN_PRODUCTION: 'false'
+      VITE_HOST: 0.0.0.0
+      VITE_PORT: 5173
+      VITE_API_PROXY_TARGET: http://api:3000
+      VITE_HMR_HOST: 127.0.0.1
+      VITE_HMR_CLIENT_PORT: ${DEV_WEB_PORT:-18080}
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: ${DEV_WATCH_INTERVAL_MS:-1000}
+      WATCHPACK_POLLING: 'true'
+    volumes:
+      - .:/workspace
+      - dev_workspace_node_modules:/workspace/node_modules
     networks:
       - dofus-like-network
     labels: []
+
+volumes:
+  dev_workspace_node_modules:
 
 networks:
   dofus-like-network:

@@ -1,4 +1,5 @@
 const { spawnSync } = require('node:child_process');
+const { existsSync } = require('node:fs');
 const { PrismaClient } = require('@prisma/client');
 
 function runNode(args, label) {
@@ -15,6 +16,15 @@ function runNode(args, label) {
   if (result.status !== 0) {
     throw new Error(`${label} failed with exit code ${result.status ?? 'unknown'}`);
   }
+}
+
+function resolveFirstExistingPath(candidates) {
+  const resolved = candidates.find((candidate) => existsSync(candidate));
+  if (!resolved) {
+    throw new Error(`Unable to resolve any of: ${candidates.join(', ')}`);
+  }
+
+  return resolved;
 }
 
 async function repairDuplicateOpenSessions() {
@@ -100,16 +110,31 @@ async function ensureSeeded() {
   }
 
   console.log('[seed] DB vide, lancement du seed...');
-  runNode(['seed-build/prisma/seed.js'], 'seed');
+  const compiledSeedPath = ['seed-build/prisma/seed.js', '/app/seed-build/prisma/seed.js'].find((candidate) =>
+    existsSync(candidate),
+  );
+
+  if (compiledSeedPath) {
+    runNode([compiledSeedPath], 'seed');
+    return;
+  }
+
+  runNode(['node_modules/ts-node/dist/bin.js', 'apps/api/prisma/seed.ts'], 'seed');
 }
 
 async function main() {
+  const prismaSchemaPath = resolveFirstExistingPath([
+    './prisma/schema.prisma',
+    'apps/api/prisma/schema.prisma',
+    '/app/prisma/schema.prisma',
+  ]);
+
   console.log('[startup] Repairing duplicate open sessions before migrations...');
   await repairDuplicateOpenSessions();
 
   console.log('[startup] Applying Prisma migrations...');
   runNode(
-    ['node_modules/prisma/build/index.js', 'migrate', 'deploy', '--schema=./prisma/schema.prisma'],
+    ['node_modules/prisma/build/index.js', 'migrate', 'deploy', `--schema=${prismaSchemaPath}`],
     'migrate deploy',
   );
 

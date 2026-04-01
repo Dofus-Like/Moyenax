@@ -4,23 +4,43 @@ import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
+const devPort = Number(process.env.VITE_PORT ?? '5173');
+const devHost = process.env.VITE_HOST ?? 'localhost';
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000';
+const watchInterval = Number(process.env.CHOKIDAR_INTERVAL ?? '1000');
+const usePolling = process.env.CHOKIDAR_USEPOLLING === 'true';
+const hmrClientPort = process.env.VITE_HMR_CLIENT_PORT ? Number(process.env.VITE_HMR_CLIENT_PORT) : undefined;
+
 export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/web',
   envPrefix: 'VITE_',
   server: {
-    port: 5173,
-    host: 'localhost',
+    port: devPort,
+    host: devHost,
+    watch: usePolling
+      ? {
+          usePolling: true,
+          interval: watchInterval,
+        }
+      : undefined,
+    hmr:
+      process.env.VITE_HMR_HOST || hmrClientPort
+        ? {
+            host: process.env.VITE_HMR_HOST,
+            clientPort: hmrClientPort,
+          }
+        : undefined,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: apiProxyTarget,
         changeOrigin: true,
       },
     },
   },
   preview: {
-    port: 5173,
-    host: 'localhost',
+    port: devPort,
+    host: devHost,
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   // Uncomment this if you are using workers.

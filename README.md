@@ -131,13 +131,14 @@ game-monorepo/
 
 ## 🧪 Stack Dev Conteneurisée
 
-- `yarn docker:dev` lance une stack locale avec les mêmes services qu’en prod: `postgres`, `redis`, `api-setup`, `api`, `web`.
+- `yarn docker:dev` lance une stack locale avec les mêmes services qu’en prod: `postgres`, `redis`, `api-setup`, `api`, `web`, avec API/Web en mode dev dans les conteneurs, bind mounts et hot reload.
 - Ports locaux:
   - PostgreSQL: `15432`
   - Redis: `16379`
   - API: `http://127.0.0.1:13000`
   - Web: `http://127.0.0.1:18080`
 - Ces ports évitent les collisions avec `yarn dev` et `yarn docker:dev:infra`. Ils restent surchargeables via `DEV_POSTGRES_PORT`, `DEV_REDIS_PORT`, `DEV_API_PORT`, `DEV_WEB_PORT`.
+- Les watchers Docker utilisent le polling; vous pouvez ajuster la fréquence via `DEV_WATCH_INTERVAL_MS`.
 - `yarn docker:dev:down` arrête cette stack. Ajoutez `DEV_REMOVE_VOLUMES=1` pour supprimer les volumes.
 - `yarn docker:dev:infra` reste disponible si vous voulez garder uniquement la base et Redis puis lancer `yarn dev` sur l’hôte.
 

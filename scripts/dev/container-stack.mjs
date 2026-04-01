@@ -19,9 +19,9 @@ const env = {
   POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD ?? 'game_password',
   JWT_SECRET: process.env.JWT_SECRET ?? 'change-this-secret-in-production-minimum-32-chars',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '7d',
+  DEV_WATCH_INTERVAL_MS: process.env.DEV_WATCH_INTERVAL_MS ?? '1000',
   FRONTEND_URL: process.env.FRONTEND_URL ?? `http://127.0.0.1:${process.env.DEV_WEB_PORT ?? '18080'}`,
-  DEV_LOCAL_API_IMAGE: process.env.DEV_LOCAL_API_IMAGE ?? 'dofus-like-api:dev-local',
-  DEV_LOCAL_WEB_IMAGE: process.env.DEV_LOCAL_WEB_IMAGE ?? 'dofus-like-web:dev-local',
+  DEV_LOCAL_WORKSPACE_IMAGE: process.env.DEV_LOCAL_WORKSPACE_IMAGE ?? 'dofus-like-workspace:dev-local',
 };
 
 function runCompose(args) {
