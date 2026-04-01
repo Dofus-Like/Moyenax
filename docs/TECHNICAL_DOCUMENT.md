@@ -1,4 +1,4 @@
-# Dossier d'Architecture Technique — Dofus-Like
+# Dossier d'Architecture Technique — Moyenax
 
 Ce document décrit l'architecture logicielle, la stack technique, et l'organisation du monorepo du projet de jeu de stratégie au tour par tour.
 
