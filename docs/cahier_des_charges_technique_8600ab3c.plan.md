@@ -1,6 +1,6 @@
 ---
 name: Cahier des charges technique
-overview: Cahier des charges technique du jeu Moyenax, decoupant l'ensemble des fonctionnalites du GDD V2 en Epics, User Stories et Tasks, ancre dans l'architecture existante (NX monorepo, NestJS, Prisma, React 19, Three.js).
+overview: Cahier des charges technique du jeu Dofus-Like, decoupant l'ensemble des fonctionnalites du GDD V2 en Epics, User Stories et Tasks, ancre dans l'architecture existante (NX monorepo, NestJS, Prisma, React 19, Three.js).
 todos:
   - id: epic1-schema
     content: "EPIC 1 : Refonte schema Prisma, types partages et seed"
@@ -32,7 +32,7 @@ todos:
 isProject: false
 ---
 
-# Cahier des charges technique -- Moyenax (aligne GDD V2)
+# Cahier des charges technique -- Dofus-Like (aligne GDD V2)
 
 Le projet est un monorepo NX avec :
 

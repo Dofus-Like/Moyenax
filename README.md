@@ -1,6 +1,6 @@
-# ⚔️ Moyenax — Jeu de Stratégie au Tour par Tour
+# ⚔️ Dofus-like — Jeu de Stratégie au Tour par Tour
 
-Monorepo NX pour un jeu de stratégie au tour par tour sur navigateur inspiré de Moyenax.
+Monorepo NX pour un jeu de stratégie au tour par tour sur navigateur inspiré de Dofus.
 
 ## 🎮 Phases de Jeu
 
@@ -19,7 +19,7 @@ Monorepo NX pour un jeu de stratégie au tour par tour sur navigateur inspiré d
 ### 1. Initialisation automatique (Recommandé)
 ```bash
 # Clonez le repo et entrez dans le dossier
-git clone <url> && cd Moyenax
+git clone <url> && cd Dofus-Like
 
 # Lancez l'installation complète (Yarn, Docker, Prisma, Seed)
 yarn setup

@@ -1,4 +1,4 @@
-# Game Design Document — Moyenax v2
+# Game Design Document — Dofus-Like v2
 
 > Jeu de stratégie au tour par tour en navigateur, inspiré de Dofus.
 

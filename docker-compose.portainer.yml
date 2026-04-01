@@ -3,13 +3,13 @@
 # Ne pas modifier manuellement — les changements seront ecrases au prochain push sur main.
 #
 # Sous-domaines :
-#   API : https://moyenax-api.roketlab.duckdns.org
-#   Web : https://moyenax.roketlab.duckdns.org
+#   API : https://dofus-like-api.roketlab.duckdns.org
+#   Web : https://dofus-like.roketlab.duckdns.org
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: ${STACK_CONTAINER_PREFIX:-moyenax}-postgres
+    container_name: ${STACK_CONTAINER_PREFIX:-dofus-like}-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: game_db
@@ -26,11 +26,11 @@ services:
       retries: 10
       start_period: 30s
     networks:
-      - moyenax-network
+      - dofus-like-network
 
   redis:
     image: redis:7-alpine
-    container_name: ${STACK_CONTAINER_PREFIX:-moyenax}-redis
+    container_name: ${STACK_CONTAINER_PREFIX:-dofus-like}-redis
     restart: unless-stopped
     volumes:
       - redis_data:/data
@@ -41,11 +41,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - moyenax-network
+      - dofus-like-network
 
   api-setup:
-    image: ghcr.io/roketag33/moyenax-api:${IMAGE_TAG:-latest}
-    container_name: ${STACK_CONTAINER_PREFIX:-moyenax}-api-setup
+    image: ghcr.io/roketag33/dofus-like-api:${IMAGE_TAG:-latest}
+    container_name: ${STACK_CONTAINER_PREFIX:-dofus-like}-api-setup
     restart: "no"
     # Migrations uniquement — pas de set -e fragile, pas de scripts inline complexes.
     # Le seed est gere separement si besoin (la DB est deja initialisee en prod).
@@ -61,11 +61,11 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - moyenax-network
+      - dofus-like-network
 
   api:
-    image: ghcr.io/roketag33/moyenax-api:${IMAGE_TAG:-latest}
-    container_name: ${STACK_CONTAINER_PREFIX:-moyenax}-api
+    image: ghcr.io/roketag33/dofus-like-api:${IMAGE_TAG:-latest}
+    container_name: ${STACK_CONTAINER_PREFIX:-dofus-like}-api
     restart: unless-stopped
     command:
       - node
@@ -79,7 +79,7 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      FRONTEND_URL: ${FRONTEND_URL:-https://moyenax.roketlab.duckdns.org}
+      FRONTEND_URL: ${FRONTEND_URL:-https://dofus-like.roketlab.duckdns.org}
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,39 +94,39 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - moyenax-network
+      - dofus-like-network
       - proxy
     labels:
       - "com.centurylinklabs.watchtower.enable=false"
       - "traefik.enable=true"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-api.rule=Host(`${API_HOST:-moyenax-api.roketlab.duckdns.org}`)"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-api.entrypoints=websecure"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-api.tls=true"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-api.tls.certresolver=le"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-api.service=${TRAEFIK_ROUTER_PREFIX:-moyenax}-api"
-      - "traefik.http.services.${TRAEFIK_ROUTER_PREFIX:-moyenax}-api.loadbalancer.server.port=3000"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-api.rule=Host(`${API_HOST:-dofus-like-api.roketlab.duckdns.org}`)"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-api.entrypoints=websecure"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-api.tls=true"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-api.tls.certresolver=le"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-api.service=${TRAEFIK_ROUTER_PREFIX:-dofus-like}-api"
+      - "traefik.http.services.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-api.loadbalancer.server.port=3000"
       - "traefik.docker.network=proxy"
 
   web:
-    image: ghcr.io/roketag33/moyenax-web:${IMAGE_TAG:-latest}
-    container_name: ${STACK_CONTAINER_PREFIX:-moyenax}-web
+    image: ghcr.io/roketag33/dofus-like-web:${IMAGE_TAG:-latest}
+    container_name: ${STACK_CONTAINER_PREFIX:-dofus-like}-web
     restart: unless-stopped
     expose:
       - "80"
     depends_on:
       - api
     networks:
-      - moyenax-network
+      - dofus-like-network
       - proxy
     labels:
       - "com.centurylinklabs.watchtower.enable=false"
       - "traefik.enable=true"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-web.rule=Host(`${WEB_HOST:-moyenax.roketlab.duckdns.org}`)"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-web.entrypoints=websecure"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-web.tls=true"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-web.tls.certresolver=le"
-      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-moyenax}-web.service=${TRAEFIK_ROUTER_PREFIX:-moyenax}-web"
-      - "traefik.http.services.${TRAEFIK_ROUTER_PREFIX:-moyenax}-web.loadbalancer.server.port=80"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-web.rule=Host(`${WEB_HOST:-dofus-like.roketlab.duckdns.org}`)"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-web.entrypoints=websecure"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-web.tls=true"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-web.tls.certresolver=le"
+      - "traefik.http.routers.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-web.service=${TRAEFIK_ROUTER_PREFIX:-dofus-like}-web"
+      - "traefik.http.services.${TRAEFIK_ROUTER_PREFIX:-dofus-like}-web.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy"
 
 volumes:
@@ -136,8 +136,8 @@ volumes:
     driver: local
 
 networks:
-  moyenax-network:
-    name: ${APP_NETWORK_NAME:-moyenax-network}
+  dofus-like-network:
+    name: ${APP_NETWORK_NAME:-dofus-like-network}
     driver: bridge
   proxy:
     external: true

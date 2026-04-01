@@ -12,14 +12,14 @@ export const composeFiles = [
   resolve(repoRoot, 'docker-compose.ci-local.override.yml'),
 ];
 
-export const composeProjectName = 'moyenax-ci-local';
-export const apiImage = process.env.CI_LOCAL_API_IMAGE ?? 'moyenax-api:ci-local';
-export const webImage = process.env.CI_LOCAL_WEB_IMAGE ?? 'moyenax-web:ci-local';
-export const apiSetupContainerName = 'moyenax-api-setup-ci-local';
-export const apiContainerName = 'moyenax-api-ci-local';
-export const webContainerName = 'moyenax-web-ci-local';
-export const postgresContainerName = 'moyenax-postgres-ci-local';
-export const redisContainerName = 'moyenax-redis-ci-local';
+export const composeProjectName = 'dofus-like-ci-local';
+export const apiImage = process.env.CI_LOCAL_API_IMAGE ?? 'dofus-like-api:ci-local';
+export const webImage = process.env.CI_LOCAL_WEB_IMAGE ?? 'dofus-like-web:ci-local';
+export const apiSetupContainerName = 'dofus-like-api-setup-ci-local';
+export const apiContainerName = 'dofus-like-api-ci-local';
+export const webContainerName = 'dofus-like-web-ci-local';
+export const postgresContainerName = 'dofus-like-postgres-ci-local';
+export const redisContainerName = 'dofus-like-redis-ci-local';
 export const apiPort = process.env.CI_LOCAL_API_PORT ?? '13000';
 export const webPort = process.env.CI_LOCAL_WEB_PORT ?? '18080';
 export const dirtySecurityFixturePath = resolve(
