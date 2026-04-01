@@ -120,6 +120,7 @@ interface PlayersLayerProps {
   jumpingPlayers: Record<string, boolean>;
   setPawnRef: (playerId: string, handle: PlayerPawnHandle | null) => void;
   onCombatPathComplete: (playerId: string) => void;
+  onTileReached?: (node: PathNode) => void;
 }
 
 export const PlayersLayer = React.memo(
@@ -137,6 +138,7 @@ export const PlayersLayer = React.memo(
     jumpingPlayers,
     setPawnRef,
     onCombatPathComplete,
+    onTileReached,
   }: PlayersLayerProps) => {
     if (mode === 'farming' && playerPosition) {
       return (
@@ -145,7 +147,9 @@ export const PlayersLayer = React.memo(
           gridSize={mapWidth}
           path={movePath || null}
           onPathComplete={onPathComplete ?? (() => undefined)}
+          onTileReached={onTileReached}
           playerData={{ username: farmingPlayerName, skin: farmingPlayerSkin }}
+          setPawnRef={setPawnRef}
         />
       );
     }
@@ -172,6 +176,7 @@ export const PlayersLayer = React.memo(
               lookAtPosition={opponentPosition}
               isJumping={!!jumpingPlayers[player.playerId]}
               onPathComplete={() => onCombatPathComplete(player.playerId)}
+              setPawnRef={setPawnRef}
             />
           );
         })}

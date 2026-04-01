@@ -39,6 +39,7 @@ interface UnifiedMapSceneProps {
   onTileHover?: (info: { x: number; y: number; terrain: TerrainType } | null) => void;
   isCameraMoving?: boolean;
   isMoving?: boolean;
+  onTileReached?: (node: PathNode) => void;
 }
 
 function getProjectileType(spellId: string) {
@@ -57,6 +58,7 @@ export const UnifiedMapScene = React.memo(
     onTileClick,
     onTileHover,
     isMoving = false,
+    onTileReached,
   }: UnifiedMapSceneProps) => {
     const combatState = useCombatStore((state) => state.combatState);
     const selectedSpellId = useCombatStore((state) => state.selectedSpellId);
@@ -668,6 +670,7 @@ export const UnifiedMapScene = React.memo(
             jumpingPlayers={jumpingPlayers}
             setPawnRef={setPawnRef}
             onCombatPathComplete={handleCombatPathComplete}
+            onTileReached={onTileReached}
           />
 
           {mode === 'combat' && (

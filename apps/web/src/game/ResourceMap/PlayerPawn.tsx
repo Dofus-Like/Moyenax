@@ -7,8 +7,8 @@ import { getSkinById } from '../../game/constants/skins';
 import { useAuthStore } from '../../store/auth.store';
 import { useCombatStore } from '../../store/combat.store';
 
-const MOVE_SPEED = 4.5;
-const ANIM_SPEED = 12;
+const MOVE_SPEED = 12.0;
+const ANIM_SPEED = 18;
 const IDLE_FRAMES = 6;
 const WALK_FRAMES = 8;
 const ATTACK_FRAMES = 6;
@@ -21,6 +21,8 @@ interface PlayerPawnProps {
   playerData?: Partial<CombatPlayer> & { username?: string; playerId?: string };
   lookAtPosition?: PathNode | null;
   isJumping?: boolean;
+  setPawnRef: (playerId: string, handle: PlayerPawnHandle | null) => void;
+  onTileReached?: (node: PathNode) => void;
 }
 
 export type PlayerPawnHandle = {
@@ -32,7 +34,7 @@ function toWorld(gx: number, gy: number, gridSize: number): [number, number, num
 }
 
 export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
-  ({ gridPosition, gridSize, path, onPathComplete, playerData, lookAtPosition, isJumping }, ref) => {
+  ({ gridPosition, gridSize, path, onPathComplete, playerData, lookAtPosition, isJumping, onTileReached }, ref) => {
     const groupRef = useRef<THREE.Group>(null);
     const spriteRef = useRef<THREE.Sprite>(null);
     const { camera } = useThree();
@@ -249,16 +251,18 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
           }
 
           groupRef.current.position.set(x, y, z);
-
           if (t >= 1) {
             const nextIndex = pathIndex + 1;
             if (nextIndex < currentPath.length) {
+              groupRef.current.position.set(toRef.current[0], 0, toRef.current[2]);
+              onTileReached?.(currentPath[pathIndex]);
               fromRef.current = [...toRef.current];
               toRef.current = toWorld(currentPath[nextIndex].x, currentPath[nextIndex].y, gridSize);
               setPathIndex(nextIndex);
               progressRef.current = 0;
             } else {
               groupRef.current.position.set(toRef.current[0], 0, toRef.current[2]);
+              onTileReached?.(currentPath[pathIndex]);
               setIsMoving(false);
               setCurrentPath([]);
               setPathIndex(0);
