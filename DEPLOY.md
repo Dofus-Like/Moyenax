@@ -12,16 +12,16 @@ Push sur main
     │
     ▼
 GitHub Actions
-    ├── Job 1 : Build image API  → ghcr.io/roketag33/moyenax-api:<sha>
-    ├── Job 1 : Build image Web  → ghcr.io/roketag33/moyenax-web:<sha>
+    ├── Job 1 : Build image API  → ghcr.io/roketag33/dofus-like-api:<sha>
+    ├── Job 1 : Build image Web  → ghcr.io/roketag33/dofus-like-web:<sha>
     │
     └── Job 2 : Portainer API (upsert)
             ├── Stack inexistante → POST /api/stacks/create  (1er deploy)
             └── Stack existante  → PUT  /api/stacks/{id}     (deploys suivants)
 
 URLs finales :
-  API : https://moyenax-api.roketlab.duckdns.org
-  Web : https://moyenax.roketlab.duckdns.org
+  API : https://dofus-like-api.roketlab.duckdns.org
+  Web : https://dofus-like.roketlab.duckdns.org
 ```
 
 ---
@@ -36,8 +36,8 @@ Portainer doit pouvoir les pull. Deux options :
 Apres le premier push sur main (qui cree les images), pour chaque package :
 
 1. `https://github.com/roketag33?tab=packages`
-2. Cliquer sur `moyenax-api` → Package settings → Change visibility → **Public**
-3. Repeter pour `moyenax-web`
+2. Cliquer sur `dofus-like-api` → Package settings → Change visibility → **Public**
+3. Repeter pour `dofus-like-web`
 
 ### Option B — Configurer le registry prive dans Portainer
 
@@ -75,7 +75,7 @@ Ajouter ces 6 secrets :
 |--------------------------|---------------------------------------------|
 | `PORTAINER_URL`          | `https://roketlab.duckdns.org:9443`         |
 | `PORTAINER_API_TOKEN`    | Le token genere a l'etape 2                 |
-| `PORTAINER_STACK_NAME`   | `moyenax`                                |
+| `PORTAINER_STACK_NAME`   | `dofus-like`                                |
 | `PORTAINER_ENDPOINT_ID`  | `3`                                         |
 | `JWT_SECRET`             | Une chaine aleatoire longue (min 32 chars)  |
 | `POSTGRES_PASSWORD`      | Un mot de passe fort pour la base de prod   |
@@ -90,7 +90,7 @@ Une fois les secrets configures, le premier deploiement se declenche automatique
 au prochain push sur `main`. Le workflow va :
 
 1. Builder et pusher les images sur GHCR
-2. Creer la stack `moyenax` dans Portainer (si elle n'existe pas)
+2. Creer la stack `dofus-like` dans Portainer (si elle n'existe pas)
 3. Demarrer tous les containers
 
 Si tu as choisi **l'Option A** (packages publics), fais d'abord le push pour creer
@@ -115,7 +115,7 @@ A chaque push sur `main` :
 Pour revenir a un commit precedent, repere le SHA dans l'historique GitHub Actions
 puis relance le workflow manuellement en modifiant `IMAGE_TAG` dans Portainer :
 
-Portainer → Stacks → moyenax → Editor → modifier `IMAGE_TAG` → Update the stack
+Portainer → Stacks → dofus-like → Editor → modifier `IMAGE_TAG` → Update the stack
 
 ---
 

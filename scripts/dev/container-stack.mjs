@@ -21,7 +21,7 @@ const env = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '7d',
   DEV_WATCH_INTERVAL_MS: process.env.DEV_WATCH_INTERVAL_MS ?? '1000',
   FRONTEND_URL: process.env.FRONTEND_URL ?? `http://127.0.0.1:${process.env.DEV_WEB_PORT ?? '18080'}`,
-  DEV_LOCAL_WORKSPACE_IMAGE: process.env.DEV_LOCAL_WORKSPACE_IMAGE ?? 'moyenax-workspace:dev-local',
+  DEV_LOCAL_WORKSPACE_IMAGE: process.env.DEV_LOCAL_WORKSPACE_IMAGE ?? 'dofus-like-workspace:dev-local',
 };
 
 function runCompose(args) {
@@ -29,7 +29,7 @@ function runCompose(args) {
   for (const file of composeFiles) {
     composeArgs.push('-f', file);
   }
-  composeArgs.push('--project-name', 'moyenax-dev', ...args);
+  composeArgs.push('--project-name', 'dofus-like-dev', ...args);
 
   const result = spawnSync('docker', composeArgs, {
     cwd: repoRoot,
