@@ -1,41 +1,67 @@
 services:
   postgres:
-    container_name: dofus-like-postgres-ci-local
+    container_name: moyenax-postgres-ci-local
     ports:
       - "${CI_LOCAL_POSTGRES_PORT:-15432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
-    container_name: dofus-like-redis-ci-local
-    ports:
-      - "${CI_LOCAL_REDIS_PORT:-16379}:6379"
+    image: redis:7-alpine
+    container_name: moyenax-redis-ci-local
+    expose:
+      - "6379"
+    networks:
+      - moyenax-network
 
   api-setup:
-    image: ${CI_LOCAL_API_IMAGE:-dofus-like-api:ci-local}
-    container_name: dofus-like-api-setup-ci-local
+    image: ${CI_LOCAL_API_IMAGE:-moyenax-api:ci-local}
+    container_name: moyenax-api-setup-ci-local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env.test
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/moyenax_test?schema=public
+    networks:
+      - moyenax-network
+    command: >
+      sh -c "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && npx ts-node apps/api/prisma/seed.ts"
 
   api:
-    image: ${CI_LOCAL_API_IMAGE:-dofus-like-api:ci-local}
-    container_name: dofus-like-api-ci-local
+    image: ${CI_LOCAL_API_IMAGE:-moyenax-api:ci-local}
+    container_name: moyenax-api-ci-local
+    depends_on:
+      api-setup:
+        condition: service_completed
+      redis:
+        condition: service_started
+    env_file: .env.test
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/moyenax_test?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
-      - "${CI_LOCAL_API_PORT:-13000}:3000"
+      - "3000:3000"
     networks:
-      - dofus-like-network
-    labels: []
+      - moyenax-network
 
   web:
-    image: ${CI_LOCAL_WEB_IMAGE:-dofus-like-web:ci-local}
-    container_name: dofus-like-web-ci-local
+    image: ${CI_LOCAL_WEB_IMAGE:-moyenax-web:ci-local}
+    container_name: moyenax-web-ci-local
     ports:
-      - "${CI_LOCAL_WEB_PORT:-18080}:80"
+      - "5173:5173"
     networks:
-      - dofus-like-network
-    labels: []
+      - moyenax-network
 
 networks:
-  dofus-like-network:
-    name: dofus-like-ci-local-network
+  moyenax-network:
+    name: moyenax-ci-local-network
     driver: bridge
   proxy:
-    name: dofus-like-ci-local-proxy
+    name: moyenax-ci-local-proxy
     driver: bridge
     external: false

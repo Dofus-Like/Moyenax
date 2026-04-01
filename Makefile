@@ -1,4 +1,4 @@
-# Dofus-Like Project Makefile
+# Moyenax Project Makefile
 # ---------------------------
 
 .PHONY: help setup dev dev-api dev-web build lint test db-migrate db-seed db-studio docker-up docker-down clean-ports clean-agent kill-all

@@ -1,13 +1,13 @@
 services:
   postgres:
-    container_name: dofus-like-postgres-dev
+    container_name: moyenax-postgres-dev
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-game_password}
     ports:
       - "${DEV_POSTGRES_PORT:-15432}:5432"
 
   redis:
-    container_name: dofus-like-redis-dev
+    container_name: moyenax-redis-dev
     ports:
       - "${DEV_REDIS_PORT:-16379}:6379"
 
@@ -15,8 +15,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev-container
-    image: ${DEV_LOCAL_WORKSPACE_IMAGE:-dofus-like-workspace:dev-local}
-    container_name: dofus-like-api-setup-dev
+    image: ${DEV_LOCAL_WORKSPACE_IMAGE:-moyenax-workspace:dev-local}
+    container_name: moyenax-api-setup-dev
     working_dir: /workspace
     command:
       - sh
@@ -41,8 +41,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev-container
-    image: ${DEV_LOCAL_WORKSPACE_IMAGE:-dofus-like-workspace:dev-local}
-    container_name: dofus-like-api-dev
+    image: ${DEV_LOCAL_WORKSPACE_IMAGE:-moyenax-workspace:dev-local}
+    container_name: moyenax-api-dev
     working_dir: /workspace
     command: ['sh', '/workspace/scripts/dev/run-api-dev.sh']
     ports:
@@ -62,15 +62,15 @@ services:
       - .:/workspace
       - dev_workspace_node_modules:/workspace/node_modules
     networks:
-      - dofus-like-network
+      - moyenax-network
     labels: []
 
   web:
     build:
       context: .
       dockerfile: Dockerfile.dev-container
-    image: ${DEV_LOCAL_WORKSPACE_IMAGE:-dofus-like-workspace:dev-local}
-    container_name: dofus-like-web-dev
+    image: ${DEV_LOCAL_WORKSPACE_IMAGE:-moyenax-workspace:dev-local}
+    container_name: moyenax-web-dev
     working_dir: /workspace
     command:
       - sh
@@ -98,17 +98,17 @@ services:
       - .:/workspace
       - dev_workspace_node_modules:/workspace/node_modules
     networks:
-      - dofus-like-network
+      - moyenax-network
     labels: []
 
 volumes:
   dev_workspace_node_modules:
 
 networks:
-  dofus-like-network:
-    name: dofus-like-dev-network
+  moyenax-network:
+    name: moyenax-dev-network
     driver: bridge
   proxy:
-    name: dofus-like-dev-proxy
+    name: moyenax-dev-proxy
     driver: bridge
     external: false
