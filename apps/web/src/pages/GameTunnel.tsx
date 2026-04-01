@@ -142,7 +142,7 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
       return;
     }
 
-    if (activeSession?.status === 'FINISHED' || nextSessionId === null) {
+    if (nextSessionId === null) {
       useCombatStore.getState().disconnect();
       useFarmingStore.getState().reset();
     }
@@ -159,11 +159,6 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
       try {
         const next = JSON.parse(event.data) as GameSession;
         if (!next || typeof next !== 'object' || !('id' in next)) {
-          return;
-        }
-
-        if (next.status === 'FINISHED') {
-          setActiveSession(null);
           return;
         }
 

@@ -34,6 +34,7 @@ describe('useFarmingStore', () => {
     mocks.farmingApi.getState.mockResolvedValue({
       pips: 3,
       round: 2,
+      spendableGold: 6,
       seedId: 'FORGE',
       map: [
         { x: 0, y: 0, terrain: TerrainType.GROUND },
@@ -49,16 +50,18 @@ describe('useFarmingStore', () => {
     const state = useFarmingStore.getState();
     expect(state.pips).toBe(3);
     expect(state.round).toBe(2);
+    expect(state.spendableGold).toBe(6);
     expect(state.seedId).toBe('FORGE');
-    expect(state.inventory).toEqual({ Or: 2 });
+    expect(state.inventory).toEqual({});
     expect(state.map?.grid[1][1]).toBe(TerrainType.GOLD);
     expect(state.isLoading).toBe(false);
   });
 
-  it('refreshes map and inventory after gathering a node', async () => {
+  it('refreshes map and spendable gold after gathering a gold node', async () => {
     useFarmingStore.setState({
       playerPosition: { x: 1, y: 1 },
       pips: 4,
+      spendableGold: 2,
       map: {
         width: 20,
         height: 20,
@@ -68,6 +71,7 @@ describe('useFarmingStore', () => {
     });
     mocks.farmingApi.gather.mockResolvedValue({
       pips: 3,
+      spendableGold: 3,
       map: [{ x: 2, y: 2, terrain: TerrainType.GOLD }],
     });
     mocks.inventoryApi.getInventory.mockResolvedValue({
@@ -78,7 +82,8 @@ describe('useFarmingStore', () => {
 
     const state = useFarmingStore.getState();
     expect(state.pips).toBe(3);
-    expect(state.inventory).toEqual({ Or: 1 });
+    expect(state.spendableGold).toBe(3);
+    expect(state.inventory).toEqual({});
     expect(state.map?.grid[2][2]).toBe(TerrainType.GOLD);
   });
 
@@ -87,11 +92,12 @@ describe('useFarmingStore', () => {
       pips: 0,
       round: 4,
       seedId: 'FORGE',
-      inventory: { Or: 3 },
+      spendableGold: 3,
     });
     mocks.farmingApi.nextRound.mockResolvedValue({
       pips: 4,
       round: 5,
+      spendableGold: 3,
     });
 
     await useFarmingStore.getState().nextRound();
@@ -99,7 +105,7 @@ describe('useFarmingStore', () => {
     const state = useFarmingStore.getState();
     expect(state.round).toBe(5);
     expect(state.pips).toBe(4);
-    expect(state.inventory).toEqual({ Or: 3 });
+    expect(state.spendableGold).toBe(3);
   });
 
   it('fully resets transient farming state between games', () => {
@@ -115,6 +121,7 @@ describe('useFarmingStore', () => {
       isHarvesting: true,
       pips: 1,
       round: 5,
+      spendableGold: 9,
       seedId: 'NATURE',
       isLoading: true,
     });
@@ -128,6 +135,7 @@ describe('useFarmingStore', () => {
       isHarvesting: false,
       pips: 4,
       round: 1,
+      spendableGold: 0,
       seedId: null,
       isLoading: false,
     });

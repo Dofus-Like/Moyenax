@@ -1,12 +1,20 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { GameSessionService } from '../../game-session/game-session.service';
+import { SpendableGoldService } from '../shared/spendable-gold.service';
+
+interface CraftCostEntry {
+  itemId: string;
+  quantity: number;
+  usesSpendableGold: boolean;
+}
 
 @Injectable()
 export class CraftingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gameSession: GameSessionService,
+    private readonly spendableGold: SpendableGoldService,
   ) {}
 
   async getRecipes() {
@@ -22,34 +30,47 @@ export class CraftingService {
     }
 
     const craftCost = item.craftCost as Record<string, number>;
+    const costEntries = await this.resolveCraftCostEntries(craftCost);
 
     const session = await this.gameSession.getActiveSession(playerId);
     if (session) {
-      return this.craftSession(playerId, session.id, itemId, craftCost);
+      return this.craftSession(playerId, session.id, itemId, costEntries, session);
     }
 
     return this.prisma.$transaction(async (tx: any) => {
-      for (const [resourceItemId, requiredQty] of Object.entries(craftCost)) {
+      const goldCost = costEntries
+        .filter((entry) => entry.usesSpendableGold)
+        .reduce((sum, entry) => sum + entry.quantity, 0);
+
+      await this.spendableGold.debitOrThrowInTransaction(
+        tx,
+        playerId,
+        goldCost,
+        null,
+        'Or insuffisant pour le craft',
+      );
+
+      for (const entry of costEntries.filter((candidate) => !candidate.usesSpendableGold)) {
         const inventoryItem = await tx.inventoryItem.findFirst({
-          where: { playerId, itemId: resourceItemId, rank: 1 },
+          where: { playerId, itemId: entry.itemId, rank: 1 },
         });
 
-        if (!inventoryItem || inventoryItem.quantity < requiredQty) {
+        if (!inventoryItem || inventoryItem.quantity < entry.quantity) {
           throw new BadRequestException(`Ressource insuffisante pour le craft`);
         }
       }
 
-      for (const [resourceItemId, requiredQty] of Object.entries(craftCost)) {
+      for (const entry of costEntries.filter((candidate) => !candidate.usesSpendableGold)) {
         const inventoryItem = await tx.inventoryItem.findFirst({
-          where: { playerId, itemId: resourceItemId, rank: 1 },
+          where: { playerId, itemId: entry.itemId, rank: 1 },
         });
 
-        if (inventoryItem && inventoryItem.quantity === requiredQty) {
+        if (inventoryItem && inventoryItem.quantity === entry.quantity) {
           await tx.inventoryItem.delete({ where: { id: inventoryItem.id } });
         } else if (inventoryItem) {
           await tx.inventoryItem.update({
             where: { id: inventoryItem.id },
-            data: { quantity: { decrement: requiredQty } },
+            data: { quantity: { decrement: entry.quantity } },
           });
         }
       }
@@ -77,34 +98,47 @@ export class CraftingService {
     playerId: string,
     sessionId: string,
     itemId: string,
-    craftCost: Record<string, number>,
+    costEntries: CraftCostEntry[],
+    session: Awaited<ReturnType<GameSessionService['getActiveSession']>>,
   ) {
     return this.prisma.$transaction(async (tx: any) => {
-      for (const [resourceItemId, requiredQty] of Object.entries(craftCost)) {
+      const goldCost = costEntries
+        .filter((entry) => entry.usesSpendableGold)
+        .reduce((sum, entry) => sum + entry.quantity, 0);
+
+      await this.spendableGold.debitOrThrowInTransaction(
+        tx,
+        playerId,
+        goldCost,
+        session,
+        'Pièces insuffisantes pour le craft',
+      );
+
+      for (const entry of costEntries.filter((candidate) => !candidate.usesSpendableGold)) {
         const row = await (tx as any).sessionItem.findUnique({
           where: {
-            sessionId_playerId_itemId: { sessionId, playerId, itemId: resourceItemId },
+            sessionId_playerId_itemId: { sessionId, playerId, itemId: entry.itemId },
           },
         });
 
-        if (!row || row.quantity < requiredQty) {
+        if (!row || row.quantity < entry.quantity) {
           throw new BadRequestException(`Ressource insuffisante pour le craft`);
         }
       }
 
-      for (const [resourceItemId, requiredQty] of Object.entries(craftCost)) {
+      for (const entry of costEntries.filter((candidate) => !candidate.usesSpendableGold)) {
         const row = await (tx as any).sessionItem.findUnique({
           where: {
-            sessionId_playerId_itemId: { sessionId, playerId, itemId: resourceItemId },
+            sessionId_playerId_itemId: { sessionId, playerId, itemId: entry.itemId },
           },
         });
 
-        if (row.quantity === requiredQty) {
+        if (row.quantity === entry.quantity) {
           await (tx as any).sessionItem.delete({ where: { id: row.id } });
         } else {
           await (tx as any).sessionItem.update({
             where: { id: row.id },
-            data: { quantity: { decrement: requiredQty } },
+            data: { quantity: { decrement: entry.quantity } },
           });
         }
       }
@@ -184,6 +218,28 @@ export class CraftingService {
         data: { playerId, itemId, quantity: 1, rank: nextRank },
         include: { item: true },
       });
+    });
+  }
+
+  private async resolveCraftCostEntries(craftCost: Record<string, number>) {
+    const itemIds = Object.keys(craftCost);
+    const items = await this.prisma.item.findMany({
+      where: { id: { in: itemIds } },
+      select: { id: true, name: true },
+    });
+
+    return itemIds.map<CraftCostEntry>((itemId) => {
+      const resource = items.find((entry) => entry.id === itemId);
+
+      if (!resource) {
+        throw new NotFoundException('Recette introuvable');
+      }
+
+      return {
+        itemId,
+        quantity: craftCost[itemId],
+        usesSpendableGold: resource.name === 'Or',
+      };
     });
   }
 }

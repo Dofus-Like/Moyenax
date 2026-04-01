@@ -1,14 +1,16 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { GameSessionService } from '../../game-session/game-session.service';
+import { SpendableGoldService } from '../shared/spendable-gold.service';
 
 @Injectable()
 export class ShopService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gameSession: GameSessionService,
+    private readonly spendableGold: SpendableGoldService,
   ) {}
 
   async getAvailableItems() {
@@ -25,37 +27,16 @@ export class ShopService {
 
     const totalCost = item.shopPrice * quantity;
     const session = await this.gameSession.getActiveSession(playerId);
-
-    if (session) {
-      const po =
-        session.player1Id === playerId
-          ? (session as any).player1Po
-          : (session as any).player2Po;
-      if (po < totalCost) {
-        throw new BadRequestException('Pièces insuffisantes');
-      }
-    } else {
-      const player = await this.prisma.player.findUnique({ where: { id: playerId } });
-      if (!player || player.gold < totalCost) {
-        throw new BadRequestException('Or insuffisant');
-      }
-    }
+    const insufficientMessage = session ? 'Pièces insuffisantes' : 'Or insuffisant';
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      if (session) {
-        const isPlayer1 = session.player1Id === playerId;
-        await (tx as any).gameSession.update({
-          where: { id: session.id },
-          data: isPlayer1
-            ? { player1Po: { decrement: totalCost } }
-            : { player2Po: { decrement: totalCost } },
-        });
-      } else {
-        await tx.player.update({
-          where: { id: playerId },
-          data: { gold: { decrement: totalCost } },
-        });
-      }
+      await this.spendableGold.debitOrThrowInTransaction(
+        tx,
+        playerId,
+        totalCost,
+        session,
+        insufficientMessage,
+      );
 
       if (session) {
         const existing = await (tx as any).sessionItem.findUnique({
@@ -122,18 +103,7 @@ export class ShopService {
     const sellPrice = Math.floor((inventoryItem.item.shopPrice ?? 0) * 0.5) * quantity;
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      if (session) {
-        const isP1 = session.player1Id === playerId;
-        await (tx as any).gameSession.update({
-          where: { id: session.id },
-          data: isP1 ? { player1Po: { increment: sellPrice } } : { player2Po: { increment: sellPrice } },
-        });
-      } else {
-        await tx.player.update({
-          where: { id: playerId },
-          data: { gold: { increment: sellPrice } },
-        });
-      }
+      await this.spendableGold.creditInTransaction(tx, playerId, sellPrice, session);
 
       if (inventoryItem.quantity === quantity) {
         if (session) {

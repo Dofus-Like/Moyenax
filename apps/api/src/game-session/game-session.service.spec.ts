@@ -28,7 +28,9 @@ describe('GameSessionService', () => {
     },
     combatSession: {
       findFirst: jest.fn(),
+      findMany: jest.fn(),
       findUnique: jest.fn(),
+      updateMany: jest.fn(),
     },
     gameSession: {
       create: jest.fn(),
@@ -97,7 +99,9 @@ describe('GameSessionService', () => {
     prisma.equipmentSlot.updateMany.mockResolvedValue({ count: 0 });
     prisma.sessionItem.deleteMany.mockResolvedValue({ count: 0 });
     prisma.combatSession.findFirst.mockResolvedValue(null);
+    prisma.combatSession.findMany.mockResolvedValue([]);
     prisma.combatSession.findUnique.mockResolvedValue(null);
+    prisma.combatSession.updateMany.mockResolvedValue({ count: 0 });
     redis.del.mockResolvedValue(undefined);
     statsCalculator.computeEffectiveStatsFromSnapshot.mockReturnValue({
       vit: 100,
@@ -206,6 +210,42 @@ describe('GameSessionService', () => {
         data: expect.objectContaining({
           player1Id: 'player-1',
           player2Id: 'player-2',
+          status: 'ACTIVE',
+        }),
+      }),
+    );
+  });
+
+  it('cleans stale standalone combats before creating a VS AI session', async () => {
+    const createdSession = {
+      id: 'session-vs-ai',
+      player1Id: 'player-1',
+      player2Id: 'bot-1',
+      status: 'ACTIVE',
+      phase: 'FARMING',
+    };
+
+    prisma.player.findUnique.mockResolvedValue({ id: 'bot-1', username: 'Bot' });
+    prisma.combatSession.findMany.mockResolvedValue([{ id: 'combat-stale-1' }, { id: 'combat-stale-2' }]);
+    sessionSecurity.assertPlayerAvailableForPublicRoom.mockResolvedValue(undefined);
+    prisma.gameSession.create.mockResolvedValue(createdSession);
+
+    await expect(service.createVsAiSession('player-1', 'bot-1')).resolves.toEqual(createdSession);
+
+    expect(prisma.combatSession.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['combat-stale-1', 'combat-stale-2'] } },
+      data: {
+        status: 'FINISHED',
+        endedAt: expect.any(Date),
+      },
+    });
+    expect(redis.del).toHaveBeenNthCalledWith(1, 'combat:combat-stale-1');
+    expect(redis.del).toHaveBeenNthCalledWith(2, 'combat:combat-stale-2');
+    expect(prisma.gameSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          player1Id: 'player-1',
+          player2Id: 'bot-1',
           status: 'ACTIVE',
         }),
       }),

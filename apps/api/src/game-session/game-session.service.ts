@@ -74,6 +74,11 @@ export class GameSessionService {
     }
   }
 
+  async createVsAiSession(player1Id: string, botPlayerId: string) {
+    await this.cleanupStandaloneCombatSessions(player1Id);
+    return this.createSession(player1Id, botPlayerId, { vsAi: true });
+  }
+
   async getWaitingSessions() {
     return (this.prisma as any).gameSession.findMany({
       where: {
@@ -343,6 +348,31 @@ export class GameSessionService {
     }
 
     await Promise.all(uniquePlayerIds.map((playerId) => this.recomputePersistentLoadout(playerId)));
+  }
+
+  private async cleanupStandaloneCombatSessions(playerId: string) {
+    const staleCombatSessions = await this.prisma.combatSession.findMany({
+      where: {
+        gameSessionId: null,
+        status: { in: ['WAITING', 'ACTIVE'] },
+        OR: [{ player1Id: playerId }, { player2Id: playerId }],
+      },
+      select: { id: true },
+    });
+
+    if (staleCombatSessions.length === 0) {
+      return;
+    }
+
+    const staleIds = staleCombatSessions.map((session) => session.id);
+    await this.prisma.combatSession.updateMany({
+      where: { id: { in: staleIds } },
+      data: {
+        status: 'FINISHED',
+        endedAt: new Date(),
+      },
+    });
+    await Promise.all(staleIds.map((sessionId) => this.redis.del(`combat:${sessionId}`)));
   }
 
   private async recomputePersistentLoadout(playerId: string) {

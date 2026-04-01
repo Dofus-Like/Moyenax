@@ -4,6 +4,8 @@ import { craftingApi } from '../api/crafting.api';
 import { useGameSession } from './GameTunnel';
 import { inventoryApi } from '../api/inventory.api';
 import { itemsApi } from '../api/items.api';
+import { useAuthStore } from '../store/auth.store';
+import { getSessionPo } from '../utils/sessionPo';
 import './CraftingPage.css';
 
 interface Item {
@@ -33,7 +35,9 @@ export function CraftingPage() {
   const [searchParams] = useSearchParams();
   const isDebugMode = searchParams.get('debug') === 'true';
   const tunnelQuery = isDebugMode ? '?debug=true' : '';
-  const { activeSession } = useGameSession();
+  const { activeSession, refreshSession } = useGameSession();
+  const player = useAuthStore((s) => s.player);
+  const refreshPlayer = useAuthStore((s) => s.refreshPlayer);
   const [activeTab, setActiveTab] = useState<'craft' | 'fusion'>('craft');
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -60,14 +64,36 @@ export function CraftingPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    void fetchData();
+    if (activeSession) {
+      void refreshSession({ silent: true });
+      return;
+    }
+
+    void refreshPlayer();
+  }, [activeSession, refreshPlayer, refreshSession]);
+
+  const spendableGold = activeSession ? (getSessionPo(activeSession, player?.id) ?? 0) : (player?.gold ?? 0);
+
+  const getAvailableQuantity = (resourceItemId: string) => {
+    const resource = allItems.find((item) => item.id === resourceItemId);
+    if (resource?.name === 'Or') {
+      return spendableGold;
+    }
+
+    return inventory.find((item) => item.itemId === resourceItemId)?.quantity || 0;
+  };
 
   const handleCraft = async (itemId: string) => {
     try {
       await craftingApi.craftItem(itemId);
+      if (activeSession) {
+        await refreshSession({ silent: true });
+      } else {
+        await refreshPlayer();
+      }
       setMessage({ text: 'Objet fabriqué avec succès !', type: 'success' });
-      fetchData();
+      await fetchData();
     } catch (error: any) {
       setMessage({ text: error.response?.data?.message || 'Erreur lors du craft', type: 'error' });
     }
@@ -76,8 +102,13 @@ export function CraftingPage() {
   const handleMerge = async (itemId: string, rank: number) => {
     try {
       await craftingApi.mergeItem(itemId, rank);
+      if (activeSession) {
+        await refreshSession({ silent: true });
+      } else {
+        await refreshPlayer();
+      }
       setMessage({ text: 'Fusion réussie ! Rang augmenté.', type: 'success' });
-      fetchData();
+      await fetchData();
     } catch (error: any) {
       setMessage({ text: error.response?.data?.message || 'Erreur lors de la fusion', type: 'error' });
     }
@@ -165,7 +196,7 @@ export function CraftingPage() {
                           <div className="cost-list">
                             {Object.entries(recipe.craftCost).map(([resId, qty]) => {
                               const resItem = allItems.find(i => i.id === resId);
-                              const userOwned = inventory.find(i => i.itemId === resId)?.quantity || 0;
+                              const userOwned = getAvailableQuantity(resId);
                               const hasEnough = userOwned >= qty;
                               
                               return (
@@ -186,7 +217,7 @@ export function CraftingPage() {
                           className="action-button" 
                           onClick={() => handleCraft(recipe.id)}
                           disabled={Object.entries(recipe.craftCost).some(([resId, qty]) => {
-                            const userOwned = inventory.find(i => i.itemId === resId)?.quantity || 0;
+                            const userOwned = getAvailableQuantity(resId);
                             return userOwned < qty;
                           })}
                         >

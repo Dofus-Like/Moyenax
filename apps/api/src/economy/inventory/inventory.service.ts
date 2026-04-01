@@ -16,13 +16,20 @@ export class InventoryService {
     const session = await this.gameSession.getActiveSession(playerId);
     if (session) {
       return (this.prisma as any).sessionItem.findMany({
-        where: { sessionId: session.id, playerId },
+        where: {
+          sessionId: session.id,
+          playerId,
+          equipmentSlot: { is: null },
+        },
         include: { item: true },
       });
     }
 
     return this.prisma.inventoryItem.findMany({
-      where: { playerId },
+      where: {
+        playerId,
+        equipmentSlot: { is: null },
+      },
       include: { item: true },
     });
   }

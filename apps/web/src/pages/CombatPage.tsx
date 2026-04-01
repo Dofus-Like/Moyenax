@@ -46,6 +46,7 @@ export function CombatPage() {
   const authInitialize = useAuthStore((s) => s.initialize);
   const [isCameraMoving, setIsCameraMoving] = React.useState(false);
   const controlsRef = React.useRef<CameraControlsImpl>(null);
+  const wasLinkedSessionRef = React.useRef(false);
 
   const { activeSession, refreshSession } = useGameSession();
   const onRest = React.useCallback(() => setIsCameraMoving(false), []);
@@ -88,8 +89,14 @@ export function CombatPage() {
 
   // Fin de manche : le serveur repasse la game session en FARMING (manche suivante) → retour farming
   useEffect(() => {
+    if (activeSession?.id) {
+      wasLinkedSessionRef.current = true;
+    }
+
     if (!activeSession) {
-      prevGamePhaseRef.current = null;
+      if (wasLinkedSessionRef.current) {
+        navigate('/', { replace: true });
+      }
       return;
     }
     if (activeSession.status === 'FINISHED') {

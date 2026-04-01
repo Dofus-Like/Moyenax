@@ -3,6 +3,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { RedisService } from '../../shared/redis/redis.service';
 import { MapGeneratorService } from '../map/map-generator.service';
 import { InventoryService } from '../../economy/inventory/inventory.service';
+import { SpendableGoldService } from '../../economy/shared/spendable-gold.service';
 import { FarmingState, SeedId, TERRAIN_PROPERTIES, TerrainType, GAME_EVENTS } from '@game/shared-types';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 
@@ -12,6 +13,7 @@ export class FarmingService {
     private readonly redis: RedisService,
     private readonly mapGenerator: MapGeneratorService,
     private readonly inventory: InventoryService,
+    private readonly spendableGold: SpendableGoldService,
     private readonly perfLogger: PerfLoggerService,
   ) {}
 
@@ -35,12 +37,13 @@ export class FarmingService {
         map: gridCells,
         pips: 4,
         round: 1,
+        spendableGold: 0,
       };
       
       await this.redis.setJson(key, state, 86400); // 24h
     }
 
-    return state;
+    return this.withSpendableGold(playerId, state);
   }
 
   async gatherResource(playerId: string, x: number, y: number, playerX: number, playerY: number): Promise<FarmingState> {
@@ -59,13 +62,17 @@ export class FarmingService {
     const dist = Math.abs(playerX - x) + Math.abs(playerY - y);
     if (dist > 1) throw new BadRequestException('Trop loin pour récolter');
 
-    // Proceed to gather
-    await this.inventory.addResourceByName(playerId, props.resourceName);
+    if (node.terrain === TerrainType.GOLD) {
+      const { session } = await this.spendableGold.getContext(playerId);
+      await this.spendableGold.credit(playerId, 1, session);
+    } else {
+      await this.inventory.addResourceByName(playerId, props.resourceName);
+    }
 
     state.pips -= 1;
     await this.redis.setJson(key, state, 86400);
 
-    return state;
+    return this.withSpendableGold(playerId, state);
   }
 
   async endFarmingPhase(playerId: string): Promise<FarmingState> {
@@ -78,7 +85,7 @@ export class FarmingService {
     state.pips = 0;
     await this.redis.setJson(key, state, 86400);
     
-    return state;
+    return this.withSpendableGold(playerId, state);
   }
 
   async debugRefillPips(playerId: string): Promise<FarmingState> {
@@ -90,7 +97,7 @@ export class FarmingService {
     state.pips = 4;
     await this.redis.setJson(key, state, 86400);
     
-    return state;
+    return this.withSpendableGold(playerId, state);
   }
 
   async nextRound(playerId: string): Promise<FarmingState> {
@@ -103,7 +110,7 @@ export class FarmingService {
     state.pips = 4;
     await this.redis.setJson(key, state, 86400);
     
-    return state;
+    return this.withSpendableGold(playerId, state);
   }
 
   @OnEvent(GAME_EVENTS.COMBAT_ENDED)
@@ -124,5 +131,13 @@ export class FarmingService {
         await this.redis.setJson(key, state, 86400);
       }
     }
+  }
+
+  private async withSpendableGold(playerId: string, state: FarmingState): Promise<FarmingState> {
+    const spendableGold = await this.spendableGold.getBalance(playerId);
+    return {
+      ...state,
+      spendableGold,
+    };
   }
 }

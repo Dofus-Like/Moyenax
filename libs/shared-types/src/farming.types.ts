@@ -6,4 +6,5 @@ export interface FarmingState {
   map: { x: number; y: number; terrain: TerrainType }[];
   pips: number;
   round: number;
+  spendableGold: number;
 }
