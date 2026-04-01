@@ -198,7 +198,7 @@ export function LobbyPage() {
   return (
     <div className="lobby-container">
       <header className="lobby-header">
-        <h1>⚔️ RokeTag Arena</h1>
+        <h1>⚔️ Moyenax</h1>
 
         <div className="lobby-user-info">
           <div className="user-profile-summary">

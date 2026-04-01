@@ -40,7 +40,7 @@ export function LoginPage() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1 className="login-title">⚔️ Dofus-like</h1>
+        <h1 className="login-title">⚔️ Moyenax</h1>
         <p className="login-subtitle">Jeu de stratégie au tour par tour</p>
 
         <div className="login-tabs">
