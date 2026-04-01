@@ -1,9 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { calculateInitiativeJet, calculatePlayerSpells } from '@game/game-engine';
+import { calculateInitiativeJet } from '@game/game-engine';
 import { GAME_EVENTS } from '@game/shared-types';
 import type { CombatState } from '@game/shared-types';
 import { performance } from 'node:perf_hooks';
+import { PlayerSpellProjectionService } from '../../player/player-spell-projection.service';
 import { PlayerStatsService } from '../../player/player-stats.service';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 import { PrismaService } from '../../shared/prisma/prisma.service';
@@ -19,6 +20,7 @@ export class SessionService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly sse: SseService,
+    private readonly playerSpellProjection: PlayerSpellProjectionService,
     private readonly playerStatsService: PlayerStatsService,
     private readonly mapService: MapService,
     private readonly eventEmitter: EventEmitter2,
@@ -55,13 +57,6 @@ export class SessionService {
           },
         },
       });
-
-      const punch = await this.prisma.spell.findFirst({ where: { name: 'Frappe' } });
-      if (punch) {
-        await this.prisma.playerSpell.create({
-          data: { playerId: bot.id, spellId: punch.id },
-        });
-      }
     }
 
     return bot;
@@ -146,9 +141,16 @@ export class SessionService {
       throw new BadRequestException('Echec de liaison du joueur 2');
     }
 
-    const [loadoutP1, loadoutP2, p1, p2] = await Promise.all([
+    await Promise.all([
+      this.playerSpellProjection.syncPlayerSpells(session.player1Id),
+      this.playerSpellProjection.syncPlayerSpells(session.player2Id),
+    ]);
+
+    const [loadoutP1, loadoutP2, spellsP1, spellsP2, p1, p2] = await Promise.all([
       this.playerStatsService.getCombatLoadout(session.player1Id),
       this.playerStatsService.getCombatLoadout(session.player2Id),
+      this.playerSpellProjection.getCombatSpellDefinitions(session.player1Id),
+      this.playerSpellProjection.getCombatSpellDefinitions(session.player2Id),
       this.prisma.player.findUnique({
         where: { id: session.player1Id },
         select: { username: true, skin: true },
@@ -161,15 +163,10 @@ export class SessionService {
 
     const statsP1 = loadoutP1.stats;
     const statsP2 = loadoutP2.stats;
-    const itemsP1 = loadoutP1.items;
-    const itemsP2 = loadoutP2.items;
 
     const init1 = calculateInitiativeJet(statsP1);
     const init2 = calculateInitiativeJet(statsP2);
     const firstPlayerId = init1 >= init2 ? session.player1Id : session.player2Id;
-
-    const spellsP1 = calculatePlayerSpells(itemsP1);
-    const spellsP2 = calculatePlayerSpells(itemsP2);
 
     const initialState: CombatState = {
       sessionId,

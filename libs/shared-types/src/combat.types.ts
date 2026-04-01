@@ -18,16 +18,43 @@ export enum SpellVisualType {
   UTILITY = 'UTILITY',
 }
 
+export enum SpellFamily {
+  COMMON = 'COMMON',
+  WARRIOR = 'WARRIOR',
+  MAGE = 'MAGE',
+  NINJA = 'NINJA',
+}
+
+export enum SpellEffectKind {
+  DAMAGE_PHYSICAL = 'DAMAGE_PHYSICAL',
+  DAMAGE_MAGICAL = 'DAMAGE_MAGICAL',
+  HEAL = 'HEAL',
+  TELEPORT = 'TELEPORT',
+  BUFF_VIT_MAX = 'BUFF_VIT_MAX',
+  SUMMON_MENHIR = 'SUMMON_MENHIR',
+  PUSH_LINE = 'PUSH_LINE',
+  BUFF_PM = 'BUFF_PM',
+}
+
 export interface SpellDefinition {
   id: string;
+  code: string;
   name: string;
-  paCost: number;     
+  description: string | null;
+  paCost: number;
   minRange: number;
   maxRange: number;
   damage: { min: number; max: number };
   cooldown: number;
   type: SpellType;
   visualType: SpellVisualType;
+  family: SpellFamily;
+  iconPath: string | null;
+  sortOrder: number;
+  requiresLineOfSight: boolean;
+  requiresLinearTargeting: boolean;
+  effectKind: SpellEffectKind;
+  effectConfig: Record<string, unknown> | null;
 }
 
 

@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { OnEvent as NestOnEvent } from '@nestjs/event-emitter';
 import { GAME_EVENTS } from '@game/shared-types';
 import { SessionService } from '../combat/session/session.service';
-import { SpellResolverService } from '../combat/spell-resolver.service';
+import { PlayerSpellProjectionService } from '../player/player-spell-projection.service';
 import { StatsCalculatorService } from '../player/stats-calculator.service';
 import { PrismaService } from '../shared/prisma/prisma.service';
 import { RedisService } from '../shared/redis/redis.service';
@@ -20,7 +20,7 @@ export class GameSessionService {
     private readonly sessionSecurity: SessionSecurityService,
     private readonly sseTickets: SseTicketService,
     private readonly statsCalculator: StatsCalculatorService,
-    private readonly spellResolver: SpellResolverService,
+    private readonly playerSpellProjection: PlayerSpellProjectionService,
   ) {}
 
   async createSession(
@@ -72,6 +72,11 @@ export class GameSessionService {
 
       throw error;
     }
+  }
+
+  async createVsAiSession(player1Id: string, botPlayerId: string) {
+    await this.cleanupStandaloneCombatSessions(player1Id);
+    return this.createSession(player1Id, botPlayerId, { vsAi: true });
   }
 
   async getWaitingSessions() {
@@ -345,8 +350,33 @@ export class GameSessionService {
     await Promise.all(uniquePlayerIds.map((playerId) => this.recomputePersistentLoadout(playerId)));
   }
 
+  private async cleanupStandaloneCombatSessions(playerId: string) {
+    const staleCombatSessions = await this.prisma.combatSession.findMany({
+      where: {
+        gameSessionId: null,
+        status: { in: ['WAITING', 'ACTIVE'] },
+        OR: [{ player1Id: playerId }, { player2Id: playerId }],
+      },
+      select: { id: true },
+    });
+
+    if (staleCombatSessions.length === 0) {
+      return;
+    }
+
+    const staleIds = staleCombatSessions.map((session) => session.id);
+    await this.prisma.combatSession.updateMany({
+      where: { id: { in: staleIds } },
+      data: {
+        status: 'FINISHED',
+        endedAt: new Date(),
+      },
+    });
+    await Promise.all(staleIds.map((sessionId) => this.redis.del(`combat:${sessionId}`)));
+  }
+
   private async recomputePersistentLoadout(playerId: string) {
-    const [baseStats, slots, allSpells] = await Promise.all([
+    const [baseStats, slots, playerSpellsData] = await Promise.all([
       this.prisma.playerStats.findUnique({
         where: { playerId },
       }),
@@ -365,9 +395,7 @@ export class GameSessionService {
           },
         },
       }),
-      this.prisma.spell.findMany({
-        select: { id: true, name: true },
-      }),
+      this.playerSpellProjection.buildPlayerSpellAssignments(playerId),
     ]);
 
     if (!baseStats) {
@@ -375,26 +403,6 @@ export class GameSessionService {
     }
 
     const effectiveStats = this.statsCalculator.computeEffectiveStatsFromSnapshot(baseStats, slots as any[]);
-    const equipment = (slots as Array<any>).reduce<Record<string, any>>((accumulator, slot) => {
-      accumulator[slot.slot] = slot.inventoryItem ?? slot.sessionItem ?? null;
-      return accumulator;
-    }, {});
-
-    const resolvedSpells = this.spellResolver.resolveSpells(equipment);
-    const playerSpellsData = resolvedSpells
-      .map((spell) => {
-        const dbSpell = allSpells.find((entry) => entry.name === spell.spellName);
-        if (!dbSpell) {
-          return null;
-        }
-
-        return {
-          playerId,
-          spellId: dbSpell.id,
-          level: spell.level,
-        };
-      })
-      .filter((entry): entry is { playerId: string; spellId: string; level: number } => entry !== null);
 
     await this.prisma.$transaction([
       this.prisma.playerStats.update({

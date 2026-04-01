@@ -112,7 +112,7 @@ export class GameSessionController {
   @Post('vs-ai')
   async startVsAi(@Request() req: { user: { id: string } }) {
     const bot = await this.sessionService.getOrCreateBotPlayer();
-    return this.gameSessionService.createSession(req.user.id, bot.id, { vsAi: true });
+    return this.gameSessionService.createVsAiSession(req.user.id, bot.id);
   }
 
   @UseGuards(JwtAuthGuard)

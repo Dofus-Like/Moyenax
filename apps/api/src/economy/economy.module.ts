@@ -6,14 +6,23 @@ import { CraftingModule } from './crafting/crafting.module';
 import { EquipmentModule } from './equipment/equipment.module';
 import { PlayerModule } from '../player/player.module';
 import { CombatModule } from '../combat/combat.module';
+import { SpendableGoldModule } from './shared/spendable-gold.module';
 
 import { EconomyListenerService } from './economy-listener.service';
 
 @Module({
-  imports: [InventoryModule, ItemsModule, ShopModule, CraftingModule, EquipmentModule, PlayerModule, CombatModule],
+  imports: [
+    InventoryModule,
+    ItemsModule,
+    ShopModule,
+    CraftingModule,
+    EquipmentModule,
+    PlayerModule,
+    CombatModule,
+    SpendableGoldModule,
+  ],
   providers: [EconomyListenerService],
-  exports: [InventoryModule, ItemsModule, ShopModule, CraftingModule, EquipmentModule],
+  exports: [InventoryModule, ItemsModule, ShopModule, CraftingModule, EquipmentModule, SpendableGoldModule],
 })
 export class EconomyModule {}
-
 

@@ -3,8 +3,8 @@ import { performance } from 'node:perf_hooks';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 
 import { EquipmentSlotType } from '@game/shared-types';
+import { PlayerSpellProjectionService } from '../../player/player-spell-projection.service';
 import { StatsCalculatorService } from '../../player/stats-calculator.service';
-import { SpellResolverService } from '../../combat/spell-resolver.service';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 import { GameSessionService } from '../../game-session/game-session.service';
 
@@ -13,7 +13,7 @@ export class EquipmentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly statsCalculator: StatsCalculatorService,
-    private readonly spellResolver: SpellResolverService,
+    private readonly playerSpellProjection: PlayerSpellProjectionService,
     private readonly perfLogger: PerfLoggerService,
     private readonly gameSession: GameSessionService,
   ) {}
@@ -160,27 +160,11 @@ export class EquipmentService {
 
   private async updatePlayerStatsAndSpells(playerId: string) {
     const startedAt = performance.now();
-    const [stats, equipment, allSpells] = await Promise.all([
+    const [stats, equipment, playerSpellsData] = await Promise.all([
       this.statsCalculator.computeEffectiveStats(playerId),
       this.getEquipment(playerId),
-      this.prisma.spell.findMany({
-        select: { id: true, name: true },
-      }),
+      this.playerSpellProjection.buildPlayerSpellAssignments(playerId),
     ]);
-
-    const resolvedSpells = this.spellResolver.resolveSpells(equipment);
-    const playerSpellsData: Array<{ playerId: string; spellId: string; level: number }> = [];
-
-    for (const rs of resolvedSpells) {
-      const dbSpell = allSpells.find((s: any) => s.name === rs.spellName);
-      if (dbSpell) {
-        playerSpellsData.push({
-          playerId,
-          spellId: dbSpell.id,
-          level: rs.level,
-        });
-      }
-    }
 
     await this.prisma.$transaction([
       this.prisma.playerStats.update({

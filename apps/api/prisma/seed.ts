@@ -1,8 +1,300 @@
-import { PrismaClient, ItemType, SpellType, SpellVisualType, EquipmentSlotType } from '@prisma/client';
+import {
+  PrismaClient,
+  ItemType,
+  SpellType,
+  SpellVisualType,
+  EquipmentSlotType,
+  SpellFamily,
+  SpellEffectKind,
+} from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { createDefaultPlayerStats } from '../src/player/default-player-stats';
 
 const prisma = new PrismaClient();
+
+const SPELL_DEFINITIONS = [
+  {
+    code: 'spell-claque',
+    name: 'Claque',
+    description: 'Une gifle universelle pour ne jamais rester sans action.',
+    paCost: 2,
+    minRange: 1,
+    maxRange: 1,
+    damageMin: 8,
+    damageMax: 12,
+    cooldown: 0,
+    type: SpellType.DAMAGE,
+    visualType: SpellVisualType.PHYSICAL,
+    family: SpellFamily.COMMON,
+    iconPath: '/assets/pack/spells/epee.png',
+    sortOrder: 99,
+    requiresLineOfSight: true,
+    requiresLinearTargeting: false,
+    effectKind: SpellEffectKind.DAMAGE_PHYSICAL,
+    effectConfig: {},
+    isDefault: true,
+  },
+  {
+    code: 'spell-frappe',
+    name: 'Frappe',
+    description: 'Une attaque physique de mêlée.',
+    paCost: 3,
+    minRange: 1,
+    maxRange: 1,
+    damageMin: 35,
+    damageMax: 45,
+    cooldown: 0,
+    type: SpellType.DAMAGE,
+    visualType: SpellVisualType.PHYSICAL,
+    family: SpellFamily.WARRIOR,
+    iconPath: '/assets/pack/spells/epee.png',
+    sortOrder: 10,
+    requiresLineOfSight: true,
+    requiresLinearTargeting: false,
+    effectKind: SpellEffectKind.DAMAGE_PHYSICAL,
+    effectConfig: {},
+    isDefault: false,
+  },
+  {
+    code: 'spell-bond',
+    name: 'Bond',
+    description: 'Se téléporte sur une case libre et traversable.',
+    paCost: 4,
+    minRange: 1,
+    maxRange: 4,
+    damageMin: 0,
+    damageMax: 0,
+    cooldown: 1,
+    type: SpellType.BUFF,
+    visualType: SpellVisualType.UTILITY,
+    family: SpellFamily.WARRIOR,
+    iconPath: '/assets/pack/spells/bond.png',
+    sortOrder: 11,
+    requiresLineOfSight: false,
+    requiresLinearTargeting: false,
+    effectKind: SpellEffectKind.TELEPORT,
+    effectConfig: {},
+    isDefault: false,
+  },
+  {
+    code: 'spell-endurance',
+    name: 'Endurance',
+    description: 'Augmente la vitalité maximale pendant le combat.',
+    paCost: 2,
+    minRange: 0,
+    maxRange: 0,
+    damageMin: 0,
+    damageMax: 0,
+    cooldown: 2,
+    type: SpellType.BUFF,
+    visualType: SpellVisualType.UTILITY,
+    family: SpellFamily.WARRIOR,
+    iconPath: '/assets/pack/spells/endurance.png',
+    sortOrder: 12,
+    requiresLineOfSight: true,
+    requiresLinearTargeting: false,
+    effectKind: SpellEffectKind.BUFF_VIT_MAX,
+    effectConfig: { buffValue: 20, buffDuration: 99 },
+    isDefault: false,
+  },
+  {
+    code: 'spell-boule-de-feu',
+    name: 'Boule de Feu',
+    description: 'Une boule de feu qui frappe à distance.',
+    paCost: 3,
+    minRange: 1,
+    maxRange: 7,
+    damageMin: 20,
+    damageMax: 30,
+    cooldown: 0,
+    type: SpellType.DAMAGE,
+    visualType: SpellVisualType.PROJECTILE,
+    family: SpellFamily.MAGE,
+    iconPath: '/assets/pack/spells/fireball.png',
+    sortOrder: 20,
+    requiresLineOfSight: true,
+    requiresLinearTargeting: false,
+    effectKind: SpellEffectKind.DAMAGE_MAGICAL,
+    effectConfig: {},
+    isDefault: false,
+  },
+  {
+    code: 'spell-soin',
+    name: 'Soin',
+    description: 'Un soin mono-cible.',
+    paCost: 2,
+    minRange: 0,
+    maxRange: 4,
+    damageMin: 15,
+    damageMax: 25,
+    cooldown: 1,
+    type: SpellType.HEAL,
+    visualType: SpellVisualType.UTILITY,
+    family: SpellFamily.MAGE,
+    iconPath: '/assets/pack/spells/heal.png',
+    sortOrder: 21,
+    requiresLineOfSight: true,
+    requiresLinearTargeting: false,
+    effectKind: SpellEffectKind.HEAL,
+    effectConfig: {},
+    isDefault: false,
+  },
+  {
+    code: 'spell-menhir',
+    name: 'Menhir',
+    description: 'Invoque un menhir bloquant sur une case libre.',
+    paCost: 4,
+    minRange: 1,
+    maxRange: 3,
+    damageMin: 0,
+    damageMax: 0,
+    cooldown: 1,
+    type: SpellType.BUFF,
+    visualType: SpellVisualType.PHYSICAL,
+    family: SpellFamily.MAGE,
+    iconPath: '/assets/pack/spells/menhir.png',
+    sortOrder: 22,
+    requiresLineOfSight: true,
+    requiresLinearTargeting: false,
+    effectKind: SpellEffectKind.SUMMON_MENHIR,
+    effectConfig: {
+      skin: 'menhir',
+      stats: {
+        vit: 1,
+        atk: 0,
+        mag: 0,
+        def: 0,
+        res: 0,
+        ini: 0,
+        pa: 0,
+        pm: 0,
+        baseVit: 1,
+        baseAtk: 0,
+        baseMag: 0,
+        baseDef: 0,
+        baseRes: 0,
+        baseIni: 0,
+        basePa: 0,
+        basePm: 0,
+      },
+    },
+    isDefault: false,
+  },
+  {
+    code: 'spell-kunai',
+    name: 'Kunai',
+    description: 'Un projectile précis de ninja.',
+    paCost: 2,
+    minRange: 1,
+    maxRange: 9,
+    damageMin: 15,
+    damageMax: 20,
+    cooldown: 0,
+    type: SpellType.DAMAGE,
+    visualType: SpellVisualType.PROJECTILE,
+    family: SpellFamily.NINJA,
+    iconPath: '/assets/pack/spells/kunai.png',
+    sortOrder: 30,
+    requiresLineOfSight: true,
+    requiresLinearTargeting: false,
+    effectKind: SpellEffectKind.DAMAGE_PHYSICAL,
+    effectConfig: {},
+    isDefault: false,
+  },
+  {
+    code: 'spell-bombe-repousse',
+    name: 'Bombe repousse',
+    description: 'Projette la cible en ligne droite.',
+    paCost: 4,
+    minRange: 1,
+    maxRange: 4,
+    damageMin: 0,
+    damageMax: 0,
+    cooldown: 1,
+    type: SpellType.DAMAGE,
+    visualType: SpellVisualType.PROJECTILE,
+    family: SpellFamily.NINJA,
+    iconPath: '/assets/pack/spells/bombe.png',
+    sortOrder: 31,
+    requiresLineOfSight: true,
+    requiresLinearTargeting: true,
+    effectKind: SpellEffectKind.PUSH_LINE,
+    effectConfig: { pushDistance: 3 },
+    isDefault: false,
+  },
+  {
+    code: 'spell-velocite',
+    name: 'Vélocité',
+    description: 'Donne immédiatement des PM supplémentaires.',
+    paCost: 2,
+    minRange: 0,
+    maxRange: 0,
+    damageMin: 0,
+    damageMax: 0,
+    cooldown: 1,
+    type: SpellType.BUFF,
+    visualType: SpellVisualType.UTILITY,
+    family: SpellFamily.NINJA,
+    iconPath: '/assets/pack/spells/velocite.png',
+    sortOrder: 32,
+    requiresLineOfSight: true,
+    requiresLinearTargeting: false,
+    effectKind: SpellEffectKind.BUFF_PM,
+    effectConfig: { buffValue: 2, buffDuration: 1, applyImmediately: true },
+    isDefault: false,
+  },
+] as const;
+
+async function rebuildPlayerSpellsForPlayer(playerId: string) {
+  const [defaultSpells, equippedSlots] = await Promise.all([
+    prisma.spell.findMany({
+      where: { isDefault: true },
+      select: { id: true },
+    }),
+    prisma.equipmentSlot.findMany({
+      where: {
+        playerId,
+        OR: [{ inventoryItemId: { not: null } }, { sessionItemId: { not: null } }],
+      },
+      select: {
+        inventoryItem: { select: { itemId: true } },
+        sessionItem: { select: { itemId: true } },
+      },
+    }),
+  ]);
+
+  const itemIds = [...new Set(
+    equippedSlots
+      .map((slot) => slot.inventoryItem?.itemId ?? slot.sessionItem?.itemId ?? null)
+      .filter((itemId): itemId is string => itemId !== null),
+  )];
+
+  const itemGrantedSpells = itemIds.length
+    ? await prisma.itemGrantedSpell.findMany({
+        where: { itemId: { in: itemIds } },
+        select: { spellId: true },
+      })
+    : [];
+
+  const spellIds = [...new Set([
+    ...defaultSpells.map((spell) => spell.id),
+    ...itemGrantedSpells.map((entry) => entry.spellId),
+  ])];
+
+  await prisma.playerSpell.deleteMany({
+    where: { playerId },
+  });
+
+  if (spellIds.length > 0) {
+    await prisma.playerSpell.createMany({
+      data: spellIds.map((spellId) => ({
+        playerId,
+        spellId,
+        level: 1,
+      })),
+    });
+  }
+}
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -13,6 +305,7 @@ async function main() {
   await prisma.sessionItem.deleteMany();
   await prisma.gameSession.deleteMany();
   await prisma.playerSpell.deleteMany();
+  await prisma.itemGrantedSpell.deleteMany();
   await prisma.equipmentSlot.deleteMany();
   await prisma.inventoryItem.deleteMany();
   await prisma.playerStats.deleteMany();
@@ -21,62 +314,13 @@ async function main() {
   await prisma.spell.deleteMany();
 
   // ── Sorts de base ──────────────────────────────────────────────────
-
-  const fireball = await prisma.spell.create({
-    data: {
-      name: 'Boule de Feu',
-      paCost: 4,
-      minRange: 1,
-      maxRange: 5,
-      damageMin: 15,
-      damageMax: 25,
-      cooldown: 1,
-      type: SpellType.DAMAGE,
-      visualType: SpellVisualType.PROJECTILE,
-    },
-  });
-
-  const kunaiSpell = await prisma.spell.create({
-    data: {
-      name: 'Kunai',
-      paCost: 3,
-      minRange: 2,
-      maxRange: 4,
-      damageMin: 10,
-      damageMax: 18,
-      cooldown: 0,
-      type: SpellType.DAMAGE,
-      visualType: SpellVisualType.PROJECTILE,
-    },
-  });
-
-  const heal = await prisma.spell.create({
-    data: {
-      name: 'Soin',
-      paCost: 3,
-      minRange: 0,
-      maxRange: 4,
-      damageMin: -10,
-      damageMax: -20,
-      cooldown: 1,
-      type: SpellType.HEAL,
-      visualType: SpellVisualType.UTILITY,
-    },
-  });
-
-  const frappe = await prisma.spell.create({
-    data: {
-      name: 'Frappe',
-      paCost: 3,
-      minRange: 1,
-      maxRange: 1,
-      damageMin: 12,
-      damageMax: 22,
-      cooldown: 0,
-      type: SpellType.DAMAGE,
-      visualType: SpellVisualType.PHYSICAL,
-    },
-  });
+  const spellsByCode = new Map<string, Awaited<ReturnType<typeof prisma.spell.create>>>();
+  for (const spellDefinition of SPELL_DEFINITIONS) {
+    const spell = await prisma.spell.create({
+      data: spellDefinition,
+    });
+    spellsByCode.set(spell.code, spell);
+  }
 
   // ── Ressources ──────────────────────────────────────────────────
 
@@ -271,7 +515,6 @@ async function main() {
       name: 'Anneau du Guerrier',
       type: ItemType.ACCESSORY,
       statsBonus: { vit: 100, atk: 20, def: 10, pa: 1 },
-      grantsSpells: ['spell-frappe', 'spell-bond', 'spell-endurance'],
       craftCost: { [fer.id]: 2, [or.id]: 2 },
       shopPrice: 25,
     },
@@ -282,7 +525,6 @@ async function main() {
       name: 'Anneau du Mage',
       type: ItemType.ACCESSORY,
       statsBonus: { vit: 50, mag: 30, res: 15, pa: 1 },
-      grantsSpells: ['spell-boule-de-feu', 'spell-soin', 'spell-menhir'],
       craftCost: { [cristal.id]: 2, [or.id]: 2 },
       shopPrice: 25,
     },
@@ -293,7 +535,6 @@ async function main() {
       name: 'Anneau du Ninja',
       type: ItemType.ACCESSORY,
       statsBonus: { vit: 50, atk: 15, mag: 5, ini: 500, pm: 1 },
-      grantsSpells: ['spell-kunai', 'spell-bombe-repousse', 'spell-velocite'],
       craftCost: { [cuir.id]: 1, [bois.id]: 1, [or.id]: 2 },
       shopPrice: 25,
     },
@@ -305,9 +546,31 @@ async function main() {
       type: ItemType.ACCESSORY,
       description: "Un anneau moulé directement sur l'artisan le plus expérimenté de Vergeronce",
       statsBonus: { vit: 9999, atk: 999, mag: 999, def: 100, res: 100, pa: 12, pm: 12 },
-      grantsSpells: ['*'],
       shopPrice: 69,
     },
+  });
+
+  await prisma.itemGrantedSpell.createMany({
+    data: [
+      { itemId: anneauGuerrier.id, spellId: spellsByCode.get('spell-frappe')!.id },
+      { itemId: anneauGuerrier.id, spellId: spellsByCode.get('spell-bond')!.id },
+      { itemId: anneauGuerrier.id, spellId: spellsByCode.get('spell-endurance')!.id },
+      { itemId: anneauMage.id, spellId: spellsByCode.get('spell-boule-de-feu')!.id },
+      { itemId: anneauMage.id, spellId: spellsByCode.get('spell-soin')!.id },
+      { itemId: anneauMage.id, spellId: spellsByCode.get('spell-menhir')!.id },
+      { itemId: anneauNinja.id, spellId: spellsByCode.get('spell-kunai')!.id },
+      { itemId: anneauNinja.id, spellId: spellsByCode.get('spell-bombe-repousse')!.id },
+      { itemId: anneauNinja.id, spellId: spellsByCode.get('spell-velocite')!.id },
+      { itemId: anneauPenien.id, spellId: spellsByCode.get('spell-frappe')!.id },
+      { itemId: anneauPenien.id, spellId: spellsByCode.get('spell-bond')!.id },
+      { itemId: anneauPenien.id, spellId: spellsByCode.get('spell-endurance')!.id },
+      { itemId: anneauPenien.id, spellId: spellsByCode.get('spell-boule-de-feu')!.id },
+      { itemId: anneauPenien.id, spellId: spellsByCode.get('spell-soin')!.id },
+      { itemId: anneauPenien.id, spellId: spellsByCode.get('spell-menhir')!.id },
+      { itemId: anneauPenien.id, spellId: spellsByCode.get('spell-kunai')!.id },
+      { itemId: anneauPenien.id, spellId: spellsByCode.get('spell-bombe-repousse')!.id },
+      { itemId: anneauPenien.id, spellId: spellsByCode.get('spell-velocite')!.id },
+    ],
   });
 
   // ── Consommables : prix bas pour ne pas grignoter le budget équipement ──
@@ -459,9 +722,18 @@ async function main() {
     }
   });
 
+  await Promise.all([
+    rebuildPlayerSpellsForPlayer(warrior.id),
+    rebuildPlayerSpellsForPlayer(mage.id),
+    rebuildPlayerSpellsForPlayer(ninja.id),
+    rebuildPlayerSpellsForPlayer(troll.id),
+  ]);
+
   const itemCount = await prisma.item.count();
+  const spellCount = await prisma.spell.count();
   console.log('✅ Seed completed!');
   console.log(`   Items: ${itemCount}`);
+  console.log(`   Spells: ${spellCount}`);
   console.log(`   Players: Warrior, Mage, Ninja, Troll pénien`);
 }
 

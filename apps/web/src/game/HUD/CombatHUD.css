@@ -15,6 +15,7 @@
   --warrior-color: #dc2626;
   --mage-color: #7c3aed;
   --ninja-color: #16a34a;
+  --common-color: #f59e0b;
   --mage-blue: #3b82f6;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
@@ -572,6 +573,7 @@
   transform: translateY(-8px) scale(1.1);
 }
 
+.family-common:hover  { border-color: var(--common-color); box-shadow: 0 0 25px rgba(245, 158, 11, 0.35); }
 .family-warrior:hover { border-color: var(--warrior-color); box-shadow: 0 0 25px rgba(220, 38, 38, 0.4); }
 .family-mage:hover    { border-color: var(--mage-blue);      box-shadow: 0 0 25px rgba(59, 130, 246, 0.4); }
 .family-ninja:hover   { border-color: var(--ninja-color);  box-shadow: 0 0 25px rgba(22, 163, 74, 0.4); }
@@ -598,6 +600,13 @@
 }
 
 /* FILTRES FAMILLES */
+.family-common .spell-icon-img {
+  filter: sepia(0.9) saturate(2.2) hue-rotate(-10deg) drop-shadow(0 2px 4px rgba(245, 158, 11, 0.3));
+}
+.family-common {
+  border-bottom: 3px solid var(--common-color) !important;
+}
+
 .family-warrior .spell-icon-img {
   filter: sepia(1) saturate(10) hue-rotate(-60deg) drop-shadow(0 2px 4px rgba(239, 68, 68, 0.3));
 }

@@ -1,5 +1,4 @@
 export { calculateEffectiveStats } from './stats.calculator';
-export { calculatePlayerSpells } from './spells.calculator';
 export {
   calculateDamage,
   calculateHeal,

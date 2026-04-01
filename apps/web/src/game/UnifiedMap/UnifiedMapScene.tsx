@@ -42,7 +42,11 @@ interface UnifiedMapSceneProps {
 }
 
 function getProjectileType(spellId: string) {
-  return spellId.includes('kunai') ? 'spell-kunai' : 'spell-fireball';
+  if (spellId.includes('kunai')) {
+    return 'spell-kunai';
+  }
+
+  return 'spell-fireball';
 }
 
 export const UnifiedMapScene = React.memo(
@@ -433,7 +437,10 @@ export const UnifiedMapScene = React.memo(
 
           if (
             targetInRange &&
-            (spell.id === 'spell-bond' || hasLineOfSight(currentPlayer.position, target, combatState.map.tiles))
+            (!spell.requiresLineOfSight || hasLineOfSight(currentPlayer.position, target, combatState.map.tiles)) &&
+            (!spell.requiresLinearTargeting ||
+              currentPlayer.position.x === target.x ||
+              currentPlayer.position.y === target.y)
           ) {
             tilesInRange.push(target);
           }

@@ -4,33 +4,20 @@ import { useCombatStore } from '../../store/combat.store';
 import { useAuthStore } from '../../store/auth.store';
 import { useGameSession } from '../../pages/GameTunnel';
 import { combatApi } from '../../api/combat.api';
-import { CombatActionType } from '@game/shared-types';
+import { CombatActionType, SpellFamily } from '@game/shared-types';
 import { getSkinById } from '../../game/constants/skins';
 import './CombatHUD.css';
 
-const SPELL_FAMILIES: Record<string, 'warrior' | 'mage' | 'ninja'> = {
-  'spell-frappe': 'warrior',
-  'spell-bond': 'warrior',
-  'spell-endurance': 'warrior',
-  'spell-boule-de-feu': 'mage',
-  'spell-menhir': 'mage',
-  'spell-soin': 'mage',
-  'spell-kunai': 'ninja',
-  'spell-bombe-repousse': 'ninja',
-  'spell-velocite': 'ninja'
+const SPELL_FAMILY_ORDER: Record<SpellFamily, number> = {
+  [SpellFamily.COMMON]: 1,
+  [SpellFamily.WARRIOR]: 2,
+  [SpellFamily.MAGE]: 3,
+  [SpellFamily.NINJA]: 4,
 };
 
-const SPELL_ICONS: Record<string, string> = {
-  'spell-frappe': '/assets/pack/spells/epee.png',
-  'spell-bond': '/assets/pack/spells/bond.png',
-  'spell-endurance': '/assets/pack/spells/endurance.png',
-  'spell-boule-de-feu': '/assets/pack/spells/fireball.png',
-  'spell-menhir': '/assets/pack/spells/menhir.png',
-  'spell-soin': '/assets/pack/spells/heal.png',
-  'spell-kunai': '/assets/pack/spells/kunai.png',
-  'spell-bombe-repousse': '/assets/pack/spells/bombe.png',
-  'spell-velocite': '/assets/pack/spells/velocite.png'
-};
+function toFamilyClassName(family: SpellFamily | null | undefined) {
+  return `family-${(family ?? SpellFamily.COMMON).toLowerCase()}`;
+}
 
 function getCombatErrorMessage(error: unknown, fallback: string) {
   if (
@@ -106,12 +93,17 @@ export function CombatHUD() {
   const isWinner = winnerId === user.id;
   const showCombatEnd = !!winnerId;
 
-  // Tri par famille
   const sortedSpells = [...currentPlayer.spells].sort((a, b) => {
-    const families: Record<string, number> = { warrior: 1, mage: 2, ninja: 3 };
-    const famA = families[SPELL_FAMILIES[a.id]] || 99;
-    const famB = families[SPELL_FAMILIES[b.id]] || 99;
-    return famA - famB;
+    const familyOrder = SPELL_FAMILY_ORDER[a.family] - SPELL_FAMILY_ORDER[b.family];
+    if (familyOrder !== 0) {
+      return familyOrder;
+    }
+
+    if (a.sortOrder !== b.sortOrder) {
+      return a.sortOrder - b.sortOrder;
+    }
+
+    return a.name.localeCompare(b.name);
   });
 
   const handleEndTurn = async () => {
@@ -217,13 +209,13 @@ export function CombatHUD() {
             const notEnoughPa = currentPlayer.remainingPa < spell.paCost;
             const isActive = selectedSpellId === spell.id;
             const disabled = !isMyTurn || onCooldown || notEnoughPa;
-            const family = SPELL_FAMILIES[spell.id] || 'warrior';
+            const familyClassName = toFamilyClassName(spell.family);
             const isHovered = hoveredSpellId === spell.id;
 
             return (
               <div 
                 key={spell.id}
-                className={`spell-card ${disabled ? 'disabled' : ''} ${isActive ? 'active' : ''} family-${family}`}
+                className={`spell-card ${disabled ? 'disabled' : ''} ${isActive ? 'active' : ''} ${familyClassName}`}
                 onMouseEnter={() => setHoveredSpellId(spell.id)}
                 onMouseLeave={() => setHoveredSpellId(null)}
                 onClick={() => !disabled && setSelectedSpell(isActive ? null : spell.id)}
@@ -236,7 +228,7 @@ export function CombatHUD() {
                 
                 <div className="spell-pa-cost">{spell.paCost}</div>
                 <img 
-                  src={SPELL_ICONS[spell.id] || ''} 
+                  src={spell.iconPath ?? '/assets/pack/spells/epee.png'}
                   className="spell-icon-img" 
                   alt={spell.name} 
                 />

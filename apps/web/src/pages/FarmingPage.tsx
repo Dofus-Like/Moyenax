@@ -47,7 +47,8 @@ function findSpawnPosition(grid: TerrainType[][]): PathNode {
 export function FarmingPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { player } = useAuthStore();
+  const player = useAuthStore((s) => s.player);
+  const refreshPlayer = useAuthStore((s) => s.refreshPlayer);
   const { activeSession, refreshSession } = useGameSession();
   const currentPlayerId = player?.id;
   const isDebugMode = searchParams.get('debug') === 'true';
@@ -71,9 +72,10 @@ export function FarmingPage() {
   const fetchState = useFarmingStore((s) => s.fetchState);
   const gatherNode = useFarmingStore((s) => s.gatherNode);
   const debugRefill = useFarmingStore((s) => s.debugRefill);
-  const nextRound = useFarmingStore((s) => s.nextRound);
   const round = useFarmingStore((s) => s.round);
   const pips = useFarmingStore((s) => s.pips);
+  const spendableGold = useFarmingStore((s) => s.spendableGold);
+  const [isTransitioningToCrafting, setIsTransitioningToCrafting] = useState(false);
 
   const showActionMessage = useCallback((text: string, type: 'info' | 'error' = 'error') => {
     setActionMessage({ text, type });
@@ -162,6 +164,31 @@ export function FarmingPage() {
     }
   }, [map, movePlayer, playerPosition]);
 
+  const syncSpendableGold = useCallback(async () => {
+    if (activeSession) {
+      await refreshSession({ silent: true });
+      return;
+    }
+
+    await refreshPlayer();
+  }, [activeSession, refreshPlayer, refreshSession]);
+
+  const performGather = useCallback(
+    async (x: number, y: number) => {
+      const previousPips = useFarmingStore.getState().pips;
+      const nextState = await gatherNode(x, y);
+      await syncSpendableGold();
+
+      if (!nextState || isDebugMode || previousPips <= 0 || nextState.pips !== 0 || isTransitioningToCrafting) {
+        return;
+      }
+
+      setIsTransitioningToCrafting(true);
+      navigate('/crafting');
+    },
+    [gatherNode, isDebugMode, isTransitioningToCrafting, navigate, syncSpendableGold],
+  );
+
   const previewPath = useMemo(() => {
     if (!map || !hoverInfo) {
       return [];
@@ -198,7 +225,7 @@ export function FarmingPage() {
 
       if (props.harvestable) {
         if (isAdjacent) {
-          void gatherNode(x, y).catch((error) => {
+          void performGather(x, y).catch((error) => {
             console.error(error);
             showActionMessage('Recolte impossible sur cette case.', 'error');
           });
@@ -255,7 +282,7 @@ export function FarmingPage() {
       setQueuedAction(null);
       setIsMoving(true);
     },
-    [currentPlayerPos, gatherNode, isMoving, map, showActionMessage],
+    [currentPlayerPos, isMoving, map, performGather, showActionMessage],
   );
 
   const handlePathComplete = useCallback(() => {
@@ -264,7 +291,7 @@ export function FarmingPage() {
       movePlayer({ x: last.x, y: last.y });
 
       if (queuedAction?.type === 'gather') {
-        void gatherNode(queuedAction.x, queuedAction.y).catch((error) => {
+        void performGather(queuedAction.x, queuedAction.y).catch((error) => {
           console.error(error);
           showActionMessage('Recolte impossible apres deplacement.', 'error');
         });
@@ -274,7 +301,7 @@ export function FarmingPage() {
     setMovePath(null);
     setQueuedAction(null);
     setIsMoving(false);
-  }, [gatherNode, movePath, movePlayer, queuedAction, showActionMessage]);
+  }, [movePath, movePlayer, performGather, queuedAction, showActionMessage]);
 
   const handleTileHover = useCallback((info: { x: number; y: number; terrain: TerrainType } | null) => {
     setHoverInfo(info);
@@ -285,22 +312,12 @@ export function FarmingPage() {
       if (isDebugMode) {
         await debugRefill();
         showActionMessage('Pips restaures.', 'info');
-        return;
       }
-
-      await nextRound();
-      const currentRound = useFarmingStore.getState().round;
-      if (currentRound > 5) {
-        navigate('/');
-        return;
-      }
-
-      navigate(isDebugMode ? '/crafting?debug=true' : '/crafting');
     } catch (error) {
       console.error(error);
       showActionMessage('Impossible de terminer la manche.', 'error');
     }
-  }, [debugRefill, isDebugMode, navigate, nextRound, showActionMessage]);
+  }, [debugRefill, isDebugMode, showActionMessage]);
 
   const handleEndSession = useCallback(async () => {
     if (!activeSession) {
@@ -380,7 +397,7 @@ export function FarmingPage() {
     currentPosition: currentPlayerPos,
     terrain: currentTerrain,
     onHarvest: async (x, y) => {
-      await gatherNode(x, y);
+      await performGather(x, y);
     },
   });
 
@@ -424,9 +441,11 @@ export function FarmingPage() {
               {amIReady ? 'Pret' : 'Pret ?'}
             </button>
           )}
-          <button className="resource-action-btn resource-action-btn--primary" onClick={handleNextRound}>
-            {isDebugMode ? 'Debug refill' : 'Terminer la manche'}
-          </button>
+          {isDebugMode && (
+            <button className="resource-action-btn resource-action-btn--primary" onClick={handleNextRound}>
+              Debug refill
+            </button>
+          )}
           {activeSession && (
             <button className="resource-action-btn resource-action-btn--danger" onClick={handleEndSession}>
               Abandonner
@@ -468,6 +487,17 @@ export function FarmingPage() {
               ))}
             </div>
             <p className="resource-sidebar-card__copy">{pips} / 4 recoltes restantes</p>
+          </section>
+
+          <section className="resource-sidebar-card">
+            <div className="resource-sidebar-card__header">
+              <span className="resource-sidebar-card__eyebrow">Economie</span>
+              <h3>Solde</h3>
+            </div>
+            <div className="resource-round-score">
+              <strong>{spendableGold}</strong>
+              <span>{activeSession ? 'Po disponibles en session' : 'or disponible'}</span>
+            </div>
           </section>
 
           <section className="resource-sidebar-card resource-sidebar-card--inventory">

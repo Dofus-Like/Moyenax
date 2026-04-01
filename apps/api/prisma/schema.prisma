@@ -39,6 +39,24 @@ enum SpellVisualType {
   UTILITY
 }
 
+enum SpellFamily {
+  COMMON
+  WARRIOR
+  MAGE
+  NINJA
+}
+
+enum SpellEffectKind {
+  DAMAGE_PHYSICAL
+  DAMAGE_MAGICAL
+  HEAL
+  TELEPORT
+  BUFF_VIT_MAX
+  SUMMON_MENHIR
+  PUSH_LINE
+  BUFF_PM
+}
+
 enum SessionStatus {
   WAITING
   ACTIVE
@@ -98,18 +116,19 @@ model PlayerStats {
 
 
 model Item {
-  id           String          @id @default(uuid())
-  name         String          @unique
-  description  String?
-  type         ItemType
-  family       String?
-  rank         Int             @default(1)
-  statsBonus   Json?
-  grantsSpells Json?
-  craftCost    Json?
-  shopPrice    Int?
-  inventory    InventoryItem[]
-  sessionItems SessionItem[]
+  id                String            @id @default(uuid())
+  name              String            @unique
+  description       String?
+  type              ItemType
+  family            String?
+  rank              Int               @default(1)
+  statsBonus        Json?
+  grantsSpells      Json?
+  craftCost         Json?
+  shopPrice         Int?
+  inventory         InventoryItem[]
+  sessionItems      SessionItem[]
+  grantedSpellLinks ItemGrantedSpell[]
 }
 
 
@@ -140,17 +159,28 @@ model EquipmentSlot {
 }
 
 model Spell {
-  id        String        @id @default(uuid())
-  name      String        @unique
-  paCost    Int           @default(3)
-  minRange  Int           @default(1)
-  maxRange  Int           @default(3)
-  damageMin Int           @default(10)
-  damageMax Int           @default(20)
-  cooldown   Int             @default(0)
-  type       SpellType       @default(DAMAGE)
-  visualType SpellVisualType @default(PHYSICAL)
-  players    PlayerSpell[]
+  id                    String            @id @default(uuid())
+  code                  String            @unique
+  name                  String            @unique
+  description           String?
+  paCost                Int               @default(3)
+  minRange              Int               @default(1)
+  maxRange              Int               @default(3)
+  damageMin             Int               @default(10)
+  damageMax             Int               @default(20)
+  cooldown              Int               @default(0)
+  type                  SpellType         @default(DAMAGE)
+  visualType            SpellVisualType   @default(PHYSICAL)
+  family                SpellFamily       @default(COMMON)
+  iconPath              String?
+  sortOrder             Int               @default(0)
+  requiresLineOfSight   Boolean           @default(true)
+  requiresLinearTargeting Boolean         @default(false)
+  effectKind            SpellEffectKind   @default(DAMAGE_PHYSICAL)
+  effectConfig          Json?
+  isDefault             Boolean           @default(false)
+  players               PlayerSpell[]
+  grantedByItems        ItemGrantedSpell[]
 }
 
 model PlayerSpell {
@@ -161,6 +191,15 @@ model PlayerSpell {
   spell    Spell  @relation(fields: [spellId], references: [id])
 
   @@id([playerId, spellId])
+}
+
+model ItemGrantedSpell {
+  itemId   String
+  spellId  String
+  item     Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  spell    Spell  @relation(fields: [spellId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, spellId])
 }
 
 model CombatSession {
