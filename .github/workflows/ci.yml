@@ -14,5 +14,20 @@ permissions:
   contents: read
 
 jobs:
+  main-merge-guard:
+    name: Main merge guard
+    if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allow only dev into main
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.head_ref }}" != "dev" ]]; then
+            echo "::error::Pull requests targeting main must come from dev. Current source branch: ${{ github.head_ref }}"
+            exit 1
+          fi
+
   quality-gates:
     uses: ./.github/workflows/_quality-gates.yml

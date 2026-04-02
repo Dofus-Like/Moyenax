@@ -141,7 +141,8 @@ Configure les branch rules GitHub :
 2. `main`
    - PR obligatoire
    - status checks obligatoires sur la CI
-   - merge uniquement depuis `dev`
+   - status check `Main merge guard` obligatoire
+   - seules les PR `dev -> main` peuvent passer la CI
    - approbation requise avant merge
 
 ## URLs generees
