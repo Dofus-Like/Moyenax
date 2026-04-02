@@ -114,6 +114,14 @@ game-monorepo/
 | `yarn smoke:prod-local` | Vérifie en local le boot conteneurisé, les rooms privées et le matchmaking |
 | `yarn repro:matchmaking:legacy-redis` | Reproduit et valide le cas Redis legacy `matchmaking:queue` |
 
+## 🚢 CI/CD
+
+- Les pull requests vers `dev` et `main` passent par la CI GitHub (`lint`, `test`, smoke Docker prod-like).
+- Les merges sur `dev` deploient automatiquement une stack de test sur Portainer.
+- Les merges sur `main` deploient automatiquement la production sur la stack Portainer principale.
+- L’API expose `GET /api/v1/health` pour les smoke tests distants et le rollback automatique en production.
+- La doc de configuration GitHub/Portainer est dans [DEPLOY.md](DEPLOY.md).
+
 ## 📈 Profiling Backend
 
 - Les artefacts bruts de perf ne sont jamais versionnés et vivent uniquement dans `tmp/perf/`.

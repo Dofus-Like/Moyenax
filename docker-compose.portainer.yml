@@ -1,10 +1,6 @@
 # docker-compose.portainer.yml
-# Stack deploye automatiquement via GitHub Actions CI/CD.
-# Ne pas modifier manuellement — les changements seront ecrases au prochain push sur main.
-#
-# Sous-domaines :
-#   API : https://dofus-like-api.roketlab.duckdns.org
-#   Web : https://dofus-like.roketlab.duckdns.org
+# Stack deployee automatiquement via GitHub Actions.
+# Ne pas modifier manuellement dans Portainer : le prochain deploiement ecrasera ces changements.
 
 services:
   postgres:
@@ -44,7 +40,7 @@ services:
       - dofus-like-network
 
   api-setup:
-    image: ghcr.io/roketag33/dofus-like-api:${IMAGE_TAG:-latest}
+    image: ${API_IMAGE:-ghcr.io/roketag33/dofus-like-api}:${IMAGE_TAG:-latest}
     container_name: ${STACK_CONTAINER_PREFIX:-dofus-like}-api-setup
     restart: "no"
     # Migrations uniquement — pas de set -e fragile, pas de scripts inline complexes.
@@ -64,7 +60,7 @@ services:
       - dofus-like-network
 
   api:
-    image: ghcr.io/roketag33/dofus-like-api:${IMAGE_TAG:-latest}
+    image: ${API_IMAGE:-ghcr.io/roketag33/dofus-like-api}:${IMAGE_TAG:-latest}
     container_name: ${STACK_CONTAINER_PREFIX:-dofus-like}-api
     restart: unless-stopped
     command:
@@ -88,7 +84,7 @@ services:
       api-setup:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('net').createConnection(3000).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))\""]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/v1/health').then((response)=>process.exit(response.ok ? 0 : 1)).catch(()=>process.exit(1))\""]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -108,13 +104,20 @@ services:
       - "traefik.docker.network=proxy"
 
   web:
-    image: ghcr.io/roketag33/dofus-like-web:${IMAGE_TAG:-latest}
+    image: ${WEB_IMAGE:-ghcr.io/roketag33/dofus-like-web}:${IMAGE_TAG:-latest}
     container_name: ${STACK_CONTAINER_PREFIX:-dofus-like}-web
     restart: unless-stopped
     expose:
       - "80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - dofus-like-network
       - proxy

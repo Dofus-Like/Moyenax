@@ -1,129 +1,173 @@
-# Guide de deploiement — CI/CD vers Portainer
+# Guide de deploiement — GitHub Actions, GHCR et Portainer
 
-Ce document explique comment configurer le pipeline CI/CD qui deploie automatiquement
-la branche `main` sur ton instance Portainer (`roketlab.duckdns.org:9443`).
+Ce document decrit le nouveau flux CI/CD du repo :
 
----
+- `feature/*` ou toute branche de travail part de `dev`
+- PR vers `dev` : CI obligatoire, pas de deploiement
+- merge sur `dev` : deploiement automatique sur la stack de test
+- PR `dev -> main` : CI obligatoire
+- merge sur `main` : deploiement automatique sur la stack de production
 
-## Architecture du deploiement
+## Architecture cible
 
 ```
+Pull request vers dev/main
+    │
+    ▼
+GitHub Actions / CI
+    ├── lint
+    ├── tests
+    └── smoke Docker prod-like
+
+Push sur dev
+    │
+    ▼
+Build images GHCR
+    ├── tag SHA
+    └── tag stable `dev`
+    │
+    ▼
+Attente explicite des manifests GHCR
+    │
+    ▼
+Deploy Portainer stack de test
+    │
+    ▼
+Smoke HTTP sur /api/v1/health et sur le front
+
 Push sur main
     │
     ▼
-GitHub Actions
-    ├── Job 1 : Build image API  → ghcr.io/roketag33/dofus-like-api:<sha>
-    ├── Job 1 : Build image Web  → ghcr.io/roketag33/dofus-like-web:<sha>
+Build images GHCR
+    ├── tag SHA
+    └── tag stable `latest`
     │
-    └── Job 2 : Portainer API (upsert)
-            ├── Stack inexistante → POST /api/stacks/create  (1er deploy)
-            └── Stack existante  → PUT  /api/stacks/{id}     (deploys suivants)
-
-URLs finales :
-  API : https://dofus-like-api.roketlab.duckdns.org
-  Web : https://dofus-like.roketlab.duckdns.org
+    ▼
+Attente explicite des manifests GHCR
+    │
+    ▼
+Deploy Portainer stack de prod
+    │
+    ▼
+Smoke HTTP sur /api/v1/health et sur le front
+    │
+    └── rollback automatique si le smoke test echoue
 ```
 
----
+## Pourquoi le dernier deploy a casse
 
-## Etape 1 — Configurer l'acces GHCR dans Portainer
+Le run en echec montrait :
 
-Les images buildees par GitHub Actions sont stockees sur GHCR (GitHub Container Registry).
-Portainer doit pouvoir les pull. Deux options :
+- build GHCR termine avec succes
+- update Portainer lancee quelques secondes apres
+- erreur `manifest unknown` lors du `compose pull`
 
-### Option A — Rendre les packages GHCR publics (recommande pour un projet perso)
+Le tag SHA existe bien dans GHCR ensuite. Le probleme etait donc tres probablement un
+race condition entre la publication GHCR et le pull immediat par Portainer, pas un build
+Docker invalide. Le nouveau workflow attend explicitement la disponibilite des manifests
+avant d'appeler Portainer, puis retente l'update si Portainer retourne encore une erreur
+transitoire de pull.
 
-Apres le premier push sur main (qui cree les images), pour chaque package :
+## Secrets et variables GitHub a configurer
 
-1. `https://github.com/roketag33?tab=packages`
-2. Cliquer sur `dofus-like-api` → Package settings → Change visibility → **Public**
-3. Repeter pour `dofus-like-web`
+### Secrets obligatoires
 
-### Option B — Configurer le registry prive dans Portainer
+| Secret | Role |
+|---|---|
+| `PORTAINER_URL` | URL de l’API Portainer |
+| `PORTAINER_API_TOKEN` | Token d’acces Portainer |
+| `PORTAINER_ENDPOINT_ID` | Identifiant de l’environnement Portainer cible |
+| `PORTAINER_STACK_NAME` | Nom exact de la stack de production, par exemple `dofus-like` |
+| `JWT_SECRET` | Secret JWT partage par l’API |
+| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL de la stack |
 
-1. Dans Portainer → Settings → Registries → Add registry
-2. Choisir **GitHub Container Registry**
-3. Remplir :
-   - Username : `roketag33`
-   - Personal Access Token : un PAT GitHub avec le scope `read:packages`
-     (generer sur `https://github.com/settings/tokens`)
-4. Sauvegarder
+### Variables optionnelles
 
----
+| Variable | Defaut | Role |
+|---|---|---|
+| `BASE_DOMAIN` | `roketlab.duckdns.org` | Domaine racine des URLs |
+| `PORTAINER_TEST_STACK_NAME` | `${PORTAINER_STACK_NAME}-test` | Nom exact de la stack de test |
+| `GHCR_NAMESPACE` | `roketag33` | Namespace GHCR |
+| `GHCR_IMAGE_PREFIX` | `dofus-like` | Prefixe des images GHCR |
 
-## Etape 2 — Generer un API token Portainer
+## Configuration Portainer / GHCR
 
-1. Dans Portainer : ton profil (icone en haut a droite) → **Access tokens**
-2. Add access token → copier la valeur (affichee une seule fois)
+Le workflow utilise le `GITHUB_TOKEN` natif de GitHub Actions pour pousser les
+images sur GHCR, avec la permission `packages: write`.
 
----
+Portainer doit pouvoir pull les images GHCR :
 
-## Etape 3 — Recuperer l'endpoint ID Portainer
+1. soit les packages GHCR sont publics
+2. soit Portainer a un registry GHCR configure avec un token `read:packages`
 
-L'endpoint ID de l'environnement `local` est **3**.
-(Verifie via : Settings → Environments si ca change un jour)
+Si tu restes sur le namespace actuel :
 
----
+- API : `ghcr.io/roketag33/dofus-like-api`
+- Web : `ghcr.io/roketag33/dofus-like-web`
 
-## Etape 4 — Configurer les secrets GitHub Actions
+Si tu renommes les images plus tard, il suffit de changer `GHCR_NAMESPACE` et
+`GHCR_IMAGE_PREFIX` sans toucher au workflow.
 
-Aller sur : `https://github.com/roketag33/Dofus-Like/settings/secrets/actions`
+## GitHub Environments recommandes
 
-Ajouter ces 6 secrets :
+Cree deux environments GitHub :
 
-| Secret                   | Valeur                                      |
-|--------------------------|---------------------------------------------|
-| `PORTAINER_URL`          | `https://roketlab.duckdns.org:9443`         |
-| `PORTAINER_API_TOKEN`    | Le token genere a l'etape 2                 |
-| `PORTAINER_STACK_NAME`   | `dofus-like`                                |
-| `PORTAINER_ENDPOINT_ID`  | `3`                                         |
-| `JWT_SECRET`             | Une chaine aleatoire longue (min 32 chars)  |
-| `POSTGRES_PASSWORD`      | Un mot de passe fort pour la base de prod   |
+1. `test`
+2. `production`
 
-Note : `GITHUB_TOKEN` est injecte automatiquement — pas besoin de le configurer.
+Utilisation recommandee :
 
----
+- `test` : deployment automatique depuis `dev`
+- `production` : deployment depuis `main`, avec approbation manuelle optionnelle
 
-## Etape 5 — Premier deploiement
+Tu peux y surcharger `JWT_SECRET`, `POSTGRES_PASSWORD`, `PORTAINER_URL`,
+`PORTAINER_API_TOKEN` et `PORTAINER_ENDPOINT_ID` si tu veux isoler davantage
+le test de la prod.
 
-Une fois les secrets configures, le premier deploiement se declenche automatiquement
-au prochain push sur `main`. Le workflow va :
+## Branch protection recommandee
 
-1. Builder et pusher les images sur GHCR
-2. Creer la stack `dofus-like` dans Portainer (si elle n'existe pas)
-3. Demarrer tous les containers
+Le workflow seul ne suffit pas si quelqu’un pousse directement sur `main`.
+Configure les branch rules GitHub :
 
-Si tu as choisi **l'Option A** (packages publics), fais d'abord le push pour creer
-les images, rends-les publiques, puis relance le workflow (bouton "Run workflow" ou
-nouveau push vide : `git commit --allow-empty -m "chore: trigger first deploy"`).
+1. `dev`
+   - PR obligatoire
+   - status checks obligatoires sur la CI
+2. `main`
+   - PR obligatoire
+   - status checks obligatoires sur la CI
+   - merge uniquement depuis `dev`
+   - approbation requise avant merge
 
----
+## URLs generees
 
-## Fonctionnement au quotidien
+Les URLs sont derivees du nom de stack :
 
-A chaque push sur `main` :
-
-1. GitHub Actions build les images avec le cache GHA (build rapide apres le premier)
-2. Push sur GHCR avec deux tags : `latest` et le SHA du commit
-3. Portainer met a jour la stack avec `IMAGE_TAG=<sha>` et `pullImage: true`
-4. Les containers sont redemarres avec la nouvelle image
-
----
+- prod `dofus-like`
+  - web: `https://dofus-like.roketlab.duckdns.org`
+  - api: `https://dofus-like-api.roketlab.duckdns.org/api/v1/health`
+- test `dofus-like-test`
+  - web: `https://dofus-like-test.roketlab.duckdns.org`
+  - api: `https://dofus-like-test-api.roketlab.duckdns.org/api/v1/health`
 
 ## Rollback
 
-Pour revenir a un commit precedent, repere le SHA dans l'historique GitHub Actions
-puis relance le workflow manuellement en modifiant `IMAGE_TAG` dans Portainer :
+Le job de production sauvegarde avant update :
 
-Portainer → Stacks → dofus-like → Editor → modifier `IMAGE_TAG` → Update the stack
+- le compose file courant de la stack Portainer
+- les variables d’environnement courantes de la stack
 
----
+Si le smoke test HTTP echoue apres deploiement, le workflow restaure automatiquement
+l’etat precedent. Ce n’est pas du blue/green complet, donc le zero downtime absolu
+n’est pas garanti avec une seule stack Compose, mais la fenetre d’indisponibilite est
+fortement reduite et le rollback devient automatique.
 
 ## Fichiers cles
 
-| Fichier                          | Role                                              |
-|----------------------------------|---------------------------------------------------|
-| `.github/workflows/deploy.yml`   | Pipeline CI/CD complet (build + upsert stack)     |
-| `docker-compose.portainer.yml`   | Stack de prod (Traefik + reseau proxy)            |
-| `docker-compose.prod.yml`        | Ancienne config build local — gardee en backup    |
-| `docker-compose.yml`             | Dev local uniquement                              |
+| Fichier | Role |
+|---|---|
+| `.github/workflows/_quality-gates.yml` | Reusable workflow CI |
+| `.github/workflows/ci.yml` | CI sur PR et pushes `dev`/`main` |
+| `.github/workflows/deploy.yml` | Build, attente GHCR, deploy Portainer, smoke, rollback |
+| `scripts/ci/portainer-deploy.mjs` | Orchestration du deploy Portainer et rollback |
+| `docker-compose.portainer.yml` | Definition de stack deployee sur Portainer |
+| `apps/api/src/health/*` | Endpoint de sante pour smoke tests et supervision |

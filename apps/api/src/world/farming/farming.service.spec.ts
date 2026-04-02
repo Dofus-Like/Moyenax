@@ -27,6 +27,12 @@ describe('FarmingService', () => {
     logEvent: jest.fn(),
   };
 
+  const prisma = {
+    gameSession: {
+      findFirst: jest.fn(),
+    },
+  };
+
   let service: FarmingService;
 
   beforeEach(() => {
@@ -52,6 +58,7 @@ describe('FarmingService', () => {
       },
     });
     spendableGold.credit.mockResolvedValue(11);
+    prisma.gameSession.findFirst.mockResolvedValue(null);
 
     service = new FarmingService(
       redis as any,
@@ -59,6 +66,7 @@ describe('FarmingService', () => {
       inventory as any,
       spendableGold as any,
       perfLogger as any,
+      prisma as any,
     );
   });
 

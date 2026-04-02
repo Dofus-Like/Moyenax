@@ -1,55 +1,122 @@
-name: CI/CD - Build & Deploy to Portainer
+name: Deploy to Portainer
 
 on:
   push:
-    branches: [main]
+    branches:
+      - dev
+      - main
   workflow_dispatch:
     inputs:
       deploy_target:
-        description: "Target deployment environment"
+        description: "Deployment target"
         type: choice
         options:
-          - staging
+          - test
           - production
-        default: staging
+        default: test
       stack_name_override:
-        description: "Optional Portainer stack name override"
+        description: "Optional exact Portainer stack name"
         type: string
         default: ""
-      force_deploy:
-        description: "Force redeploy even if nothing changed"
-        type: boolean
-        default: false
 
-env:
-  REGISTRY: ghcr.io
-  API_IMAGE: ghcr.io/roketag33/dofus-like-api
-  WEB_IMAGE: ghcr.io/roketag33/dofus-like-web
+permissions:
+  contents: read
 
 jobs:
-  build-and-push:
-    name: Build & Push Docker Images
+  resolve-context:
+    name: Resolve Deployment Context
     runs-on: ubuntu-latest
+    outputs:
+      environment_name: ${{ steps.context.outputs.environment_name }}
+      stable_tag: ${{ steps.context.outputs.stable_tag }}
+
+    steps:
+      - name: Resolve deployment target
+        id: context
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            case "${{ github.ref_name }}" in
+              main)
+                environment_name="production"
+                ;;
+              dev)
+                environment_name="test"
+                ;;
+              *)
+                echo "::error::Unsupported branch for deployment: ${{ github.ref_name }}"
+                exit 1
+                ;;
+            esac
+          else
+            environment_name="${{ inputs.deploy_target }}"
+          fi
+
+          if [[ "$environment_name" == "production" && "${{ github.ref_name }}" != "main" ]]; then
+            echo "::error::Production deployments must run from main."
+            exit 1
+          fi
+
+          if [[ "$environment_name" == "production" ]]; then
+            stable_tag="latest"
+          else
+            stable_tag="dev"
+          fi
+
+          echo "environment_name=$environment_name" >> "$GITHUB_OUTPUT"
+          echo "stable_tag=$stable_tag" >> "$GITHUB_OUTPUT"
+
+  quality-gates:
+    uses: ./.github/workflows/_quality-gates.yml
+
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs:
+      - resolve-context
+      - quality-gates
     permissions:
       contents: read
       packages: write
 
     outputs:
       image_tag: ${{ github.sha }}
+      api_image: ${{ steps.images.outputs.api_image }}
+      web_image: ${{ steps.images.outputs.web_image }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
+
+      - name: Resolve registry image names
+        id: images
+        shell: bash
+        env:
+          GHCR_NAMESPACE_OVERRIDE: ${{ vars.GHCR_NAMESPACE }}
+          GHCR_IMAGE_PREFIX_OVERRIDE: ${{ vars.GHCR_IMAGE_PREFIX }}
+        run: |
+          set -euo pipefail
+
+          namespace="${GHCR_NAMESPACE_OVERRIDE:-roketag33}"
+          image_prefix="${GHCR_IMAGE_PREFIX_OVERRIDE:-dofus-like}"
+
+          namespace="$(echo "$namespace" | tr '[:upper:]' '[:lower:]')"
+          image_prefix="$(echo "$image_prefix" | tr '[:upper:]' '[:lower:]')"
+
+          echo "api_image=ghcr.io/${namespace}/${image_prefix}-api" >> "$GITHUB_OUTPUT"
+          echo "web_image=ghcr.io/${namespace}/${image_prefix}-web" >> "$GITHUB_OUTPUT"
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
-          registry: ${{ env.REGISTRY }}
-          username: roketag33
-          password: ${{ secrets.GHCR_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
 
       - name: Resolve image tags
         id: tags
@@ -57,31 +124,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          publish_latest=false
-
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-            publish_latest=true
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.deploy_target }}" == "production" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-            publish_latest=true
-          fi
-
           {
             echo "api_tags<<EOF"
-            if [[ "$publish_latest" == "true" ]]; then
-              echo "${{ env.API_IMAGE }}:latest"
-            fi
-            echo "${{ env.API_IMAGE }}:${{ github.sha }}"
+            echo "${{ steps.images.outputs.api_image }}:${{ github.sha }}"
+            echo "${{ steps.images.outputs.api_image }}:${{ needs.resolve-context.outputs.stable_tag }}"
             echo "EOF"
             echo "web_tags<<EOF"
-            if [[ "$publish_latest" == "true" ]]; then
-              echo "${{ env.WEB_IMAGE }}:latest"
-            fi
-            echo "${{ env.WEB_IMAGE }}:${{ github.sha }}"
+            echo "${{ steps.images.outputs.web_image }}:${{ github.sha }}"
+            echo "${{ steps.images.outputs.web_image }}:${{ needs.resolve-context.outputs.stable_tag }}"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
       - name: Build & Push API image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/api/Dockerfile
@@ -91,7 +146,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=api
 
       - name: Build & Push Web image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/web/Dockerfile
@@ -102,172 +157,146 @@ jobs:
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
 
-  deploy:
-    name: Deploy to Portainer
-    needs: build-and-push
+  verify-manifests:
+    name: Wait for GHCR Manifests
     runs-on: ubuntu-latest
+    needs:
+      - build-and-push
+    permissions:
+      contents: read
+      packages: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
-      - name: Deploy stack via Portainer API
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Wait until manifests are available
         shell: bash
         env:
-          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
-          PORTAINER_API_TOKEN: ${{ secrets.PORTAINER_API_TOKEN }}
-          PORTAINER_STACK_NAME: ${{ secrets.PORTAINER_STACK_NAME }}
-          PORTAINER_STACK_NAME_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.stack_name_override || '' }}
-          PORTAINER_ENDPOINT_ID: ${{ secrets.PORTAINER_ENDPOINT_ID }}
-          IMAGE_TAG: ${{ github.sha }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || 'production' }}
+          API_IMAGE: ${{ needs.build-and-push.outputs.api_image }}
+          WEB_IMAGE: ${{ needs.build-and-push.outputs.web_image }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
         run: |
           set -euo pipefail
 
-          if [[ -n "${PORTAINER_STACK_NAME_OVERRIDE}" ]]; then
-            TARGET_STACK_NAME="${PORTAINER_STACK_NAME_OVERRIDE}"
-          elif [[ "${DEPLOY_TARGET}" == "staging" ]]; then
-            TARGET_STACK_NAME="${PORTAINER_STACK_NAME}-staging"
-          else
-            TARGET_STACK_NAME="${PORTAINER_STACK_NAME}"
-          fi
+          wait_for_manifest() {
+            local image_ref="$1"
 
-          STACK_CONTAINER_PREFIX=$(echo "${TARGET_STACK_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
-          TRAEFIK_ROUTER_PREFIX="${STACK_CONTAINER_PREFIX}"
-          APP_NETWORK_NAME="${STACK_CONTAINER_PREFIX}-network"
+            for attempt in $(seq 1 12); do
+              if docker buildx imagetools inspect "$image_ref" >/dev/null 2>&1; then
+                echo "Manifest ready: $image_ref"
+                return 0
+              fi
 
-          if [[ "${DEPLOY_TARGET}" == "staging" ]]; then
-            API_HOST="${STACK_CONTAINER_PREFIX}-api.roketlab.duckdns.org"
-            WEB_HOST="${STACK_CONTAINER_PREFIX}.roketlab.duckdns.org"
-          else
-            API_HOST="dofus-like-api.roketlab.duckdns.org"
-            WEB_HOST="dofus-like.roketlab.duckdns.org"
-          fi
+              echo "Manifest not ready yet for $image_ref (attempt $attempt/12)"
+              sleep 10
+            done
 
-          FRONTEND_URL="https://${WEB_HOST}"
-          COMPOSE_CONTENT=$(cat docker-compose.portainer.yml)
-
-          ENV_VARS=$(jq -n \
-            --arg image_tag "$IMAGE_TAG" \
-            --arg jwt_secret "$JWT_SECRET" \
-            --arg postgres_password "$POSTGRES_PASSWORD" \
-            --arg stack_container_prefix "$STACK_CONTAINER_PREFIX" \
-            --arg traefik_router_prefix "$TRAEFIK_ROUTER_PREFIX" \
-            --arg api_host "$API_HOST" \
-            --arg web_host "$WEB_HOST" \
-            --arg app_network_name "$APP_NETWORK_NAME" \
-            --arg frontend_url "$FRONTEND_URL" \
-            '[
-              {name: "IMAGE_TAG", value: $image_tag},
-              {name: "JWT_SECRET", value: $jwt_secret},
-              {name: "JWT_EXPIRES_IN", value: "7d"},
-              {name: "POSTGRES_PASSWORD", value: $postgres_password},
-              {name: "STACK_CONTAINER_PREFIX", value: $stack_container_prefix},
-              {name: "TRAEFIK_ROUTER_PREFIX", value: $traefik_router_prefix},
-              {name: "API_HOST", value: $api_host},
-              {name: "WEB_HOST", value: $web_host},
-              {name: "APP_NETWORK_NAME", value: $app_network_name},
-              {name: "FRONTEND_URL", value: $frontend_url}
-            ]')
-
-          portainer_request() {
-            local method="$1"
-            local url="$2"
-            local payload="$3"
-            local response_file
-            response_file=$(mktemp)
-
-            local http_code
-            http_code=$(curl --silent --show-error -L -X "$method" \
-              --insecure \
-              -H "X-API-Key: ${PORTAINER_API_TOKEN}" \
-              -H "Content-Type: application/json" \
-              -o "$response_file" \
-              -w '%{http_code}' \
-              "$url" \
-              -d "$payload")
-
-            if [[ "$http_code" =~ ^2 ]]; then
-              jq '{Id, Name, Status}' "$response_file"
-              rm -f "$response_file"
-              return 0
-            fi
-
-            echo "Portainer API error (${http_code})"
-            cat "$response_file"
-            rm -f "$response_file"
+            echo "::error::Manifest never became available for $image_ref"
             return 1
           }
 
-          echo "Fetching stack list from Portainer..."
-          STACKS=$(curl -fsSL \
-            --insecure \
-            -H "X-API-Key: ${PORTAINER_API_TOKEN}" \
-            "${PORTAINER_URL}/api/stacks")
+          wait_for_manifest "${API_IMAGE}:${IMAGE_TAG}"
+          wait_for_manifest "${WEB_IMAGE}:${IMAGE_TAG}"
 
-          STACK_ID=$(echo "$STACKS" | jq -r --arg name "$TARGET_STACK_NAME" \
-            '.[] | select(.Name == $name) | .Id')
+  deploy:
+    name: Deploy Stack
+    runs-on: ubuntu-latest
+    needs:
+      - resolve-context
+      - build-and-push
+      - verify-manifests
+    environment: ${{ needs.resolve-context.outputs.environment_name }}
+    concurrency:
+      group: deploy-${{ needs.resolve-context.outputs.environment_name }}
+      cancel-in-progress: ${{ needs.resolve-context.outputs.environment_name == 'test' }}
+    permissions:
+      contents: read
 
-          if [[ -z "$STACK_ID" || "$STACK_ID" == "null" ]]; then
-            echo "Stack '${TARGET_STACK_NAME}' not found, creating..."
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
-            PAYLOAD=$(jq -n \
-              --arg name "$TARGET_STACK_NAME" \
-              --arg content "$COMPOSE_CONTENT" \
-              --argjson env "$ENV_VARS" \
-              '{name: $name, stackFileContent: $content, env: $env}')
+      - name: Resolve stack endpoints
+        id: stack
+        shell: bash
+        env:
+          BASE_DOMAIN_OVERRIDE: ${{ vars.BASE_DOMAIN }}
+          STACK_NAME_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.stack_name_override || '' }}
+          PORTAINER_STACK_NAME_BASE: ${{ secrets.PORTAINER_STACK_NAME }}
+          PORTAINER_TEST_STACK_NAME_OVERRIDE: ${{ vars.PORTAINER_TEST_STACK_NAME }}
+          TARGET_ENV: ${{ needs.resolve-context.outputs.environment_name }}
+        run: |
+          set -euo pipefail
 
-            portainer_request \
-              POST \
-              "${PORTAINER_URL}/api/stacks/create/standalone/string?endpointId=${PORTAINER_ENDPOINT_ID}" \
-              "$PAYLOAD"
-          else
-            echo "Stack found (ID: $STACK_ID), updating..."
-
-            PAYLOAD=$(jq -n \
-              --arg content "$COMPOSE_CONTENT" \
-              --argjson env "$ENV_VARS" \
-              '{stackFileContent: $content, pullImage: true, prune: false, env: $env}')
-
-            portainer_request \
-              PUT \
-              "${PORTAINER_URL}/api/stacks/${STACK_ID}?endpointId=${PORTAINER_ENDPOINT_ID}" \
-              "$PAYLOAD"
+          if [[ -z "${PORTAINER_STACK_NAME_BASE}" ]]; then
+            echo "::error::Missing required secret PORTAINER_STACK_NAME"
+            exit 1
           fi
+
+          base_domain="${BASE_DOMAIN_OVERRIDE:-roketlab.duckdns.org}"
+
+          if [[ -n "${STACK_NAME_OVERRIDE}" ]]; then
+            stack_name="${STACK_NAME_OVERRIDE}"
+          elif [[ "${TARGET_ENV}" == "test" && -n "${PORTAINER_TEST_STACK_NAME_OVERRIDE}" ]]; then
+            stack_name="${PORTAINER_TEST_STACK_NAME_OVERRIDE}"
+          elif [[ "${TARGET_ENV}" == "test" ]]; then
+            stack_name="${PORTAINER_STACK_NAME_BASE}-test"
+          else
+            stack_name="${PORTAINER_STACK_NAME_BASE}"
+          fi
+
+          stack_container_prefix="$(echo "${stack_name}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')"
+          api_host="${stack_container_prefix}-api.${base_domain}"
+          web_host="${stack_container_prefix}.${base_domain}"
+
+          echo "stack_name=${stack_name}" >> "$GITHUB_OUTPUT"
+          echo "stack_container_prefix=${stack_container_prefix}" >> "$GITHUB_OUTPUT"
+          echo "api_host=${api_host}" >> "$GITHUB_OUTPUT"
+          echo "web_host=${web_host}" >> "$GITHUB_OUTPUT"
+          echo "app_network_name=${stack_container_prefix}-network" >> "$GITHUB_OUTPUT"
+          echo "frontend_url=https://${web_host}" >> "$GITHUB_OUTPUT"
+          echo "smoke_api_url=https://${api_host}/api/v1/health" >> "$GITHUB_OUTPUT"
+          echo "smoke_web_url=https://${web_host}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy stack via Portainer API
+        env:
+          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+          PORTAINER_API_TOKEN: ${{ secrets.PORTAINER_API_TOKEN }}
+          PORTAINER_ENDPOINT_ID: ${{ secrets.PORTAINER_ENDPOINT_ID }}
+          PORTAINER_COMPOSE_FILE: docker-compose.portainer.yml
+          STACK_NAME: ${{ steps.stack.outputs.stack_name }}
+          STACK_CONTAINER_PREFIX: ${{ steps.stack.outputs.stack_container_prefix }}
+          TRAEFIK_ROUTER_PREFIX: ${{ steps.stack.outputs.stack_container_prefix }}
+          API_HOST: ${{ steps.stack.outputs.api_host }}
+          WEB_HOST: ${{ steps.stack.outputs.web_host }}
+          APP_NETWORK_NAME: ${{ steps.stack.outputs.app_network_name }}
+          FRONTEND_URL: ${{ steps.stack.outputs.frontend_url }}
+          SMOKE_API_URL: ${{ steps.stack.outputs.smoke_api_url }}
+          SMOKE_WEB_URL: ${{ steps.stack.outputs.smoke_web_url }}
+          API_IMAGE: ${{ needs.build-and-push.outputs.api_image }}
+          WEB_IMAGE: ${{ needs.build-and-push.outputs.web_image }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          ROLLBACK_ON_FAILURE: ${{ needs.resolve-context.outputs.environment_name == 'production' && 'true' || 'false' }}
+        run: node scripts/ci/portainer-deploy.mjs
 
       - name: Deployment summary
         if: always()
-        shell: bash
-        env:
-          PORTAINER_STACK_NAME: ${{ secrets.PORTAINER_STACK_NAME }}
-          PORTAINER_STACK_NAME_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.stack_name_override || '' }}
-          DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || 'production' }}
         run: |
-          if [[ -n "${PORTAINER_STACK_NAME_OVERRIDE}" ]]; then
-            TARGET_STACK_NAME="${PORTAINER_STACK_NAME_OVERRIDE}"
-          elif [[ "${DEPLOY_TARGET}" == "staging" ]]; then
-            TARGET_STACK_NAME="${PORTAINER_STACK_NAME}-staging"
-          else
-            TARGET_STACK_NAME="${PORTAINER_STACK_NAME}"
-          fi
-
-          STACK_CONTAINER_PREFIX=$(echo "${TARGET_STACK_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
-
-          if [[ "${DEPLOY_TARGET}" == "staging" ]]; then
-            API_HOST="${STACK_CONTAINER_PREFIX}-api.roketlab.duckdns.org"
-            WEB_HOST="${STACK_CONTAINER_PREFIX}.roketlab.duckdns.org"
-          else
-            API_HOST="dofus-like-api.roketlab.duckdns.org"
-            WEB_HOST="dofus-like.roketlab.duckdns.org"
-          fi
-
           echo "Commit  : ${{ github.sha }}"
           echo "Branch  : ${{ github.ref_name }}"
-          echo "Target  : ${DEPLOY_TARGET}"
-          echo "Stack   : ${TARGET_STACK_NAME}"
-          echo "API     : ${{ env.API_IMAGE }}:${{ github.sha }}"
-          echo "Web     : ${{ env.WEB_IMAGE }}:${{ github.sha }}"
-          echo "URL API : https://${API_HOST}"
-          echo "URL Web : https://${WEB_HOST}"
+          echo "Target  : ${{ needs.resolve-context.outputs.environment_name }}"
+          echo "Stack   : ${{ steps.stack.outputs.stack_name }}"
+          echo "API     : ${{ needs.build-and-push.outputs.api_image }}:${{ needs.build-and-push.outputs.image_tag }}"
+          echo "Web     : ${{ needs.build-and-push.outputs.web_image }}:${{ needs.build-and-push.outputs.image_tag }}"
+          echo "URL API : ${{ steps.stack.outputs.smoke_api_url }}"
+          echo "URL Web : ${{ steps.stack.outputs.smoke_web_url }}"

@@ -119,6 +119,10 @@ export class RedisService {
     return this.measure('zcard', key, () => this.client.zcard(key));
   }
 
+  async ping(): Promise<string> {
+    return this.measure('ping', 'health:ping', () => this.client.ping());
+  }
+
   private async measure<T>(operation: string, key: string, callback: () => Promise<T>): Promise<T> {
     const startedAt = performance.now();
     try {
