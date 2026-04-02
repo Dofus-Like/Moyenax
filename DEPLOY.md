@@ -74,6 +74,7 @@ transitoire de pull.
 
 | Secret | Role |
 |---|---|
+| `GHCR_TOKEN` | PAT GitHub avec `write:packages` pour pousser sur le namespace GHCR cible |
 | `PORTAINER_URL` | URL de l’API Portainer |
 | `PORTAINER_API_TOKEN` | Token d’acces Portainer |
 | `PORTAINER_ENDPOINT_ID` | Identifiant de l’environnement Portainer cible |
@@ -89,11 +90,16 @@ transitoire de pull.
 | `PORTAINER_TEST_STACK_NAME` | `${PORTAINER_STACK_NAME}-test` | Nom exact de la stack de test |
 | `GHCR_NAMESPACE` | `roketag33` | Namespace GHCR |
 | `GHCR_IMAGE_PREFIX` | `dofus-like` | Prefixe des images GHCR |
+| `GHCR_USERNAME` | `roketag33` | Compte GitHub associe au `GHCR_TOKEN` |
 
 ## Configuration Portainer / GHCR
 
-Le workflow utilise le `GITHUB_TOKEN` natif de GitHub Actions pour pousser les
-images sur GHCR, avec la permission `packages: write`.
+Le workflow utilise `GHCR_TOKEN` pour pousser les images sur GHCR.
+
+Ce point est important si les images vivent dans un namespace utilisateur
+comme `ghcr.io/roketag33/...` alors que le repository est heberge sous une
+organisation. Dans ce cas, le `GITHUB_TOKEN` du repository ne suffit pas
+forcément pour publier les images.
 
 Portainer doit pouvoir pull les images GHCR :
 
