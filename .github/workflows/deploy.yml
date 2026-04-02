@@ -115,8 +115,8 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
+          username: ${{ vars.GHCR_USERNAME || 'roketag33' }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Resolve image tags
         id: tags
@@ -174,8 +174,8 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
+          username: ${{ vars.GHCR_USERNAME || 'roketag33' }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Wait until manifests are available
         shell: bash
