@@ -7,6 +7,7 @@ import { itemsApi } from '../api/items.api';
 import { useAuthStore } from '../store/auth.store';
 import { getSessionPo } from '../utils/sessionPo';
 import './CraftingPage.css';
+import './CraftingPage.retro.css';
 
 interface Item {
   id: string;

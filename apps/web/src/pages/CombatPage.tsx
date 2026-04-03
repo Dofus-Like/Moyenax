@@ -12,6 +12,7 @@ import { TerrainType } from '@game/shared-types';
 import { useGameSession } from './GameTunnel';
 import { gameSessionApi } from '../api/game-session.api';
 import './CombatPage.css';
+import './CombatPage.retro.css';
 
 /**
  * Pré chargeur d'assets pour éviter les "flashs" lors du premier sort ou déplacement

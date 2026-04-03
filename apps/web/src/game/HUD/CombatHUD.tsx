@@ -7,6 +7,7 @@ import { combatApi } from '../../api/combat.api';
 import { CombatActionType, SpellFamily } from '@game/shared-types';
 import { getSkinById } from '../../game/constants/skins';
 import './CombatHUD.css';
+import './CombatHUD.retro.css';
 
 const SPELL_FAMILY_ORDER: Record<SpellFamily, number> = {
   [SpellFamily.COMMON]: 1,

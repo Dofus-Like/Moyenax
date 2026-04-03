@@ -7,6 +7,7 @@ import { combatApi } from '../api/combat.api';
 import { mapApi } from '../api/map.api';
 import { ALL_SEED_IDS, SEED_CONFIGS, SeedId } from '@game/shared-types';
 import './DebugPage.css';
+import './DebugPage.retro.css';
 
 export function DebugPage() {
   const navigate = useNavigate();

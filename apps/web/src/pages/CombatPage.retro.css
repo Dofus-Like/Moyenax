@@ -1,0 +1,156 @@
+[data-theme="retro"] .combat-page-container {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #c0c0c0;
+}
+
+[data-theme="retro"] .combat-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #c0c0c0;
+  border-bottom: 2px solid #808080;
+  z-index: 1000;
+}
+
+[data-theme="retro"] .combat-toolbar-back, [data-theme="retro"] .combat-toolbar-abandon {
+  padding: 4px 10px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  color: #000000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+[data-theme="retro"] .combat-toolbar-abandon {
+  background: #ff0000;
+  color: #ffffff;
+  border-color: #ff5555 #800000 #800000 #ff5555;
+}
+
+[data-theme="retro"] .combat-toolbar-back:active, [data-theme="retro"] .combat-toolbar-abandon:active {
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .combat-toolbar-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  flex: 1;
+  color: #000000;
+}
+
+[data-theme="retro"] .combat-toolbar-turn {
+  font-size: 0.9rem;
+  color: #000080;
+  font-weight: 900;
+  font-family: var(--font-mono);
+}
+
+[data-theme="retro"] .combat-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+[data-theme="retro"] .combat-game-zone {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #808080;
+}
+
+[data-theme="retro"] .combat-logs-side {
+  width: 320px;
+  background: #c0c0c0;
+  border-left: 2px solid #808080;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+[data-theme="retro"] .logs-sidebar-header {
+  padding: 8px 16px;
+  background: linear-gradient(to right, #000080, #1084d0);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: #ffffff;
+  border-bottom: 2px solid #808080;
+}
+
+[data-theme="retro"] .logs-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #ffffff;
+  margin: 4px;
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+}
+
+[data-theme="retro"] .log-entry {
+  padding: 6px 10px;
+  background: #ffffff;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  border-left: 4px solid transparent;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+[data-theme="retro"] .log-entry.type-info { border-left-color: #0000ff; color: #000000; }
+[data-theme="retro"] .log-entry.type-damage { border-left-color: #ff0000; color: #800000; background: #ffcccc; }
+[data-theme="retro"] .log-entry.type-victory { border-left-color: #ffff00; color: #000000; background: #ffffcc; }
+
+[data-theme="retro"] .logs-empty {
+  text-align: center;
+  color: #808080;
+  margin-top: 40px;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+[data-theme="retro"] .combat-overlay {
+  position: fixed;
+  inset: 0;
+  background: #c0c0c0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  gap: 16px;
+}
+
+[data-theme="retro"] .loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e8e8e8;
+  border-top-color: #0000ff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+  [data-theme="retro"] .combat-logs-side { display: none; }
+}

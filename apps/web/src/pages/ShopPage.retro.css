@@ -1,0 +1,211 @@
+[data-theme="retro"] .shop-container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+[data-theme="retro"] .shop-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 0;
+}
+
+[data-theme="retro"] .shop-header-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+[data-theme="retro"] .shop-header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+[data-theme="retro"] .shop-header-info h2 {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  color: #000000;
+}
+
+[data-theme="retro"] .session-badge {
+  display: inline-block;
+  background: #ff0000;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+[data-theme="retro"] .shop-po-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #808080;
+  line-height: 1.4;
+}
+
+[data-theme="retro"] .shop-gold {
+  font-weight: 700;
+  color: #000000;
+  font-size: 1.1rem;
+  font-family: var(--font-mono);
+}
+
+[data-theme="retro"] .back-button, [data-theme="retro"] .nav-link-btn {
+  padding: 6px 14px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  color: #000000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: none;
+  text-transform: uppercase;
+}
+
+[data-theme="retro"] .back-button:hover, [data-theme="retro"] .nav-link-btn:hover {
+  background: #d0d0d0;
+}
+
+[data-theme="retro"] .back-button:active, [data-theme="retro"] .nav-link-btn:active {
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0;
+  border: 2px solid #808080;
+}
+
+[data-theme="retro"] .shop-loading {
+  color: #808080;
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 16px;
+}
+
+[data-theme="retro"] .shop-item-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+[data-theme="retro"] .family-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  font-weight: bold;
+  text-align: center;
+}
+
+[data-theme="retro"] .family-badge.forge   { background: #ff0000; color: #ffffff; }
+[data-theme="retro"] .family-badge.arcane  { background: #000080; color: #ffffff; }
+[data-theme="retro"] .family-badge.nature  { background: #00aa00; color: #ffffff; }
+
+[data-theme="retro"] .seed-badge {
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  font-weight: bold;
+}
+
+[data-theme="retro"] .seed-badge.warn {
+  background: #ffff00;
+  color: #000000;
+}
+
+[data-theme="retro"] .shop-item-card {
+  position: relative;
+  background: #ffffff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  padding: 16px;
+  padding-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: none;
+}
+
+[data-theme="retro"] .shop-item-card:hover { background: #ffffcc; }
+
+[data-theme="retro"] .shop-item-visual {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  background: #e8e8e8;
+}
+
+[data-theme="retro"] .shop-item-visual.forge   { background: #ffcccc; }
+[data-theme="retro"] .shop-item-visual.arcane  { background: #ccccff; }
+[data-theme="retro"] .shop-item-visual.nature  { background: #ccffcc; }
+[data-theme="retro"] .shop-item-visual.special { background: #ffffcc; }
+[data-theme="retro"] .shop-item-visual.neutral { background: #e8e8e8; }
+
+[data-theme="retro"] .shop-item-card.out-of-seed {
+  opacity: 0.6;
+  background: #e8e8e8;
+}
+
+[data-theme="retro"] .current-seed-info {
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: #808080;
+}
+
+[data-theme="retro"] .shop-item-type {
+  font-size: 0.75rem;
+  color: #0000ff;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+[data-theme="retro"] .shop-item-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #000000;
+}
+
+[data-theme="retro"] .shop-item-price {
+  color: #000000;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+[data-theme="retro"] .shop-buy-button {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 2px solid;
+  border-color: #00ff00 #006600 #006600 #00ff00;
+  background: #00aa00;
+  color: #ffffff;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  transition: none;
+  cursor: pointer;
+}
+
+[data-theme="retro"] .shop-buy-button:hover:not(:disabled) { background: #00cc00; }
+[data-theme="retro"] .shop-buy-button:active:not(:disabled) {
+  border-color: #006600 #00ff00 #00ff00 #006600;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+[data-theme="retro"] .shop-buy-button:disabled { opacity: 0.5; cursor: not-allowed; }

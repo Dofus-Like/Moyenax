@@ -9,6 +9,7 @@ import { playerApi } from '../api/player.api';
 import { Mannequin } from '../components/Mannequin';
 import { EquipmentSlotType, InventoryItem, ItemType } from '@game/shared-types';
 import './InventoryPage.css';
+import './InventoryPage.retro.css';
 
 export function InventoryPage() {
   const navigate = useNavigate();

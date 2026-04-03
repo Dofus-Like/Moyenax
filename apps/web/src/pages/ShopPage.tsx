@@ -9,6 +9,7 @@ import { SEED_CONFIGS, SeedId } from '@game/shared-types';
 import { getSessionPo } from '../utils/sessionPo';
 import { getItemVisualMeta } from '../utils/itemVisual';
 import './ShopPage.css';
+import './ShopPage.retro.css';
 
 export function ShopPage() {
   const navigate = useNavigate();

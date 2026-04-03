@@ -20,6 +20,7 @@ import {
   TERRAIN_PROPERTIES,
 } from '@game/shared-types';
 import './ResourceMapPage.css';
+import './ResourceMapPage.retro.css';
 
 const LEGEND_ITEMS = [
   { key: 'ground', label: 'Sol', className: 'legend-ground' },

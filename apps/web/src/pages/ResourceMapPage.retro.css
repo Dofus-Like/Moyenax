@@ -1,0 +1,374 @@
+[data-theme="retro"] .resource-map-container{
+  --rm-bg: #c0c0c0;
+  --rm-surface: #c0c0c0;
+  --rm-surface-strong: #e8e8e8;
+  --rm-border: #808080;
+  --rm-border-strong: #000000;
+  --rm-text: #000000;
+  --rm-muted: #808080;
+  --rm-accent: #000080;
+  --rm-accent-strong: #ff0000;
+  --rm-success: #00aa00;
+  --rm-danger: #ff0000;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--rm-bg);
+  color: var(--rm-text);
+}
+
+[data-theme="retro"] .resource-map-header{
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #c0c0c0;
+  border-bottom: 2px solid #808080;
+}
+
+[data-theme="retro"] .resource-map-title{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+  flex: 1 1 auto;
+}
+
+[data-theme="retro"] .resource-map-title-kicker{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #000080;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-theme="retro"] .resource-map-title h2{
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  line-height: 1;
+  color: #000000;
+}
+
+[data-theme="retro"] .resource-map-title p{
+  margin: 4px 0 0;
+  color: var(--rm-muted);
+  font-size: 0.85rem;
+}
+
+[data-theme="retro"] .resource-map-actions{
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+[data-theme="retro"] .resource-action-btn{
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: none;
+  text-transform: uppercase;
+}
+
+[data-theme="retro"] .resource-action-btn:active{
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .resource-action-btn--ghost{
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  color: #000000;
+}
+
+[data-theme="retro"] .resource-action-btn--ghost:hover{ background: #d0d0d0; }
+
+[data-theme="retro"] .resource-action-btn--accent{
+  background: #000080;
+  color: #ffffff;
+  border-color: #5555ff #000080 #000080 #5555ff;
+}
+
+[data-theme="retro"] .resource-action-btn--accent.is-ready{
+  background: #00aa00;
+  border-color: #00ff00 #006600 #006600 #00ff00;
+}
+
+[data-theme="retro"] .resource-action-btn--danger{
+  background: #ff0000;
+  color: #ffffff;
+  border-color: #ff5555 #800000 #800000 #ff5555;
+}
+
+[data-theme="retro"] .resource-action-btn--primary{
+  background: #0000ff;
+  color: #ffffff;
+  border-color: #5555ff #000080 #000080 #5555ff;
+}
+
+[data-theme="retro"] .resource-map-layout{
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: 220px minmax(0, 1fr) 250px;
+  gap: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+[data-theme="retro"] .resource-map-stage{
+  position: relative;
+  min-height: 0;
+}
+
+[data-theme="retro"] .resource-map-canvas{
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  background: #808080;
+}
+
+[data-theme="retro"] .resource-map-sidebar{
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+[data-theme="retro"] .resource-sidebar-card{
+  padding: 10px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+}
+
+[data-theme="retro"] .resource-sidebar-card--seed{
+  background: #ffffcc;
+  border-color: var(--bevel-outset);
+}
+
+[data-theme="retro"] .resource-sidebar-card h3{
+  margin: 0;
+  font-size: 0.95rem;
+  font-family: var(--font-heading);
+  color: #000000;
+}
+
+[data-theme="retro"] .resource-sidebar-card p{
+  margin: 0;
+  color: var(--rm-muted);
+  line-height: 1.4;
+  font-size: 0.85rem;
+}
+
+[data-theme="retro"] .resource-sidebar-card__header{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+[data-theme="retro"] .resource-sidebar-card__eyebrow{
+  color: #000080;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-theme="retro"] .resource-sidebar-card__copy{ font-size: 0.9rem; }
+
+[data-theme="retro"] .resource-pips{
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+[data-theme="retro"] .resource-pip{
+  width: 12px;
+  height: 12px;
+  border: 2px solid #000080;
+  background: #ffffff;
+}
+
+[data-theme="retro"] .resource-pip.is-filled{
+  border-color: #006600;
+  background: #00aa00;
+}
+
+[data-theme="retro"] .resource-legend-list, [data-theme="retro"] .resource-inventory-list{
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-direction: column;
+  gap: 6px;
+}
+
+[data-theme="retro"] .resource-legend-item, [data-theme="retro"] .resource-inventory-list li{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #000000;
+}
+
+[data-theme="retro"] .resource-legend-item{ justify-content: flex-start; }
+[data-theme="retro"] .resource-inventory-list li{ justify-content: space-between; }
+
+[data-theme="retro"] .resource-legend-swatch{
+  width: 12px;
+  height: 12px;
+}
+
+[data-theme="retro"] .legend-ground{ background: #808080; }
+[data-theme="retro"] .legend-iron{ background: #808080; }
+[data-theme="retro"] .legend-leather{ background: #800000; }
+[data-theme="retro"] .legend-crystal{ background: #000080; }
+[data-theme="retro"] .legend-fabric{ background: #800080; }
+[data-theme="retro"] .legend-wood{ background: #008000; }
+[data-theme="retro"] .legend-herb{ background: #00aa00; }
+[data-theme="retro"] .legend-gold{ background: #ffff00; }
+
+[data-theme="retro"] .resource-inventory-list li{
+  padding-bottom: 6px;
+  border-bottom: 1px solid #808080;
+}
+
+[data-theme="retro"] .resource-inventory-list li:last-child{
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+[data-theme="retro"] .resource-tile-details{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--rm-muted);
+  font-size: 0.85rem;
+}
+
+[data-theme="retro"] .resource-round-score{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+[data-theme="retro"] .resource-round-score strong{
+  font-size: 1.2rem;
+  color: #000000;
+}
+
+[data-theme="retro"] .resource-round-score span{
+  color: var(--rm-muted);
+  font-size: 0.8rem;
+}
+
+[data-theme="retro"] .resource-sidebar-card--player{
+  border-color: var(--bevel-outset);
+}
+
+[data-theme="retro"] .resource-sidebar-card--inventory{
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+[data-theme="retro"] .resource-sidebar-card--inventory .resource-inventory-list{
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+[data-theme="retro"] .map-action-toast{
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 20;
+  min-width: 220px;
+  max-width: min(480px, calc(100% - 24px));
+  transform: translateX(-50%);
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  padding: 8px 14px;
+  background: #c0c0c0;
+  color: #000000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+[data-theme="retro"] .map-action-toast.info{ border-left: 4px solid #0000ff; }
+[data-theme="retro"] .map-action-toast.error{ border-left: 4px solid #ff0000; color: #800000; }
+
+[data-theme="retro"] .map-loading, [data-theme="retro"] .map-error{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--rm-muted);
+  font-size: 1rem;
+}
+
+[data-theme="retro"] .map-error{ color: #ff0000; }
+
+@media (max-width: 1240px){
+  [data-theme="retro"] .resource-map-layout{
+    grid-template-columns: 200px minmax(0, 1fr) 220px;
+  }
+}
+
+@media (max-width: 900px){
+  [data-theme="retro"] .resource-map-header{
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px;
+  }
+
+  [data-theme="retro"] .resource-map-actions{ justify-content: stretch; }
+  [data-theme="retro"] .resource-action-btn{ flex: 1 1 160px; }
+
+  [data-theme="retro"] .resource-map-layout{
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  [data-theme="retro"] .resource-map-sidebar{ overflow: visible; }
+}
+
+@media (max-width: 640px){
+  [data-theme="retro"] .resource-map-layout{ padding: 8px; }
+
+  [data-theme="retro"] .resource-map-title{ align-items: flex-start; }
+  [data-theme="retro"] .resource-map-title-kicker{ width: 40px; height: 40px; }
+  [data-theme="retro"] .resource-action-btn{ width: 100%; }
+  [data-theme="retro"] .resource-map-canvas{ min-height: 300px; }
+}

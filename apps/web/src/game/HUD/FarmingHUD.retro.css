@@ -1,0 +1,79 @@
+[data-theme="retro"] .farming-hud {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 100;
+  color: #000000;
+  font-family: var(--font-body);
+}
+
+[data-theme="retro"] .hud-top .round-badge {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #000080;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+[data-theme="retro"] .pips-container {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+[data-theme="retro"] .pip {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #000080;
+  transition: none;
+}
+
+[data-theme="retro"] .pip.filled {
+  background: #00aa00;
+  border-color: #006600;
+}
+
+[data-theme="retro"] .pip.empty {
+  background: #ffffff;
+}
+
+[data-theme="retro"] .pips-label {
+  font-size: 0.8rem;
+  color: #808080;
+  margin-top: 4px;
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+[data-theme="retro"] .end-phase-btn {
+  margin-top: 4px;
+  padding: 8px 16px;
+  border: 2px solid;
+  border-color: #5555ff #000080 #000080 #5555ff;
+  background: #0000ff;
+  color: #ffffff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: none;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+[data-theme="retro"] .end-phase-btn:hover { background: #3333ff; }
+
+[data-theme="retro"] .end-phase-btn:active {
+  border-color: #000080 #5555ff #5555ff #000080;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}

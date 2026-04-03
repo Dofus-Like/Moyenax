@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFarmingStore } from '../../store/farming.store';
 import './FarmingHUD.css';
+import './FarmingHUD.retro.css';
 
 export function FarmingHUD() {
   const { pips, round, endPhase } = useFarmingStore();

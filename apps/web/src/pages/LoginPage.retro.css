@@ -1,0 +1,255 @@
+[data-theme="retro"] .login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+[data-theme="retro"] .login-card {
+  width: 100%;
+  max-width: 460px;
+}
+
+[data-theme="retro"] .login-title {
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  margin-bottom: 0;
+  text-shadow: 2px 2px 0 #808080;
+}
+
+[data-theme="retro"] .login-subtitle {
+  text-align: center;
+  color: var(--retro-foreground);
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+[data-theme="retro"] .login-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+[data-theme="retro"] .login-tab {
+  flex: 1;
+  padding: 8px 16px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  color: #000000;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  transition: none;
+  cursor: pointer;
+}
+
+[data-theme="retro"] .login-tab.active {
+  background: #000080;
+  color: #ffffff;
+  border-color: #5555ff #000080 #000080 #5555ff;
+}
+
+[data-theme="retro"] .login-tab:active {
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+[data-theme="retro"] .login-input {
+  padding: 6px 8px;
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  background: #ffffff;
+  color: #000000;
+  font-size: 0.95rem;
+  transition: none;
+}
+
+[data-theme="retro"] .login-input::placeholder { color: #808080; }
+
+[data-theme="retro"] .login-input:focus {
+  outline: 2px dotted #000000;
+  outline-offset: 2px;
+}
+
+[data-theme="retro"] .login-button {
+  padding: 10px;
+  border: 2px solid;
+  border-color: #5555ff #000080 #000080 #5555ff;
+  background: #0000ff;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: none;
+  margin-top: 8px;
+  cursor: pointer;
+}
+
+[data-theme="retro"] .login-button:hover { background: #3333ff; }
+
+[data-theme="retro"] .login-button:active {
+  border-color: #000080 #5555ff #5555ff #000080;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .login-error {
+  color: #ff0000;
+  font-size: 0.85rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* Quick Login Section */
+[data-theme="retro"] .quick-login {
+  margin-top: 16px;
+  padding: 8px;
+}
+
+[data-theme="retro"] .quick-login-title {
+  font-size: 0.8rem;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+[data-theme="retro"] .quick-login-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+[data-theme="retro"] .quick-btn {
+  padding: 8px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  color: #000000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: none;
+}
+
+[data-theme="retro"] .quick-btn:hover {
+  background: #d0d0d0;
+}
+
+[data-theme="retro"] .quick-btn:active {
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .quick-btn.warrior { border-left: 4px solid #ff0000; }
+[data-theme="retro"] .quick-btn.mage    { border-left: 4px solid #0000ff; }
+[data-theme="retro"] .quick-btn.ninja   { border-left: 4px solid #00aa00; }
+[data-theme="retro"] .quick-btn.troll   { border-left: 4px solid #ffd700; }
+
+[data-theme="retro"] .quick-login-tip {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: #000000;
+  line-height: 1.4;
+  text-align: center;
+}
+
+[data-theme="retro"] .quick-login-tip strong {
+  color: #0000ff;
+}
+
+/* Class selector */
+[data-theme="retro"] .class-selector {
+  margin: 12px 0;
+  padding: 8px;
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  background: #ffffff;
+}
+
+[data-theme="retro"] .selector-title {
+  font-size: 0.85rem;
+  color: #000000;
+  margin-bottom: 8px;
+  text-align: center;
+  font-weight: 700;
+}
+
+[data-theme="retro"] .class-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+[data-theme="retro"] .class-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  cursor: pointer;
+  transition: none;
+}
+
+[data-theme="retro"] .class-option:hover {
+  background: #d0d0d0;
+}
+
+[data-theme="retro"] .class-option:active {
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .class-option.active {
+  background: #000080;
+  color: #ffffff;
+  border-color: #5555ff #000080 #000080 #5555ff;
+}
+
+[data-theme="retro"] .class-option.active .class-info strong,
+[data-theme="retro"] .class-option.active .class-info small {
+  color: #ffffff;
+}
+
+[data-theme="retro"] .class-emoji {
+  font-size: 1.5rem;
+}
+
+[data-theme="retro"] .class-info {
+  display: flex;
+  flex-direction: column;
+}
+
+[data-theme="retro"] .class-info strong {
+  font-size: 0.9rem;
+  color: #000000;
+}
+
+[data-theme="retro"] .class-info small {
+  font-size: 0.75rem;
+  color: #808080;
+}

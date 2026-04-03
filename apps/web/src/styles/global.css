@@ -4,6 +4,8 @@
   box-sizing: border-box;
 }
 
+/* ========== MODERN THEME (default) ========== */
+
 :root {
   --color-bg: #3f3f46;
   --color-bg-secondary: #52525b;
@@ -18,6 +20,9 @@
   --color-danger: #ef4444;
   --color-heal: #34d399;
   --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
   --radius: 8px;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
@@ -50,4 +55,99 @@ button {
 
 input, select {
   font-family: var(--font-main);
+}
+
+/* ========== RETRO 90s THEME ========== */
+
+[data-theme="retro"]:root {
+  --color-bg: #c0c0c0;
+  --color-bg-secondary: #e8e8e8;
+  --color-bg-card: #c0c0c0;
+  --color-primary: #0000ff;
+  --color-primary-hover: #ff0000;
+  --color-accent: #ffd700;
+  --color-text: #000000;
+  --color-text-secondary: #808080;
+  --color-border: #000000;
+  --color-success: #00aa00;
+  --color-danger: #ff0000;
+  --color-heal: #00ff00;
+
+  --retro-bg: #c0c0c0;
+  --retro-foreground: #000000;
+  --retro-muted: #808080;
+  --retro-accent: #0000ff;
+  --retro-secondary: #ff0000;
+  --retro-tertiary: #ffff00;
+  --retro-success: #00ff00;
+  --retro-success-dark: #00aa00;
+  --retro-border: #000000;
+  --retro-border-light: #ffffff;
+  --retro-border-dark: #808080;
+  --retro-title-start: #000080;
+  --retro-title-end: #1084d0;
+  --retro-panel-yellow: #ffffcc;
+  --retro-visited: #800080;
+
+  --font-body: "MS Sans Serif", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  --font-heading: "Arial Black", Impact, Haettenschweiler, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+  --font-main: var(--font-body);
+
+  --radius: 0px;
+  --shadow: none;
+
+  --bevel-outset: #ffffff #808080 #808080 #ffffff;
+  --bevel-inset: #808080 #ffffff #ffffff #808080;
+  --shadow-outset: inset -1px -1px 0 #404040, inset 1px 1px 0 #dfdfdf;
+  --shadow-inset: inset 1px 1px 0 #404040, inset -1px -1px 0 #dfdfdf;
+}
+
+[data-theme="retro"] body {
+  font-family: var(--font-body);
+  background-color: var(--retro-bg);
+  color: var(--retro-foreground);
+  line-height: 1.5;
+  background-image:
+    linear-gradient(45deg, #b8b8b8 25%, transparent 25%),
+    linear-gradient(-45deg, #b8b8b8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #b8b8b8 75%),
+    linear-gradient(-45deg, transparent 75%, #b8b8b8 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 0 2px, 2px -2px, -2px 0px;
+}
+
+[data-theme="retro"] ::selection {
+  background: #000080;
+  color: #ffffff;
+}
+
+[data-theme="retro"] a {
+  color: var(--retro-accent);
+  text-decoration: underline;
+}
+
+[data-theme="retro"] a:visited {
+  color: var(--retro-visited);
+}
+
+[data-theme="retro"] a:hover {
+  color: var(--retro-secondary);
+}
+
+[data-theme="retro"] button {
+  font-family: var(--font-body);
+  border-radius: 0;
+}
+
+[data-theme="retro"] input,
+[data-theme="retro"] select,
+[data-theme="retro"] textarea {
+  font-family: var(--font-body);
+  border-radius: 0;
+}
+
+[data-theme="retro"] *:focus-visible {
+  outline: 2px dotted #000000;
+  outline-offset: 2px;
 }

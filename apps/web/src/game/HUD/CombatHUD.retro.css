@@ -1,0 +1,810 @@
+[data-theme="retro"] {
+  --combat-bg: #c0c0c0;
+  --combat-bg-light: #e8e8e8;
+  --combat-border: #808080;
+  --hp-red: #ff0000;
+  --hp-red-light: #ff5555;
+  --pa-blue: #0000ff;
+  --pa-blue-dark: #000080;
+  --pm-green: #00aa00;
+  --pm-green-dark: #006600;
+  --turn-active: #ff0000;
+  --turn-waiting: #808080;
+  --victory-gold: #ffff00;
+  --defeat-red: #ff0000;
+  --warrior-color: #ff0000;
+  --mage-color: #0000ff;
+  --ninja-color: #00aa00;
+  --common-color: #808080;
+  --mage-blue: #0000ff;
+  --text-main: #000000;
+  --text-muted: #808080;
+
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-full: 0px;
+  --radius-circle: 0px;
+
+  --shadow-hud: inset -1px -1px 0 #404040, inset 1px 1px 0 #dfdfdf;
+  --shadow-glow: none;
+
+  --trans-fast: 0s;
+  --trans-med: 0s;
+}
+
+/* --- BASE HUD CONTAINER --- */
+[data-theme="retro"] .combat-hud{
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  font-family: var(--font-body);
+  color: var(--text-main);
+  overflow: hidden;
+  user-select: none;
+  z-index: 10;
+}
+
+[data-theme="retro"] .combat-hud *{
+  pointer-events: auto;
+}
+
+[data-theme="retro"] .combat-toast{
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 260px;
+  max-width: 520px;
+  padding: 8px 16px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: center;
+  z-index: 140;
+}
+
+[data-theme="retro"] .combat-toast.info{ color: #000080; border-left: 4px solid #0000ff; }
+[data-theme="retro"] .combat-toast.error{ color: #800000; border-left: 4px solid #ff0000; }
+
+/* TOP LEFT BLOCK */
+[data-theme="retro"] .hud-character-block{
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  z-index: 100;
+}
+
+[data-theme="retro"] .hud-portrait-container{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #c0c0c0;
+  padding: 6px 12px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+}
+
+[data-theme="retro"] .portrait-badge-wrapper{
+  position: relative;
+  flex-shrink: 0;
+}
+
+[data-theme="retro"] .portrait-circle{
+  width: 64px;
+  height: 64px;
+  background-color: #000000;
+  border: 2px solid var(--turn-waiting);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  overflow: hidden;
+  background-repeat: no-repeat;
+  transition: none;
+}
+
+[data-theme="retro"] .portrait-circle.is-my-turn{
+  border-color: var(--turn-active);
+}
+
+[data-theme="retro"] .portrait-circle.not-my-turn{
+  border-color: var(--turn-waiting);
+  filter: grayscale(0.5);
+}
+
+[data-theme="retro"] .avatar-resources-group{
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+[data-theme="retro"] .res-item{
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+[data-theme="retro"] .res-circle{
+  width: 22px;
+  height: 22px;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 950;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+[data-theme="retro"] .res-label-mini{
+  font-size: 0.6rem;
+  font-weight: 950;
+  color: #000000;
+  letter-spacing: 0.5px;
+}
+
+[data-theme="retro"] .res-item:nth-child(1){ top: 2px; right: -10px; }
+[data-theme="retro"] .res-item:nth-child(1) .res-circle{ background: var(--pa-blue); }
+
+[data-theme="retro"] .res-item:nth-child(2){ top: 25px; right: -28px; }
+[data-theme="retro"] .res-item:nth-child(2) .res-circle{ background: var(--pm-green); }
+
+[data-theme="retro"] .stats-info{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+[data-theme="retro"] .username{
+  font-weight: 900;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #000000;
+}
+
+[data-theme="retro"] .hp-bar-container{
+  width: 140px;
+  height: 8px;
+  background: #ffffff;
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  overflow: hidden;
+}
+
+[data-theme="retro"] .hp-bar-fill{
+  height: 100%;
+  background: var(--hp-red);
+  transition: width 0.3s linear;
+}
+
+[data-theme="retro"] .hud-combined-stats{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 2px;
+}
+
+[data-theme="retro"] .hp-text{
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--hp-red);
+  font-family: var(--font-mono);
+}
+
+[data-theme="retro"] .mini-res-row{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+[data-theme="retro"] .badge-pa, [data-theme="retro"] .badge-pm{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: white;
+  margin-right: 4px;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+}
+
+[data-theme="retro"] .badge-pa{ background: var(--pa-blue); }
+[data-theme="retro"] .badge-pm{ background: var(--pm-green); }
+
+[data-theme="retro"] .portrait-image{
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  transition: none;
+}
+
+[data-theme="retro"] .portrait-image.avatar-orc{
+  background-image: url('/assets/sprites/orc/idle.png');
+  background-size: 1600px auto;
+  background-position: -98px -88px;
+  animation: portrait-idle-orc 0.8s steps(6) infinite;
+  image-rendering: pixelated;
+}
+
+[data-theme="retro"] .portrait-image.avatar-soldier{
+  background-image: url('/assets/sprites/soldier/idle.png');
+  background-size: 1600px auto;
+  background-position: -98px -88px;
+  animation: portrait-idle-soldier 0.8s steps(6) infinite;
+  image-rendering: pixelated;
+}
+
+@keyframes portrait-idle-orc {
+  from { background-position-x: -98px; }
+  to { background-position-x: -1698px; }
+}
+
+@keyframes portrait-idle-soldier {
+  from { background-position-x: -98px; }
+  to { background-position-x: -1698px; }
+}
+
+/* ACTIONS ROW */
+[data-theme="retro"] .actions-row{
+  margin-top: 10px;
+  padding-left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-theme="retro"] .surrender-button{
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  color: #000000;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: none;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-theme="retro"] .surrender-button:hover{
+  background: #ffcccc;
+}
+
+[data-theme="retro"] .surrender-button:active{
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .toggle-hp-button{
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  color: #000000;
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme="retro"] .toggle-hp-button.active{
+  color: #0000ff;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+}
+
+[data-theme="retro"] .toggle-hp-button:hover{ background: #d0d0d0; }
+
+/* COMBAT END OVERLAY */
+[data-theme="retro"] .combat-end-overlay{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  pointer-events: auto;
+}
+
+[data-theme="retro"] .end-modal{
+  background: #c0c0c0;
+  padding: 40px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  text-align: center;
+  max-width: 500px;
+}
+
+[data-theme="retro"] .combat-end-overlay.victory .end-modal{
+  border-color: #ffff00 #808000 #808000 #ffff00;
+}
+
+[data-theme="retro"] .combat-end-overlay.victory h1{
+  color: #000080;
+  text-shadow: 2px 2px 0 #808080;
+}
+
+[data-theme="retro"] .combat-end-overlay.defeat .end-modal{
+  border-color: #ff5555 #800000 #800000 #ff5555;
+}
+
+[data-theme="retro"] .combat-end-overlay.defeat h1{
+  color: #ff0000;
+  text-shadow: 2px 2px 0 #808080;
+}
+
+[data-theme="retro"] .end-modal h1{
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  margin-bottom: 16px;
+  font-weight: 900;
+}
+
+[data-theme="retro"] .end-modal p{
+  color: #808080;
+  font-size: 1rem;
+  margin-bottom: 24px;
+}
+
+[data-theme="retro"] .exit-button{
+  padding: 12px 32px;
+  border: 2px solid;
+  border-color: #5555ff #000080 #000080 #5555ff;
+  background: #0000ff;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: none;
+  text-transform: uppercase;
+}
+
+[data-theme="retro"] .exit-button:hover{ background: #3333ff; }
+[data-theme="retro"] .exit-button:active{
+  border-color: #000080 #5555ff #5555ff #000080;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .effects-row{
+  display: flex;
+  gap: 6px;
+  margin-left: 10px;
+  margin-top: 5px;
+}
+
+[data-theme="retro"] .hex-effect{
+  width: 24px;
+  height: 24px;
+  background: #c0c0c0;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  border: 1px solid #808080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+/* --- BOTTOM CENTER: SPELLS & RESOURCES --- */
+[data-theme="retro"] .hud-bottom-anchor{
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  min-height: 100px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  background: linear-gradient(to top, rgba(192, 192, 192, 0.95) 0%, transparent 100%);
+  padding-bottom: 20px;
+  pointer-events: none;
+}
+
+[data-theme="retro"] .spell-bar{
+  display: flex;
+  gap: 6px;
+  position: relative;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 90vw;
+  pointer-events: auto;
+}
+
+[data-theme="retro"] .spell-hover-tag{
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #c0c0c0;
+  color: #000080;
+  padding: 2px 10px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  font-size: 0.75rem;
+  font-weight: 900;
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+[data-theme="retro"] .spell-card{
+  width: 50px;
+  height: 50px;
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: none;
+  user-select: none;
+}
+
+[data-theme="retro"] .spell-card:hover{
+  background: #d0d0d0;
+  transform: translateY(-4px);
+}
+
+[data-theme="retro"] .family-common:hover{ border-color: #808080; }
+[data-theme="retro"] .family-warrior:hover{ border-color: #ff0000; }
+[data-theme="retro"] .family-mage:hover{ border-color: #0000ff; }
+[data-theme="retro"] .family-ninja:hover{ border-color: #00aa00; }
+
+[data-theme="retro"] .spell-card.active{
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  background: #e8e8e8;
+}
+
+[data-theme="retro"] .spell-card.disabled{
+  opacity: 0.4;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+[data-theme="retro"] .spell-icon-img{
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+/* FILTRES FAMILLES */
+[data-theme="retro"] .family-common .spell-icon-img{
+  filter: sepia(0.9) saturate(2.2) hue-rotate(-10deg);
+}
+[data-theme="retro"] .family-common{ border-bottom: 3px solid var(--common-color) !important; }
+
+[data-theme="retro"] .family-warrior .spell-icon-img{
+  filter: sepia(1) saturate(10) hue-rotate(-60deg);
+}
+[data-theme="retro"] .family-warrior{ border-bottom: 3px solid var(--warrior-color) !important; }
+
+[data-theme="retro"] .family-mage .spell-icon-img{
+  filter: sepia(1) saturate(10) hue-rotate(160deg);
+}
+[data-theme="retro"] .family-mage{ border-bottom: 3px solid var(--mage-blue) !important; }
+
+[data-theme="retro"] .family-ninja .spell-icon-img{
+  filter: sepia(1) saturate(10) hue-rotate(60deg);
+}
+[data-theme="retro"] .family-ninja{ border-bottom: 3px solid var(--ninja-color) !important; }
+
+[data-theme="retro"] .spell-pa-cost{
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  background: var(--pa-blue);
+  color: white;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 950;
+  z-index: 100;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+[data-theme="retro"] .resources-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-theme="retro"] .resources-numeric{
+  display: flex;
+  gap: 15px;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: var(--font-mono);
+}
+
+[data-theme="retro"] .res-pa{ color: var(--pa-blue); }
+[data-theme="retro"] .res-pm{ color: var(--pm-green); }
+
+[data-theme="retro"] .gems-row{
+  display: flex;
+  gap: 4px;
+}
+
+[data-theme="retro"] .gem{
+  width: 14px;
+  height: 14px;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  background: #ffffff;
+  border: 1px solid #808080;
+  transition: none;
+}
+
+[data-theme="retro"] .gem.active.pa{ background: var(--pa-blue); border-color: #000080; }
+[data-theme="retro"] .gem.active.pm{ background: var(--pm-green); border-color: #006600; }
+
+/* --- END TURN BUTTON --- */
+[data-theme="retro"] .btn-end-turn-compact{
+  width: 70px;
+  height: 70px;
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: #ff5555 #800000 #800000 #ff5555;
+  color: #ff0000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.65rem;
+  text-align: center;
+  cursor: pointer;
+  transition: none;
+  padding: 5px;
+  margin-left: 10px;
+  line-height: 1.2;
+  overflow: hidden;
+  white-space: nowrap;
+  text-transform: uppercase;
+  animation: expandTurnBtn 0.3s linear forwards;
+}
+
+@keyframes expandTurnBtn {
+  from { width: 0; opacity: 0; margin-left: 0; }
+  to { width: 70px; opacity: 1; margin-left: 10px; }
+}
+
+@keyframes collapseTurnBtn {
+  from { width: 70px; opacity: 1; margin-left: 10px; }
+  to { width: 0; opacity: 0; margin-left: 0; padding: 0; border-width: 0; }
+}
+
+[data-theme="retro"] .btn-end-turn-compact.my-turn{
+  border-color: #00ff00 #006600 #006600 #00ff00;
+  color: #006600;
+  background: #ccffcc;
+  animation: expandTurnBtn 0.3s linear forwards, pulseEndTurn 2s step-end infinite;
+}
+
+[data-theme="retro"] .btn-end-turn-compact.closing{
+  animation: collapseTurnBtn 0.3s linear forwards !important;
+}
+
+[data-theme="retro"] .btn-end-turn-compact:hover:not(:disabled){
+  background: #d0d0d0;
+}
+
+[data-theme="retro"] .btn-end-turn-compact.my-turn:hover{
+  background: #aaffaa;
+}
+
+[data-theme="retro"] .btn-end-turn-compact:active:not(:disabled){
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+@keyframes pulseEndTurn {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+[data-theme="retro"] .spell-info-overlay{
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #c0c0c0;
+  padding: 10px 20px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  min-width: 280px;
+  text-align: center;
+}
+
+[data-theme="retro"] .spell-name-title{
+  font-weight: 900;
+  font-size: 1rem;
+  color: #000080;
+  display: block;
+  font-family: var(--font-heading);
+}
+
+[data-theme="retro"] .spell-details{
+  font-size: 0.85rem;
+  color: #808080;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 1280px) {
+  [data-theme="retro"] .hud-character-block{
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0 8px;
+    pointer-events: none;
+  }
+
+  [data-theme="retro"] .hud-portrait-container{
+    width: 100%;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    padding: 6px 16px;
+    pointer-events: none;
+  }
+
+  [data-theme="retro"] .hud-portrait-container > *{ pointer-events: auto; }
+  [data-theme="retro"] .actions-row{ pointer-events: auto; }
+  [data-theme="retro"] .btn-end-turn-compact{ margin-left: auto !important; }
+}
+
+@media (max-width: 768px) {
+  [data-theme="retro"] .hud-character-block{
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  [data-theme="retro"] .hud-portrait-container{
+    width: 100%;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    padding: 4px 10px;
+    gap: 10px;
+  }
+
+  [data-theme="retro"] .btn-end-turn-compact{
+    width: 60px;
+    height: 50px;
+    margin-left: auto !important;
+    font-size: 0.55rem;
+    border-width: 2px;
+  }
+
+  [data-theme="retro"] .portrait-circle{
+    width: 52px;
+    height: 52px;
+    border-width: 2px;
+    font-size: 1.3rem;
+  }
+
+  [data-theme="retro"] .portrait-image.avatar-orc, [data-theme="retro"] .portrait-image.avatar-soldier{
+    background-size: 1200px auto;
+    background-position: -73px -67px;
+  }
+
+  @keyframes portrait-idle-orc {
+    from { background-position-x: -73px; }
+    to { background-position-x: -1273px; }
+  }
+  @keyframes portrait-idle-soldier {
+    from { background-position-x: -73px; }
+    to { background-position-x: -1273px; }
+  }
+
+  [data-theme="retro"] .res-item:nth-child(1){ top: -2px; right: -4px; }
+  [data-theme="retro"] .res-item:nth-child(2){ top: 18px; right: -24px; }
+
+  [data-theme="retro"] .res-circle{ width: 18px; height: 18px; font-size: 0.6rem; }
+  [data-theme="retro"] .res-label-mini{ font-size: 0.5rem; }
+
+  [data-theme="retro"] .hp-bar-container{ width: 110px; height: 6px; }
+  [data-theme="retro"] .username{ font-size: 0.7rem; }
+
+  @keyframes expandTurnBtn {
+    from { width: 0; opacity: 0; margin-left: 0; }
+    to { width: 60px; opacity: 1; margin-left: 8px; }
+  }
+
+  @keyframes collapseTurnBtn {
+    from { width: 60px; opacity: 1; margin-left: 8px; }
+    to { width: 0; opacity: 0; margin-left: 0; padding: 0; border-width: 0; }
+  }
+
+  [data-theme="retro"] .hud-bottom-anchor{
+    min-height: 80px;
+    padding-bottom: 12px;
+  }
+
+  [data-theme="retro"] .spell-card{ width: 42px; height: 42px; }
+  [data-theme="retro"] .spell-icon-img{ width: 32px; height: 32px; }
+
+  [data-theme="retro"] .spell-pa-cost{
+    width: 18px;
+    height: 18px;
+    top: -6px;
+    right: -6px;
+    font-size: 0.6rem;
+  }
+
+  [data-theme="retro"] .spell-info-overlay{
+    top: -65px;
+    min-width: 240px;
+    padding: 6px 14px;
+  }
+
+  [data-theme="retro"] .spell-name-title{ font-size: 0.85rem; }
+  [data-theme="retro"] .spell-details{ font-size: 0.7rem; }
+
+  [data-theme="retro"] .end-modal{
+    padding: 24px;
+    width: 90%;
+  }
+
+  [data-theme="retro"] .end-modal h1{ font-size: 2rem; }
+  [data-theme="retro"] .end-modal p{ font-size: 0.9rem; margin-bottom: 16px; }
+}

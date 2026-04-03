@@ -1,0 +1,230 @@
+[data-theme="retro"] .debug-container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+[data-theme="retro"] .debug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 0;
+}
+
+[data-theme="retro"] .debug-header h1 {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  color: #000000;
+}
+
+[data-theme="retro"] .debug-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #000000;
+  background: #c0c0c0;
+  padding: 6px 12px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+}
+
+[data-theme="retro"] .debug-user-badge code {
+  font-size: 0.75rem;
+  color: #0000ff;
+  font-family: var(--font-mono);
+}
+
+[data-theme="retro"] .debug-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+[data-theme="retro"] .debug-card {
+  background: #ffffff;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  padding: 16px;
+}
+
+[data-theme="retro"] .debug-card h2 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #808080;
+  color: #000000;
+}
+
+[data-theme="retro"] .debug-card p {
+  color: #808080;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+[data-theme="retro"] .debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+[data-theme="retro"] .debug-btn {
+  padding: 6px 14px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 2px solid;
+  transition: none;
+  text-transform: uppercase;
+}
+
+[data-theme="retro"] .debug-btn.primary {
+  border-color: #5555ff #000080 #000080 #5555ff;
+  background: #0000ff;
+  color: #ffffff;
+}
+
+[data-theme="retro"] .debug-btn.primary:active {
+  border-color: #000080 #5555ff #5555ff #000080;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .debug-btn.secondary {
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  color: #000000;
+}
+
+[data-theme="retro"] .debug-btn.secondary:active {
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .debug-btn.success {
+  border-color: #00ff00 #006600 #006600 #00ff00;
+  background: #00aa00;
+  color: #ffffff;
+}
+
+[data-theme="retro"] .debug-btn.success:active {
+  border-color: #006600 #00ff00 #00ff00 #006600;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .debug-btn.danger {
+  border-color: #ff5555 #800000 #800000 #ff5555;
+  background: #ff0000;
+  color: #ffffff;
+}
+
+[data-theme="retro"] .debug-btn.danger:active {
+  border-color: #800000 #ff5555 #ff5555 #800000;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .debug-btn:hover { filter: brightness(1.1); }
+
+[data-theme="retro"] .debug-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[data-theme="retro"] .seed-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+[data-theme="retro"] .seed-chip {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  color: #000000;
+  transition: none;
+}
+
+[data-theme="retro"] .seed-chip.active {
+  background: #000080;
+  color: #ffffff;
+  border-color: #5555ff #000080 #000080 #5555ff;
+}
+
+[data-theme="retro"] .seed-chip:active {
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .debug-state-panel {
+  grid-column: 1 / -1;
+}
+
+[data-theme="retro"] .debug-json {
+  background: #000080;
+  color: #00ff00;
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+}
+
+[data-theme="retro"] .debug-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+[data-theme="retro"] .debug-status-dot {
+  width: 8px;
+  height: 8px;
+  background: #ff0000;
+}
+
+[data-theme="retro"] .debug-status-dot.connected {
+  background: #00ff00;
+}
+
+[data-theme="retro"] .back-button {
+  padding: 6px 14px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  color: #000000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: none;
+  text-transform: uppercase;
+}
+
+[data-theme="retro"] .back-button:hover { background: #d0d0d0; }
+[data-theme="retro"] .back-button:active {
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}

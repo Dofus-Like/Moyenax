@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { gameSessionApi } from '../api/game-session.api';
 import { SKINS, getSkinById } from '../game/constants/skins';
 import { useAuthStore } from '../store/auth.store';
+import { useThemeStore } from '../store/theme.store';
 import { useGameSession } from './GameTunnel';
+import { ThemeToggle } from '../components/ThemeToggle';
 import './LobbyPage.css';
+import './LobbyPage.retro.css';
 
 interface Room {
   id: string;
@@ -194,22 +197,26 @@ export function LobbyPage() {
     () => rooms.filter((room) => room.status === 'WAITING' && room.player2Id == null),
     [rooms],
   );
+  const isRetro = useThemeStore((s) => s.theme) === 'retro';
 
   return (
     <div className="lobby-container">
       <header className="lobby-header">
-        <h1>⚔️ Moyenax</h1>
+        <h1>{isRetro ? 'Moyenax' : '⚔️ Moyenax'}</h1>
 
         <div className="lobby-user-info">
           <div className="user-profile-summary">
             <span className="lobby-username">{player?.username ?? 'Joueur'}</span>
             <span className="lobby-skin-tag">{getSkinById(player?.skin || 'soldier-classic').name}</span>
           </div>
+          <ThemeToggle />
           <button type="button" className="lobby-logout" onClick={handleLogout}>
             Déconnexion
           </button>
         </div>
       </header>
+
+      {isRetro && <hr className="hr-groove" />}
 
       <section className="lobby-skins">
         <div className="lobby-section-header">
@@ -240,6 +247,8 @@ export function LobbyPage() {
           ))}
         </div>
       </section>
+
+      {isRetro && <hr className="hr-groove" />}
 
       <section className="lobby-matchmaking">
         <div className="matchmaking-card">
@@ -278,6 +287,8 @@ export function LobbyPage() {
           )}
         </div>
       </section>
+
+      {isRetro && <hr className="hr-groove" />}
 
       <section className="lobby-combat">
         <div className="lobby-section-header">

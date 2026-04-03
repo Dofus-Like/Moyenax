@@ -1,0 +1,278 @@
+/* ===== RETRO 90s UTILITIES (scoped to [data-theme="retro"]) ===== */
+
+/* --- Bevel Classes --- */
+[data-theme="retro"] .bevel-outset {
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+}
+
+[data-theme="retro"] .bevel-inset {
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+}
+
+/* --- Retro Button Base --- */
+[data-theme="retro"] .retro-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+  color: #000000;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: none;
+  border-radius: 0;
+  text-decoration: none;
+}
+
+[data-theme="retro"] .retro-btn:hover {
+  background: #d0d0d0;
+}
+
+[data-theme="retro"] .retro-btn:active {
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .retro-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[data-theme="retro"] .retro-btn:disabled:active {
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  transform: none;
+}
+
+/* Button Variants */
+[data-theme="retro"] .retro-btn.primary {
+  background: #0000ff;
+  color: #ffffff;
+  border-color: #5555ff #000080 #000080 #5555ff;
+}
+
+[data-theme="retro"] .retro-btn.primary:hover { background: #3333ff; }
+[data-theme="retro"] .retro-btn.primary:active {
+  border-color: #000080 #5555ff #5555ff #000080;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .retro-btn.danger {
+  background: #ff0000;
+  color: #ffffff;
+  border-color: #ff5555 #800000 #800000 #ff5555;
+}
+
+[data-theme="retro"] .retro-btn.danger:hover { background: #ff3333; }
+[data-theme="retro"] .retro-btn.danger:active {
+  border-color: #800000 #ff5555 #ff5555 #800000;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+[data-theme="retro"] .retro-btn.success {
+  background: #00aa00;
+  color: #ffffff;
+  border-color: #00ff00 #006600 #006600 #00ff00;
+}
+
+[data-theme="retro"] .retro-btn.success:hover { background: #00cc00; }
+[data-theme="retro"] .retro-btn.success:active {
+  border-color: #006600 #00ff00 #00ff00 #006600;
+  box-shadow: var(--shadow-inset);
+  transform: translate(1px, 1px);
+}
+
+/* --- Retro Input --- */
+[data-theme="retro"] .retro-input {
+  padding: 6px 8px;
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  background: #ffffff;
+  color: #000000;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  border-radius: 0;
+}
+
+[data-theme="retro"] .retro-input::placeholder {
+  color: #808080;
+}
+
+[data-theme="retro"] .retro-input:focus {
+  outline: 2px dotted #000000;
+  outline-offset: 2px;
+}
+
+[data-theme="retro"] .retro-input:disabled {
+  background: #c0c0c0;
+  opacity: 0.5;
+}
+
+/* --- Window Title Bar --- */
+[data-theme="retro"] .retro-titlebar {
+  background: linear-gradient(to right, var(--retro-title-start), var(--retro-title-end));
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  letter-spacing: 0.02em;
+}
+
+/* --- Window Panel --- */
+[data-theme="retro"] .retro-window {
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+  box-shadow: var(--shadow-outset);
+  background: #c0c0c0;
+}
+
+[data-theme="retro"] .retro-window-content {
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+  background: #ffffff;
+  padding: 16px;
+  margin: 4px;
+}
+
+[data-theme="retro"] .retro-window-content.yellow {
+  background: var(--retro-panel-yellow);
+}
+
+/* --- Groove HR --- */
+[data-theme="retro"] .hr-groove {
+  border: none;
+  height: 4px;
+  background: linear-gradient(
+    to bottom,
+    #808080 0%, #808080 50%,
+    #ffffff 50%, #ffffff 100%
+  );
+  margin: 16px 0;
+}
+
+/* --- Construction Stripes --- */
+[data-theme="retro"] .bg-construction {
+  background: repeating-linear-gradient(
+    45deg,
+    #ffff00,
+    #ffff00 10px,
+    #000000 10px,
+    #000000 20px
+  );
+}
+
+/* --- Alternating Rows --- */
+[data-theme="retro"] .retro-row-even { background: #ffffff; }
+[data-theme="retro"] .retro-row-odd  { background: #e8e8e8; }
+
+/* --- Hit Counter Style --- */
+[data-theme="retro"] .hit-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #000080;
+  color: #00ff00;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 2px solid;
+  border-color: var(--bevel-inset);
+  box-shadow: var(--shadow-inset);
+}
+
+/* --- Rainbow Text --- */
+[data-theme="retro"] .text-rainbow {
+  animation: rainbow 4s linear infinite;
+  font-family: var(--font-heading);
+  font-weight: 900;
+}
+
+@keyframes rainbow {
+  0%   { color: #ff0000; }
+  17%  { color: #ff8000; }
+  33%  { color: #ffff00; }
+  50%  { color: #00ff00; }
+  67%  { color: #0080ff; }
+  83%  { color: #8000ff; }
+  100% { color: #ff0000; }
+}
+
+/* --- Pulse Glow Badge --- */
+[data-theme="retro"] .badge-pulse {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+  display: inline-block;
+  padding: 2px 8px;
+  background: #ff0000;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  border: 2px solid;
+  border-color: var(--bevel-outset);
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px 2px rgba(255, 0, 0, 0.5);
+  }
+}
+
+/* --- Blink (sparingly) --- */
+[data-theme="retro"] .blink {
+  animation: blink-step 1s step-end infinite;
+}
+
+@keyframes blink-step {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* --- Loading Screen --- */
+[data-theme="retro"] .loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  color: #000000;
+  text-transform: uppercase;
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="retro"] .text-rainbow {
+    animation: none;
+    color: #ff0000;
+  }
+  [data-theme="retro"] .badge-pulse {
+    animation: none;
+  }
+  [data-theme="retro"] .blink {
+    animation: none;
+  }
+}

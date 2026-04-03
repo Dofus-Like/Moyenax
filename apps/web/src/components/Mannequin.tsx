@@ -1,6 +1,7 @@
 import { EquipmentSlotType, InventoryItem } from '@game/shared-types';
 import mannequinBg from '../assets/mannequin-bg.gif';
 import './Mannequin.css';
+import './Mannequin.retro.css';
 
 
 
