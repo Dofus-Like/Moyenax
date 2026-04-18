@@ -375,8 +375,7 @@ export const UnifiedMapScene = React.memo(
             next.x < 0 ||
             next.x >= gameMap.width ||
             next.y < 0 ||
-            next.y >= gameMap.height ||
-            visited.has(key)
+            next.y >= gameMap.height
           ) {
             continue;
           }
@@ -387,8 +386,32 @@ export const UnifiedMapScene = React.memo(
           const isOccupied = !isCurrentPlayerTile && occupiedPositionSet.has(key);
 
           if (tile && TERRAIN_PROPERTIES[tile.type].traversable && !isOccupied) {
-            visited.add(key);
-            queue.push({ ...next, dist: current.dist + 1 });
+            if (!visited.has(key)) {
+              visited.add(key);
+              queue.push({ ...next, dist: current.dist + 1 });
+            }
+          }
+
+          if (tile && TERRAIN_PROPERTIES[tile.type].jumpable) {
+            const jumpNext = { x: current.x + direction.x * 2, y: current.y + direction.y * 2 };
+            const jumpKey = toPositionKey(jumpNext.x, jumpNext.y);
+
+            if (
+              jumpNext.x >= 0 &&
+              jumpNext.x < gameMap.width &&
+              jumpNext.y >= 0 &&
+              jumpNext.y < gameMap.height
+            ) {
+              const jumpTile = tileIndex.get(jumpKey);
+              const isJumpOccupied = occupiedPositionSet.has(jumpKey);
+
+              if (jumpTile && TERRAIN_PROPERTIES[jumpTile.type].traversable && !isJumpOccupied) {
+                if (!visited.has(jumpKey)) {
+                  visited.add(jumpKey);
+                  queue.push({ ...jumpNext, dist: current.dist + 1 });
+                }
+              }
+            }
           }
         }
       }

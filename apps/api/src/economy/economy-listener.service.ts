@@ -23,4 +23,13 @@ export class EconomyListenerService {
       await this.sessionService.endCombat(payload.sessionId, payload.winnerId, payload.loserId);
     }
   }
+
+  @OnEvent(GAME_EVENTS.COMBAT_PLAYER_DIED)
+  handleCombatPlayerDied(payload: { sessionId: string; playerId: string }) {
+    this.perfLogger.logEvent('economy', 'combat_player_died.received', {
+      session_id: payload.sessionId,
+      player_id: payload.playerId,
+    });
+    // Add custom tracking or logging logic here if needed
+  }
 }

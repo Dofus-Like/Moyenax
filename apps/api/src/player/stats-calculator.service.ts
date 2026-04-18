@@ -92,12 +92,16 @@ export class StatsCalculatorService {
     };
 
     slots.forEach((slot) => {
-      const item = slot.inventoryItem?.item ?? slot.sessionItem?.item;
+      const inventoryItem = slot.inventoryItem;
+      const sessionItem = slot.sessionItem;
+      const item = inventoryItem?.item ?? sessionItem?.item;
+      const rank = inventoryItem?.rank ?? 1; // SessionItems n'ont pas de rang pour l'instant
+
       if (item?.statsBonus) {
         const bonus = item.statsBonus as Partial<PlayerStats>;
         Object.entries(bonus).forEach(([key, value]) => {
           if (key in effectiveStats && typeof value === 'number') {
-            (effectiveStats as unknown as Record<string, number>)[key] += value;
+            (effectiveStats as unknown as Record<string, number>)[key] += value * rank;
           }
         });
       }

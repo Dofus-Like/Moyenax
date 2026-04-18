@@ -6,6 +6,7 @@ import CameraControlsImpl from 'camera-controls';
 import * as THREE from 'three';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import { CombatHUD } from '../game/HUD/CombatHUD';
+import { CombatMannequins } from '../game/HUD/CombatMannequins';
 import { useCombatStore } from '../store/combat.store';
 import { useAuthStore } from '../store/auth.store';
 import { TerrainType } from '@game/shared-types';
@@ -229,6 +230,7 @@ export function CombatPage() {
           </Canvas>
 
           <CombatHUD />
+          <CombatMannequins />
         </div>
 
         {/* RIGHT WINDOW: LOGS (Desktop only via CSS) */}
