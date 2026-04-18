@@ -144,6 +144,40 @@ describe('BotService', () => {
         );
       });
 
+      it('should recurse with afterMove=true after a movement', async () => {
+        const mockState = {
+          sessionId,
+          map: { width: 10, height: 10, tiles: [{ x: 5, y: 6, type: TerrainType.GROUND }] },
+          players: {
+            [botId]: {
+              playerId: botId,
+              username: 'Bot',
+              position: { x: 5, y: 5 },
+              remainingPa: 6,
+              remainingPm: 3,
+              spells: [{ id: 'spell-1', paCost: 3, minRange: 1, maxRange: 1, name: 'Slash' }],
+              type: 'PLAYER',
+            },
+            [enemyId]: {
+              playerId: enemyId,
+              username: 'Target',
+              position: { x: 5, y: 7 }, // Need to move one step to be in range (5,6)
+            },
+          },
+        } as unknown as CombatState;
+
+        redisService.getJson.mockResolvedValue(mockState);
+        const spy = jest.spyOn(service as any, 'makeMove');
+
+        // @ts-ignore
+        await service.makeMove(sessionId, botId);
+
+        // First call: afterMove=false
+        // Second call (after move): afterMove=true
+        expect(spy).toHaveBeenCalledWith(sessionId, botId, true);
+        spy.mockRestore();
+      });
+
       it('should end turn if no actions possible', async () => {
         const mockState = {
           sessionId,

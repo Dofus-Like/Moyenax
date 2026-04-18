@@ -70,6 +70,10 @@ describe('GameSessionService', () => {
     buildPlayerSpellAssignments: jest.fn(),
   };
 
+  const eventEmitter = {
+    emit: jest.fn(),
+  };
+
   let service: GameSessionService;
 
   beforeEach(() => {
@@ -129,6 +133,7 @@ describe('GameSessionService', () => {
       sseTickets as any,
       statsCalculator as any,
       playerSpellProjection as any,
+      eventEmitter as any,
     );
   });
 
