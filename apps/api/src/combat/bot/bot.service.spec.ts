@@ -88,12 +88,22 @@ describe('BotService', () => {
         },
       } as unknown as CombatState;
 
-      redisService.getJson.mockResolvedValue(mockState);
+      // On simule deux états : un avec PA, un sans PA pour arrêter la récursion
+      const stateWithPa = { ...mockState };
+      const stateWithoutPa = { 
+        ...mockState, 
+        players: { 
+          ...mockState.players, 
+          [botId]: { ...mockState.players[botId], remainingPa: 0 } 
+        } 
+      };
+
+      redisService.getJson
+        .mockResolvedValueOnce(stateWithPa as any)
+        .mockResolvedValueOnce(stateWithoutPa as any);
       (gameEngine.isInRange as jest.Mock).mockReturnValue(true);
 
-      // We bypass the 1.5s delay by mocking handleTurnStarted flow if needed, 
-      // but here we'll just test the makeMove logic which is called internally.
-      // @ts-ignore - access private method for testing
+      // @ts-ignore
       await service.makeMove(sessionId, botId);
 
       expect(turnService.forcePlayAction).toHaveBeenCalledWith(
@@ -131,7 +141,19 @@ describe('BotService', () => {
           },
         } as unknown as CombatState;
   
-        redisService.getJson.mockResolvedValue(mockState);
+        // Simuler la consommation de PM
+        const stateWithPm = { ...mockState };
+        const stateWithoutPm = { 
+            ...mockState, 
+            players: { 
+              ...mockState.players, 
+              [botId]: { ...mockState.players[botId], remainingPm: 0 } 
+            } 
+        };
+
+        redisService.getJson
+            .mockResolvedValueOnce(stateWithPm as any)
+            .mockResolvedValueOnce(stateWithoutPm as any);
         (gameEngine.isInRange as jest.Mock).mockReturnValue(false);
   
         // @ts-ignore
@@ -166,7 +188,20 @@ describe('BotService', () => {
           },
         } as unknown as CombatState;
 
-        redisService.getJson.mockResolvedValue(mockState);
+        // Important : On doit vider les PM au 2ème appel pour arrêter la récursion du test
+        const stateWithPm = { ...mockState };
+        const stateWithoutPm = { 
+            ...mockState, 
+            players: { 
+                ...mockState.players, 
+                [botId]: { ...mockState.players[botId], remainingPm: 0 } 
+            } 
+        };
+
+        redisService.getJson
+            .mockResolvedValueOnce(stateWithPm as any)
+            .mockResolvedValueOnce(stateWithoutPm as any);
+
         const spy = jest.spyOn(service as any, 'makeMove');
 
         // @ts-ignore
