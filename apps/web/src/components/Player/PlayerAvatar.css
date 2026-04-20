@@ -1,0 +1,54 @@
+.player-avatar-root {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-sprite-img {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  background-size: 1600px auto; /* 16 skins horizontalement */
+  background-position: -98px -88px; /* Centrage exact selon le sprite sheet soldier/orc */
+}
+
+/* Animations ORC */
+.avatar-sprite-img.type-orc {
+  background-image: url('/assets/sprites/orc/idle.png');
+  background-position: -123% -110%; /* Ajuste selon ton sprite-sheet */
+}
+
+.avatar-sprite-img.type-orc.anim-idle {
+  background-image: url('/assets/sprites/orc/idle.png');
+  animation: portrait-steps-orc 0.8s steps(6) infinite;
+}
+
+/* Animations SOLDIER */
+.avatar-sprite-img.type-soldier {
+  background-image: url('/assets/sprites/soldier/idle.png');
+  background-position: -123% -110%;
+}
+
+.avatar-sprite-img.type-soldier.anim-idle {
+  background-image: url('/assets/sprites/soldier/idle.png');
+  animation: portrait-steps-soldier 0.8s steps(6) infinite;
+}
+
+/* On utilise le même calcul que dans CombatHUD pour la fluidité */
+@keyframes portrait-steps-orc {
+  from { background-position-x: -98px; }
+  to { background-position-x: -1698px; }
+}
+
+@keyframes portrait-steps-soldier {
+  from { background-position-x: -98px; }
+  to { background-position-x: -1698px; }
+}
+
+/* Support pour d'autres animations si besoin à l'avenir */
+.avatar-sprite-img.anim-walk.type-soldier { background-image: url('/assets/sprites/soldier/walk.png'); }
+.avatar-sprite-img.anim-attack.type-soldier { background-image: url('/assets/sprites/soldier/attack.png'); }
