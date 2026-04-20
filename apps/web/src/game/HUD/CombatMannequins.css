@@ -1,0 +1,165 @@
+.combat-mannequins-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 500;
+}
+
+<<<<<<< HEAD
+=======
+.toggle-mannequins-btn {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  padding: 8px 20px;
+  border-radius: 30px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+
+.toggle-mannequins-btn:hover {
+  background: rgba(30, 41, 59, 1);
+  border-color: #fbbf24;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+>>>>>>> b7acecf (test(api): fix GameSessionService tests and update HUD UI)
+.combat-mannequin-panel {
+  position: absolute;
+  width: 220px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 14px;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  backdrop-filter: blur(12px);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 1000; /* On top of other UI elements when open */
+}
+
+.combat-mannequin-panel.left {
+  top: 240px; /* Below the player portrait block */
+  left: 30px;
+}
+
+.combat-mannequin-panel.right {
+  top: 40px; /* Top right is usually free */
+  right: 30px;
+}
+
+<<<<<<< HEAD
+=======
+.combat-mannequin-panel.minimized.left {
+  transform: translateX(-120%) scale(0.9);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.combat-mannequin-panel.minimized.right {
+  transform: translateX(120%) scale(0.9);
+  opacity: 0;
+  pointer-events: none;
+}
+
+>>>>>>> b7acecf (test(api): fix GameSessionService tests and update HUD UI)
+.mannequin-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.portrait-mini {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-size: cover;
+  background-color: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.mannequin-header span {
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.mannequin-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.mannequin-items::-webkit-scrollbar {
+  width: 4px;
+}
+
+.mannequin-items::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.mannequin-item {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mannequin-item.empty {
+  color: #64748b;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Ranks colors (sync with inventory) */
+.mannequin-item.rank-1 { border-left: 3px solid #94a3b8; }
+.mannequin-item.rank-2 { border-left: 3px solid #22c55e; }
+.mannequin-item.rank-3 { border-left: 3px solid #3b82f6; }
+.mannequin-item.rank-4 { border-left: 3px solid #a855f7; }
+.mannequin-item.rank-5 { border-left: 3px solid #ef4444; }
+.mannequin-item.rank-6 { border-left: 3px solid #eab308; }
+
+.mannequin-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.mannequin-stats span {
+  display: flex;
+  justify-content: space-between;
+}

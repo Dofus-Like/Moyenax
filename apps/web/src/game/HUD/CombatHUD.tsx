@@ -6,6 +6,7 @@ import { useGameSession } from '../../pages/GameTunnel';
 import { combatApi } from '../../api/combat.api';
 import { CombatActionType, SpellFamily } from '@game/shared-types';
 import { getSkinById } from '../../game/constants/skins';
+import { CombatPlayerPanel } from './CombatPlayerPanel';
 import './CombatHUD.css';
 
 const SPELL_FAMILY_ORDER: Record<SpellFamily, number> = {
@@ -45,6 +46,8 @@ export function CombatHUD() {
   const winnerId = useCombatStore((s) => s.winnerId);
   const showEnemyHp = useCombatStore((s) => s.showEnemyHp);
   const toggleShowEnemyHp = useCombatStore((s) => s.toggleShowEnemyHp);
+  const showMannequins = useCombatStore((s) => s.showMannequins);
+  const toggleShowMannequins = useCombatStore((s) => s.toggleShowMannequins);
   const surrender = useCombatStore((s) => s.surrender);
   const disconnect = useCombatStore((s) => s.disconnect);
   const uiMessage = useCombatStore((s) => s.uiMessage);
@@ -55,6 +58,7 @@ export function CombatHUD() {
   const { activeSession } = useGameSession();
 
   const currentPlayer = (combatState && user) ? combatState.players[user.id] : null;
+  const enemyId = combatState && user ? Object.keys(combatState.players).find(id => id !== user.id) : null;
   const isMyTurn = (combatState && user) ? combatState.currentTurnPlayerId === user.id : false;
 
   const skinConfig = React.useMemo(() => {
@@ -144,62 +148,8 @@ export function CombatHUD() {
         </div>
       )}
 
-      {/* TOP LEFT: PORTRAIT & STATS */}
-      <div className="hud-character-block">
-        <div className="hud-portrait-container">
-          <div className="portrait-badge-wrapper">
-            <div className={`portrait-circle ${isMyTurn ? 'is-my-turn' : 'not-my-turn'}`}>
-               <div 
-                className={`portrait-image avatar-${avatarClass}`}
-                style={{ filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` }}
-               />
-            </div>
-            <div className="avatar-resources-group">
-              <div className="res-item">
-                <div className="res-circle pa">{currentPlayer.remainingPa}</div>
-                <span className="res-label-mini">PA</span>
-              </div>
-              <div className="res-item">
-                <div className="res-circle pm">{currentPlayer.remainingPm}</div>
-                <span className="res-label-mini">PM</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="stats-info">
-            <span className="username">{user.username}</span>
-            <div className="hp-bar-container">
-              <div className="hp-bar-fill" style={{ width: `${Math.max(0, hpPercent)}%` }} />
-            </div>
-            
-            <div className="hud-combined-stats">
-              <span className="hp-text">{currentPlayer.currentVit} / {currentPlayer.stats.vit} PV</span>
-            </div>
-          </div>
-
-          {(isMyTurn || isClosing) && (
-            <button 
-              className={`btn-end-turn-compact my-turn ${isClosing ? 'closing' : ''}`}
-              onClick={handleEndTurn}
-            >
-              FIN DE TOUR
-            </button>
-          )}
-        </div>
-
-        <div className="actions-row">
-            <button className="surrender-button" onClick={() => surrender()} title="Abandonner">
-                QUITTER LE COMBAT
-            </button>
-            <button 
-              className={`toggle-hp-button ${showEnemyHp ? 'active' : ''}`} 
-              onClick={() => toggleShowEnemyHp()}
-              title={showEnemyHp ? "Cacher les HP (afficher au survol)" : "Toujours afficher les HP"}
-            >
-              👁
-            </button>
-        </div>
-      </div>
+      <CombatPlayerPanel playerId={user.id} side="left" />
+      {enemyId && <CombatPlayerPanel playerId={enemyId} side="right" />}
 
       {/* BOTTOM CENTER: SPELLS */}
       <div className="hud-bottom-anchor">

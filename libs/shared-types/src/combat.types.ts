@@ -83,6 +83,7 @@ export interface CombatPlayer {
   spellCooldowns: Record<string, number>;
   buffs: Buff[];
   skin?: string;
+  items?: any[];
 }
 
 export enum CombatActionType {

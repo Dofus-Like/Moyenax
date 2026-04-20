@@ -7,6 +7,8 @@ import { PlayerSpellProjectionService } from '../../player/player-spell-projecti
 import { StatsCalculatorService } from '../../player/stats-calculator.service';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 import { GameSessionService } from '../../game-session/game-session.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GAME_EVENTS } from '@game/shared-types';
 
 @Injectable()
 export class EquipmentService {
@@ -16,6 +18,7 @@ export class EquipmentService {
     private readonly playerSpellProjection: PlayerSpellProjectionService,
     private readonly perfLogger: PerfLoggerService,
     private readonly gameSession: GameSessionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async getEquipment(playerId: string) {
@@ -95,6 +98,7 @@ export class EquipmentService {
         },
       });
 
+      this.eventEmitter.emit(GAME_EVENTS.ITEM_EQUIPPED, { playerId, inventoryItemId, slot });
       return this.updatePlayerStatsAndSpells(playerId);
     }
 
@@ -141,6 +145,7 @@ export class EquipmentService {
       },
     });
 
+    this.eventEmitter.emit(GAME_EVENTS.ITEM_EQUIPPED, { playerId, inventoryItemId, slot });
     return this.updatePlayerStatsAndSpells(playerId);
   }
 
@@ -155,6 +160,7 @@ export class EquipmentService {
       },
     });
 
+    this.eventEmitter.emit(GAME_EVENTS.ITEM_UNEQUIPPED, { playerId, slot });
     return this.updatePlayerStatsAndSpells(playerId);
   }
 
@@ -187,6 +193,8 @@ export class EquipmentService {
       player_id: playerId,
       spell_count: playerSpellsData.length,
     });
+
+    this.eventEmitter.emit(GAME_EVENTS.SPELLS_CHANGED, { playerId, spellsDecks: playerSpellsData });
 
     return equipment;
   }

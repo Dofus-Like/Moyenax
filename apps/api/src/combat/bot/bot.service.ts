@@ -1,7 +1,7 @@
 // Bot service for handles AI turns
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { GAME_EVENTS, CombatState, CombatActionType } from '@game/shared-types';
+import { GAME_EVENTS, CombatState, CombatActionType, TerrainType, GameMap, findPathToAdjacent } from '@game/shared-types';
 import { TurnService } from '../turn/turn.service';
 import { isInRange } from '@game/game-engine';
 import { RedisService } from '../../shared/redis/redis.service';
@@ -25,8 +25,8 @@ export class BotService {
 
     console.log(`[BotService] Bot ${player.username} is thinking... (Session: ${sessionId})`);
     
-    // Petit délai pour simuler la réflexion
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Délai réduit pour la première action car le bot est réactif
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
       await this.makeMove(sessionId, playerId);
@@ -41,7 +41,7 @@ export class BotService {
     }
   }
 
-  private async makeMove(sessionId: string, botId: string): Promise<void> {
+  private async makeMove(sessionId: string, botId: string, afterMove = false): Promise<void> {
     const state = await this.redis.getJson<CombatState>(`combat:${sessionId}`);
     if (!state) return;
 
@@ -56,9 +56,17 @@ export class BotService {
     }
 
     // 1. Tenter de lancer un sort si à portée
-    const spell = bot.spells[0]; // On prend le premier (Frappe par défaut)
+    const spell = bot.spells[0];
     if (spell && bot.remainingPa >= spell.paCost) {
         if (isInRange(bot.position, enemy.position, spell.minRange, spell.maxRange)) {
+            // Si on vient de se déplacer, on attend un peu que l'animation de fin de course se termine
+            if (afterMove) {
+              await new Promise(resolve => setTimeout(resolve, 600));
+            }
+            
+            // Petite pause avant de lancer le sort pour simuler l'incantation/visée
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
             console.log(`[BotService] Bot casting ${spell.name} on ${enemy.username}`);
             await this.turnService.forcePlayAction(sessionId, botId, {
                 type: CombatActionType.CAST_SPELL,
@@ -66,44 +74,58 @@ export class BotService {
                 targetX: enemy.position.x,
                 targetY: enemy.position.y
             });
-            // Récursif pour vider les PA si possible
-            return this.makeMove(sessionId, botId);
+            // Délai après l'attaque pour laisser les animations se jouer
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Récursif pour vider les PA si possible (pas considéré comme un move)
+            return this.makeMove(sessionId, botId, false);
         }
     }
 
     // 2. Sinon, se rapprocher si PM > 0
     if (bot.remainingPm > 0) {
-        const dx = enemy.position.x - bot.position.x;
-        const dy = enemy.position.y - bot.position.y;
-        
-        // Si déjà adjacent, on ne bouge plus (sauf si on veut s'échapper, mais ici c'est un bot basique)
-        const dist = Math.abs(dx) + Math.abs(dy);
-        if (dist > 1) {
-            let targetX = bot.position.x;
-            let targetY = bot.position.y;
+        // ... (Building gameMap and occupiedSet)
+        const grid = Array.from({ length: state.map.height }, () => 
+            Array(state.map.width).fill(TerrainType.GROUND)
+        );
+        state.map.tiles.forEach(t => {
+            if (grid[t.y]) grid[t.y][t.x] = t.type;
+        });
+        const gameMap: GameMap = {
+            width: state.map.width,
+            height: state.map.height,
+            grid,
+            seedId: 'FORGE'
+        };
 
-            if (Math.abs(dx) > Math.abs(dy)) {
-                targetX += Math.sign(dx);
-            } else {
-                targetY += Math.sign(dy);
+        const occupiedSet = new Set<string>();
+        Object.values(state.players).forEach(p => {
+            if (p.playerId !== botId) {
+                occupiedSet.add(`${p.position.x},${p.position.y}`);
             }
+        });
 
-            console.log(`[BotService] Bot moving from ${bot.position.x},${bot.position.y} to ${targetX},${targetY}`);
+        const path = findPathToAdjacent(gameMap, bot.position, enemy.position, occupiedSet);
+        
+        if (path && path.length > 0) {
+            const nextStep = path[0];
+            
             try {
                 await this.turnService.forcePlayAction(sessionId, botId, {
                     type: CombatActionType.MOVE,
-                    targetX,
-                    targetY
+                    targetX: nextStep.x,
+                    targetY: nextStep.y
                 });
-                return this.makeMove(sessionId, botId);
-            } catch {
-                console.log(`[BotService] Bot move blocked at ${targetX},${targetY}.`);
+                // On repart immédiatement pour le prochain pas (pas de délai ici pour la fluidité)
+                return this.makeMove(sessionId, botId, true);
+            } catch (e) {
+                console.log(`[BotService] Bot pathfinding move blocked:`, e);
             }
         }
     }
 
     // 3. Fin du tour
     console.log(`[BotService] Bot ending turn.`);
+    await new Promise(resolve => setTimeout(resolve, 500));
     await this.turnService.forcePlayAction(sessionId, botId, { type: CombatActionType.END_TURN });
   }
 }

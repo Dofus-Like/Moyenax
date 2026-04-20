@@ -57,13 +57,15 @@ interface CombatStore {
   lastHealEvent: HealEvent | null;
   lastJumpEvent: JumpEvent | null;
   winnerId: string | null;
-  showEnemyHp: boolean;
+   showEnemyHp: boolean;
+  showMannequins: boolean;
   uiMessage: UiMessage | null;
   _currentConnectionId: string | null;
 
   setCombatState: (state: CombatState) => void;
   setSelectedSpell: (spellId: string | null) => void;
   toggleShowEnemyHp: () => void;
+  toggleShowMannequins: () => void;
   connectToSession: (sessionId: string) => Promise<void>;
   disconnect: () => void;
   addLog: (message: string, type: CombatLog['type']) => void;
@@ -105,10 +107,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   lastJumpEvent: null,
   winnerId: null,
   showEnemyHp: true,
+  showMannequins: true,
   uiMessage: null,
   _currentConnectionId: null,
 
   toggleShowEnemyHp: () => set((state) => ({ showEnemyHp: !state.showEnemyHp })),
+  toggleShowMannequins: () => set((state) => ({ showMannequins: !state.showMannequins })),
 
   setCombatState: (state: CombatState) => {
     set({

@@ -263,6 +263,11 @@ export class TurnService {
 
               this.sse.emit(state.sessionId, 'COMBAT_ENDED', { winnerId, loserId });
               
+              this.eventEmitter.emit(GAME_EVENTS.COMBAT_PLAYER_DIED, {
+                  sessionId: state.sessionId,
+                  playerId: loserId,
+              });
+              
               // Notifier l'équipe A (Prisma, etc.)
               this.eventEmitter.emit(GAME_EVENTS.COMBAT_ENDED, {
                   sessionId: state.sessionId,

@@ -186,6 +186,7 @@ export class SessionService {
           spellCooldowns: {},
           buffs: [],
           skin: p1?.skin || 'soldier-classic',
+          items: loadoutP1.items,
         },
         [session.player2Id]: {
           playerId: session.player2Id,
@@ -200,6 +201,7 @@ export class SessionService {
           spellCooldowns: {},
           buffs: [],
           skin: p2?.skin || 'soldier-classic',
+          items: loadoutP2.items,
         },
       },
       map: {

@@ -9,6 +9,7 @@ import { RedisService } from '../shared/redis/redis.service';
 import { SessionSecurityService } from '../shared/security/session-security.service';
 import { SseTicketService } from '../shared/security/sse-ticket.service';
 import { SseService } from '../shared/sse/sse.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class GameSessionService {
@@ -21,6 +22,7 @@ export class GameSessionService {
     private readonly sseTickets: SseTicketService,
     private readonly statsCalculator: StatsCalculatorService,
     private readonly playerSpellProjection: PlayerSpellProjectionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createSession(
@@ -43,8 +45,7 @@ export class GameSessionService {
       const { ALL_SEED_IDS } = await import('@game/shared-types');
       const mapSeedId = ALL_SEED_IDS[Math.floor(Math.random() * ALL_SEED_IDS.length)];
       const mapSeed = Math.floor(Math.random() * 1000000);
-
-      return await (this.prisma as any).gameSession.create({
+      const session = await (this.prisma as any).gameSession.create({
         data: {
           player1Id,
           player2Id,
@@ -66,6 +67,14 @@ export class GameSessionService {
           },
         },
       });
+
+      this.eventEmitter.emit(GAME_EVENTS.SESSION_CREATED, {
+        sessionId: session.id,
+        player1Id: session.player1Id,
+        player2Id: session.player2Id,
+      });
+
+      return session;
     } catch (error) {
       if (
         typeof error === 'object' &&

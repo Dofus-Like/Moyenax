@@ -87,13 +87,21 @@ describe('PlayerSpellProjectionService', () => {
     },
     spell: {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
     },
     playerSpell: {
       findMany: jest.fn(),
       deleteMany: jest.fn(),
       createMany: jest.fn(),
     },
+    itemGrantedSpell: {
+        findMany: jest.fn(),
+    },
     $transaction: jest.fn(),
+  };
+
+  const spellResolver = {
+    resolveSpells: jest.fn(),
   };
 
   let service: PlayerSpellProjectionService;
@@ -101,31 +109,19 @@ describe('PlayerSpellProjectionService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.$transaction.mockImplementation(async (operations: any[]) => Promise.all(operations));
-    service = new PlayerSpellProjectionService(prisma as any);
+    service = new PlayerSpellProjectionService(prisma as any, spellResolver as any);
   });
 
-  it('assigns Claque by default to an unequipped player', async () => {
+  it('assigns spells using the spellResolver', async () => {
     prisma.equipmentSlot.findMany.mockResolvedValue([]);
     prisma.spell.findMany.mockResolvedValue([defaultSpell]);
+    prisma.itemGrantedSpell.findMany.mockResolvedValue([]);
+    
+    spellResolver.resolveSpells.mockReturnValue({
+        'spell-claque-id': 1
+    });
 
     await expect(service.buildPlayerSpellAssignments('player-1')).resolves.toEqual([
-      { playerId: 'player-1', spellId: 'spell-claque-id', level: 1 },
-    ]);
-  });
-
-  it('assigns Claque plus warrior ring spells when the ring is equipped', async () => {
-    prisma.equipmentSlot.findMany.mockResolvedValue([
-      {
-        inventoryItem: { itemId: 'ring-warrior' },
-        sessionItem: null,
-      },
-    ]);
-    prisma.spell.findMany.mockResolvedValue([defaultSpell, ...warriorSpellRows]);
-
-    await expect(service.buildPlayerSpellAssignments('player-1')).resolves.toEqual([
-      { playerId: 'player-1', spellId: 'spell-frappe-id', level: 1 },
-      { playerId: 'player-1', spellId: 'spell-bond-id', level: 1 },
-      { playerId: 'player-1', spellId: 'spell-endurance-id', level: 1 },
       { playerId: 'player-1', spellId: 'spell-claque-id', level: 1 },
     ]);
   });
@@ -141,7 +137,7 @@ describe('PlayerSpellProjectionService', () => {
         id: 'spell-bond',
         code: 'spell-bond',
         name: 'Bond',
-        description: 'Une gifle universelle.',
+        description: 'Une gifle universelle.', // In our mock it inherits from defaultSpell
         paCost: 4,
         minRange: 1,
         maxRange: 4,

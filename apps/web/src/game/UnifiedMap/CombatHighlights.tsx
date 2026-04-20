@@ -1,4 +1,5 @@
 import React from 'react';
+import { COMBAT_COLORS } from '../constants/colors';
 
 interface CombatHighlightProps {
   x: number;
@@ -15,10 +16,10 @@ export const CombatHighlight = React.memo(({ x, y, gridSize, type }: CombatHighl
     return (
       <mesh position={[worldX, 0.03, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[0.92, 0.92]} />
-        <meshBasicMaterial color="#ef4444" transparent opacity={0.4} />
+        <meshBasicMaterial color={COMBAT_COLORS.HP_RED} transparent opacity={0.4} />
         <mesh position={[0, 0, 0]}>
           <ringGeometry args={[0.4, 0.45, 16]} />
-          <meshBasicMaterial color="#ef4444" transparent opacity={0.8} />
+          <meshBasicMaterial color={COMBAT_COLORS.HP_RED} transparent opacity={0.8} />
         </mesh>
       </mesh>
     );
@@ -27,7 +28,7 @@ export const CombatHighlight = React.memo(({ x, y, gridSize, type }: CombatHighl
   return (
     <mesh position={[worldX, 0.015, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[0.92, 0.92]} />
-      <meshBasicMaterial color="#3b82f6" transparent opacity={0.3} />
+      <meshBasicMaterial color={COMBAT_COLORS.PM_VIOLET} transparent opacity={0.3} />
     </mesh>
   );
 });
@@ -49,13 +50,16 @@ export const CombatHighlightsLayer = React.memo(({ reachableTiles, spellRangeTil
         <CombatHighlight key={`spell-${t.x}-${t.y}`} x={t.x} y={t.y} gridSize={gridSize} type="spell-range" />
       ))}
       {pathTarget && (
-        <mesh 
-          position={[pathTarget.x - gridSize / 2 + 0.5, 0.02, pathTarget.y - gridSize / 2 + 0.5]} 
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
-          <circleGeometry args={[0.3, 16]} />
-          <meshBasicMaterial color="#22c55e" transparent opacity={0.6} />
-        </mesh>
+        <group position={[pathTarget.x - gridSize / 2 + 0.5, 0.04, pathTarget.y - gridSize / 2 + 0.5]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.35, 32]} />
+            <meshBasicMaterial color={COMBAT_COLORS.PA_YELLOW} transparent opacity={0.8} />
+          </mesh>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+            <ringGeometry args={[0.35, 0.42, 32]} />
+            <meshBasicMaterial color="white" transparent opacity={0.5} />
+          </mesh>
+        </group>
       )}
     </group>
   );

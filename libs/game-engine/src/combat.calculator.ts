@@ -104,25 +104,60 @@ export function canMoveTo(
   tiles: Tile[],
   occupiedPositions: CombatPosition[]
 ): boolean {
-  const distance = Math.abs(to.x - currentPosition.x) + Math.abs(to.y - currentPosition.y);
-  if (distance === 0 || distance > remainingPm) {
-    console.log(`[canMoveTo] Failed: dist=${distance}, pm=${remainingPm}`);
-    return false;
-  }
+  if (currentPosition.x === to.x && currentPosition.y === to.y) return false;
+
+  const isOccupied = occupiedPositions.some(p => p.x === to.x && p.y === to.y);
+  if (isOccupied) return false;
 
   const targetTile = tiles.find(t => t.x === to.x && t.y === to.y);
   if (!targetTile || !TERRAIN_PROPERTIES[targetTile.type as TerrainType].traversable) {
-    console.log(`[canMoveTo] Failed: targetTile=${targetTile?.type}, traversable=${targetTile ? TERRAIN_PROPERTIES[targetTile.type as TerrainType].traversable : 'N/A'}`);
     return false;
   }
 
-  const isOccupied = occupiedPositions.some(p => p.x === to.x && p.y === to.y);
-  if (isOccupied) {
-    console.log(`[canMoveTo] Failed: occupied at ${to.x},${to.y}`);
-    return false;
+  // Distance naïve pour s'épargner un BFS si c'est de toute façon trop loin
+  const manhattanDistance = Math.abs(to.x - currentPosition.x) + Math.abs(to.y - currentPosition.y);
+  if (manhattanDistance > remainingPm) return false;
+
+  // BFS pour trouver s'il existe un chemin qui évite les obstacles (murs, menhirs, autres joueurs)
+  const queue: { x: number, y: number, dist: number }[] = [{ x: currentPosition.x, y: currentPosition.y, dist: 0 }];
+  const visited = new Set<string>();
+  visited.add(`${currentPosition.x},${currentPosition.y}`);
+
+  const directions = [
+    { dx: 1, dy: 0 },
+    { dx: -1, dy: 0 },
+    { dx: 0, dy: 1 },
+    { dx: 0, dy: -1 }
+  ];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+
+    if (current.x === to.x && current.y === to.y) return true;
+
+    if (current.dist === remainingPm) continue;
+
+    for (const dir of directions) {
+      const nx = current.x + dir.dx;
+      const ny = current.y + dir.dy;
+      const key = `${nx},${ny}`;
+
+      if (visited.has(key)) continue;
+
+      const tile = tiles.find(t => t.x === nx && t.y === ny);
+      if (!tile || !TERRAIN_PROPERTIES[tile.type as TerrainType].traversable) continue;
+
+      // Un joueur ne peut pas traverser un autre joueur, donc on vérifie s'il y a qqn.
+      // Sauf si on est sur la case d'arrivée, ce qu'on a déjà validé au début.
+      const occ = occupiedPositions.some(p => p.x === nx && p.y === ny);
+      if (occ && (nx !== to.x || ny !== to.y)) continue;
+
+      visited.add(key);
+      queue.push({ x: nx, y: ny, dist: current.dist + 1 });
+    }
   }
 
-  return true;
+  return false;
 }
 
 /**

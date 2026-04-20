@@ -309,7 +309,12 @@ export const UnifiedMapScene = React.memo(
         }
 
         targetPositionsRef.current[player.playerId] = player.position;
-        const path = findPath(gameMap, visualPosition, player.position);
+        
+        // On exclut la position cible du joueur lui-même pour que le pathfinder accepte d'y aller
+        const filteredOccupied = new Set(occupiedPositionSet);
+        filteredOccupied.delete(toPositionKey(player.position.x, player.position.y));
+        
+        const path = findPath(gameMap, visualPosition, player.position, filteredOccupied);
 
         if (path && path.length > 0) {
           newPaths[player.playerId] = path;
@@ -375,8 +380,7 @@ export const UnifiedMapScene = React.memo(
             next.x < 0 ||
             next.x >= gameMap.width ||
             next.y < 0 ||
-            next.y >= gameMap.height ||
-            visited.has(key)
+            next.y >= gameMap.height
           ) {
             continue;
           }
@@ -387,8 +391,32 @@ export const UnifiedMapScene = React.memo(
           const isOccupied = !isCurrentPlayerTile && occupiedPositionSet.has(key);
 
           if (tile && TERRAIN_PROPERTIES[tile.type].traversable && !isOccupied) {
-            visited.add(key);
-            queue.push({ ...next, dist: current.dist + 1 });
+            if (!visited.has(key)) {
+              visited.add(key);
+              queue.push({ ...next, dist: current.dist + 1 });
+            }
+          }
+
+          if (tile && TERRAIN_PROPERTIES[tile.type].jumpable) {
+            const jumpNext = { x: current.x + direction.x * 2, y: current.y + direction.y * 2 };
+            const jumpKey = toPositionKey(jumpNext.x, jumpNext.y);
+
+            if (
+              jumpNext.x >= 0 &&
+              jumpNext.x < gameMap.width &&
+              jumpNext.y >= 0 &&
+              jumpNext.y < gameMap.height
+            ) {
+              const jumpTile = tileIndex.get(jumpKey);
+              const isJumpOccupied = occupiedPositionSet.has(jumpKey);
+
+              if (jumpTile && TERRAIN_PROPERTIES[jumpTile.type].traversable && !isJumpOccupied) {
+                if (!visited.has(jumpKey)) {
+                  visited.add(jumpKey);
+                  queue.push({ ...jumpNext, dist: current.dist + 1 });
+                }
+              }
+            }
           }
         }
       }
@@ -414,7 +442,11 @@ export const UnifiedMapScene = React.memo(
 
       if (!closestTile) return [];
 
-      return findPath(gameMap, currentPlayer.position, closestTile) ?? [];
+      // Pour la preview du trajet, on exclut le joueur local du set d'obstacles pour ne pas bloquer le point de départ
+      const obstacles = new Set(occupiedPositionSet);
+      if (currentUserId) obstacles.delete(toPositionKey(currentPlayer.position.x, currentPlayer.position.y));
+
+      return findPath(gameMap, currentPlayer.position, closestTile, obstacles) ?? [];
     }, [currentPlayer, gameMap, hoveredTile, isMyTurn, mode, reachableTiles, selectedSpellId]);
 
     const spellRangeTiles = useMemo(() => {

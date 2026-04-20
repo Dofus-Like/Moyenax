@@ -14,6 +14,7 @@ import {
   SpellVisualType,
 } from '@game/shared-types';
 import { PrismaService } from '../shared/prisma/prisma.service';
+import { SpellResolverService } from './spell-resolver.service';
 
 type SpellRow = {
   id: string;
@@ -39,17 +40,29 @@ type SpellRow = {
 
 @Injectable()
 export class PlayerSpellProjectionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly spellResolver: SpellResolverService,
+  ) {}
 
   async buildPlayerSpellAssignments(playerId: string) {
     const projectedSpells = await this.getProjectedSpellRows(playerId);
+    
+    // Pour T4.4.4 (Comptage de sources), on va avoir besoin des sources brutes
+    const sources = await this.getSpellSources(playerId);
 
-    return projectedSpells.map((spell) => ({
-      playerId,
-      spellId: spell.id,
-      level: 1,
-    }));
+    return projectedSpells.map((spell) => {
+      const level = Math.min(3, sources[spell.id] || 1);
+      return {
+        playerId,
+        spellId: spell.id,
+        level,
+      };
+    });
   }
+
+
+
 
   async syncPlayerSpells(playerId: string) {
     const assignments = await this.buildPlayerSpellAssignments(playerId);
@@ -91,44 +104,41 @@ export class PlayerSpellProjectionService {
   }
 
   private async getProjectedSpellRows(playerId: string): Promise<SpellRow[]> {
+    const sources = await this.getSpellSources(playerId);
+    const spellIds = Object.keys(sources);
+
+    if (spellIds.length === 0) return [];
+
+    const projectedSpells = await this.prisma.spell.findMany({ 
+      where: { id: { in: spellIds } } 
+    });
+    
+    return projectedSpells.sort((left, right) => this.compareSpellRows(left, right));
+  }
+
+  private async getSpellSources(playerId: string): Promise<Record<string, number>> {
     const equippedSlots = await this.prisma.equipmentSlot.findMany({
       where: {
         playerId,
         OR: [{ inventoryItemId: { not: null } }, { sessionItemId: { not: null } }],
       },
-      select: {
-        inventoryItem: { select: { itemId: true } },
-        sessionItem: { select: { itemId: true } },
+      include: {
+        inventoryItem: { include: { item: true } },
+        sessionItem: { include: { item: true } },
       },
     });
 
-    const itemIds = [
-      ...new Set(
-        equippedSlots
-          .map((slot) => slot.inventoryItem?.itemId ?? slot.sessionItem?.itemId ?? null)
-          .filter((itemId): itemId is string => itemId !== null),
-      ),
-    ];
+    const equippedItems = equippedSlots
+      .map((slot) => slot.inventoryItem?.item ?? slot.sessionItem?.item ?? null)
+      .filter((item): item is NonNullable<typeof item> => item !== null);
 
-    const where: Prisma.SpellWhereInput = {
-      OR: [
-        { isDefault: true },
-        ...(itemIds.length > 0
-          ? [
-              {
-                grantedByItems: {
-                  some: {
-                    itemId: { in: itemIds },
-                  },
-                },
-              },
-            ]
-          : []),
-      ],
-    };
+    const [defaultSpells, grants, allSpells] = await Promise.all([
+      this.prisma.spell.findMany({ where: { isDefault: true } }),
+      this.prisma.itemGrantedSpell.findMany(),
+      this.prisma.spell.findMany()
+    ]);
 
-    const projectedSpells = await this.prisma.spell.findMany({ where });
-    return projectedSpells.sort((left, right) => this.compareSpellRows(left, right));
+    return this.spellResolver.resolveSpells(equippedItems as any, defaultSpells, grants, allSpells);
   }
 
   private compareSpellRows(left: Pick<SpellRow, 'sortOrder' | 'name' | 'code'>, right: Pick<SpellRow, 'sortOrder' | 'name' | 'code'>) {

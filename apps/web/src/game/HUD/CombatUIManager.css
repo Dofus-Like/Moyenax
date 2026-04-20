@@ -1,0 +1,303 @@
+.combat-ui-manager {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  font-family: 'Inter', sans-serif;
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.5rem;
+}
+
+.combat-ui-manager * {
+  pointer-events: auto;
+}
+
+/* --- TOP ZONE --- */
+.ui-top-zone {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.ui-player-corner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.portrait-block {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 0.75rem 1.5rem 0.75rem 0.75rem;
+  border-radius: 60px 12px 12px 60px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.portrait-circle {
+  width: 70px;
+  height: 70px;
+  background: #1e293b;
+  border-radius: 50%;
+  border: 3px solid #64748b;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.4s;
+}
+
+.portrait-circle.active {
+  border-color: #fbbf24;
+  box-shadow: 0 0 25px rgba(251, 191, 36, 0.4);
+}
+
+.portrait-img {
+  width: 100%;
+  height: 100%;
+  background-size: 1400px auto; 
+  background-position: -86px -77px;
+  image-rendering: pixelated;
+}
+
+.avatar-orc { background-image: url('/assets/sprites/orc/idle.png'); animation: idle-orc 0.8s steps(6) infinite; }
+.avatar-soldier { background-image: url('/assets/sprites/soldier/idle.png'); animation: idle-soldier 0.8s steps(6) infinite; }
+
+@keyframes idle-orc { from { background-position-x: -86px; } to { background-position-x: -1486px; } }
+@keyframes idle-soldier { from { background-position-x: -80px; } to { background-position-x: -1480px; } }
+
+.portrait-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-name {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 0.8rem;
+}
+
+.hp-bar-bg {
+  width: 140px;
+  height: 6px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ef4444, #f87171);
+  transition: width 0.4s;
+}
+
+.res-row {
+  display: flex;
+  gap: 10px;
+}
+
+.res-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.res-badge.pa { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+.res-badge.pm { color: #a855f7; background: rgba(168, 85, 247, 0.1); }
+
+.btn-end-turn {
+  width: 70px;
+  height: 70px;
+  border: 3px solid #fbbf24;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fbbf24;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s;
+  animation: pulse-gold 2s infinite;
+}
+
+@keyframes pulse-gold {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(251, 191, 36, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+
+/* --- CONTROLS --- */
+.ui-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.ui-controls button {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ui-controls button:hover {
+  background: rgba(30, 41, 59, 1);
+  color: white;
+}
+
+.btn-view.active {
+  color: #fbbf24;
+  border-color: #fbbf24;
+}
+
+.mannequins-control-group {
+  position: relative;
+  display: flex;
+}
+
+.ui-mannequins-layer-embedded {
+  position: absolute; /* Relatif au bouton 'Voir Inventaires' */
+  top: 100%; /* Juste en dessous du bouton */
+  left: 0;
+  width: auto;
+  min-width: 500px;
+  max-width: 90vw;
+  display: flex;
+  gap: 20px;
+  padding-top: 15px;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  transform: translateY(10px);
+  z-index: 50;
+}
+
+.ui-mannequins-layer-embedded.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* --- BOTTOM ZONE --- */
+.ui-bottom-zone {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 2rem;
+}
+
+.spell-bar {
+  display: flex;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.spell-slot {
+  width: 54px;
+  height: 54px;
+  background: #1e293b;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.spell-slot:hover { transform: translateY(-8px) scale(1.1); }
+
+.spell-slot img { width: 42px; height: 42px; object-fit: contain; }
+
+.spell-cost {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.spell-slot.active { border-color: #fbbf24; box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+.spell-slot.disabled { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
+
+/* FILTRES COULEURS SORTS PAR FAMILLE */
+.spell-slot.family-common  { border-bottom: 3px solid #f59e0b; }
+.spell-slot.family-common img { filter: sepia(0.9) saturate(2.2) hue-rotate(-10deg); }
+
+.spell-slot.family-warrior { border-bottom: 3px solid #dc2626; }
+.spell-slot.family-warrior img { filter: sepia(1) saturate(10) hue-rotate(-60deg); }
+
+.spell-slot.family-mage    { border-bottom: 3px solid #3b82f6; }
+.spell-slot.family-mage img { filter: sepia(1) saturate(10) hue-rotate(160deg); }
+
+.spell-slot.family-ninja   { border-bottom: 3px solid #16a34a; }
+.spell-slot.family-ninja img { filter: sepia(1) saturate(10) hue-rotate(60deg); }
+
+/* TOASTS & OVERLAYS */
+.combat-toast {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.9);
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: 800;
+  z-index: 1000;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.combat-end-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(10px);
+}
+
+.end-modal {
+  text-align: center;
+  background: #1e293b;
+  padding: 4rem;
+  border-radius: 24px;
+  border: 2px solid #fbbf24;
+}
+
+.end-modal h1 { font-size: 3rem; margin-bottom: 2rem; }
+.exit-button {
+  background: #fbbf24;
+  color: #1e293b;
+  border: none;
+  padding: 1rem 3rem;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}

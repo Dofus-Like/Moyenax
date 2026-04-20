@@ -3,6 +3,8 @@ export const GAME_EVENTS = {
   ITEM_EQUIPPED: 'player.item.equipped',
   ITEM_UNEQUIPPED: 'player.item.unequipped',
   SPELL_LEARNED: 'player.spell.learned',
+  SPELLS_CHANGED: 'player.spells.changed',
+  SESSION_CREATED: 'game.session.created',
   // Émis par Équipe B, consommés par Équipe A
   COMBAT_ENDED: 'combat.ended',
   COMBAT_PLAYER_DIED: 'combat.player.died',

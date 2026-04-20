@@ -42,11 +42,13 @@ export function findPath(
   map: GameMap,
   start: PathNode,
   end: PathNode,
+  occupiedPositionSet?: Set<string>,
 ): PathNode[] | null {
   if (
     end.x < 0 || end.x >= map.width ||
     end.y < 0 || end.y >= map.height ||
-    !isWalkable(map.grid[end.y][end.x])
+    !isWalkable(map.grid[end.y][end.x]) ||
+    (occupiedPositionSet?.has(`${end.x},${end.y}`))
   ) {
     return null;
   }
@@ -92,6 +94,7 @@ export function findPath(
       if (nx < 0 || nx >= map.width || ny < 0 || ny >= map.height) continue;
       if (closed.has(key(nx, ny))) continue;
       if (!isWalkable(map.grid[ny][nx])) continue;
+      if (occupiedPositionSet?.has(key(nx, ny))) continue;
 
       const g = current.g + 1;
       let h = heuristic({ x: nx, y: ny }, end);
@@ -128,6 +131,7 @@ export function findPathToAdjacent(
   map: GameMap,
   start: PathNode,
   target: PathNode,
+  occupiedPositionSet?: Set<string>,
 ): PathNode[] | null {
   const key = (x: number, y: number) => `${x},${y}`;
   const open: AStarNode[] = [];
@@ -171,6 +175,7 @@ export function findPathToAdjacent(
       if (nx < 0 || nx >= map.width || ny < 0 || ny >= map.height) continue;
       if (closed.has(key(nx, ny))) continue;
       if (!isWalkable(map.grid[ny][nx])) continue;
+      if (occupiedPositionSet?.has(key(nx, ny))) continue;
 
       const g = current.g + 1;
       let h = heuristic({ x: nx, y: ny }, target);

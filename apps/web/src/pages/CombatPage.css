@@ -11,35 +11,86 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: rgba(15, 23, 42, 0.98);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 15px;
+  padding: 10px 20px;
+  background: var(--combat-bg-light);
+  border-bottom: 1px solid var(--combat-border);
   z-index: 1000;
+  backdrop-filter: blur(10px);
 }
 
-.combat-toolbar-back,
-.combat-toolbar-abandon {
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e2e8f0;
-  font-size: 0.85rem;
-  font-weight: 600;
+.combat-toolbar-back {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--combat-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  font-size: 0.8rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: all var(--trans-fast);
 }
 
-.combat-toolbar-abandon {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.5);
-  color: #fecaca;
+.combat-toolbar-back:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .combat-toolbar-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
   flex: 1;
+  text-align: center;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolbar-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all var(--trans-fast);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--combat-border);
+  background: rgba(15, 23, 42, 0.4);
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.toolbar-btn.surrender {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--hp-red-light);
+}
+
+.toolbar-btn.surrender:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--hp-red);
+}
+
+.toolbar-btn.utility.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--turn-active);
+  color: var(--victory-gold);
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 .combat-toolbar-turn {
