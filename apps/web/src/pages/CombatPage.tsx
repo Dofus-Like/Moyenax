@@ -171,7 +171,7 @@ export function CombatPage() {
             camera={{ fov: 30 }}
             onPointerMissed={() => setSelectedSpell(null)}
           >
-            <color attach="background" args={['#0f172a']} />
+            <color attach="background" args={['#87CEEB']} />
             <OrthographicCamera
               makeDefault
               position={[20, 20, 20]}

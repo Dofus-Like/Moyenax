@@ -322,7 +322,11 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
         position={initialWorld}
       >
         {/* HITBOX invisible (laissée pour d'autres clics éventuels) */}
-        <mesh visible={false} position={[0, 0.5, 0]}>
+        <mesh 
+          visible={false} 
+          position={[0, 0.5, 0]}
+          userData={{ type: 'player-pawn', playerId: playerData?.playerId }}
+        >
             <boxGeometry args={[1, 1.5, 1]} />
         </mesh>
 
