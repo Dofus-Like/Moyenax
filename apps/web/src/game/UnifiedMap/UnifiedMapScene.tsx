@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import {
   CombatActionType,
@@ -8,10 +8,12 @@ import {
   TerrainType,
   findPath,
 } from '@game/shared-types';
+import { Castle } from '../ResourceMap/Castle';
 import { ThreeEvent, useThree } from '@react-three/fiber';
 import { canJumpTo, canMoveTo, hasLineOfSight, isInRange } from '@game/game-engine';
 import { useCombatStore } from '../../store/combat.store';
 import { useAuthStore } from '../../store/auth.store';
+import { useControls } from 'leva';
 import { combatApi } from '../../api/combat.api';
 import {
   HoverLayer,
@@ -82,6 +84,7 @@ export const UnifiedMapScene = React.memo(
     const [jumpingPlayers, setJumpingPlayers] = useState<Record<string, boolean>>({});
     const [visualPositions, setVisualPositions] = useState<Record<string, PathNode>>({});
     const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
+    const [hoveredPlayerId, setHoveredPlayerId] = useState<string | null>(null);
     const [mapRotation, setMapRotation] = useState(0);
 
     const visualPositionsRef = useRef<Record<string, PathNode>>({});
@@ -120,6 +123,18 @@ export const UnifiedMapScene = React.memo(
     }, [mode, map, combatState]);
 
     const activeMap = mode === 'combat' ? gameMap : map;
+
+    // Debug controls for the tiles
+    const tileConfig = useControls('Tiles Debug', {
+      checkerColorA: { value: '#deffb3' }, 
+      checkerColorB: { value: '#849a69' },
+      sideColor: { value: '#465138' },
+      tileSize: { value: 0.95, min: 0.8, max: 1.0, step: 0.01 },
+      tileRadius: { value: 0.08, min: 0, max: 0.2, step: 0.01 },
+      pmColor: { value: '#9524f8' },
+      rangeColor: { value: '#fca800' },
+    }, { rendered: mode === 'combat' });
+
     const combatPlayers = useMemo(
       () => (mode === 'combat' && combatState ? Object.values(combatState.players) : []),
       [mode, combatState],
@@ -150,9 +165,19 @@ export const UnifiedMapScene = React.memo(
       const intersects = raycaster.intersectObjects([target], true);
       const tileIntersect = intersects.find(
         (intersection) =>
-          typeof intersection.object.userData === 'object' &&
           intersection.object.userData?.type === 'terrain-tile',
       );
+
+      const playerIntersect = intersects.find(
+        (intersection) =>
+          intersection.object.userData?.type === 'player-pawn'
+      );
+
+      if (playerIntersect) {
+        setHoveredPlayerId(playerIntersect.object.userData.playerId);
+      } else {
+        setHoveredPlayerId(null);
+      }
 
       if (!tileIntersect) {
         setHoveredTile(null);
@@ -424,6 +449,13 @@ export const UnifiedMapScene = React.memo(
       return reachable;
     }, [currentPlayer, gameMap, isMyTurn, mode, occupiedPositionSet, tileIndex]);
 
+    const filteredReachableTiles = useMemo(() => {
+      if (mode !== 'combat' || selectedSpellId) return [];
+      // On n'affiche la portée que si la souris survole le personnage local
+      if (hoveredPlayerId !== currentUserId) return [];
+      return reachableTiles;
+    }, [mode, selectedSpellId, hoveredPlayerId, currentUserId, reachableTiles]);
+
     const combatPreviewPath = useMemo(() => {
       if (mode !== 'combat' || !isMyTurn || !currentPlayer || !hoveredTile || !gameMap || selectedSpellId) {
         return [];
@@ -678,14 +710,31 @@ export const UnifiedMapScene = React.memo(
         </mesh>
 
         <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
-          <TerrainLayer map={activeMap} onTileClick={handleTileClickDispatcher} />
+          {mode === 'combat' && (
+            <Suspense fallback={null}>
+              <Castle 
+                position={[-1.07, 5.34, -0.94]} 
+                targetSize={14.0} 
+                rotation={[0, 0, 0]} 
+              />
+            </Suspense>
+          )}
+          <TerrainLayer 
+            map={activeMap} 
+            onTileClick={handleTileClickDispatcher} 
+            checkerColorA={mode === 'combat' ? tileConfig.checkerColorA : undefined}
+            checkerColorB={mode === 'combat' ? tileConfig.checkerColorB : undefined}
+            sideColor={mode === 'combat' ? tileConfig.sideColor : undefined}
+            tileSize={mode === 'combat' ? tileConfig.tileSize : undefined}
+            tileRadius={mode === 'combat' ? tileConfig.tileRadius : undefined}
+          />
           <HoverLayer hoveredTile={hoveredTile} map={activeMap} />
 
           <UnifiedMapOverlayLayer
             mode={mode}
             isMyTurn={isMyTurn}
             selectedSpellId={selectedSpellId}
-            reachableTiles={reachableTiles}
+            reachableTiles={filteredReachableTiles}
             spellRangeTiles={spellRangeTiles}
             combatPreviewPath={combatPreviewPath}
             previewPath={previewPath}
@@ -693,6 +742,10 @@ export const UnifiedMapScene = React.memo(
             map={activeMap}
             currentUserId={currentUserId ?? undefined}
             playerPaths={playerPaths}
+            tileSize={mode === 'combat' ? tileConfig.tileSize : undefined}
+            pmColor={mode === 'combat' ? tileConfig.pmColor : undefined}
+            rangeColor={mode === 'combat' ? tileConfig.rangeColor : undefined}
+            hoveredTile={hoveredTile}
           />
 
           <PlayersLayer

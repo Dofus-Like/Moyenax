@@ -1,9 +1,11 @@
 import React from 'react';
+import * as THREE from 'three';
 import { ThreeEvent } from '@react-three/fiber';
 import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
 import { Bush } from './Bush';
 import { Tree } from './Tree';
 import { Suspense } from 'react';
+import { RoundedBox } from '@react-three/drei';
 
 const TERRAIN_COLORS: Record<TerrainType, { base: string; hover: string }> = {
   [TerrainType.GROUND]: { base: '#374151', hover: '#4b5563' },
@@ -32,6 +34,9 @@ export interface TerrainTileProps {
   
   // Props optionnels pour le mode combat
   previewColor?: string | null;
+  customColor?: string | null;
+  sideColor?: string | null;
+  tileSize?: number;
   neighbors?: {
     top: boolean;
     right: boolean;
@@ -119,7 +124,7 @@ function FlatResource({ position, color }: { position: [number, number, number];
   );
 }
 
-export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, previewColor, neighbors }: TerrainTileProps) => {
+export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, previewColor, customColor, sideColor, tileSize = 0.95, tileRadius = 0.08, neighbors }: TerrainTileProps) => {
   const colors = TERRAIN_COLORS[terrain];
   const props = TERRAIN_PROPERTIES[terrain];
 
@@ -127,14 +132,19 @@ export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, p
   const worldZ = y - gridSize / 2 + 0.5;
   const pos: [number, number, number] = [worldX, 0, worldZ];
 
-  const baseColor = props.combatType === CombatTerrainType.HOLE
-    ? '#1a1a0f'
-    : colors.base;
+  const baseColor = customColor 
+    ? customColor
+    : (props.combatType === CombatTerrainType.HOLE ? '#1a1a0f' : colors.base);
+
+  const finalSideColor = sideColor || "#3c2415";
 
   return (
     <group>
-      {/* Sol épais en 3D (box) au lieu de plat */}
-      <mesh
+      {/* Sol épais arrondi (RoundedBox) */}
+      <RoundedBox
+        args={[tileSize, 0.4, tileSize]}
+        radius={tileRadius}
+        smoothness={4}
         position={[worldX, -0.2, worldZ]}
         receiveShadow
         userData={{ x, y, terrain, type: 'terrain-tile' }}
@@ -143,15 +153,17 @@ export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, p
           if (onTileClick) onTileClick(x, y, terrain);
         }}
       >
-        <boxGeometry args={[0.92, 0.4, 0.92]} />
-        {/* Les 6 faces du cube de sol : 
-            0: droite, 1: gauche, 2: dessus, 3: dessous, 4: devant, 5: derrière */}
-        <meshStandardMaterial attach="material-0" color="#3c2415" />
-        <meshStandardMaterial attach="material-1" color="#3c2415" />
-        <meshStandardMaterial attach="material-2" color={baseColor} />
-        <meshStandardMaterial attach="material-3" color="#3c2415" />
-        <meshStandardMaterial attach="material-4" color="#3c2415" />
-        <meshStandardMaterial attach="material-5" color="#3c2415" />
+        <meshStandardMaterial color={finalSideColor} />
+      </RoundedBox>
+
+      {/* Surface supérieure pour le damier (légèrement au-dessus pour éviter le z-fighting) */}
+      <mesh 
+        position={[worldX, 0.001, worldZ]} 
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[tileSize - 0.02, tileSize - 0.02]} />
+        <meshStandardMaterial color={baseColor} />
       </mesh>
 
       {props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD && (
@@ -203,8 +215,8 @@ export const TerrainTile = React.memo(({ x, y, terrain, gridSize, onTileClick, p
       {/* Les effets de survol (hover) ne sont plus ici ! */}
       {previewColor && (
         <mesh position={[worldX, 0.02, worldZ]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[0.3, 16]} />
-          <meshBasicMaterial color={previewColor} transparent opacity={0.6} />
+          <planeGeometry args={[1, 1]} />
+          <meshBasicMaterial color={previewColor} transparent opacity={0.8} />
         </mesh>
       )}
     </group>

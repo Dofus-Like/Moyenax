@@ -11,30 +11,60 @@ import { DamagePopup } from './overlays/DamagePopup';
 interface TerrainLayerProps {
   map: GameMap;
   onTileClick?: (x: number, y: number, terrain: TerrainType) => void;
+  checkerColorA?: string;
+  checkerColorB?: string;
+  sideColor?: string;
+  tileSize?: number;
+  tileRadius?: number;
 }
 
-export const TerrainLayer = React.memo(({ map, onTileClick }: TerrainLayerProps) => {
+export const TerrainLayer = React.memo(({ map, onTileClick, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius }: TerrainLayerProps) => {
   const tiles = useMemo(() => {
     const result: React.ReactElement[] = [];
 
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const terrain = map.grid[y][x] as TerrainType;
+        
+        let customColor = null;
+        if (checkerColorA && checkerColorB) {
+          customColor = (x + y) % 2 === 0 ? checkerColorA : checkerColorB;
+        }
+
         const tileProps: TerrainTileProps = {
           x,
           y,
           terrain,
           gridSize: map.width,
           onTileClick,
+          customColor,
+          sideColor,
+          tileSize,
+          tileRadius,
         };
         result.push(<TerrainTile key={`${x}-${y}`} {...tileProps} />);
       }
     }
 
     return result;
-  }, [map, onTileClick]);
+  }, [map, onTileClick, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius]);
 
-  return <>{tiles}</>;
+  return (
+    <group>
+      {/* Plateau de fond pour boucher les trous entre les tiles avec la sideColor */}
+      {sideColor && (
+        <mesh 
+          position={[0, -0.02, 0]} 
+          rotation={[-Math.PI / 2, 0, 0]} 
+          receiveShadow
+        >
+          <planeGeometry args={[map.width, map.height]} />
+          <meshStandardMaterial color={sideColor} />
+        </mesh>
+      )}
+      {tiles}
+    </group>
+  );
 });
 
 interface HoverLayerProps {
@@ -65,6 +95,10 @@ interface OverlayLayerProps {
   map: GameMap;
   currentUserId?: string;
   playerPaths: Record<string, PathNode[]>;
+  tileSize?: number;
+  pmColor?: string;
+  rangeColor?: string;
+  hoveredTile?: { x: number; y: number } | null;
 }
 
 export const UnifiedMapOverlayLayer = React.memo(
@@ -78,6 +112,10 @@ export const UnifiedMapOverlayLayer = React.memo(
     map,
     currentUserId,
     playerPaths,
+    tileSize,
+    pmColor,
+    rangeColor,
+    hoveredTile,
   }: OverlayLayerProps) => {
     return (
       <Suspense fallback={null}>
@@ -87,12 +125,16 @@ export const UnifiedMapOverlayLayer = React.memo(
             spellRangeTiles={spellRangeTiles}
             pathTarget={combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null}
             gridSize={map.width}
+            tileSize={tileSize}
+            pmColor={pmColor}
+            rangeColor={rangeColor}
+            hoveredTile={hoveredTile}
           />
         )}
 
 
         {mode === 'combat' && isMyTurn && currentUserId && !playerPaths[currentUserId] && (
-          <PathPreview path={combatPreviewPath} gridSize={map.width} />
+          <PathPreview path={combatPreviewPath} gridSize={map.width} tileSize={tileSize} color={pmColor} />
         )}
       </Suspense>
     );

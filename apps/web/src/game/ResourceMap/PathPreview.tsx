@@ -5,9 +5,11 @@ import { COMBAT_COLORS } from '../constants/colors';
 interface PathPreviewProps {
   path: PathNode[];
   gridSize: number;
+  tileSize?: number;
+  color?: string;
 }
 
-export function PathPreview({ path, gridSize }: PathPreviewProps) {
+export const PathPreview = ({ path, gridSize, tileSize = 1, color }: PathPreviewProps) => {
   if (path.length === 0) return null;
 
   return (
@@ -25,11 +27,11 @@ export function PathPreview({ path, gridSize }: PathPreviewProps) {
             position={[wx, 0.02, wz]}
             rotation={[-Math.PI / 2, 0, 0]}
           >
-            <circleGeometry args={[0.1, 12]} />
+            <planeGeometry args={[tileSize, tileSize]} />
             <meshBasicMaterial
-              color={COMBAT_COLORS.PM_VIOLET}
+              color={color || COMBAT_COLORS.PM_VIOLET}
               transparent
-              opacity={0.4}
+              opacity={0.9}
             />
           </mesh>
         );
