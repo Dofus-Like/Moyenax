@@ -425,11 +425,6 @@ export function FarmingPage() {
 
   return (
     <div className="resource-map-container">
-              Abandonner
-            </button>
-          )}
-        </div>
-      </div>
 
       <div className="resource-map-layout">
         <aside className="resource-map-sidebar resource-map-sidebar--player">

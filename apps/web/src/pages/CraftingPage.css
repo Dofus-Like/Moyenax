@@ -290,3 +290,449 @@
   font-size: 1.1rem;
 }
 
+/* ══════════════════════════════════════════════════════
+   FUSION WORKSHOP
+══════════════════════════════════════════════════════ */
+
+.fusion-workshop {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 32px;
+  min-height: 500px;
+}
+
+/* ── Left panel ─────────────────────────────────────── */
+.fusion-inventory-panel {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  max-height: 75vh;
+}
+
+.fusion-panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin: 0 0 8px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.fusion-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fusion-inv-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(30, 41, 59, 0.4);
+  cursor: grab;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.fusion-inv-item:active { cursor: grabbing; }
+
+.fusion-inv-item:hover:not(.in-slot) {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255,255,255,0.2);
+  transform: translateX(4px);
+}
+
+.fusion-inv-item.in-slot {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.fusion-inv-item.low-qty {
+  opacity: 0.6;
+}
+
+.fusion-inv-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  font-size: 1.4rem;
+}
+
+.fusion-inv-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.fusion-inv-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fusion-inv-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fusion-inv-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.fusion-in-slot-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.25);
+  color: #818cf8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fusion-low-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  flex-shrink: 0;
+}
+
+/* ── Main workshop ─────────────────────────────────── */
+.fusion-main-panel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.fusion-workspace {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 600px;
+}
+
+/* ── Drop slots row ─────────────────────────────────── */
+.fusion-slots-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.fusion-slot {
+  flex: 1;
+  min-height: 120px;
+  border: 2px dashed rgba(255,255,255,0.12);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+  gap: 12px;
+}
+
+.fusion-slot.drag-over {
+  border-color: #818cf8;
+  background: rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+  transform: scale(1.02);
+}
+
+.fusion-slot.has-item {
+  border-style: solid;
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(30, 41, 59, 0.6);
+  justify-content: flex-start;
+}
+
+.fusion-slot-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+}
+
+.fusion-slot-icon-placeholder {
+  font-size: 2rem;
+  line-height: 1;
+  opacity: 0.5;
+}
+
+.fusion-slot-label {
+  font-size: 0.78rem;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.fusion-slot-icon {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.04);
+  border-radius: 12px;
+}
+
+.fusion-slot-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.fusion-slot-emoji {
+  font-size: 2rem;
+}
+
+.fusion-slot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.fusion-slot-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.fusion-slot-rank {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.fusion-slot-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(239, 68, 68, 0.2);
+  border: none;
+  color: #f87171;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.fusion-slot-remove:hover {
+  background: rgba(239, 68, 68, 0.5);
+}
+
+.fusion-plus {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #334155;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ── Anvil ──────────────────────────────────────────── */
+.fusion-anvil {
+  width: 120px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fusion-anvil-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.35;
+  font-size: 2.5rem;
+}
+
+.fusion-anvil-label {
+  font-size: 0.65rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+/* ── Error ──────────────────────────────────────────── */
+.fusion-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 12px 20px;
+  color: #f87171;
+  font-size: 0.88rem;
+  text-align: center;
+  width: 100%;
+}
+
+/* ── Preview ────────────────────────────────────────── */
+.fusion-preview {
+  width: 100%;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fusion-preview-header {
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.fusion-preview-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #818cf8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.fusion-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 18px;
+  padding: 20px 24px;
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+}
+
+.fusion-preview-icon {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.fusion-preview-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.6));
+}
+
+.fusion-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fusion-preview-info h4 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.fusion-rank-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  width: fit-content;
+}
+
+.fusion-rank-badge.rank-2 {
+  background: rgba(250, 204, 21, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.fusion-rank-badge.rank-3 {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.fusion-preview-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.fusion-stat-chip {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+/* ── Fuse button ────────────────────────────────────── */
+.fusion-btn {
+  padding: 16px 48px;
+  border-radius: 16px;
+  border: none;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  width: 100%;
+  background: #334155;
+  color: #64748b;
+}
+
+.fusion-btn.ready {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+}
+
+.fusion-btn.ready:hover:not(:disabled) {
+  transform: translateY(-3px);
+  filter: brightness(1.1);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.55);
+}
+
+.fusion-btn:disabled {
+  cursor: not-allowed;
+}
