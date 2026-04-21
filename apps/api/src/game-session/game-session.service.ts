@@ -231,7 +231,7 @@ export class GameSessionService {
         p2: { select: { username: true } },
         combats: {
           orderBy: { createdAt: 'desc' },
-          take: 5,
+          take: 1, // We only need the latest one to confirm
         },
       },
     });
@@ -306,10 +306,29 @@ export class GameSessionService {
     const sessionId = combat.gameSessionId;
     const session = await (this.prisma as any).gameSession.findUnique({
       where: { id: sessionId },
-      include: { p1: true, p2: true }
+      include: { 
+        p1: true, 
+        p2: true,
+        combats: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        }
+      }
     });
 
     if (!session) {
+      return;
+    }
+
+    // Protection anti-race condition : on vérifie si ce combat est bien le dernier en date
+    const latestCombatId = session.combats?.[0]?.id;
+    if (latestCombatId && latestCombatId !== payload.sessionId) {
+      console.warn(`[GameSession] Ignoring stale COMBAT_ENDED event for combat ${payload.sessionId}. Latest is ${latestCombatId}`);
+      return;
+    }
+
+    if (session.phase === 'FARMING') {
+      console.warn(`[GameSession] Ignoring COMBAT_ENDED event for combat ${payload.sessionId} because session is already in FARMING phase`);
       return;
     }
 

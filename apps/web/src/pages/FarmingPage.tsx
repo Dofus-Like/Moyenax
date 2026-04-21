@@ -57,6 +57,7 @@ export function FarmingPage() {
   const [isMoving, setIsMoving] = useState(false);
   const [isCameraMoving, setIsCameraMoving] = useState(false);
   const [isReadyToRender, setIsReadyToRender] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(
     null,
   );
@@ -359,38 +360,32 @@ export function FarmingPage() {
   }, [activeSession, navigate, refreshSession]);
 
   const handleToggleReady = useCallback(async () => {
-    if (!activeSession) {
-      return;
-    }
-
-    if (activeSession.phase === 'FIGHTING') {
-      const latestCombat = activeSession.combats?.length ? activeSession.combats[0] : undefined;
-      if (latestCombat?.status === 'ACTIVE') {
-        navigate(`/combat/${latestCombat.id}`);
-        return;
-      }
-      await refreshSession({ silent: false });
-      return;
-    }
-
+    if (!activeSession) return;
+    setIsTransitioning(true);
+    
     try {
       const isReady =
         activeSession.player1Id === currentPlayerId ? activeSession.player1Ready : activeSession.player2Ready;
+      console.log(`[FarmingPage] Toggling ready from ${isReady} to ${!isReady}`);
       const { data: updated } = await gameSessionApi.toggleReady(!isReady, activeSession.id);
       
       // Si le combat vient de se lancer, on redirige immédiatement avec l'ID du nouveau combat
       if (updated.phase === 'FIGHTING' && updated.combats?.length > 0) {
         const latestCombat = updated.combats[0];
-        if (latestCombat.status === 'ACTIVE') {
+        console.log(`[FarmingPage] API Response: Phase is FIGHTING. Latest combat: ${latestCombat.id}, status: ${latestCombat.status}`);
+        
+        if (latestCombat.status === 'ACTIVE' || latestCombat.status === 'WAITING') {
           console.log("[FarmingPage] Match started! Navigating to combat:", latestCombat.id);
           navigate(`/combat/${latestCombat.id}`);
-          return;
+          return; // Navigation will unmount, no need to setIsTransitioning(false)
         }
       }
       
+      setIsTransitioning(false);
       await refreshSession({ silent: true });
     } catch (error) {
-      console.error('Erreur toggle ready:', error);
+      console.error("[FarmingPage] Error toggling ready:", error);
+      setIsTransitioning(false);
     }
   }, [activeSession, currentPlayerId, refreshSession, navigate]);
 
@@ -629,12 +624,15 @@ export function FarmingPage() {
 
         {activeSession && activeSession.player2Id && (
           <button
-            className={`resource-action-btn resource-action-btn--accent ${amIReady && activeSession.phase === 'FARMING' ? 'is-ready' : ''}`}
+            className={`resource-action-btn resource-action-btn--accent ${amIReady && activeSession.phase === 'FARMING' ? 'is-ready' : ''} ${isTransitioning ? 'loading' : ''}`}
             onClick={handleToggleReady}
+            disabled={isTransitioning}
           >
-            {activeSession.phase === 'FIGHTING' 
-              ? '⚔️ Rejoindre le combat' 
-              : amIReady ? 'Prêt !' : 'Se déclarer prêt'}
+            {isTransitioning 
+              ? 'Lancement...' 
+              : activeSession.phase === 'FIGHTING' 
+                ? '⚔️ Rejoindre le combat' 
+                : amIReady ? 'Prêt !' : 'Se déclarer prêt'}
           </button>
         )}
       </div>
