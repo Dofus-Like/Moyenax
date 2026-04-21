@@ -1,4 +1,5 @@
-import { calculateBoundaryEdges, toPositionKey } from './unifiedMap.utils';
+import { calculateBoundaryEdges, toPositionKey, toWorldPosition } from './unifiedMap.utils';
+import { COMBAT_COLORS } from '../constants/colors';
 
 describe('calculateBoundaryEdges', () => {
   it('should return 4 edges for a single tile', () => {
@@ -62,5 +63,34 @@ describe('calculateBoundaryEdges', () => {
 describe('toPositionKey', () => {
   it('should format coordinates correctly', () => {
     expect(toPositionKey(10, -5)).toBe('10,-5');
+  });
+});
+
+describe('toWorldPosition', () => {
+  it('should center tiles correctly based on gridSize', () => {
+    const gridSize = 10;
+    // (0,0) with size 10 should be at -4.5 (left/top)
+    expect(toWorldPosition(0, 0, gridSize)).toEqual([-4.5, 0, -4.5]);
+    // (5,5) with size 10 should be at 0.5 (center-ish)
+    expect(toWorldPosition(5, 5, gridSize)).toEqual([0.5, 0, 0.5]);
+    // (9,9) with size 10 should be at 4.5 (right/bottom)
+    expect(toWorldPosition(9, 9, gridSize)).toEqual([4.5, 0, 4.5]);
+  });
+});
+
+describe('COMBAT_COLORS', () => {
+  it('should contain all essential tactical keys', () => {
+    const requiredKeys = [
+      'PM_VIOLET', 'PA_YELLOW', 'HP_RED', 'HEAL_GREEN', 'RANGE_ORANGE'
+    ];
+    requiredKeys.forEach(key => {
+      expect(COMBAT_COLORS).toHaveProperty(key);
+      expect(COMBAT_COLORS[key as keyof typeof COMBAT_COLORS]).toMatch(/^#[0-9a-fA-F]{6}$/);
+    });
+  });
+
+  it('should have consistent dark variations for main types', () => {
+    expect(COMBAT_COLORS).toHaveProperty('PM_VIOLET_DARK');
+    expect(COMBAT_COLORS).toHaveProperty('PA_YELLOW_DARK');
   });
 });
