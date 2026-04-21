@@ -260,6 +260,7 @@ export class TurnService {
               const winnerId = winner?.playerId;
 
               state.winnerId = winnerId; // Marquer l'état comme fini pour le front
+              console.log(`[TurnService] Combat ended! Winner: ${winnerId}, Loser: ${loserId}, Session: ${state.sessionId}`);
 
               this.sse.emit(state.sessionId, 'COMBAT_ENDED', { winnerId, loserId });
               

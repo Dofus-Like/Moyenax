@@ -319,7 +319,16 @@ export class GameSessionService {
     const isGameOver = newWinsP1 >= 3 || newWinsP2 >= 3;
 
     // Detect if the opponent is the Bot to auto-ready it for next round
-    const isVsAi = session.p2?.username === 'Bot';
+    const isVsAi = session.p2?.username === 'Bot' || session.player2Id === null; // In VS AI sessions, player2Id might be the Bot ID or null if not yet linked, but usually it's the Bot ID.
+    
+    // Safety check: find Bot ID if not sure
+    if (!isVsAi && session.player2Id) {
+      const bot = await this.prisma.player.findUnique({ where: { username: 'Bot' } });
+      if (session.player2Id === bot?.id) {
+        (session as any).isVsAi = true;
+      }
+    }
+    const finalIsVsAi = isVsAi || (session as any).isVsAi;
     
     console.log(`[GameSession] Transitioning session ${sessionId} to FARMING. VS AI: ${isVsAi}. Round: ${session.currentRound + 1}`);
 
@@ -331,7 +340,7 @@ export class GameSessionService {
         currentRound: session.currentRound + 1,
         phase: 'FARMING',
         player1Ready: false,
-        player2Ready: isVsAi, // Bot is always ready immediately
+        player2Ready: finalIsVsAi, // Bot is always ready immediately
         status: isGameOver ? 'FINISHED' : 'ACTIVE',
         endedAt: isGameOver ? new Date() : null,
       },

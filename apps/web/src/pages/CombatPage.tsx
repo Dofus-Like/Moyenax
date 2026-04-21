@@ -81,6 +81,7 @@ export function CombatPage() {
     };
   }, [sessionId, connectToSession, disconnect]);
 
+  const mountedAtRef = React.useRef<number>(Date.now());
   const prevGamePhaseRef = React.useRef<string | null>(null);
 
   // Repli si le SSE game-session arrive en retard : le backend a déjà mis à jour la session
@@ -107,16 +108,19 @@ export function CombatPage() {
       return;
     }
     const phase = activeSession.phase;
-    const wasFighting = prevGamePhaseRef.current === 'FIGHTING';
-    const backToFarming =
-      phase === 'FARMING' &&
-      activeSession.status === 'ACTIVE' &&
-      (wasFighting || winnerId != null);
-    if (backToFarming) {
-      navigate('/farming', { replace: true });
+    
+    // Redirection manuelle uniquement : on retire la redirection automatique vers farming
+    // pour que le joueur puisse voir ses récompenses et cliquer sur "Continuer" dans le HUD.
+    // La redirection vers '/' reste active si la session est supprimée ou finie (status 'FINISHED').
+    const isRecentlyMounted = Date.now() - mountedAtRef.current < 2000;
+
+    if (activeSession.status === 'FINISHED' && !isRecentlyMounted) {
+      console.log('[CombatPage] Session finished, redirecting to root');
+      navigate('/', { replace: true });
     }
+
     prevGamePhaseRef.current = phase ?? null;
-  }, [activeSession, navigate, winnerId]);
+  }, [activeSession, navigate]);
 
   // Construire une GameMap fictive à partir de combatState pour UnifiedMapScene
   const gameMap = useMemo(() => {

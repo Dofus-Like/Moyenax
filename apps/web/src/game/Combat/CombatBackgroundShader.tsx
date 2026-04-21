@@ -79,9 +79,9 @@ export function CombatBackgroundShader() {
   const { camera } = useThree();
 
   const config = useControls('Background Shader', {
-    colorA: { value: COMBAT_COLORS.SHADER_BG_A },
-    colorB: { value: COMBAT_COLORS.SHADER_BG_B },
-    colorC: { value: COMBAT_COLORS.SHADER_BG_C },
+    colorA: { value: COMBAT_COLORS?.SHADER_BG_A || '#cafdff' },
+    colorB: { value: COMBAT_COLORS?.SHADER_BG_B || '#0a3fa7' },
+    colorC: { value: COMBAT_COLORS?.SHADER_BG_C || '#ffffff' },
     speed: { value: 1.0, min: 0, max: 2 },
     scale: { value: 1.0, min: 0.1, max: 10 },
     opacity: { value: 1.0, min: 0, max: 1 },

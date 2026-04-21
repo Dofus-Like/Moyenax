@@ -56,9 +56,16 @@ export function FarmingPage() {
   const [movePath, setMovePath] = useState<PathNode[] | null>(null);
   const [isMoving, setIsMoving] = useState(false);
   const [isCameraMoving, setIsCameraMoving] = useState(false);
+  const [isReadyToRender, setIsReadyToRender] = useState(false);
   const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(
     null,
   );
+
+  React.useEffect(() => {
+    // Délai pour laisser le temps au GPU de nettoyer les anciens contextes (ex: CombatPage)
+    const timer = setTimeout(() => setIsReadyToRender(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'info' | 'error' } | null>(
     null,
   );
@@ -369,8 +376,19 @@ export function FarmingPage() {
     try {
       const isReady =
         activeSession.player1Id === currentPlayerId ? activeSession.player1Ready : activeSession.player2Ready;
-      await gameSessionApi.toggleReady(!isReady, activeSession.id);
-      await refreshSession({ silent: false });
+      const { data: updated } = await gameSessionApi.toggleReady(!isReady, activeSession.id);
+      
+      // Si le combat vient de se lancer, on redirige immédiatement avec l'ID du nouveau combat
+      if (updated.phase === 'FIGHTING' && updated.combats?.length > 0) {
+        const latestCombat = updated.combats[0];
+        if (latestCombat.status === 'ACTIVE') {
+          console.log("[FarmingPage] Match started! Navigating to combat:", latestCombat.id);
+          navigate(`/combat/${latestCombat.id}`);
+          return;
+        }
+      }
+      
+      await refreshSession({ silent: true });
     } catch (error) {
       console.error('Erreur toggle ready:', error);
     }
@@ -512,9 +530,9 @@ export function FarmingPage() {
 
           {actionMessage && <div className={`map-action-toast ${actionMessage.type}`}>{actionMessage.text}</div>}
           {!map && <div className="map-loading">Chargement de la carte...</div>}
-          {map && (
+          {map && isReadyToRender && (
             <div className="resource-map-canvas">
-              <Canvas>
+              <Canvas key={`farming-canvas-${activeSession?.id || 'default'}`}>
                 <OrthographicCamera makeDefault position={[15, 20, 15]} zoom={30} near={0.1} far={100} />
                 <CameraControls
                   ref={setControls}
