@@ -356,6 +356,16 @@ export function FarmingPage() {
       return;
     }
 
+    if (activeSession.phase === 'FIGHTING') {
+      const latestCombat = activeSession.combats?.length ? activeSession.combats[0] : undefined;
+      if (latestCombat?.status === 'ACTIVE') {
+        navigate(`/combat/${latestCombat.id}`);
+        return;
+      }
+      await refreshSession({ silent: false });
+      return;
+    }
+
     try {
       const isReady =
         activeSession.player1Id === currentPlayerId ? activeSession.player1Ready : activeSession.player2Ready;
@@ -364,7 +374,7 @@ export function FarmingPage() {
     } catch (error) {
       console.error('Erreur toggle ready:', error);
     }
-  }, [activeSession, currentPlayerId, refreshSession]);
+  }, [activeSession, currentPlayerId, refreshSession, navigate]);
 
   const combatListRefreshKey = useRef<string | null>(null);
   useEffect(() => {
@@ -394,8 +404,14 @@ export function FarmingPage() {
     const latestCombat = activeSession.combats?.length ? activeSession.combats[0] : undefined;
     if (latestCombat?.status === 'ACTIVE') {
       navigate(`/combat/${latestCombat.id}`);
+    } else {
+      // Force a refresh if we are in fighting phase but no active combat is found yet
+      const timer = setTimeout(() => {
+        void refreshSession({ silent: true });
+      }, 1000);
+      return () => clearTimeout(timer);
     }
-  }, [activeSession?.combats, activeSession?.phase, navigate]);
+  }, [activeSession?.combats, activeSession?.phase, navigate, refreshSession]);
 
   const p1IsMe = activeSession?.player1Id === currentPlayerId;
   const amIReady = p1IsMe ? activeSession?.player1Ready : activeSession?.player2Ready;
@@ -578,10 +594,12 @@ export function FarmingPage() {
 
         {activeSession && activeSession.player2Id && (
           <button
-            className={`resource-action-btn resource-action-btn--accent ${amIReady ? 'is-ready' : ''}`}
+            className={`resource-action-btn resource-action-btn--accent ${amIReady && activeSession.phase === 'FARMING' ? 'is-ready' : ''}`}
             onClick={handleToggleReady}
           >
-            {amIReady ? 'Prêt !' : 'Se déclarer prêt'}
+            {activeSession.phase === 'FIGHTING' 
+              ? '⚔️ Rejoindre le combat' 
+              : amIReady ? 'Prêt !' : 'Se déclarer prêt'}
           </button>
         )}
       </div>

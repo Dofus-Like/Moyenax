@@ -200,9 +200,11 @@ export class GameSessionService {
       },
     });
 
+    console.log(`[GameSession] Session ${sessionId} status: P1Ready=${updatedSession.player1Ready}, P2Ready=${updatedSession.player2Ready}`);
     this.sse.emit(`game-session:${sessionId}`, 'SESSION_UPDATED', updatedSession);
 
     if (updatedSession.player1Ready && updatedSession.player2Ready) {
+      console.log(`[GameSession] Both players ready! Starting next combat...`);
       await this.startMatch(sessionId);
     }
 
@@ -213,7 +215,9 @@ export class GameSessionService {
     const session = await (this.prisma as any).gameSession.findUnique({ where: { id: sessionId } });
     if (!session) return;
 
-    await this.sessionService.startSessionCombat(session.player1Id, session.player2Id!, session.id);
+    console.log(`[GameSession] Starting match for session ${sessionId} (Round ${session.currentRound})`);
+    const combat = await this.sessionService.startSessionCombat(session.player1Id, session.player2Id!, session.id);
+    console.log(`[GameSession] Created combat for session ${combat.sessionId}`);
 
     const updated = await (this.prisma as any).gameSession.update({
       where: { id: sessionId },
@@ -232,6 +236,7 @@ export class GameSessionService {
       },
     });
 
+    console.log(`[GameSession] Session ${sessionId} phase updated to FIGHTING. Combats count: ${updated.combats.length}`);
     this.sse.emit(`game-session:${sessionId}`, 'SESSION_UPDATED', updated);
   }
 
@@ -286,17 +291,22 @@ export class GameSessionService {
 
   @NestOnEvent(GAME_EVENTS.COMBAT_ENDED)
   async handleCombatEnded(payload: { winnerId: string; loserId: string; sessionId: string }) {
+    console.log(`[GameSession] handleCombatEnded triggered for combat ${payload.sessionId}`);
+    
     const combat = await this.prisma.combatSession.findUnique({
       where: { id: payload.sessionId },
       select: { gameSessionId: true },
     });
 
     if (!combat?.gameSessionId) {
+      console.warn(`[GameSession] No linked gameSession found for combat ${payload.sessionId}`);
       return;
     }
 
+    const sessionId = combat.gameSessionId;
     const session = await (this.prisma as any).gameSession.findUnique({
-      where: { id: combat.gameSessionId },
+      where: { id: sessionId },
+      include: { p1: true, p2: true }
     });
 
     if (!session) {
@@ -308,18 +318,20 @@ export class GameSessionService {
     const newWinsP2 = !isPlayer1Winner ? session.player2Wins + 1 : session.player2Wins;
     const isGameOver = newWinsP1 >= 3 || newWinsP2 >= 3;
 
-    const bot = await this.prisma.player.findUnique({ where: { username: 'Bot' } });
-    const isVsAi = session.player2Id === bot?.id;
+    // Detect if the opponent is the Bot to auto-ready it for next round
+    const isVsAi = session.p2?.username === 'Bot';
+    
+    console.log(`[GameSession] Transitioning session ${sessionId} to FARMING. VS AI: ${isVsAi}. Round: ${session.currentRound + 1}`);
 
     const updated = await (this.prisma as any).gameSession.update({
-      where: { id: session.id },
+      where: { id: sessionId },
       data: {
         player1Wins: newWinsP1,
         player2Wins: newWinsP2,
         currentRound: session.currentRound + 1,
         phase: 'FARMING',
         player1Ready: false,
-        player2Ready: isVsAi,
+        player2Ready: isVsAi, // Bot is always ready immediately
         status: isGameOver ? 'FINISHED' : 'ACTIVE',
         endedAt: isGameOver ? new Date() : null,
       },
@@ -333,11 +345,12 @@ export class GameSessionService {
       },
     });
 
-    if (isGameOver) {
-      await this.cleanupSessionArtifacts(session.id, [session.player1Id, session.player2Id]);
-    }
+    console.log(`[GameSession] Session ${sessionId} update complete. Phase: ${updated.phase}. P2Ready: ${updated.player2Ready}`);
+    this.sse.emit(`game-session:${sessionId}`, 'SESSION_UPDATED', updated);
 
-    this.sse.emit(`game-session:${session.id}`, 'SESSION_UPDATED', updated);
+    if (isGameOver) {
+      await this.cleanupSessionArtifacts(sessionId, [session.player1Id, session.player2Id]);
+    }
   }
 
   private async cleanupSessionArtifacts(sessionId: string, playerIds: Array<string | null | undefined>) {

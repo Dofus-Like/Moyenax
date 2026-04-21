@@ -293,6 +293,14 @@ export class SessionService {
     }
 
     await this.redis.del(`combat:${combatSessionId}`);
+    
+    // Notify internal services (like GameSessionService)
+    this.eventEmitter.emit(GAME_EVENTS.COMBAT_ENDED, { 
+      winnerId, 
+      loserId, 
+      sessionId: combatSessionId 
+    });
+
     this.sse.emit(combatSessionId, 'COMBAT_ENDED', {
       winnerId,
       loserId,
