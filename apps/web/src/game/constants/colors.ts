@@ -7,4 +7,7 @@ export const COMBAT_COLORS = {
   HP_RED_LIGHT: '#fca5a5',
   VICTORY_GOLD: '#fbbf24',
   DEFEAT_RED: '#ef4444',
+  SHADER_BG_A: '#cafdff',
+  SHADER_BG_B: '#0a3fa7',
+  SHADER_BG_C: '#ffffff',
 };

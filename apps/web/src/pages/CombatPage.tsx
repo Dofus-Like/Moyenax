@@ -12,6 +12,7 @@ import { useAuthStore } from '../store/auth.store';
 import { TerrainType } from '@game/shared-types';
 import { useGameSession } from './GameTunnel';
 import { gameSessionApi } from '../api/game-session.api';
+import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import './CombatPage.css';
 
 /**
@@ -171,7 +172,7 @@ export function CombatPage() {
             camera={{ fov: 30 }}
             onPointerMissed={() => setSelectedSpell(null)}
           >
-            <color attach="background" args={['#87CEEB']} />
+            <CombatBackgroundShader />
             <OrthographicCamera
               makeDefault
               position={[20, 20, 20]}

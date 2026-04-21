@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as THREE from 'three';
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -33,6 +34,32 @@ vi.mock('react-router-dom', () => ({
 vi.mock('@react-three/fiber', () => ({
   Canvas: ({ children }: { children: ReactNode }) => <div data-testid="canvas">{children}</div>,
   useLoader: vi.fn(),
+  useThree: () => ({
+    viewport: { width: 100, height: 100 },
+    camera: { 
+      position: new THREE.Vector3(), 
+      getWorldDirection: vi.fn().mockReturnValue(new THREE.Vector3()) 
+    },
+  }),
+  useFrame: vi.fn(),
+}));
+
+vi.mock('leva', () => ({
+  useControls: (name: string, controls: any) => {
+    const values: any = {};
+    for (const key in controls) {
+      if (controls[key] && typeof controls[key] === 'object' && 'value' in controls[key]) {
+        values[key] = controls[key].value;
+      } else {
+        values[key] = controls[key];
+      }
+    }
+    return values;
+  },
+}));
+
+vi.mock('../game/Combat/CombatBackgroundShader', () => ({
+  CombatBackgroundShader: () => <div data-testid="combat-background-shader" />,
 }));
 
 vi.mock('@react-three/drei', () => ({
