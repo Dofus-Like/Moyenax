@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gameSessionApi } from '../api/game-session.api';
-import { SKINS, getSkinById } from '../game/constants/skins';
+import { SKINS } from '../game/constants/skins';
 import { useAuthStore } from '../store/auth.store';
 import { useGameSession } from './GameTunnel';
 import './LobbyPage.css';
@@ -31,7 +31,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function LobbyPage() {
-  const { player, logout, initialize, setSkin } = useAuthStore();
+  const { player, initialize, setSkin } = useAuthStore();
   const { activeSession, refreshSession } = useGameSession();
   const navigate = useNavigate();
   const [rooms, setRooms] = React.useState<Room[]>([]);
@@ -79,11 +79,6 @@ export function LobbyPage() {
       navigate('/farming');
     }
   }, [activeSession, navigate]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const handleCreateRoom = async () => {
     try {
@@ -197,20 +192,6 @@ export function LobbyPage() {
 
   return (
     <div className="lobby-container">
-      <header className="lobby-header">
-        <h1>⚔️ Moyenax</h1>
-
-        <div className="lobby-user-info">
-          <div className="user-profile-summary">
-            <span className="lobby-username">{player?.username ?? 'Joueur'}</span>
-            <span className="lobby-skin-tag">{getSkinById(player?.skin || 'soldier-classic').name}</span>
-          </div>
-          <button type="button" className="lobby-logout" onClick={handleLogout}>
-            Déconnexion
-          </button>
-        </div>
-      </header>
-
       <section className="lobby-skins">
         <div className="lobby-section-header">
           <h2>🎭 Choisissez votre apparence</h2>

@@ -8,15 +8,30 @@
   box-sizing: border-box;
 }
 
-.inventory-header {
+.inventory-sub-header {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  width: 100%;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+.inventory-page-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 
 .inventory-header-nav {
   display: flex;

@@ -1,24 +1,20 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuthStore } from '../store/auth.store';
 import { useGameSession } from './GameTunnel';
 import { inventoryApi } from '../api/inventory.api';
 import { equipmentApi } from '../api/equipment.api';
 import { playerApi } from '../api/player.api';
 import { Mannequin } from '../components/Mannequin';
 import { EquipmentSlotType, InventoryItem, ItemType } from '@game/shared-types';
+import { getItemVisualMeta } from '../utils/itemVisual';
 import './InventoryPage.css';
 
+type FilterType = 'ALL' | 'WEAPON' | 'ARMOR' | 'OTHER';
+
 export function InventoryPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const isDebugMode = searchParams.get('debug') === 'true';
-  const tunnelQuery = isDebugMode ? '?debug=true' : '';
+  const [activeFilter, setActiveFilter] = React.useState<FilterType>('ALL');
   const queryClient = useQueryClient();
-  const { player } = useAuthStore();
   const { activeSession } = useGameSession();
-  const showCraftingLink = activeSession?.status === 'ACTIVE' || isDebugMode;
   const [selectedItem, setSelectedItem] = React.useState<InventoryItem | null>(null);
 
   const { data: inventory, isLoading: invLoading } = useQuery({
@@ -93,37 +89,6 @@ export function InventoryPage() {
 
   return (
     <div className="inventory-page">
-      <header className="inventory-header">
-        <div className="inventory-header-nav">
-          {(!activeSession || activeSession.status !== 'ACTIVE') && (
-            <button type="button" className="back-button" onClick={() => navigate('/')}>
-              Lobby
-            </button>
-          )}
-          <button type="button" className="nav-link-btn" onClick={() => navigate('/shop')}>
-            Boutique
-          </button>
-          <button type="button" className="nav-link-btn" onClick={() => navigate('/farming')}>
-            Farming
-          </button>
-          {showCraftingLink && (
-            <button
-              type="button"
-              className="nav-link-btn"
-              onClick={() => navigate(`/crafting${tunnelQuery}`)}
-            >
-              Forge
-            </button>
-          )}
-        </div>
-        <div className="inventory-header-info">
-          <h2>
-            🎒 Équipement & inventaire{' '}
-            {activeSession && <span className="session-badge">SESSION</span>}
-          </h2>
-        </div>
-      </header>
-
       <div className="inventory-main-content">
         <aside className="hero-section">
           <div className="stats-column main-stats">
@@ -176,10 +141,24 @@ export function InventoryPage() {
         </aside>
 
         <main className="inventory-list-section">
-          <h3>Inventaire</h3>
+          <div className="list-header">
+            <h3>Inventaire</h3>
+            <div className="item-filters">
+              <button className={`filter-btn ${activeFilter === 'ALL' ? 'active' : ''}`} onClick={() => setActiveFilter('ALL')}>Tout</button>
+              <button className={`filter-btn ${activeFilter === 'WEAPON' ? 'active' : ''}`} onClick={() => setActiveFilter('WEAPON')}>⚔️ Armes</button>
+              <button className={`filter-btn ${activeFilter === 'ARMOR' ? 'active' : ''}`} onClick={() => setActiveFilter('ARMOR')}>🛡️ Armures</button>
+              <button className={`filter-btn ${activeFilter === 'OTHER' ? 'active' : ''}`} onClick={() => setActiveFilter('OTHER')}>🎒 Autres</button>
+            </div>
+          </div>
           <div className="inventory-grid">
             {invLoading && <p className="inventory-loading">Chargement...</p>}
-            {inventory?.data?.map((inv: InventoryItem) => (
+            {inventory?.data?.filter((inv: InventoryItem) => {
+              if (activeFilter === 'ALL') return true;
+              if (activeFilter === 'WEAPON' && inv.item.type === 'WEAPON') return true;
+              if (activeFilter === 'ARMOR' && ['ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(inv.item.type)) return true;
+              if (activeFilter === 'OTHER' && !['WEAPON', 'ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(inv.item.type)) return true;
+              return false;
+            }).map((inv: InventoryItem) => (
               <div
                 key={inv.id}
                 className={`inventory-card ${selectedItem?.id === inv.id ? 'selected' : ''}`}
@@ -188,7 +167,9 @@ export function InventoryPage() {
                 onClick={() => setSelectedItem(inv)}
                 onDoubleClick={() => handleDoubleClick(inv)}
               >
-                <div className="item-icon">{inv.item.type[0]}</div>
+                <div className="item-icon">
+                  {(() => { const v = getItemVisualMeta(inv.item); return v.iconPath ? <img src={v.iconPath} alt={inv.item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span>{v.icon}</span>; })()}
+                </div>
                 <div className="item-info">
                   <span className="item-name">{inv.item.name}</span>
                   <span className="item-type">{inv.item.type}</span>
@@ -204,7 +185,9 @@ export function InventoryPage() {
           {selectedItem ? (
             <div className="item-details-card">
               <div className="item-details-header">
-                <div className="item-details-icon">{selectedItem.item.type[0]}</div>
+                <div className="item-details-icon">
+                  {(() => { const v = getItemVisualMeta(selectedItem.item); return v.iconPath ? <img src={v.iconPath} alt={selectedItem.item.name} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }} /> : <span style={{ fontSize: '2.5rem' }}>{v.icon}</span>; })()}
+                </div>
                 <h4>{selectedItem.item.name}</h4>
                 <p className="item-details-type">{selectedItem.item.type}</p>
               </div>

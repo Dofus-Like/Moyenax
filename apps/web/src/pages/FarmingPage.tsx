@@ -425,47 +425,11 @@ export function FarmingPage() {
 
   return (
     <div className="resource-map-container">
-      <header className="resource-map-header">
-        <div className="resource-map-title">
-          <span className="resource-map-title-kicker">Mode</span>
-          <div>
-            <h2>Farming</h2>
-            <p>Recolte, gere ton tempo et prepare la prochaine manche.</p>
-          </div>
-        </div>
-
-        <div className="resource-map-actions">
-          {(!activeSession || activeSession.status !== 'ACTIVE') && (
-            <button className="resource-action-btn resource-action-btn--ghost" onClick={() => navigate('/')}>
-              Lobby
-            </button>
-          )}
-          <button className="resource-action-btn resource-action-btn--ghost" onClick={() => navigate('/inventory')}>
-            Inventaire
-          </button>
-          <button className="resource-action-btn resource-action-btn--ghost" onClick={() => navigate('/shop')}>
-            Boutique
-          </button>
-          {activeSession && activeSession.player2Id && (
-            <button
-              className={`resource-action-btn resource-action-btn--accent ${amIReady ? 'is-ready' : ''}`}
-              onClick={handleToggleReady}
-            >
-              {amIReady ? 'Pret' : 'Pret ?'}
-            </button>
-          )}
-          {isDebugMode && (
-            <button className="resource-action-btn resource-action-btn--primary" onClick={handleNextRound}>
-              Debug refill
-            </button>
-          )}
-          {activeSession && (
-            <button className="resource-action-btn resource-action-btn--danger" onClick={handleEndSession}>
               Abandonner
             </button>
           )}
         </div>
-      </header>
+      </div>
 
       <div className="resource-map-layout">
         <aside className="resource-map-sidebar resource-map-sidebar--player">

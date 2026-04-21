@@ -124,6 +124,7 @@ model Item {
   rank              Int               @default(1)
   statsBonus        Json?
   grantsSpells      Json?
+  iconPath          String?
   craftCost         Json?
   shopPrice         Int?
   inventory         InventoryItem[]

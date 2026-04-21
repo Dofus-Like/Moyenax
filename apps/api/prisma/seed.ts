@@ -325,26 +325,26 @@ async function main() {
   // ── Ressources ──────────────────────────────────────────────────
 
   const fer = await prisma.item.create({
-    data: { name: 'Fer', type: ItemType.RESOURCE, description: 'Un morceau de métal qui sent le vieux clou.' },
+    data: { name: 'Fer', type: ItemType.RESOURCE, description: 'Un morceau de métal qui sent le vieux clou. On raconte qu\'il a été forgé avec la sueur d\'un nain constipé.', iconPath: '/assets/items/fer.png' },
   });
 
   const cuir = await prisma.item.create({
-    data: { name: 'Cuir', type: ItemType.RESOURCE },
+    data: { name: 'Cuir', type: ItemType.RESOURCE, description: 'Souple et résistant. Parfait pour se faire une armure ou un slip de rechange après un combat intense.', iconPath: '/assets/items/cuir.png' },
   });
   const cristal = await prisma.item.create({
-    data: { name: 'Cristal magique', type: ItemType.RESOURCE },
+    data: { name: 'Cristal magique', type: ItemType.RESOURCE, description: 'Ça brille, ça coûte cher, et ça fait des étincelles quand on le frotte contre son entrejambe.', iconPath: '/assets/items/cristal.png' },
   });
   const etoffe = await prisma.item.create({
-    data: { name: 'Étoffe', type: ItemType.RESOURCE },
+    data: { name: 'Étoffe', type: ItemType.RESOURCE, description: 'Tissu de haute qualité. Idéal pour les mages qui veulent avoir l\'air mystérieux sans avoir froid aux fesses.', iconPath: '/assets/items/etoffe.png' },
   });
   const bois = await prisma.item.create({
-    data: { name: 'Bois', type: ItemType.RESOURCE },
+    data: { name: 'Bois', type: ItemType.RESOURCE, description: 'Robuste et fibreux. Pourrait servir de gourdin si vous étiez un peu plus barbare.', iconPath: '/assets/items/bois.png' },
   });
   const herbe = await prisma.item.create({
-    data: { name: 'Herbe médicinale', type: ItemType.RESOURCE },
+    data: { name: 'Herbe médicinale', type: ItemType.RESOURCE, description: 'Ça soigne les plaies, mais ça donne aussi une haleine de poney mort.', iconPath: '/assets/items/herbe.png' },
   });
   const or = await prisma.item.create({
-    data: { name: 'Or', type: ItemType.RESOURCE },
+    data: { name: 'Or', type: ItemType.RESOURCE, description: 'Le nerf de la guerre. Et l\'ami des gens qui n\'ont rien d\'autre à offrir que leur portefeuille.', iconPath: '/assets/items/or.png' },
   });
 
   // ── Armes : boutique 25 Po (max 2 pièces d’équipement par victoire à +50 Po) ──
@@ -353,10 +353,11 @@ async function main() {
     data: {
       name: 'Épée',
       type: ItemType.WEAPON,
-      description: "Tranchante, mais surtout utile pour couper le saucisson.",
+      description: "Tranchante, mais surtout utile pour couper le saucisson... ou les doigts des imprudents.",
       statsBonus: { atk: 5 },
       craftCost: { [fer.id]: 2, [cuir.id]: 1 },
       shopPrice: 25,
+      iconPath: '/assets/items/epee.png',
     },
   });
 
@@ -364,10 +365,11 @@ async function main() {
     data: {
       name: 'Bouclier',
       type: ItemType.WEAPON,
-      description: "Plus efficace qu'une planche en bois, mais moins qu'un mur en briques.",
+      description: "Plus efficace qu'une planche en bois, mais moins qu'un mur en briques. Protège le devant, le reste est à vos risques et périls.",
       statsBonus: { def: 5 },
       craftCost: { [fer.id]: 1, [cuir.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/bouclier.png',
     },
   });
 
@@ -375,10 +377,11 @@ async function main() {
     data: {
       name: 'Bâton magique',
       type: ItemType.WEAPON,
-      description: "L'extrémité brille quand on pense très fort à du fromage.",
+      description: "L'extrémité brille quand on pense très fort à du fromage. Ou à autre chose de plus intime.",
       statsBonus: { mag: 5 },
       craftCost: { [cristal.id]: 1, [etoffe.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/baton.png',
     },
   });
 
@@ -386,9 +389,11 @@ async function main() {
     data: {
       name: 'Grimoire',
       type: ItemType.WEAPON,
+      description: "Contient des sorts puissants et des recettes de cuisine douteuses.",
       statsBonus: { mag: 3, res: 2 },
       craftCost: { [cristal.id]: 2, [etoffe.id]: 1 },
       shopPrice: 25,
+      iconPath: '/assets/items/grimoire.png',
     },
   });
 
@@ -396,9 +401,11 @@ async function main() {
     data: {
       name: 'Kunaï',
       type: ItemType.WEAPON,
+      description: "Petit, pointu, et facile à cacher. Comme le respect de vos ennemis après une défaite.",
       statsBonus: { atk: 3, ini: 2 },
       craftCost: { [fer.id]: 2, [bois.id]: 1 },
       shopPrice: 25,
+      iconPath: '/assets/items/kunai.png',
     },
   });
 
@@ -406,9 +413,11 @@ async function main() {
     data: {
       name: 'Bombe ninja',
       type: ItemType.WEAPON,
+      description: "Fait 'Pouf' et vous voilà disparu. Ou alors vous avez juste l'air idiot au milieu d'un nuage de fumée.",
       statsBonus: { atk: 2, ini: 3 },
       craftCost: { [bois.id]: 1, [herbe.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/bombe.png',
     },
   });
 
@@ -418,9 +427,11 @@ async function main() {
     data: {
       name: 'Heaume',
       type: ItemType.ARMOR_HEAD,
+      description: "Protège votre tête, mais limite votre champ de vision à celui d'un cyclope bourré.",
       statsBonus: { def: 3 },
       craftCost: { [fer.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/heaume.png',
     },
   });
 
@@ -428,9 +439,11 @@ async function main() {
     data: {
       name: 'Chapeau de mage',
       type: ItemType.ARMOR_HEAD,
+      description: "Plus le chapeau est pointu, plus le mage est... compensatoire.",
       statsBonus: { res: 3 },
       craftCost: { [cristal.id]: 1, [etoffe.id]: 1 },
       shopPrice: 25,
+      iconPath: '/assets/items/chapeau.png',
     },
   });
 
@@ -438,9 +451,11 @@ async function main() {
     data: {
       name: 'Bandeau',
       type: ItemType.ARMOR_HEAD,
+      description: "Donne un air de ninja ténébreux, mais sert surtout à éponger la sueur de la peur.",
       statsBonus: { ini: 3 },
       craftCost: { [cuir.id]: 1, [bois.id]: 1 },
       shopPrice: 25,
+      iconPath: '/assets/items/bandeau.png',
     },
   });
 
@@ -450,9 +465,11 @@ async function main() {
     data: {
       name: 'Armure',
       type: ItemType.ARMOR_CHEST,
+      description: "Du métal lourd pour gens qui n'ont pas peur de couler au fond de l'eau.",
       statsBonus: { def: 5 },
       craftCost: { [fer.id]: 2, [cuir.id]: 1 },
       shopPrice: 25,
+      iconPath: '/assets/items/armure.png',
     },
   });
 
@@ -460,9 +477,11 @@ async function main() {
     data: {
       name: 'Toge de mage',
       type: ItemType.ARMOR_CHEST,
+      description: "Très aéré. Un peu trop quand il y a du vent.",
       statsBonus: { res: 5 },
       craftCost: { [cristal.id]: 1, [etoffe.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/toge.png',
     },
   });
 
@@ -470,9 +489,11 @@ async function main() {
     data: {
       name: 'Kimono',
       type: ItemType.ARMOR_CHEST,
+      description: "Élégant et léger. Parfait pour les acrobaties et les fuites désespérées.",
       statsBonus: { ini: 3, pm: 1 },
       craftCost: { [cuir.id]: 1, [bois.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/kimono.png',
     },
   });
 
@@ -482,9 +503,11 @@ async function main() {
     data: {
       name: 'Bottes de fer',
       type: ItemType.ARMOR_LEGS,
+      description: "Pour écraser les orteils avec autorité. Interdit dans les soirées dansantes.",
       statsBonus: { def: 2, pm: 1 },
       craftCost: { [fer.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/bottesFer.png',
     },
   });
 
@@ -492,9 +515,11 @@ async function main() {
     data: {
       name: 'Bottes de mage',
       type: ItemType.ARMOR_LEGS,
+      description: "Permettent de marcher sur l'eau, ou au moins de ne pas se mouiller les chaussettes dans l'herbe haute.",
       statsBonus: { res: 2, pm: 1 },
       craftCost: { [etoffe.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/bottesMage.png',
     },
   });
 
@@ -502,9 +527,11 @@ async function main() {
     data: {
       name: 'Geta',
       type: ItemType.ARMOR_LEGS,
+      description: "Clac-clac-clac. Le bruit de la mort qui arrive... ou d'un touriste en vacances.",
       statsBonus: { pm: 2 },
       craftCost: { [bois.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/geta.png',
     },
   });
 
@@ -514,9 +541,11 @@ async function main() {
     data: {
       name: 'Anneau du Guerrier',
       type: ItemType.ACCESSORY,
+      description: "Augmente la force brute. Attention : ne pas se curer le nez avec, sous peine de luxation.",
       statsBonus: { vit: 100, atk: 20, def: 10, pa: 1 },
       craftCost: { [fer.id]: 2, [or.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/anneauGuerrier.png',
     },
   });
 
@@ -524,9 +553,11 @@ async function main() {
     data: {
       name: 'Anneau du Mage',
       type: ItemType.ACCESSORY,
+      description: "Fait circuler le mana. Et provoque des picotements bizarres dans les mains.",
       statsBonus: { vit: 50, mag: 30, res: 15, pa: 1 },
       craftCost: { [cristal.id]: 2, [or.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/anneauMage.png',
     },
   });
 
@@ -534,9 +565,11 @@ async function main() {
     data: {
       name: 'Anneau du Ninja',
       type: ItemType.ACCESSORY,
+      description: "Rend plus agile. Ou alors c'est juste l'effet placebo de porter un truc brillant.",
       statsBonus: { vit: 50, atk: 15, mag: 5, ini: 500, pm: 1 },
       craftCost: { [cuir.id]: 1, [bois.id]: 1, [or.id]: 2 },
       shopPrice: 25,
+      iconPath: '/assets/items/anneauNinja.png',
     },
   });
 
@@ -544,9 +577,10 @@ async function main() {
     data: {
       name: 'Anneau pénien',
       type: ItemType.ACCESSORY,
-      description: "Un anneau moulé directement sur l'artisan le plus expérimenté de Vergeronce",
+      description: "Un anneau moulé directement sur l'artisan le plus expérimenté de Vergeronce. Il paraît qu'il procure un bonus de 'Vigueur' insoupçonné.",
       statsBonus: { vit: 9999, atk: 999, mag: 999, def: 100, res: 100, pa: 12, pm: 12 },
       shopPrice: 69,
+      iconPath: '/assets/items/anneauPenien.png',
     },
   });
 
@@ -579,9 +613,11 @@ async function main() {
     data: {
       name: 'Potion de Soin',
       type: ItemType.CONSUMABLE,
+      description: "Boire cul-sec pour refermer ses plaies. Goût fraise des bois et vieux pansement.",
       statsBonus: { healVit: 30 },
       craftCost: { [herbe.id]: 2 },
       shopPrice: 8,
+      iconPath: '/assets/items/potionSoin.png',
     },
   });
 
@@ -589,9 +625,11 @@ async function main() {
     data: {
       name: 'Potion de Force',
       type: ItemType.CONSUMABLE,
+      description: "Vous donne des muscles en carton pendant 3 minutes. Attention au contrecoup sur votre dignité.",
       statsBonus: { buffAttaque: 5, buffDuree: 3 },
       craftCost: { [fer.id]: 1, [herbe.id]: 1 },
       shopPrice: 8,
+      iconPath: '/assets/items/potionForce.png',
     },
   });
 
@@ -599,9 +637,11 @@ async function main() {
     data: {
       name: 'Potion de Vitesse',
       type: ItemType.CONSUMABLE,
+      description: "Pour courir plus vite que son ombre. Ou que sa propre honte.",
       statsBonus: { buffPM: 2, buffDuree: 2 },
       craftCost: { [bois.id]: 1, [herbe.id]: 1 },
       shopPrice: 8,
+      iconPath: '/assets/items/potionVitesse.png',
     },
   });
 

@@ -21,17 +21,20 @@
   color: var(--rm-text);
 }
 
-.resource-map-header {
+.resource-map-sub-header {
   z-index: 50;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 14px 18px;
-  background: rgba(9, 15, 27, 0.9);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-  backdrop-filter: blur(18px);
+  padding: 24px;
+  background: rgba(9, 15, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 20px;
 }
+
 
 .resource-map-title {
   display: flex;
