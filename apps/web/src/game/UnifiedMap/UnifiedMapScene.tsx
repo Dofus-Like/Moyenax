@@ -13,7 +13,8 @@ import { ThreeEvent, useThree } from '@react-three/fiber';
 import { canJumpTo, canMoveTo, hasLineOfSight, isInRange } from '@game/game-engine';
 import { useCombatStore } from '../../store/combat.store';
 import { useAuthStore } from '../../store/auth.store';
-import { useControls } from 'leva';
+import { useControls, button, folder } from 'leva';
+import { COMBAT_COLORS } from '../constants/colors';
 import { combatApi } from '../../api/combat.api';
 import {
   HoverLayer,
@@ -124,16 +125,73 @@ export const UnifiedMapScene = React.memo(
 
     const activeMap = mode === 'combat' ? gameMap : map;
 
-    // Debug controls for the tiles
-    const tileConfig = useControls('Tiles Debug', {
-      checkerColorA: { value: '#deffb3' }, 
-      checkerColorB: { value: '#849a69' },
-      sideColor: { value: '#465138' },
-      tileSize: { value: 0.95, min: 0.8, max: 1.0, step: 0.01 },
-      tileRadius: { value: 0.08, min: 0, max: 0.2, step: 0.01 },
-      pmColor: { value: '#9524f8' },
-      rangeColor: { value: '#fca800' },
+    // Global time of day sync
+    const { timeOfDay } = useControls('Background Shader', {
+      timeOfDay: { value: 0, min: 0, max: 2, step: 1 }
+    }, { collapsed: true });
+
+    // Debug controls for the tiles per phase
+    const tileConfig = useControls('Background Shader', {
+      'Tile Colors': folder({
+        tileDayA: { value: COMBAT_COLORS.TILE_DAY_A }, 
+        tileDayB: { value: COMBAT_COLORS.TILE_DAY_B },
+        tileSideDay: { value: COMBAT_COLORS.TILE_SIDE_DAY },
+        tileSunA: { value: COMBAT_COLORS.TILE_SUNSET_A }, 
+        tileSunB: { value: COMBAT_COLORS.TILE_SUNSET_B },
+        tileSideSun: { value: COMBAT_COLORS.TILE_SIDE_SUNSET },
+        tileNightA: { value: COMBAT_COLORS.TILE_NIGHT_A }, 
+        tileNightB: { value: COMBAT_COLORS.TILE_NIGHT_B },
+        tileSideNight: { value: COMBAT_COLORS.TILE_SIDE_NIGHT },
+      }),
+      'Tile Settings': folder({
+        tileSize: { value: 0.95, min: 0.8, max: 1.0, step: 0.01 },
+        tileRadius: { value: 0.08, min: 0, max: 0.2, step: 0.01 },
+        pmColor: { value: COMBAT_COLORS.PM_VIOLET },
+        rangeColor: { value: COMBAT_COLORS.RANGE_ORANGE },
+      }),
+      'Log Tiles for AI': button((get) => {
+        const tConfig = {
+          tileDayA: get('Background Shader.Tile Colors.tileDayA'),
+          tileDayB: get('Background Shader.Tile Colors.tileDayB'),
+          tileSideDay: get('Background Shader.Tile Colors.tileSideDay'),
+          tileSunA: get('Background Shader.Tile Colors.tileSunA'),
+          tileSunB: get('Background Shader.Tile Colors.tileSunB'),
+          tileSideSun: get('Background Shader.Tile Colors.tileSideSun'),
+          tileNightA: get('Background Shader.Tile Colors.tileNightA'),
+          tileNightB: get('Background Shader.Tile Colors.tileNightB'),
+          tileSideNight: get('Background Shader.Tile Colors.tileSideNight'),
+        };
+        console.log('--- TILE CONFIG ---');
+        console.log(JSON.stringify(tConfig, null, 2));
+      }),
     }, { rendered: mode === 'combat' });
+
+    // Calculate current tile colors based on timeOfDay
+    const currentTileColors = useMemo(() => {
+      const c1 = new THREE.Color();
+      const c2 = new THREE.Color();
+      const cs = new THREE.Color();
+
+      if (timeOfDay <= 1) {
+        // Day to Sun
+        const t = timeOfDay;
+        c1.lerpColors(new THREE.Color(tileConfig.tileDayA), new THREE.Color(tileConfig.tileSunA), t);
+        c2.lerpColors(new THREE.Color(tileConfig.tileDayB), new THREE.Color(tileConfig.tileSunB), t);
+        cs.lerpColors(new THREE.Color(tileConfig.tileSideDay), new THREE.Color(tileConfig.tileSideSun), t);
+      } else {
+        // Sun to Night
+        const t = timeOfDay - 1;
+        c1.lerpColors(new THREE.Color(tileConfig.tileSunA), new THREE.Color(tileConfig.tileNightA), t);
+        c2.lerpColors(new THREE.Color(tileConfig.tileSunB), new THREE.Color(tileConfig.tileNightB), t);
+        cs.lerpColors(new THREE.Color(tileConfig.tileSideSun), new THREE.Color(tileConfig.tileSideNight), t);
+      }
+
+      return {
+        checkerColorA: '#' + c1.getHexString(),
+        checkerColorB: '#' + c2.getHexString(),
+        sideColor: '#' + cs.getHexString(),
+      };
+    }, [timeOfDay, tileConfig]);
 
     const combatPlayers = useMemo(
       () => (mode === 'combat' && combatState ? Object.values(combatState.players) : []),
@@ -229,7 +287,7 @@ export const UnifiedMapScene = React.memo(
         setVfx((current) => [
           ...current,
           {
-            id: `vfx-${lastSpellCast.timestamp}`,
+            id: 'vfx-' + lastSpellCast.timestamp,
             type: getProjectileType(lastSpellCast.spellId),
             from: { ...caster.position },
             to: { x: targetX, y: targetY },
@@ -249,7 +307,7 @@ export const UnifiedMapScene = React.memo(
       setPopups((current) => [
         ...current,
         {
-          id: `dmg-${lastDamageEvent.timestamp}`,
+          id: 'dmg-' + lastDamageEvent.timestamp,
           pos: [
             player.position.x - combatState.map.width / 2 + 0.5,
             0.5,
@@ -271,7 +329,7 @@ export const UnifiedMapScene = React.memo(
       setPopups((current) => [
         ...current,
         {
-          id: `heal-${lastHealEvent.timestamp}`,
+          id: 'heal-' + lastHealEvent.timestamp,
           pos: [
             player.position.x - combatState.map.width / 2 + 0.5,
             0.5,
@@ -458,6 +516,11 @@ export const UnifiedMapScene = React.memo(
 
     const combatPreviewPath = useMemo(() => {
       if (mode !== 'combat' || !isMyTurn || !currentPlayer || !hoveredTile || !gameMap || selectedSpellId) {
+        return [];
+      }
+
+      // Pas de preview si on survole sa propre case
+      if (hoveredTile.x === currentPlayer.position.x && hoveredTile.y === currentPlayer.position.y) {
         return [];
       }
 
@@ -722,9 +785,9 @@ export const UnifiedMapScene = React.memo(
           <TerrainLayer 
             map={activeMap} 
             onTileClick={handleTileClickDispatcher} 
-            checkerColorA={mode === 'combat' ? tileConfig.checkerColorA : undefined}
-            checkerColorB={mode === 'combat' ? tileConfig.checkerColorB : undefined}
-            sideColor={mode === 'combat' ? tileConfig.sideColor : undefined}
+            checkerColorA={mode === 'combat' ? currentTileColors.checkerColorA : undefined}
+            checkerColorB={mode === 'combat' ? currentTileColors.checkerColorB : undefined}
+            sideColor={mode === 'combat' ? currentTileColors.sideColor : undefined}
             tileSize={mode === 'combat' ? tileConfig.tileSize : undefined}
             tileRadius={mode === 'combat' ? tileConfig.tileRadius : undefined}
           />

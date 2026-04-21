@@ -42,7 +42,7 @@ export const TerrainLayer = React.memo(({ map, onTileClick, checkerColorA, check
           tileSize,
           tileRadius,
         };
-        result.push(<TerrainTile key={`${x}-${y}`} {...tileProps} />);
+        result.push(<TerrainTile key={x + '-' + y} {...tileProps} />);
       }
     }
 

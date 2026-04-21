@@ -4,6 +4,7 @@ import { Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { ParticleTrail } from './ParticleTrail';
 import { FireballParticles } from './FireballVFX';
+import { COMBAT_COLORS } from '../../constants/colors';
 
 interface SpellVFXProps {
   type: string;
@@ -108,15 +109,15 @@ export function SpellVFX({ type, from, to, onComplete }: SpellVFXProps) {
         <mesh ref={meshRef}>
           <sphereGeometry args={[0.25, 16, 16]} />
           <meshStandardMaterial
-            color="#22c55e"
-            emissive="#16a34a"
+            color={COMBAT_COLORS.HEAL_GREEN}
+            emissive={COMBAT_COLORS.HEAL_GREEN}
             emissiveIntensity={2}
             transparent
             opacity={0.7}
           />
-          <pointLight color="#22c55e" intensity={1.5} distance={2} />
+          <pointLight color={COMBAT_COLORS.HEAL_GREEN} intensity={1.5} distance={2} />
         </mesh>
-        <ParticleTrail position={new THREE.Vector3(0,0,0)} color="#86efac" count={40} spread={0.8} />
+        <ParticleTrail position={new THREE.Vector3(0,0,0)} color={COMBAT_COLORS.HP_RED_LIGHT} count={40} spread={0.8} />
       </group>
     );
   }

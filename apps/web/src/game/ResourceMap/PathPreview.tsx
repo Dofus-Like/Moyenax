@@ -1,6 +1,7 @@
 import React from 'react';
 import { PathNode } from '@game/shared-types';
 import { COMBAT_COLORS } from '../constants/colors';
+import { BoundaryOutline } from '../UnifiedMap/CombatHighlights';
 
 interface PathPreviewProps {
   path: PathNode[];
@@ -14,6 +15,13 @@ export const PathPreview = ({ path, gridSize, tileSize = 1, color }: PathPreview
 
   return (
     <group>
+      <BoundaryOutline 
+        tiles={path} 
+        gridSize={gridSize} 
+        color={color || COMBAT_COLORS.PM_VIOLET} 
+        width={3}
+        yOffset={0.07} // Slightly higher than range outlines
+      />
       {path.map((node, i) => {
         const isLast = i === path.length - 1;
         if (isLast) return null; // Skip redundant target dot
@@ -31,7 +39,7 @@ export const PathPreview = ({ path, gridSize, tileSize = 1, color }: PathPreview
             <meshBasicMaterial
               color={color || COMBAT_COLORS.PM_VIOLET}
               transparent
-              opacity={0.9}
+              opacity={0.45}
             />
           </mesh>
         );

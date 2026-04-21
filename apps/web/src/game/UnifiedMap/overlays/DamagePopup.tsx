@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Text, Billboard } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { COMBAT_COLORS } from '../../constants/colors';
 
 interface DamagePopupProps {
   position: [number, number, number];
@@ -31,7 +32,7 @@ export function DamagePopup({ position, value, onComplete }: DamagePopupProps) {
       <Text
         ref={textRef}
         fontSize={0.8}
-        color={value > 0 ? "#ef4444" : "#22c55e"} // Rouge dégâts, vert soin
+        color={value > 0 ? COMBAT_COLORS.HP_RED : COMBAT_COLORS.HEAL_GREEN} // Rouge dégâts, vert soin
         anchorX="center"
         anchorY="middle"
         outlineWidth={0.06}
