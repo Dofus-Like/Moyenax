@@ -48,8 +48,3 @@ Thumbs.db
 vite.config.*.timestamp*
 .cursor
 .claude/worktrees/
-
-# Graphify
-graphify-out/
-graphify.config.json
-.graphify
