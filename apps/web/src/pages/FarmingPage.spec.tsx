@@ -141,7 +141,7 @@ describe('FarmingPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByText('Farming');
+    await screen.findByText('Récoltes');
     expect(screen.queryByRole('button', { name: 'Terminer la manche' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Debug refill' })).not.toBeInTheDocument();
   });
@@ -155,7 +155,7 @@ describe('FarmingPage', () => {
       </MemoryRouter>,
     );
 
-    await screen.findByText('Farming');
+    await screen.findByText('Récoltes');
     await waitFor(() => expect(mocks.navigate).not.toHaveBeenCalled());
   });
 
