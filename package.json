@@ -29,6 +29,7 @@
     "repro:matchmaking:legacy-redis": "node scripts/ci/repro-matchmaking-legacy-redis.mjs",
     "ci:prepush": "node scripts/ci/prepush.mjs",
     "setup": "yarn install && yarn docker:dev:infra && yarn db:migrate && yarn db:seed",
+    "game:sim": "node scripts/balance_sim.js",
     "clean": "taskkill /F /IM node.exe /T 2>nul & powershell -Command \"Get-NetTCPConnection -LocalPort 3000, 5173 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }\" 2>nul & exit 0"
   },
   "private": true,

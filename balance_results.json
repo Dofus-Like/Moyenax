@@ -1,0 +1,56 @@
+{
+  "Manche": {
+    "WARRIOR vs MAGE": {
+      "WARRIOR": 0,
+      "MAGE": 49875
+    },
+    "WARRIOR vs NINJA": {
+      "WARRIOR": 50007,
+      "NINJA": 0
+    },
+    "MAGE vs NINJA": {
+      "MAGE": 522,
+      "NINJA": 50328
+    },
+    "WARRIOR vs WARRIOR": {
+      "WARRIOR": 49563
+    },
+    "MAGE vs MAGE": {
+      "MAGE": 50610
+    },
+    "NINJA vs NINJA": {
+      "NINJA": 49617
+    }
+  },
+  "Session": {
+    "WARRIOR vs MAGE": {
+      "WARRIOR": 0,
+      "MAGE": 16625
+    },
+    "WARRIOR vs NINJA": {
+      "WARRIOR": 16669,
+      "NINJA": 0
+    },
+    "MAGE vs NINJA": {
+      "MAGE": 0,
+      "NINJA": 16776
+    },
+    "WARRIOR vs WARRIOR": {
+      "WARRIOR": 16521
+    },
+    "MAGE vs MAGE": {
+      "MAGE": 16870
+    },
+    "NINJA vs NINJA": {
+      "NINJA": 16539
+    }
+  },
+  "Counts": {
+    "WARRIOR vs MAGE": 16625,
+    "WARRIOR vs NINJA": 16669,
+    "MAGE vs NINJA": 16776,
+    "WARRIOR vs WARRIOR": 16521,
+    "MAGE vs MAGE": 16870,
+    "NINJA vs NINJA": 16539
+  }
+}
