@@ -201,7 +201,7 @@ export function FarmingPage() {
         const previousPips = useFarmingStore.getState().pips;
         const nextState = await gatherNode(x, y);
         if (activeSession) {
-          await refreshSession({ silent: false });
+          await refreshSession({ silent: true });
           return;
         }
         await refreshPlayer();
