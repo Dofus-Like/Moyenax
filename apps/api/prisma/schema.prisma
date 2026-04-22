@@ -8,6 +8,204 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Player {
+  id               String          @id @default(uuid())
+  username         String          @unique
+  email            String          @unique
+  passwordHash     String
+  gold             Int             @default(100)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  skin             String          @default("soldier-classic")
+  combatsAsP1      CombatSession[] @relation("Player1")
+  combatsAsP2      CombatSession[] @relation("Player2")
+  equipmentSlots   EquipmentSlot[]
+  gameSessionsAsP1 GameSession[]   @relation("GSP1")
+  gameSessionsAsP2 GameSession[]   @relation("GSP2")
+  inventory        InventoryItem[]
+  spells           PlayerSpell[]
+  stats            PlayerStats?
+}
+
+model PlayerStats {
+  id       String @id @default(uuid())
+  playerId String @unique
+  vit      Int    @default(100)
+  atk      Int    @default(10)
+  mag      Int    @default(10)
+  def      Int    @default(5)
+  res      Int    @default(5)
+  ini      Int    @default(100)
+  pa       Int    @default(6)
+  pm       Int    @default(3)
+  baseAtk  Int    @default(10)
+  baseDef  Int    @default(5)
+  baseIni  Int    @default(100)
+  baseMag  Int    @default(10)
+  basePa   Int    @default(6)
+  basePm   Int    @default(3)
+  baseRes  Int    @default(5)
+  baseVit  Int    @default(100)
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model Item {
+  id                String             @id @default(uuid())
+  name              String             @unique
+  type              ItemType
+  rank              Int                @default(1)
+  statsBonus        Json?
+  craftCost         Json?
+  shopPrice         Int?
+  family            String?
+  grantsSpells      Json?
+  description       String?
+  iconPath          String?
+  inventory         InventoryItem[]
+  grantedSpellLinks ItemGrantedSpell[]
+  sessionItems      SessionItem[]
+}
+
+model InventoryItem {
+  id            String         @id @default(uuid())
+  playerId      String
+  itemId        String
+  quantity      Int            @default(1)
+  rank          Int            @default(1)
+  equipmentSlot EquipmentSlot?
+  item          Item           @relation(fields: [itemId], references: [id])
+  player        Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, itemId, rank])
+}
+
+model EquipmentSlot {
+  id              String            @id @default(uuid())
+  playerId        String
+  slot            EquipmentSlotType
+  inventoryItemId String?           @unique
+  sessionItemId   String?           @unique
+  inventoryItem   InventoryItem?    @relation(fields: [inventoryItemId], references: [id])
+  player          Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  sessionItem     SessionItem?      @relation(fields: [sessionItemId], references: [id])
+
+  @@unique([playerId, slot])
+}
+
+model Spell {
+  id                      String             @id @default(uuid())
+  name                    String             @unique
+  paCost                  Int                @default(3)
+  minRange                Int                @default(1)
+  maxRange                Int                @default(3)
+  damageMin               Int                @default(10)
+  damageMax               Int                @default(20)
+  cooldown                Int                @default(0)
+  type                    SpellType          @default(DAMAGE)
+  visualType              SpellVisualType    @default(PHYSICAL)
+  code                    String             @unique
+  description             String?
+  family                  SpellFamily        @default(COMMON)
+  iconPath                String?
+  sortOrder               Int                @default(0)
+  requiresLineOfSight     Boolean            @default(true)
+  requiresLinearTargeting Boolean            @default(false)
+  effectKind              SpellEffectKind    @default(DAMAGE_PHYSICAL)
+  effectConfig            Json?
+  isDefault               Boolean            @default(false)
+  grantedByItems          ItemGrantedSpell[]
+  players                 PlayerSpell[]
+}
+
+model PlayerSpell {
+  playerId String
+  spellId  String
+  level    Int    @default(1)
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  spell    Spell  @relation(fields: [spellId], references: [id])
+
+  @@id([playerId, spellId])
+}
+
+model ItemGrantedSpell {
+  itemId  String
+  spellId String
+  item    Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  spell   Spell  @relation(fields: [spellId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, spellId])
+}
+
+model CombatSession {
+  id            String        @id @default(uuid())
+  status        SessionStatus @default(WAITING)
+  player1Id     String
+  player2Id     String?
+  winnerId      String?
+  createdAt     DateTime      @default(now())
+  endedAt       DateTime?
+  gameSessionId String?
+  gameSession   GameSession?  @relation(fields: [gameSessionId], references: [id])
+  player1       Player        @relation("Player1", fields: [player1Id], references: [id])
+  player2       Player?       @relation("Player2", fields: [player2Id], references: [id])
+  turns         CombatTurn[]
+
+  @@index([status, player2Id, createdAt])
+  @@index([player1Id, status, createdAt])
+  @@index([player2Id, status, createdAt])
+}
+
+model CombatTurn {
+  id         String        @id @default(uuid())
+  sessionId  String
+  turnNumber Int
+  playerId   String
+  actions    Json
+  createdAt  DateTime      @default(now())
+  session    CombatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model GameSession {
+  id           String          @id @default(uuid())
+  status       SessionStatus   @default(WAITING)
+  /// @deprecated Utiliser player1Po / player2Po pour l’économie en session
+  gold         Int             @default(0)
+  player1Id    String
+  player2Id    String?
+  createdAt    DateTime        @default(now())
+  endedAt      DateTime?
+  currentRound Int             @default(1)
+  phase        GamePhase       @default(FARMING)
+  player1Ready Boolean         @default(false)
+  player1Wins  Int             @default(0)
+  player2Ready Boolean         @default(false)
+  player2Wins  Int             @default(0)
+  /// Pièces d’or gagnées en combat, dépensables à la boutique (joueur 1)
+  player1Po    Int             @default(0)
+  /// Pièces d’or gagnées en combat, dépensables à la boutique (joueur 2)
+  player2Po    Int             @default(0)
+  mapSeed      Int             @default(0)
+  mapSeedId    String          @default("FORGE")
+  combats      CombatSession[]
+  p1           Player          @relation("GSP1", fields: [player1Id], references: [id])
+  p2           Player?         @relation("GSP2", fields: [player2Id], references: [id])
+  inventory    SessionItem[]
+}
+
+model SessionItem {
+  id            String         @id @default(uuid())
+  sessionId     String
+  playerId      String
+  itemId        String
+  quantity      Int            @default(1)
+  equipped      Boolean        @default(false)
+  equipmentSlot EquipmentSlot?
+  item          Item           @relation(fields: [itemId], references: [id])
+  session       GameSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, playerId, itemId])
+}
+
 enum ItemType {
   WEAPON
   ARMOR_HEAD
@@ -66,209 +264,4 @@ enum SessionStatus {
 enum GamePhase {
   FARMING
   FIGHTING
-}
-
-model Player {
-  id           String          @id @default(uuid())
-  username     String          @unique
-  email        String          @unique
-  passwordHash String
-  gold         Int             @default(100)
-  skin         String          @default("soldier-classic")
-  stats        PlayerStats?
-  inventory    InventoryItem[]
-  spells           PlayerSpell[]
-  equipmentSlots   EquipmentSlot[]
-  combatsAsP1      CombatSession[] @relation("Player1")
-  combatsAsP2      CombatSession[] @relation("Player2")
-  gameSessionsAsP1 GameSession[]   @relation("GSP1")
-  gameSessionsAsP2 GameSession[]   @relation("GSP2")
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-}
-
-model PlayerStats {
-  id       String @id @default(uuid())
-  playerId String @unique
-  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  
-  // Statistiques effectives (Base + Equipement)
-  // Statistiques effectives (Base + Equipement)
-  vit      Int    @default(100)
-  atk      Int    @default(10)
-  mag      Int    @default(10)
-  def      Int    @default(5)
-  res      Int    @default(5)
-  ini      Int    @default(100)
-  pa       Int    @default(6)
-  pm       Int    @default(3)
-
-  // Statistiques de base (Immuables par l'équipement)
-  baseVit  Int    @default(100)
-  baseAtk  Int    @default(10)
-  baseMag  Int    @default(10)
-  baseDef  Int    @default(5)
-  baseRes  Int    @default(5)
-  baseIni  Int    @default(100)
-  basePa   Int    @default(6)
-  basePm   Int    @default(3)
-}
-
-
-model Item {
-  id                String            @id @default(uuid())
-  name              String            @unique
-  description       String?
-  type              ItemType
-  family            String?
-  rank              Int               @default(1)
-  statsBonus        Json?
-  grantsSpells      Json?
-  iconPath          String?
-  craftCost         Json?
-  shopPrice         Int?
-  inventory         InventoryItem[]
-  sessionItems      SessionItem[]
-  grantedSpellLinks ItemGrantedSpell[]
-}
-
-
-model InventoryItem {
-  id            String         @id @default(uuid())
-  playerId      String
-  itemId        String
-  quantity      Int            @default(1)
-  rank          Int            @default(1)
-  player        Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  item          Item           @relation(fields: [itemId], references: [id])
-  equipmentSlot EquipmentSlot?
-
-  @@unique([playerId, itemId, rank])
-}
-
-model EquipmentSlot {
-  id              String            @id @default(uuid())
-  playerId        String
-  slot            EquipmentSlotType
-  inventoryItemId String?           @unique
-  sessionItemId   String?           @unique
-  player          Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  inventoryItem   InventoryItem?    @relation(fields: [inventoryItemId], references: [id])
-  sessionItem     SessionItem?      @relation(fields: [sessionItemId], references: [id])
-
-  @@unique([playerId, slot])
-}
-
-model Spell {
-  id                    String            @id @default(uuid())
-  code                  String            @unique
-  name                  String            @unique
-  description           String?
-  paCost                Int               @default(3)
-  minRange              Int               @default(1)
-  maxRange              Int               @default(3)
-  damageMin             Int               @default(10)
-  damageMax             Int               @default(20)
-  cooldown              Int               @default(0)
-  type                  SpellType         @default(DAMAGE)
-  visualType            SpellVisualType   @default(PHYSICAL)
-  family                SpellFamily       @default(COMMON)
-  iconPath              String?
-  sortOrder             Int               @default(0)
-  requiresLineOfSight   Boolean           @default(true)
-  requiresLinearTargeting Boolean         @default(false)
-  effectKind            SpellEffectKind   @default(DAMAGE_PHYSICAL)
-  effectConfig          Json?
-  isDefault             Boolean           @default(false)
-  players               PlayerSpell[]
-  grantedByItems        ItemGrantedSpell[]
-}
-
-model PlayerSpell {
-  playerId String
-  spellId  String
-  level    Int    @default(1)
-  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  spell    Spell  @relation(fields: [spellId], references: [id])
-
-  @@id([playerId, spellId])
-}
-
-model ItemGrantedSpell {
-  itemId   String
-  spellId  String
-  item     Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  spell    Spell  @relation(fields: [spellId], references: [id], onDelete: Cascade)
-
-  @@id([itemId, spellId])
-}
-
-model CombatSession {
-  id        String        @id @default(uuid())
-  status    SessionStatus @default(WAITING)
-  player1Id     String
-  player2Id     String?
-  gameSessionId String?
-  winnerId      String?
-  player1     Player        @relation("Player1", fields: [player1Id], references: [id])
-  player2     Player?       @relation("Player2", fields: [player2Id], references: [id])
-  gameSession GameSession?  @relation(fields: [gameSessionId], references: [id])
-  turns       CombatTurn[]
-  createdAt DateTime      @default(now())
-  endedAt   DateTime?
-
-  @@index([status, player2Id, createdAt])
-  @@index([player1Id, status, createdAt])
-  @@index([player2Id, status, createdAt])
-}
-
-model CombatTurn {
-  id         String        @id @default(uuid())
-  sessionId  String
-  session    CombatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  turnNumber Int
-  playerId   String
-  actions    Json
-  createdAt  DateTime      @default(now())
-}
-
-model GameSession {
-  id           String          @id @default(uuid())
-  status       SessionStatus   @default(WAITING)
-  phase        GamePhase       @default(FARMING)
-  currentRound Int             @default(1)
-  player1Wins  Int             @default(0)
-  player2Wins  Int             @default(0)
-  player1Ready Boolean         @default(false)
-  player2Ready Boolean         @default(false)
-  /// @deprecated Utiliser player1Po / player2Po pour l’économie en session
-  gold         Int             @default(0)
-  /// Pièces d’or gagnées en combat, dépensables à la boutique (joueur 1)
-  player1Po    Int             @default(0)
-  /// Pièces d’or gagnées en combat, dépensables à la boutique (joueur 2)
-  player2Po    Int             @default(0)
-  player1Id    String
-  player2Id    String?
-  mapSeedId    String          @default("FORGE")
-  mapSeed      Int             @default(0)
-  p1           Player          @relation("GSP1", fields: [player1Id], references: [id])
-  p2           Player?         @relation("GSP2", fields: [player2Id], references: [id])
-  inventory    SessionItem[]
-  combats      CombatSession[]
-  createdAt    DateTime        @default(now())
-  endedAt      DateTime?
-}
-
-model SessionItem {
-  id             String         @id @default(uuid())
-  sessionId      String
-  playerId       String
-  itemId         String
-  quantity       Int            @default(1)
-  equipped       Boolean        @default(false)
-  session        GameSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  item           Item           @relation(fields: [itemId], references: [id])
-  equipmentSlot  EquipmentSlot?
-
-  @@unique([sessionId, playerId, itemId])
 }
