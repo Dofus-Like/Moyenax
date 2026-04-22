@@ -1,12 +1,21 @@
 import React, { Suspense, useMemo } from 'react';
-import { CombatPlayer, GameMap, PathNode, TerrainType } from '@game/shared-types';
-import { TerrainTile, TerrainTileProps } from '../ResourceMap/TerrainTile';
+import { 
+  CombatPlayer, 
+  GameMap, 
+  PathNode, 
+  TerrainType, 
+  TERRAIN_PROPERTIES, 
+  CombatTerrainType 
+} from '@game/shared-types';
+import { TerrainTile } from '../ResourceMap/TerrainTile';
 import { TileHoverEffect } from '../ResourceMap/TileHoverEffect';
 import { PlayerPawn, PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
 import { PathPreview } from '../ResourceMap/PathPreview';
 import { CombatHighlightsLayer } from './CombatHighlights';
 import { SpellVFX } from './overlays/SpellVFX';
 import { DamagePopup } from './overlays/DamagePopup';
+import { InstancedTerrain } from './InstancedTerrain';
+import { InstancedFoliage } from './InstancedFoliage';
 
 interface TerrainLayerProps {
   map: GameMap;
@@ -18,51 +27,51 @@ interface TerrainLayerProps {
   tileRadius?: number;
 }
 
-export const TerrainLayer = React.memo(({ map, onTileClick, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius }: TerrainLayerProps) => {
-  const tiles = useMemo(() => {
+export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius }: TerrainLayerProps) => {
+  const decorations = useMemo(() => {
     const result: React.ReactElement[] = [];
 
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const terrain = map.grid[y][x] as TerrainType;
-        
-        let customColor = null;
-        if (checkerColorA && checkerColorB) {
-          customColor = (x + y) % 2 === 0 ? checkerColorA : checkerColorB;
-        }
+        const props = TERRAIN_PROPERTIES[terrain];
 
-        const tileProps: TerrainTileProps = {
-          x,
-          y,
-          terrain,
-          gridSize: map.width,
-          onTileClick,
-          customColor,
-          sideColor,
-          tileSize,
-          tileRadius,
-        };
-        result.push(<TerrainTile key={x + '-' + y} {...tileProps} />);
+        // Check if this decoration is now handled by InstancedFoliage
+        const isInstancedFoliage = (props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD) || 
+                                   (props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain === TerrainType.HERB);
+
+        // Only render TerrainTile if it has non-ground decorations that are NOT instanced foliage
+        if (!isInstancedFoliage && (props.combatType !== CombatTerrainType.FLAT || props.harvestable)) {
+          result.push(
+            <TerrainTile 
+              key={x + '-' + y} 
+              x={x} 
+              y={y} 
+              terrain={terrain} 
+              gridSize={map.width} 
+            />
+          );
+        }
       }
     }
 
     return result;
-  }, [map, onTileClick, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius]);
+  }, [map]);
 
   return (
     <group>
-      {/* Plateau de fond pour boucher les trous entre les tiles avec la sideColor */}
-      {sideColor && (
-        <mesh 
-          position={[0, -0.02, 0]} 
-          rotation={[-Math.PI / 2, 0, 0]} 
-          receiveShadow
-        >
-          <planeGeometry args={[map.width, map.height]} />
-          <meshStandardMaterial color={sideColor} />
-        </mesh>
-      )}
-      {tiles}
+      <InstancedTerrain 
+        map={map}
+        checkerColorA={checkerColorA}
+        checkerColorB={checkerColorB}
+        sideColor={sideColor}
+        tileSize={tileSize}
+        tileRadius={tileRadius}
+      />
+      <Suspense fallback={null}>
+        <InstancedFoliage map={map} />
+      </Suspense>
+      {decorations}
     </group>
   );
 });
