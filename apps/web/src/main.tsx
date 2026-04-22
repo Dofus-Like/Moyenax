@@ -9,6 +9,7 @@ import { InventoryPage } from './pages/InventoryPage';
 import { DebugPage } from './pages/DebugPage';
 import { useAuthStore } from './store/auth.store';
 import { GameSessionProvider, GameTunnelGuard } from './pages/GameTunnel';
+import { GameLayout } from './components/GameLayout';
 import './styles/global.css';
 
 const queryClient = new QueryClient();
@@ -16,8 +17,12 @@ const FarmingPage = lazy(() => import('./pages/FarmingPage').then((module) => ({
 const CombatPage = lazy(() => import('./pages/CombatPage').then((module) => ({ default: module.CombatPage })));
 const CraftingPage = lazy(() => import('./pages/CraftingPage').then((module) => ({ default: module.CraftingPage })));
 
-function PageLoader() {
-  return <div className="loading-screen">Chargement...</div>;
+function PageLoader({ message = 'Chargement...' }: { message?: string }) {
+  return (
+    <div className="loading-screen">
+      <span>⚔️ {message}</span>
+    </div>
+  );
 }
 
 function LazyPage({ children }: { children: React.ReactNode }) {
@@ -36,7 +41,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     init();
   }, [initialize]);
 
-  if (loading) return <div className="loading-screen">Authentification...</div>;
+  if (loading) return <PageLoader message="Authentification..." />;
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
@@ -55,7 +60,9 @@ root.render(
               element={
                 <ProtectedRoute>
                   <GameTunnelGuard>
-                    <LobbyPage />
+                    <GameLayout>
+                      <LobbyPage />
+                    </GameLayout>
                   </GameTunnelGuard>
                 </ProtectedRoute>
               }
@@ -65,9 +72,11 @@ root.render(
               element={
                 <ProtectedRoute>
                   <GameTunnelGuard>
-                    <LazyPage>
-                      <FarmingPage />
-                    </LazyPage>
+                    <GameLayout>
+                      <LazyPage>
+                        <FarmingPage />
+                      </LazyPage>
+                    </GameLayout>
                   </GameTunnelGuard>
                 </ProtectedRoute>
               }
@@ -77,7 +86,9 @@ root.render(
               element={
                 <ProtectedRoute>
                   <GameTunnelGuard>
-                    <ShopPage />
+                    <GameLayout>
+                      <ShopPage />
+                    </GameLayout>
                   </GameTunnelGuard>
                 </ProtectedRoute>
               }
@@ -87,7 +98,9 @@ root.render(
               element={
                 <ProtectedRoute>
                   <GameTunnelGuard>
-                    <InventoryPage />
+                    <GameLayout>
+                      <InventoryPage />
+                    </GameLayout>
                   </GameTunnelGuard>
                 </ProtectedRoute>
               }
@@ -97,9 +110,11 @@ root.render(
               element={
                 <ProtectedRoute>
                   <GameTunnelGuard>
-                    <LazyPage>
-                      <CraftingPage />
-                    </LazyPage>
+                    <GameLayout>
+                      <LazyPage>
+                        <CraftingPage />
+                      </LazyPage>
+                    </GameLayout>
                   </GameTunnelGuard>
                 </ProtectedRoute>
               }
@@ -114,7 +129,16 @@ root.render(
                 </ProtectedRoute>
               }
             />
-            <Route path="/debug" element={<ProtectedRoute><DebugPage /></ProtectedRoute>} />
+            <Route
+              path="/debug"
+              element={
+                <ProtectedRoute>
+                  <GameLayout>
+                    <DebugPage />
+                  </GameLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </GameSessionProvider>
@@ -122,3 +146,4 @@ root.render(
     </QueryClientProvider>
   </React.StrictMode>,
 );
+

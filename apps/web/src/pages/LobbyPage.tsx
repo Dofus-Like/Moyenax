@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gameSessionApi } from '../api/game-session.api';
-import { SKINS, getSkinById } from '../game/constants/skins';
+import { SKINS } from '../game/constants/skins';
 import { useAuthStore } from '../store/auth.store';
 import { useGameSession } from './GameTunnel';
 import './LobbyPage.css';
@@ -31,7 +31,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function LobbyPage() {
-  const { player, logout, initialize, setSkin } = useAuthStore();
+  const { player, initialize, setSkin } = useAuthStore();
   const { activeSession, refreshSession } = useGameSession();
   const navigate = useNavigate();
   const [rooms, setRooms] = React.useState<Room[]>([]);
@@ -80,11 +80,6 @@ export function LobbyPage() {
     }
   }, [activeSession, navigate]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   const handleCreateRoom = async () => {
     try {
       await gameSessionApi.createPrivateSession();
@@ -116,7 +111,30 @@ export function LobbyPage() {
       navigate('/farming');
     } catch (error) {
       console.error('Failed to join room', error);
-      window.alert(getErrorMessage(error, 'Impossible de rejoindre la room.'));
+      const msg = getErrorMessage(error, 'Impossible de rejoindre la room.');
+      if (msg.includes('deja une room ouverte')) {
+        if (window.confirm('Vous avez déjà une session active. Voulez-vous la rejoindre ?')) {
+          navigate('/farming');
+        }
+      } else {
+        window.alert(msg);
+      }
+    }
+  };
+
+  const handleResetSession = async () => {
+    if (!window.confirm('Êtes-vous sûr de vouloir réinitialiser votre session ? Toute progression non sauvegardée sera perdue.')) {
+      return;
+    }
+
+    try {
+      await gameSessionApi.resetSession();
+      await refreshSession({ silent: true });
+      await fetchLobbyState();
+      window.alert('Session réinitialisée avec succès.');
+    } catch (error) {
+      console.error('Failed to reset session', error);
+      window.alert(getErrorMessage(error, 'Impossible de réinitialiser la session.'));
     }
   };
 
@@ -197,20 +215,6 @@ export function LobbyPage() {
 
   return (
     <div className="lobby-container">
-      <header className="lobby-header">
-        <h1>⚔️ Moyenax</h1>
-
-        <div className="lobby-user-info">
-          <div className="user-profile-summary">
-            <span className="lobby-username">{player?.username ?? 'Joueur'}</span>
-            <span className="lobby-skin-tag">{getSkinById(player?.skin || 'soldier-classic').name}</span>
-          </div>
-          <button type="button" className="lobby-logout" onClick={handleLogout}>
-            Déconnexion
-          </button>
-        </div>
-      </header>
-
       <section className="lobby-skins">
         <div className="lobby-section-header">
           <h2>🎭 Choisissez votre apparence</h2>
@@ -328,12 +332,22 @@ export function LobbyPage() {
           </div>
           <button
             type="button"
-            className="vs-ai-btn"
-            onClick={handleStartVsAiCombat}
-            disabled={hasOpenSession || isInQueue}
+            className={`vs-ai-btn ${hasOpenSession ? 'resume' : ''}`}
+            onClick={hasOpenSession ? () => navigate('/farming') : handleStartVsAiCombat}
+            disabled={isInQueue}
           >
-            Lancer VS AI
+            {hasOpenSession ? 'Reprendre la partie' : 'Lancer VS AI'}
           </button>
+          
+          {hasOpenSession && (
+            <button
+              type="button"
+              className="reset-session-link"
+              onClick={handleResetSession}
+            >
+              🔄 Réinitialiser
+            </button>
+          )}
         </div>
       </section>
     </div>

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { calculateInitiativeJet } from '@game/game-engine';
 import { GAME_EVENTS } from '@game/shared-types';
 import type { CombatState } from '@game/shared-types';
@@ -226,6 +226,14 @@ export class SessionService {
     return initialState;
   }
 
+  @OnEvent(GAME_EVENTS.COMBAT_ENDED)
+  async handleCombatEndedEvent(payload: { winnerId: string; loserId: string; sessionId: string }) {
+    // This handles cases where TurnService ended the combat (surrender/death)
+    // We call endCombat to ensure DB is updated and POs are awarded
+    console.log(`[SessionService] Received COMBAT_ENDED event for ${payload.sessionId}. Synchronizing DB.`);
+    await this.endCombat(payload.sessionId, payload.winnerId, payload.loserId);
+  }
+
   async endCombat(combatSessionId: string, winnerId: string, loserId: string) {
     const session = await this.prisma.combatSession.findUnique({
       where: { id: combatSessionId },
@@ -236,7 +244,7 @@ export class SessionService {
     const gameSessionId = session.gameSessionId;
 
     if (gameSessionId) {
-      const gs = await (this.prisma as any).gameSession.findUnique({
+      const gs = await this.prisma.gameSession.findUnique({
         where: { id: gameSessionId },
       });
 
@@ -255,26 +263,14 @@ export class SessionService {
           where: { id: combatSessionId },
           data: { status: 'FINISHED', winnerId, endedAt: new Date() },
         }),
-        (this.prisma as any).gameSession.update({
+        this.prisma.gameSession.update({
           where: { id: gameSessionId },
           data: poData,
         }),
       ]);
 
-      const updated = await (this.prisma as any).gameSession.findUnique({
-        where: { id: gameSessionId },
-        include: {
-          p1: { select: { username: true } },
-          p2: { select: { username: true } },
-          combats: {
-            orderBy: { createdAt: 'desc' },
-            take: 5,
-          },
-        },
-      });
-      if (updated) {
-        this.sse.emit(`game-session:${gameSessionId}`, 'SESSION_UPDATED', updated);
-      }
+      // SSE emission removed from here. GameSessionService will emit it after 
+      // correctly reconciling the phase (FARMING or FINISHED).
     } else {
       await this.prisma.$transaction([
         this.prisma.combatSession.update({
@@ -293,6 +289,15 @@ export class SessionService {
     }
 
     await this.redis.del(`combat:${combatSessionId}`);
+    
+    // Notify internal services (like GameSessionService)
+    this.eventEmitter.emit(GAME_EVENTS.COMBAT_ENDED, { 
+      winnerId, 
+      loserId, 
+      sessionId: combatSessionId, // CRITICAL: This MUST be the combat session ID for lookup
+      gameSessionId: gameSessionId, // Optional but good for logs
+    });
+
     this.sse.emit(combatSessionId, 'COMBAT_ENDED', {
       winnerId,
       loserId,

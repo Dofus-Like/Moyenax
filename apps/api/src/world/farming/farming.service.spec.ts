@@ -31,6 +31,9 @@ describe('FarmingService', () => {
     gameSession: {
       findFirst: jest.fn(),
     },
+    player: {
+      findUnique: jest.fn(),
+    },
   };
 
   let service: FarmingService;
@@ -59,6 +62,7 @@ describe('FarmingService', () => {
     });
     spendableGold.credit.mockResolvedValue(11);
     prisma.gameSession.findFirst.mockResolvedValue(null);
+    prisma.player.findUnique.mockResolvedValue({ id: 'bot-id', username: 'Bot' });
 
     service = new FarmingService(
       redis as any,

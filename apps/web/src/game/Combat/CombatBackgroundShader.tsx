@@ -12,7 +12,7 @@ export function CombatBackgroundShader() {
   const { camera } = useThree();
 
   const config = useControls('Background Shader', {
-    timeOfDay: { value: 0, min: 0, max: 2, step: 1, label: 'Moment (0:J, 1:C, 2:N)' },
+    timeOfDay: { value: 0, min: 0, max: 2, step: 0.01, label: 'Moment (0:J, 1:C, 2:N)' },
     'Sky Colors': folder({
       dayA: { value: COMBAT_COLORS.SHADER_BG_A },
       dayB: { value: COMBAT_COLORS.SHADER_BG_B },

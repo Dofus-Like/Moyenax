@@ -58,6 +58,36 @@
   box-shadow: none;
 }
 
+.vs-ai-btn.resume {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.2);
+}
+
+.vs-ai-btn.resume:hover:not(:disabled) {
+  box-shadow: 0 14px 28px rgba(16, 185, 129, 0.28);
+}
+
+.reset-session-link {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.reset-session-link:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
 .hot-badge {
   background: white;
   color: #ff0000;

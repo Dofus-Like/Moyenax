@@ -1,6 +1,5 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { OnEvent as NestOnEvent } from '@nestjs/event-emitter';
-import { GAME_EVENTS } from '@game/shared-types';
 import { SessionService } from '../combat/session/session.service';
 import { PlayerSpellProjectionService } from '../player/player-spell-projection.service';
 import { StatsCalculatorService } from '../player/stats-calculator.service';
@@ -13,6 +12,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class GameSessionService {
+  private readonly startMatchLocks = new Set<string>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -35,7 +36,10 @@ export class GameSessionService {
     const bot = await this.prisma.player.findUnique({ where: { username: 'Bot' } });
     const isVsAi =
       opts?.vsAi === true ||
-      (player2Id != null && bot?.id != null && player2Id === bot.id);
+      (player2Id != null && bot?.id != null && player2Id === bot.id) ||
+      (player2Id != null && (await this.prisma.player.findUnique({ where: { id: player2Id } }))?.username.toLowerCase().includes('bot'));
+
+    console.log(`[GameSession] Creating session for P1=${player1Id}, P2=${player2Id}. isVsAi detected: ${isVsAi}`);
 
     if (player2Id && !isVsAi) {
       await this.sessionSecurity.assertPlayerAvailableForPublicRoom(player2Id);
@@ -45,7 +49,7 @@ export class GameSessionService {
       const { ALL_SEED_IDS } = await import('@game/shared-types');
       const mapSeedId = ALL_SEED_IDS[Math.floor(Math.random() * ALL_SEED_IDS.length)];
       const mapSeed = Math.floor(Math.random() * 1000000);
-      const session = await (this.prisma as any).gameSession.create({
+      const session = await this.prisma.gameSession.create({
         data: {
           player1Id,
           player2Id,
@@ -68,7 +72,7 @@ export class GameSessionService {
         },
       });
 
-      this.eventEmitter.emit(GAME_EVENTS.SESSION_CREATED, {
+      this.eventEmitter.emit('game.session.created', {
         sessionId: session.id,
         player1Id: session.player1Id,
         player2Id: session.player2Id,
@@ -90,12 +94,54 @@ export class GameSessionService {
   }
 
   async createVsAiSession(player1Id: string, botPlayerId: string) {
+    // 1. Check for an existing session first
+    const existing = await this.prisma.gameSession.findFirst({
+      where: {
+        player1Id,
+        status: { in: ['WAITING', 'ACTIVE'] },
+      },
+      include: {
+        combats: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    if (existing) {
+      console.log(`[GameSession] auto-rejoining existing session ${existing.id} instead of creating new one.`);
+      return existing;
+    }
+
+    // 2. No session? Clean up potential old standalone combats then create
     await this.cleanupStandaloneCombatSessions(player1Id);
     return this.createSession(player1Id, botPlayerId, { vsAi: true });
   }
 
+  async forceReset(playerId: string) {
+    console.log(`[GameSession] Force resetting all sessions for player ${playerId}`);
+    
+    // 1. Find all active/waiting sessions
+    const openSessions = await this.prisma.gameSession.findMany({
+      where: {
+        OR: [{ player1Id: playerId }, { player2Id: playerId }],
+        status: { in: ['WAITING', 'ACTIVE'] },
+      },
+    });
+
+    // 2. End each session properly
+    for (const session of openSessions) {
+      await this.endSession(session.id, playerId);
+    }
+
+    // 3. Fallback: also clean up any standalone combats
+    await this.cleanupStandaloneCombatSessions(playerId);
+    
+    return { success: true, count: openSessions.length };
+  }
+
   async getWaitingSessions() {
-    return (this.prisma as any).gameSession.findMany({
+    return this.prisma.gameSession.findMany({
       where: {
         status: 'WAITING',
         player2Id: null,
@@ -110,7 +156,7 @@ export class GameSessionService {
   async joinPrivateSession(sessionId: string, player2Id: string) {
     await this.sessionSecurity.assertCanJoinGameSession(sessionId, player2Id);
 
-    const updatedCount = await (this.prisma as any).gameSession.updateMany({
+    const updatedCount = await this.prisma.gameSession.updateMany({
       where: {
         id: sessionId,
         status: 'WAITING',
@@ -126,14 +172,14 @@ export class GameSessionService {
       throw new BadRequestException('Session deja pleine ou expiree');
     }
 
-    const updated = await (this.prisma as any).gameSession.findUnique({
+    const updated = await this.prisma.gameSession.findUnique({
       where: { id: sessionId },
       include: {
         p1: { select: { username: true } },
         p2: { select: { username: true } },
         combats: {
           orderBy: { createdAt: 'desc' },
-          take: 5,
+          take: 1, // Only need the most recent
         },
       },
     });
@@ -162,16 +208,18 @@ export class GameSessionService {
   async getSessionInventory(sessionId: string, playerId: string) {
     await this.sessionSecurity.getGameSessionForParticipantOrThrow(sessionId, playerId);
 
-    return (this.prisma as any).sessionItem.findMany({
+    return this.prisma.sessionItem.findMany({
       where: { sessionId, playerId },
       include: { item: true },
     });
   }
 
   async setReady(sessionId: string, playerId: string, ready: boolean) {
+    console.log(`[GameSession] setReady call: session=${sessionId}, player=${playerId}, ready=${ready}`);
     const session = await this.sessionSecurity.getGameSessionForParticipantOrThrow(sessionId, playerId);
 
     if (session.phase !== 'FARMING') {
+      console.warn(`[GameSession] REJECTED setReady: Session ${sessionId} is in phase ${session.phase}`);
       throw new BadRequestException(
         "Vous ne pouvez changer votre etat de pret qu'en phase de preparation",
       );
@@ -184,55 +232,102 @@ export class GameSessionService {
       throw new BadRequestException('Joueur non autorise');
     }
 
-    const updatedSession = await (this.prisma as any).gameSession.update({
+    const updatedSession = await this.prisma.gameSession.update({
       where: { id: sessionId },
       data: {
-        player1Ready: isPlayer1 ? ready : session.player1Ready,
-        player2Ready: isPlayer2 ? ready : session.player2Ready,
+        player1Ready: isPlayer1 ? ready : undefined,
+        player2Ready: isPlayer2 ? ready : undefined,
       },
       include: {
-        p1: { select: { username: true } },
-        p2: { select: { username: true } },
+        p1: true,
+        p2: true,
         combats: {
           orderBy: { createdAt: 'desc' },
-          take: 5,
+          take: 1,
         },
       },
     });
 
-    this.sse.emit(`game-session:${sessionId}`, 'SESSION_UPDATED', updatedSession);
-
     if (updatedSession.player1Ready && updatedSession.player2Ready) {
-      await this.startMatch(sessionId);
+      console.log(`[GameSession] Both players ready for session ${sessionId}. Triggering startMatch.`);
+      // CRITICAL: We await startMatch to ensure the phase update to FIGHTING is persisted
+      // before we return the response or emit the final SSE event.
+      // We ALSO skip the intermediate emission at line 210 in the logic below to avoid race.
+      return this.startMatch(sessionId);
     }
 
+    // Only emit intermediate update if match hasn't started
+    this.sse.emit(`game-session:${sessionId}`, 'SESSION_UPDATED', updatedSession);
     return updatedSession;
   }
 
   private async startMatch(sessionId: string) {
-    const session = await (this.prisma as any).gameSession.findUnique({ where: { id: sessionId } });
-    if (!session) return;
+    if (this.startMatchLocks.has(sessionId)) {
+      console.warn(`[GameSession] startMatch already in progress for session ${sessionId}.`);
+      return this.prisma.gameSession.findUnique({ where: { id: sessionId }, include: { combats: { orderBy: { createdAt: 'desc' }, take: 1 } } });
+    }
 
-    await this.sessionService.startSessionCombat(session.player1Id, session.player2Id!, session.id);
+    try {
+      this.startMatchLocks.add(sessionId);
+      const session = await (this.prisma as any).gameSession.findUnique({ where: { id: sessionId } });
+      if (!session) return;
+      if (session.phase === 'FIGHTING') {
+        console.warn(`[GameSession] Session ${sessionId} is already in FIGHTING phase. Skipping startMatch.`);
+        return;
+      }
 
-    const updated = await (this.prisma as any).gameSession.update({
-      where: { id: sessionId },
-      data: {
-        phase: 'FIGHTING',
-        player1Ready: false,
-        player2Ready: false,
-      },
-      include: {
-        p1: { select: { username: true } },
-        p2: { select: { username: true } },
-        combats: {
-          orderBy: { createdAt: 'desc' },
-          take: 5,
+      console.log(`[GameSession] Starting match for session ${sessionId} (Round ${session.currentRound})`);
+      
+      if (!session.player2Id) {
+        throw new BadRequestException('Player 2 is missing from session');
+      }
+
+      const combat = await this.sessionService.startSessionCombat(session.player1Id, session.player2Id, session.id);
+      console.log(`[GameSession] Created combat session ${combat.sessionId} for game session ${sessionId}`);
+
+      const updated = await this.prisma.gameSession.update({
+        where: { id: sessionId },
+        data: {
+          phase: 'FIGHTING',
+          player1Ready: false,
+          player2Ready: false,
         },
-      },
-    });
+        include: {
+          p1: true,
+          p2: true,
+          combats: {
+            orderBy: { createdAt: 'desc' },
+            take: 1, // We only need the latest one to confirm
+          },
+        },
+      });
 
-    this.sse.emit(`game-session:${sessionId}`, 'SESSION_UPDATED', updated);
+      console.log(`[GameSession] Session ${sessionId} phase updated to FIGHTING. Latest combat: ${updated.combats?.[0]?.id}`);
+      this.sse.emit(`game-session:${sessionId}`, 'SESSION_UPDATED', updated);
+      return updated;
+    } catch (error) {
+      console.error(`[GameSession] CRITICAL ERROR in startMatch for session ${sessionId}:`, error);
+      // Reset readiness to allow the user to try again
+      try {
+        const botId = (await this.prisma.player.findUnique({ where: { username: 'Bot' } }))?.id;
+        const currentSession = await this.prisma.gameSession.findUnique({ where: { id: sessionId } });
+        const resetSession = await this.prisma.gameSession.update({
+          where: { id: sessionId },
+          data: {
+            player1Ready: false,
+            player2Ready: currentSession?.player2Id === botId, // Only ready if it's a bot
+          },
+        });
+        this.sse.emit(`game-session:${sessionId}`, 'SESSION_UPDATED', resetSession);
+        return resetSession;
+      } catch (e) {
+        console.error(`[GameSession] Failed to reset readiness for ${sessionId}:`, e);
+      }
+      this.sse.emit(`game-session:${sessionId}`, 'ERROR', { message: 'Le combat n\'a pas pu démarrer', error: (error as Error).message });
+      return this.prisma.gameSession.findUnique({ where: { id: sessionId } });
+    } finally {
+      this.startMatchLocks.delete(sessionId);
+    }
   }
 
   async endSession(sessionId: string, userId: string) {
@@ -253,7 +348,7 @@ export class GameSessionService {
 
     await this.cleanupSessionArtifacts(sessionId, [sessionToEnd.player1Id, sessionToEnd.player2Id]);
 
-    const session = await (this.prisma as any).gameSession.update({
+    const session = await this.prisma.gameSession.update({
       where: { id: sessionId },
       data: {
         status: 'FINISHED',
@@ -262,11 +357,11 @@ export class GameSessionService {
         player2Ready: false,
       },
       include: {
-        p1: { select: { username: true } },
-        p2: { select: { username: true } },
+        p1: true,
+        p2: true,
         combats: {
           orderBy: { createdAt: 'desc' },
-          take: 5,
+          take: 1,
         },
       },
     });
@@ -284,22 +379,48 @@ export class GameSessionService {
     });
   }
 
-  @NestOnEvent(GAME_EVENTS.COMBAT_ENDED)
+  @NestOnEvent('combat.ended')
   async handleCombatEnded(payload: { winnerId: string; loserId: string; sessionId: string }) {
+    const combatId = payload.sessionId;
     const combat = await this.prisma.combatSession.findUnique({
-      where: { id: payload.sessionId },
+      where: { id: combatId },
       select: { gameSessionId: true },
     });
 
-    if (!combat?.gameSessionId) {
+    const gameSessionId = combat?.gameSessionId;
+
+    console.log(`[DEBUG-GSS] [${new Date().toISOString()}] handleCombatEnded: combatId=${combatId}, gameSessionId=${gameSessionId}`);
+
+    if (!gameSessionId) {
+      console.warn(`[GameSession] No linked gameSession found for combat ${combatId}`);
       return;
     }
 
-    const session = await (this.prisma as any).gameSession.findUnique({
-      where: { id: combat.gameSessionId },
+    const session = await this.prisma.gameSession.findUnique({
+      where: { id: gameSessionId },
+      include: { 
+        p1: true, 
+        p2: true, 
+        combats: { 
+          orderBy: { createdAt: 'desc' }, 
+          take: 1 
+        } 
+      },
     });
 
     if (!session) {
+      console.error(`[DEBUG-GSS] [${new Date().toISOString()}] CRITICAL: Game session ${gameSessionId} not found for combat ${combatId}`);
+      return;
+    }
+
+    const latestCombatId = session.combats?.[0]?.id;
+    if (latestCombatId && latestCombatId !== combatId) {
+      console.warn(`[DEBUG-GSS] [${new Date().toISOString()}] REJECTED stale COMBAT_ENDED event for combat ${combatId}. Latest is ${latestCombatId}`);
+      return;
+    }
+
+    if (session.phase === 'FARMING') {
+      console.warn(`[GameSession] Session ${gameSessionId} already in FARMING. Ignoring combat end for ${combatId}`);
       return;
     }
 
@@ -308,33 +429,53 @@ export class GameSessionService {
     const newWinsP2 = !isPlayer1Winner ? session.player2Wins + 1 : session.player2Wins;
     const isGameOver = newWinsP1 >= 3 || newWinsP2 >= 3;
 
-    const updated = await (this.prisma as any).gameSession.update({
-      where: { id: session.id },
-      data: {
-        player1Wins: newWinsP1,
-        player2Wins: newWinsP2,
-        currentRound: session.currentRound + 1,
-        phase: 'FARMING',
-        player1Ready: false,
-        player2Ready: false,
-        status: isGameOver ? 'FINISHED' : 'ACTIVE',
-        endedAt: isGameOver ? new Date() : null,
-      },
-      include: {
-        p1: { select: { username: true } },
-        p2: { select: { username: true } },
-        combats: {
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-        },
-      },
-    });
-
-    if (isGameOver) {
-      await this.cleanupSessionArtifacts(session.id, [session.player1Id, session.player2Id]);
+    const botUsernames = ['Bot', 'BotWarrior', 'BotMage', 'BotRanger'];
+    const isVsAi = botUsernames.includes(session.p2?.username || '') || session.player2Id === null; 
+    
+    let finalIsVsAi = isVsAi;
+    if (!finalIsVsAi && session.p2?.username.toLowerCase().includes('bot')) {
+      finalIsVsAi = true;
     }
+    
+    console.log(`[DEBUG-GSS] [${new Date().toISOString()}] Processing transition: gameSession=${gameSessionId}, isGameOver=${isGameOver}, finalIsVsAi=${finalIsVsAi}`);
 
-    this.sse.emit(`game-session:${session.id}`, 'SESSION_UPDATED', updated);
+    try {
+      const updated = await this.prisma.gameSession.update({
+        where: { 
+          id: gameSessionId,
+          phase: 'FIGHTING'
+        },
+        data: {
+          player1Wins: newWinsP1,
+          player2Wins: newWinsP2,
+          currentRound: isGameOver ? session.currentRound : session.currentRound + 1,
+          phase: 'FARMING',
+          player1Ready: false,
+          player2Ready: finalIsVsAi,
+          status: isGameOver ? 'FINISHED' : 'ACTIVE',
+          endedAt: isGameOver ? new Date() : null,
+          player1Po: isPlayer1Winner ? { increment: 50 } : undefined, // Potential PO reward
+          player2Po: !isPlayer1Winner ? { increment: 50 } : undefined,
+        },
+        include: {
+          p1: { select: { username: true } },
+          p2: { select: { username: true } },
+          combats: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
+        },
+      });
+
+      console.log(`[GameSession] Session ${gameSessionId} update complete. Phase: ${updated.phase}. P2Ready: ${updated.player2Ready}`);
+      this.sse.emit(`game-session:${gameSessionId}`, 'SESSION_UPDATED', updated);
+
+      if (isGameOver) {
+        await this.cleanupSessionArtifacts(gameSessionId, [session.player1Id, session.player2Id]);
+      }
+    } catch (error) {
+      console.warn(`[GameSession] handleCombatEnded: Update failed for session ${gameSessionId}. It may have already transitioned. Error: ${(error as any).message}`);
+    }
   }
 
   private async cleanupSessionArtifacts(sessionId: string, playerIds: Array<string | null | undefined>) {
@@ -342,7 +483,7 @@ export class GameSessionService {
 
     await Promise.all(uniquePlayerIds.map((playerId) => this.redis.del(`farming:${playerId}`)));
 
-    const sessionItems = await (this.prisma as any).sessionItem.findMany({
+    const sessionItems = await this.prisma.sessionItem.findMany({
       where: { sessionId },
       select: { id: true },
     });
@@ -357,7 +498,7 @@ export class GameSessionService {
         data: { sessionItemId: null },
       });
 
-      await (this.prisma as any).sessionItem.deleteMany({
+      await this.prisma.sessionItem.deleteMany({
         where: { sessionId },
       });
     }
@@ -417,7 +558,7 @@ export class GameSessionService {
       return;
     }
 
-    const effectiveStats = this.statsCalculator.computeEffectiveStatsFromSnapshot(baseStats, slots as any[]);
+    const effectiveStats = this.statsCalculator.computeEffectiveStatsFromSnapshot(baseStats, slots as unknown as any[]);
 
     await this.prisma.$transaction([
       this.prisma.playerStats.update({

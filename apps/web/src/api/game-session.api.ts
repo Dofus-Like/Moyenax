@@ -6,7 +6,7 @@ export const gameSessionApi = {
   joinQueue: () => apiClient.post<{ status: string; sessionId?: string }>(`${API_URL}/join-queue`),
   leaveQueue: () => apiClient.post(`${API_URL}/leave-queue`),
   getQueueStatus: () => apiClient.get<{ queued: boolean }>(`${API_URL}/queue-status`),
-  getActiveSession: () => apiClient.get(`${API_URL}/active`),
+  getActiveSession: (config?: import('axios').AxiosRequestConfig) => apiClient.get(`${API_URL}/active`, config),
   getInventory: () => apiClient.get(`${API_URL}/inventory`),
   endSession: (id: string) => apiClient.post(`${API_URL}/end/${id}`),
   toggleReady: (ready: boolean, sessionId?: string) =>
@@ -17,4 +17,5 @@ export const gameSessionApi = {
   startVsAi: () => apiClient.post(`${API_URL}/vs-ai`),
   getStreamTicket: (sessionId: string) =>
     apiClient.post<{ ticket: string; expiresIn: number }>(`${API_URL}/session/${sessionId}/stream-ticket`),
+  resetSession: () => apiClient.post(`${API_URL}/reset`),
 };

@@ -135,14 +135,17 @@ export class FarmingService {
       loser_id: payload.loserId,
     });
 
+    const bot = await this.prisma.player.findUnique({ where: { username: 'Bot' } });
+
     for (const playerId of [payload.winnerId, payload.loserId]) {
-      if (!playerId) continue;
+      if (!playerId || playerId === bot?.id) continue;
       const key = `farming:${playerId}`;
       const state = await this.redis.getJson<FarmingState>(key);
       if (state) {
         state.round += 1;
         state.pips = 4;
         await this.redis.setJson(key, state, 86400);
+        console.log(`[Farming] Reset pips and incremented round for player ${playerId} (Round ${state.round})`);
       }
     }
   }

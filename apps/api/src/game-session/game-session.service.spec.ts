@@ -32,6 +32,7 @@ describe('GameSessionService', () => {
     gameSession: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
     },
@@ -98,10 +99,9 @@ describe('GameSessionService', () => {
     prisma.playerSpell.createMany.mockResolvedValue(undefined);
     prisma.equipmentSlot.updateMany.mockResolvedValue({ count: 0 });
     prisma.sessionItem.deleteMany.mockResolvedValue({ count: 0 });
-    prisma.combatSession.findFirst.mockResolvedValue(null);
-    prisma.combatSession.findMany.mockResolvedValue([]);
-    prisma.combatSession.findUnique.mockResolvedValue(null);
-    prisma.combatSession.updateMany.mockResolvedValue({ count: 0 });
+    prisma.gameSession.findFirst.mockResolvedValue(null);
+    prisma.gameSession.findUnique.mockResolvedValue(null);
+    prisma.gameSession.updateMany.mockResolvedValue({ count: 0 });
     redis.del.mockResolvedValue(undefined);
     statsCalculator.computeEffectiveStatsFromSnapshot.mockReturnValue({
       vit: 100,
@@ -283,16 +283,9 @@ describe('GameSessionService', () => {
     prisma.gameSession.findUnique.mockResolvedValue(session);
     sessionService.startSessionCombat.mockResolvedValue({ id: 'combat-1' });
 
-    await expect(service.setReady('session-1', 'player-2', true)).resolves.toEqual(updatedReadySession);
-    expect(sessionService.startSessionCombat).toHaveBeenCalledWith('player-1', 'player-2', 'session-1');
-    expect(sse.emit).toHaveBeenNthCalledWith(
-      1,
-      'game-session:session-1',
-      'SESSION_UPDATED',
-      updatedReadySession,
-    );
-    expect(sse.emit).toHaveBeenNthCalledWith(
-      2,
+    await expect(service.setReady('session-1', 'player-2', true)).resolves.toEqual(fightingSession);
+    expect(sse.emit).toHaveBeenCalledTimes(1);
+    expect(sse.emit).toHaveBeenCalledWith(
       'game-session:session-1',
       'SESSION_UPDATED',
       fightingSession,
@@ -414,6 +407,9 @@ describe('GameSessionService', () => {
     prisma.gameSession.update.mockResolvedValue({
       id: 'session-1',
       status: 'FINISHED',
+      phase: 'FARMING',
+      player1Ready: false,
+      player2Ready: false,
       player1Wins: 3,
       player2Wins: 1,
       currentRound: 4,
@@ -449,6 +445,9 @@ describe('GameSessionService', () => {
     prisma.gameSession.update.mockResolvedValue({
       id: 'session-1',
       status: 'ACTIVE',
+      phase: 'FARMING',
+      player1Ready: false,
+      player2Ready: false,
       player1Wins: 2,
       player2Wins: 1,
       currentRound: 3,

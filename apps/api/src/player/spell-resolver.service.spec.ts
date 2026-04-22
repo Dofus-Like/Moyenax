@@ -37,6 +37,7 @@ describe('SpellResolverService', () => {
     description: null,
     type: ItemType.WEAPON,
     family: null,
+    iconPath: null,
     rank: 1,
     statsBonus: null,
     grantsSpells: null,

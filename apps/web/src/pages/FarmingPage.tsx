@@ -4,7 +4,6 @@ import { Canvas } from '@react-three/fiber';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
-import { useAutoHarvest } from '../game/UnifiedMap/hooks/useAutoHarvest';
 import { gameSessionApi } from '../api/game-session.api';
 import { useAuthStore } from '../store/auth.store';
 import { useFarmingStore } from '../store/farming.store';
@@ -57,13 +56,27 @@ export function FarmingPage() {
   const [movePath, setMovePath] = useState<PathNode[] | null>(null);
   const [isMoving, setIsMoving] = useState(false);
   const [isCameraMoving, setIsCameraMoving] = useState(false);
+  const [isReadyToRender, setIsReadyToRender] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const isActionInProgressRef = useRef(false);
   const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(
     null,
   );
+
+  React.useEffect(() => {
+    // Reset internal locks on mount to prevent stale states
+    isActionInProgressRef.current = false;
+    void refreshSession({ silent: true });
+
+    // Délai pour laisser le temps au GPU de nettoyer les anciens contextes (ex: CombatPage)
+    const timer = setTimeout(() => setIsReadyToRender(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'info' | 'error' } | null>(
     null,
   );
   const [controls, setControls] = useState<CameraControlsImpl | null>(null);
+  const [isGathering, setIsGathering] = useState(false);
 
   const map = useFarmingStore((s) => s.map);
   const playerPosition = useFarmingStore((s) => s.playerPosition);
@@ -71,10 +84,8 @@ export function FarmingPage() {
   const inventory = useFarmingStore((s) => s.inventory);
   const fetchState = useFarmingStore((s) => s.fetchState);
   const gatherNode = useFarmingStore((s) => s.gatherNode);
-  const debugRefill = useFarmingStore((s) => s.debugRefill);
   const round = useFarmingStore((s) => s.round);
   const pips = useFarmingStore((s) => s.pips);
-  const spendableGold = useFarmingStore((s) => s.spendableGold);
   const [isTransitioningToCrafting, setIsTransitioningToCrafting] = useState(false);
 
   const showActionMessage = useCallback((text: string, type: 'info' | 'error' = 'error') => {
@@ -184,18 +195,28 @@ export function FarmingPage() {
 
   const performGather = useCallback(
     async (x: number, y: number) => {
-      const previousPips = useFarmingStore.getState().pips;
-      const nextState = await gatherNode(x, y);
-      await syncSpendableGold();
+      if (isGathering) return;
+      setIsGathering(true);
+      try {
+        const previousPips = useFarmingStore.getState().pips;
+        const nextState = await gatherNode(x, y);
+        if (activeSession) {
+          await refreshSession({ silent: false });
+          return;
+        }
+        await refreshPlayer();
 
-      if (!nextState || isDebugMode || previousPips <= 0 || nextState.pips !== 0 || isTransitioningToCrafting) {
-        return;
+        if (!nextState || isDebugMode || previousPips <= 0 || nextState.pips !== 0 || isTransitioningToCrafting) {
+          return;
+        }
+
+        setIsTransitioningToCrafting(true);
+        navigate('/crafting');
+      } finally {
+        setIsGathering(false);
       }
-
-      setIsTransitioningToCrafting(true);
-      navigate('/crafting');
     },
-    [gatherNode, isDebugMode, isTransitioningToCrafting, navigate, syncSpendableGold],
+    [gatherNode, isDebugMode, isTransitioningToCrafting, navigate, syncSpendableGold, isGathering, activeSession, refreshSession, refreshPlayer],
   );
 
   const previewPath = useMemo(() => {
@@ -320,17 +341,6 @@ export function FarmingPage() {
     setHoverInfo(info);
   }, []);
 
-  const handleNextRound = useCallback(async () => {
-    try {
-      if (isDebugMode) {
-        await debugRefill();
-        showActionMessage('Pips restaures.', 'info');
-      }
-    } catch (error) {
-      console.error(error);
-      showActionMessage('Impossible de terminer la manche.', 'error');
-    }
-  }, [debugRefill, isDebugMode, showActionMessage]);
 
   const handleEndSession = useCallback(async () => {
     if (!activeSession) {
@@ -345,74 +355,102 @@ export function FarmingPage() {
       return;
     }
 
+    // Abandonner should NEVER be blocked by other actions, as it's an emergency escape
+    // if (isActionInProgressRef.current) return; 
+
     try {
+      isActionInProgressRef.current = true;
+      setIsTransitioning(true);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      
       await gameSessionApi.endSession(activeSession.id);
+      clearTimeout(timeoutId);
+      
       await refreshSession({ silent: true });
       navigate('/');
     } catch (error) {
       console.error('Erreur fin de session:', error);
+      showActionMessage("Impossible d'abandonner. Redirection forcée...", 'error');
+      setTimeout(() => navigate('/'), 1500);
+    } finally {
+      setIsTransitioning(false);
+      isActionInProgressRef.current = false;
     }
   }, [activeSession, navigate, refreshSession]);
 
   const handleToggleReady = useCallback(async () => {
-    if (!activeSession) {
+    if (!activeSession) return;
+    if (isActionInProgressRef.current) {
+      console.log("[FarmingPage] Action already in progress, skipping.");
       return;
     }
 
     try {
+      isActionInProgressRef.current = true;
+      setIsTransitioning(true);
+      
       const isReady =
         activeSession.player1Id === currentPlayerId ? activeSession.player1Ready : activeSession.player2Ready;
-      await gameSessionApi.toggleReady(!isReady, activeSession.id);
+      
+      console.log(`[FarmingPage] Toggling ready to ${!isReady}`);
+      const { data: updated } = await gameSessionApi.toggleReady(!isReady, activeSession.id);
+      
+      // We use a small delay here to let the state settle before checking for navigation
+      if (updated.phase === 'FIGHTING' && updated.combats?.[0]) {
+        const latestCombat = updated.combats[0];
+        if (latestCombat.status === 'ACTIVE' || latestCombat.status === 'WAITING') {
+          console.log(`[FarmingPage] Combat detected in response, navigating to /combat/${latestCombat.id}`);
+          navigate(`/combat/${latestCombat.id}`);
+          return;
+        }
+      }
+      
       await refreshSession({ silent: true });
     } catch (error) {
-      console.error('Erreur toggle ready:', error);
+      console.error("[FarmingPage] Error toggling ready:", error);
+      showActionMessage("Erreur lors du changement d'état prêt", 'error');
+    } finally {
+      setIsTransitioning(false);
+      isActionInProgressRef.current = false;
     }
-  }, [activeSession, currentPlayerId, refreshSession]);
+  }, [activeSession, currentPlayerId, refreshSession, navigate]);
 
-  const combatListRefreshKey = useRef<string | null>(null);
+  // -- Phase monitoring --
   useEffect(() => {
-    if (activeSession?.phase !== 'FIGHTING') {
-      combatListRefreshKey.current = null;
-      return;
-    }
+    if (!activeSession) return;
+    
+    if (activeSession.phase !== 'FIGHTING') return;
 
-    if (activeSession.combats && activeSession.combats.length > 0) {
-      return;
-    }
+    const latestCombat = activeSession.combats?.[0];
+    if (!latestCombat) return;
 
-    const key = `${activeSession.id}-${activeSession.currentRound}`;
-    if (combatListRefreshKey.current === key) {
-      return;
-    }
-
-    combatListRefreshKey.current = key;
-    void refreshSession({ silent: true });
-  }, [activeSession?.combats, activeSession?.currentRound, activeSession?.id, activeSession?.phase, refreshSession]);
-
-  useEffect(() => {
-    if (activeSession?.phase !== 'FIGHTING') {
-      return;
-    }
-
-    const latestCombat = activeSession.combats?.length ? activeSession.combats[0] : undefined;
-    if (latestCombat?.status === 'ACTIVE') {
+    console.log(`[FarmingPage] Monitor: Phase is FIGHTING. Latest combat: ${latestCombat.id}, status: ${latestCombat.status}`);
+    
+    // On redirige seulement si le combat est encore valide et qu'on n'y est pas déjà
+    if ((latestCombat.status === 'ACTIVE' || latestCombat.status === 'WAITING') && 
+        window.location.pathname !== `/combat/${latestCombat.id}`) {
       navigate(`/combat/${latestCombat.id}`);
     }
-  }, [activeSession?.combats, activeSession?.phase, navigate]);
+  }, [activeSession?.phase, activeSession?.combats?.[0]?.id, navigate]);
+
+  // -- Transition Safety: Always unlock if we are in FARMING phase --
+  useEffect(() => {
+    if (activeSession?.phase === 'FARMING') {
+      if (isActionInProgressRef.current) {
+        console.log("[FarmingPage] Phase changed to FARMING. Unlocking UI.");
+        isActionInProgressRef.current = false;
+        setIsTransitioning(false);
+      }
+    }
+  }, [activeSession?.phase]);
 
   const p1IsMe = activeSession?.player1Id === currentPlayerId;
   const amIReady = p1IsMe ? activeSession?.player1Ready : activeSession?.player2Ready;
   const isOpponentReady = p1IsMe ? activeSession?.player2Ready : activeSession?.player1Ready;
   const harvestProgress = useMemo(() => Array.from({ length: 4 }, (_, index) => index < pips), [pips]);
 
-  const currentTerrain = map ? map.grid[currentPlayerPos.y]?.[currentPlayerPos.x] : TerrainType.GROUND;
-  useAutoHarvest({
-    currentPosition: currentPlayerPos,
-    terrain: currentTerrain,
-    onHarvest: async (x, y) => {
-      await performGather(x, y);
-    },
-  });
 
   const totalResources = useMemo(
     () => Object.values(inventory).reduce((sum, count) => Number(sum) + Number(count), 0),
@@ -421,105 +459,37 @@ export function FarmingPage() {
 
   const inventoryEntries = useMemo(() => Object.entries(inventory), [inventory]);
   const primaryRound = activeSession?.currentRound ?? round;
-  const roundScore = activeSession ? `${activeSession.player1Wins} - ${activeSession.player2Wins}` : 'Solo';
+
+  const roundStatuses = useMemo(() => {
+    const statuses = Array(5).fill('pending');
+    if (!activeSession) return statuses;
+    
+    const sortedCombats = [...(activeSession.combats || [])].sort((a, b) => 
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    
+    sortedCombats.forEach((combat, idx) => {
+      if (idx < 5 && combat.status === 'FINISHED') {
+        if (combat.winnerId === currentPlayerId) statuses[idx] = 'won';
+        else statuses[idx] = 'lost';
+      }
+    });
+    
+    return statuses;
+  }, [activeSession, currentPlayerId]);
 
   return (
     <div className="resource-map-container">
-      <header className="resource-map-header">
-        <div className="resource-map-title">
-          <span className="resource-map-title-kicker">Mode</span>
-          <div>
-            <h2>Farming</h2>
-            <p>Recolte, gere ton tempo et prepare la prochaine manche.</p>
-          </div>
-        </div>
-
-        <div className="resource-map-actions">
-          {(!activeSession || activeSession.status !== 'ACTIVE') && (
-            <button className="resource-action-btn resource-action-btn--ghost" onClick={() => navigate('/')}>
-              Lobby
-            </button>
-          )}
-          <button className="resource-action-btn resource-action-btn--ghost" onClick={() => navigate('/inventory')}>
-            Inventaire
-          </button>
-          <button className="resource-action-btn resource-action-btn--ghost" onClick={() => navigate('/shop')}>
-            Boutique
-          </button>
-          {activeSession && activeSession.player2Id && (
-            <button
-              className={`resource-action-btn resource-action-btn--accent ${amIReady ? 'is-ready' : ''}`}
-              onClick={handleToggleReady}
-            >
-              {amIReady ? 'Pret' : 'Pret ?'}
-            </button>
-          )}
-          {isDebugMode && (
-            <button className="resource-action-btn resource-action-btn--primary" onClick={handleNextRound}>
-              Debug refill
-            </button>
-          )}
-          {activeSession && (
-            <button className="resource-action-btn resource-action-btn--danger" onClick={handleEndSession}>
-              Abandonner
-            </button>
-          )}
-        </div>
-      </header>
 
       <div className="resource-map-layout">
         <aside className="resource-map-sidebar resource-map-sidebar--player">
-          <section className="resource-sidebar-card resource-sidebar-card--player">
-            <div className="resource-sidebar-card__header">
-              <span className="resource-sidebar-card__eyebrow">Session</span>
-              <h3>Manche {primaryRound}</h3>
-            </div>
-            <div className="resource-round-score">
-              <strong>{roundScore}</strong>
-              <span>{activeSession ? 'Score du duel' : 'Exploration libre'}</span>
-            </div>
-            {activeSession && activeSession.player2Id && (
-              <p className="resource-sidebar-card__copy">
-                {amIReady
-                  ? 'Tu es pret pour lancer le combat.'
-                  : isOpponentReady
-                    ? 'Ton adversaire est pret, tu peux valider.'
-                    : 'Les deux joueurs doivent se declarer prets.'}
-              </p>
-            )}
-          </section>
-
-          <section className="resource-sidebar-card">
-            <div className="resource-sidebar-card__header">
-              <span className="resource-sidebar-card__eyebrow">Progression</span>
-              <h3>Recoltes</h3>
-            </div>
-            <div className="resource-pips" aria-hidden="true">
-              {harvestProgress.map((filled, index) => (
-                <span key={`pip-${index}`} className={`resource-pip ${filled ? 'is-filled' : ''}`} />
-              ))}
-            </div>
-            <p className="resource-sidebar-card__copy">{pips} / 4 recoltes restantes</p>
-          </section>
-
-          <section className="resource-sidebar-card">
-            <div className="resource-sidebar-card__header">
-              <span className="resource-sidebar-card__eyebrow">Economie</span>
-              <h3>Solde</h3>
-            </div>
-            <div className="resource-round-score">
-              <strong>{spendableGold}</strong>
-              <span>{activeSession ? 'Po disponibles en session' : 'or disponible'}</span>
-            </div>
-          </section>
-
           <section className="resource-sidebar-card resource-sidebar-card--inventory">
             <div className="resource-sidebar-card__header">
               <span className="resource-sidebar-card__eyebrow">Sacoche</span>
               <h3>Inventaire ({totalResources})</h3>
             </div>
             {inventoryEntries.length === 0 ? (
-              <p className="resource-sidebar-card__copy">Aucune ressource recoltee pour le moment.</p>
+              <p className="resource-sidebar-card__copy">Aucune ressource récoltée.</p>
             ) : (
               <ul className="resource-inventory-list">
                 {inventoryEntries.map(([resource, count]) => (
@@ -531,14 +501,53 @@ export function FarmingPage() {
               </ul>
             )}
           </section>
+
+          <section className="resource-sidebar-card">
+            <div className="resource-sidebar-card__header">
+              <span className="resource-sidebar-card__eyebrow">Progression</span>
+              <h3>Récoltes</h3>
+            </div>
+            <div className="resource-pips" aria-hidden="true">
+              {harvestProgress.map((filled, index) => (
+                <span key={`pip-${index}`} className={`resource-pip ${filled ? 'is-filled' : ''}`} />
+              ))}
+            </div>
+            <p className="resource-sidebar-card__copy">{pips} / 4 récoltes</p>
+          </section>
         </aside>
 
         <section className="resource-map-stage">
+          {activeSession && (
+            <div className="round-history-bar">
+              {roundStatuses.map((status, index) => (
+                <div key={`round-${index}`} className={`round-step ${status} ${primaryRound === index + 1 ? 'current' : ''}`}>
+                  {primaryRound === index + 1 && <span className="current-arrow">▼</span>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {hoverInfo && (
+            <div className="floating-tile-tooltip">
+              <div className="tooltip-header">
+                <strong>{TERRAIN_LABELS[hoverInfo.terrain]}</strong>
+                <span className="coords">({hoverInfo.x}, {hoverInfo.y})</span>
+              </div>
+              <div className="tooltip-body">
+                {previewPath.length > 0 && <p className="distance">Distance: {previewPath.length} cases</p>}
+                {TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable && (
+                  <p className="resource">Ressource: <strong>{TERRAIN_PROPERTIES[hoverInfo.terrain].resourceName}</strong></p>
+                )}
+                {!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable && <p className="warning">Inaccessible</p>}
+              </div>
+            </div>
+          )}
+
           {actionMessage && <div className={`map-action-toast ${actionMessage.type}`}>{actionMessage.text}</div>}
           {!map && <div className="map-loading">Chargement de la carte...</div>}
-          {map && (
+          {map && isReadyToRender && (
             <div className="resource-map-canvas">
-              <Canvas>
+              <Canvas key={`farming-canvas-${activeSession?.id || 'default'}`}>
                 <OrthographicCamera makeDefault position={[15, 20, 15]} zoom={30} near={0.1} far={100} />
                 <CameraControls
                   ref={setControls}
@@ -576,18 +585,10 @@ export function FarmingPage() {
         </section>
 
         <aside className="resource-map-sidebar resource-map-sidebar--map">
-          {seedConfig && (
-            <section className="resource-sidebar-card resource-sidebar-card--seed">
-              <span className="resource-sidebar-card__eyebrow">Biome</span>
-              <h3>{seedConfig.label}</h3>
-              <p>{seedConfig.dominantBuild}</p>
-            </section>
-          )}
-
           <section className="resource-sidebar-card">
             <div className="resource-sidebar-card__header">
               <span className="resource-sidebar-card__eyebrow">Ressources</span>
-              <h3>Legende</h3>
+              <h3>Légende</h3>
             </div>
             <ul className="resource-legend-list">
               {filteredLegend.map((item) => (
@@ -597,29 +598,46 @@ export function FarmingPage() {
                 </li>
               ))}
             </ul>
-            </section>
-
-          <section className="resource-sidebar-card">
-            <div className="resource-sidebar-card__header">
-              <span className="resource-sidebar-card__eyebrow">Case</span>
-              <h3>{hoverInfo ? TERRAIN_LABELS[hoverInfo.terrain] : 'Survole une case'}</h3>
-            </div>
-            {hoverInfo ? (
-              <div className="resource-tile-details">
-                <p>
-                  Coordonnees: ({hoverInfo.x}, {hoverInfo.y})
-                </p>
-                {previewPath.length > 0 && <p>Distance: {previewPath.length} cases</p>}
-                {TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable && (
-                  <p>Ressource: {TERRAIN_PROPERTIES[hoverInfo.terrain].resourceName}</p>
-                )}
-                {!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable && <p>Case inaccessible</p>}
-              </div>
-            ) : (
-              <p className="resource-sidebar-card__copy">La legende et le detail de tuile restent accessibles ici.</p>
-            )}
           </section>
+
+          {activeSession && activeSession.player2Id && (
+            <section className="resource-sidebar-card status-card">
+              <p className="resource-sidebar-card__copy">
+                {amIReady
+                  ? 'Prêt pour le combat.'
+                  : isOpponentReady
+                    ? 'Adversaire prêt !'
+                    : 'En attente des deux joueurs...'}
+              </p>
+            </section>
+          )}
         </aside>
+      </div>
+
+      <div className="resource-map-floating-actions">
+        {activeSession && (
+          <button
+            className="resource-action-btn resource-action-btn--danger"
+            onClick={handleEndSession}
+            title="Quitter la session en cours"
+          >
+            Abandonner
+          </button>
+        )}
+
+        {activeSession && activeSession.player2Id && (
+          <button
+            className={`resource-action-btn resource-action-btn--accent ${amIReady && activeSession.phase === 'FARMING' ? 'is-ready' : ''} ${isTransitioning ? 'loading' : ''}`}
+            onClick={handleToggleReady}
+            disabled={isTransitioning}
+          >
+            {isTransitioning 
+              ? 'Lancement...' 
+              : activeSession.phase === 'FIGHTING' 
+                ? '⚔️ Rejoindre le combat' 
+                : amIReady ? 'Prêt !' : 'Se déclarer prêt'}
+          </button>
+        )}
       </div>
     </div>
   );

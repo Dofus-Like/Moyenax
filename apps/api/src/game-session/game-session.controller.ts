@@ -134,6 +134,12 @@ export class GameSessionController {
     return this.gameSessionService.issueStreamTicket(id, req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('reset')
+  async resetSession(@Request() req: { user: { id: string } }) {
+    return this.gameSessionService.forceReset(req.user.id);
+  }
+
   @UseGuards(SseTicketGuard)
   @Sse('session/:id/events')
   @SseTicketResource('game-session')

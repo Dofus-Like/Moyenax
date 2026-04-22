@@ -20,12 +20,13 @@ const FAMILY_ICONS: Record<string, string> = {
   SPECIAL: '👑',
 };
 
-export function getItemVisualMeta(item: ShopVisualableItem): { icon: string; toneClass: string } {
+export function getItemVisualMeta(item: any): { icon: string; iconPath?: string; toneClass: string } {
   const family = item.family?.toUpperCase() ?? '';
   const type = item.type?.toUpperCase() ?? '';
 
   return {
     icon: FAMILY_ICONS[family] ?? ITEM_TYPE_ICONS[type] ?? '🎒',
+    iconPath: item.iconPath,
     toneClass: family ? family.toLowerCase() : 'neutral',
   };
 }
