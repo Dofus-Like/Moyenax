@@ -17,7 +17,9 @@ export class InventoryService {
     if (session) {
       return (this.prisma as any).sessionItem.findMany({
         where: {
+          sessionId: session.id,
           playerId,
+          equipmentSlot: { is: null },
         },
         include: { item: true },
       });
