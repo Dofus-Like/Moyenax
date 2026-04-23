@@ -4,6 +4,8 @@ import { calculateInitiativeJet } from '@game/game-engine';
 import { GAME_EVENTS } from '@game/shared-types';
 import type { CombatState } from '@game/shared-types';
 import { performance } from 'node:perf_hooks';
+import { randomUUID } from 'node:crypto';
+
 import { PlayerSpellProjectionService } from '../../player/player-spell-projection.service';
 import { PlayerStatsService } from '../../player/player-stats.service';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
@@ -382,7 +384,35 @@ export class SessionService {
   }
 
   async startVsAiCombat(challengerId: string) {
-    const bot = await this.getOrCreateBot();
+    const challenger = await this.prisma.player.findUnique({
+      where: { id: challengerId },
+      select: { username: true },
+    });
+
+    // 1. Cleanup any existing AI combat sessions for this player to avoid "Already in room" errors
+    const openAiSessions = await this.prisma.combatSession.findMany({
+      where: {
+        OR: [{ player1Id: challengerId }, { player2Id: challengerId }],
+        status: { in: ['WAITING', 'ACTIVE'] },
+        player2: { username: { startsWith: 'Bot_' } },
+      },
+    });
+
+    for (const session of openAiSessions) {
+      console.log(`[SessionService] Force closing old AI session ${session.id} for player ${challengerId}`);
+      await this.endCombat(session.id, challengerId, session.player2Id || '');
+    }
+
+    // 2. Clear from matchmaking queue if present
+    const isQueued = await this.sessionSecurity.isPlayerQueued(challengerId);
+    if (isQueued) {
+      // Logic for removing from queue could be added here if needed, 
+      // but assertPlayerAvailableForPublicRoom handles it via exception currently.
+    }
+
+    // 3. Create a unique transient bot for this combat
+    const bot = await this.createTransientBot(challenger?.username || 'Player');
+
     const activeSession = await this.prisma.gameSession.findFirst({
       where: {
         OR: [{ player1Id: challengerId }, { player2Id: challengerId }],
@@ -405,6 +435,31 @@ export class SessionService {
 
     return this.accept(session.id, bot.id);
   }
+
+  private async createTransientBot(challengerName: string) {
+    const randomId = randomUUID().split('-')[0];
+    const botUsername = `Bot_${challengerName}_${randomId}`;
+    
+    return this.prisma.player.create({
+      data: {
+        username: botUsername,
+        email: `${botUsername.toLowerCase()}@game.internal`,
+        passwordHash: 'bot-password-non-login',
+        stats: {
+          create: {
+            vit: 100,
+            pa: 6,
+            pm: 3,
+            atk: 5,
+            def: 5,
+            mag: 0,
+            res: 5,
+          },
+        },
+      },
+    });
+  }
+
 
   async startSessionCombat(player1Id: string, player2Id: string, gameSessionId: string) {
     const session = await this.prisma.combatSession.create({
