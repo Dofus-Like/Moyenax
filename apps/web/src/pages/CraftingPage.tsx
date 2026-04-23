@@ -105,6 +105,7 @@ export function CraftingPage() {
 
   const [activeTab, setActiveTab] = useState<'craft' | 'fusion'>('craft');
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
+  const [onlyCraftable, setOnlyCraftable] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Fusion drag-and-drop state
@@ -148,6 +149,12 @@ export function CraftingPage() {
     if (resource?.name === 'Or') return spendableGold;
     return inventory.find((i) => i.itemId === resourceItemId)?.quantity || 0;
   }, [allItems, inventory, spendableGold]);
+
+  const isRecipeCraftable = useCallback((recipe: Recipe) => {
+    return Object.entries(recipe.craftCost).every(([resId, qty]) => 
+      getAvailableQuantity(resId) >= qty
+    );
+  }, [getAvailableQuantity]);
 
   const handleCraft = async (itemId: string) => {
     try {
@@ -267,6 +274,13 @@ export function CraftingPage() {
         <button className={`filter-btn ${activeFilter === 'WEAPON' ? 'active' : ''}`} onClick={() => setActiveFilter('WEAPON')}>⚔️ Armes</button>
         <button className={`filter-btn ${activeFilter === 'ARMOR' ? 'active' : ''}`} onClick={() => setActiveFilter('ARMOR')}>🛡️ Armures</button>
         <button className={`filter-btn ${activeFilter === 'OTHER' ? 'active' : ''}`} onClick={() => setActiveFilter('OTHER')}>🎒 Autres</button>
+        <div className="filter-divider" />
+        <button 
+          className={`filter-btn craftable-filter ${onlyCraftable ? 'active' : ''}`} 
+          onClick={() => setOnlyCraftable(!onlyCraftable)}
+        >
+          {onlyCraftable ? '✅ Craftables' : '✨ Tout afficher'}
+        </button>
       </div>
 
       <div className="crafting-content">
@@ -276,7 +290,10 @@ export function CraftingPage() {
           /* ───────────────────── FORGE TAB ─────────────────────── */
           <div className="recipes-container">
             {filteredCategories.map(type => {
-              const categoryRecipes = recipes.filter(r => (r as Recipe & { type?: string }).type === type);
+              const categoryRecipes = recipes.filter(r => 
+                (r as Recipe & { type?: string }).type === type &&
+                (!onlyCraftable || isRecipeCraftable(r))
+              );
               if (categoryRecipes.length === 0) return null;
               return (
                 <div key={type} className="recipe-category">
