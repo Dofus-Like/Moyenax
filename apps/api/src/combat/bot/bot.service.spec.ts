@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BotService } from './bot.service';
 import { TurnService } from '../turn/turn.service';
 import { RedisService } from '../../shared/redis/redis.service';
+import { PerfStatsService } from '../../shared/perf/perf-stats.service';
 import { CombatActionType, CombatState, TerrainType } from '@game/shared-types';
 import * as gameEngine from '@game/game-engine';
 
@@ -29,6 +30,10 @@ describe('BotService', () => {
           useValue: {
             getJson: jest.fn(),
           },
+        },
+        {
+          provide: PerfStatsService,
+          useValue: { recordGameMetric: jest.fn() },
         },
       ],
     }).compile();
