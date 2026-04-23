@@ -163,11 +163,12 @@ export class SessionSecurityService {
       throw new ForbiddenException('Seul le joueur invite peut accepter ce defi');
     }
 
-    const isBot =
-      (await this.prisma.player.findUnique({
+    const player = await this.prisma.player.findUnique({
         where: { id: userId },
         select: { username: true },
-      }))?.username === 'Bot';
+      });
+    const isBot = player?.username === 'Bot' || player?.username.startsWith('Bot_');
+
 
     if (!isBot) {
       await this.assertPlayerAvailableForPublicRoom(userId, {
