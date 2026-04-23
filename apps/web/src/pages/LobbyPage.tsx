@@ -245,7 +245,7 @@ export function LobbyPage() {
         </div>
       </section>
 
-      <section className="lobby-matchmaking">
+      <section className="lobby-matchmaking parchment-container">
         <div className="matchmaking-card">
           <div className="matchmaking-info">
             <h3>🎮 Match aléatoire</h3>
@@ -283,7 +283,7 @@ export function LobbyPage() {
         </div>
       </section>
 
-      <section className="lobby-combat">
+      <section className="lobby-combat parchment-container">
         <div className="lobby-section-header">
           <h2>⚔️ Rooms personnalisées</h2>
           <div className="lobby-combat-actions">

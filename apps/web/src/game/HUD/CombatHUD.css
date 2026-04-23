@@ -410,63 +410,60 @@
 }
 
 .end-modal {
-    background: var(--combat-bg-light);
     padding: 60px;
-    border-radius: var(--radius-lg);
     text-align: center;
-    border: 2px solid var(--combat-border);
-    box-shadow: var(--shadow-hud);
-    max-width: 500px;
+    max-width: 600px;
     animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.combat-end-overlay.victory .end-modal {
-    border-color: var(--victory-gold);
-    box-shadow: 0 0 60px rgba(251, 191, 36, 0.3);
+    background: transparent !important;
+    border: none !important;
 }
 
 .combat-end-overlay.victory h1 {
-    color: var(--victory-gold);
-    text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
-}
-
-.combat-end-overlay.defeat .end-modal {
-    border-color: var(--defeat-red);
-    box-shadow: 0 0 60px rgba(239, 68, 68, 0.3);
+    color: var(--color-accent);
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
 }
 
 .combat-end-overlay.defeat h1 {
-    color: var(--defeat-red);
+    color: var(--color-danger);
 }
 
 .end-modal h1 {
     font-size: 4rem;
     margin-bottom: 20px;
-    font-weight: 900;
+    font-weight: 700;
+    font-family: var(--font-main);
 }
 
 .end-modal p {
-    color: var(--text-muted);
-    font-size: 1.2rem;
+    color: var(--color-text-secondary);
+    font-size: 1.4rem;
     margin-bottom: 40px;
+    font-style: italic;
 }
 
 .exit-button {
-    background: var(--pa-yellow);
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 16px 40px;
-    border-radius: var(--radius-md);
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: 700;
+    font-family: var(--font-main);
     cursor: pointer;
-    transition: all var(--trans-fast);
+    text-transform: uppercase;
+    transition: all 0.2s;
+    box-shadow: 0 6px 0 var(--color-primary-hover);
 }
 
 .exit-button:hover {
-    background: #2563eb;
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+    background: var(--color-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 var(--color-primary-hover);
+}
+
+.exit-button:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 var(--color-primary-hover);
 }
 
 @keyframes fadeIn {

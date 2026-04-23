@@ -10,6 +10,7 @@ import { DebugPage } from './pages/DebugPage';
 import { useAuthStore } from './store/auth.store';
 import { GameSessionProvider, GameTunnelGuard } from './pages/GameTunnel';
 import { GameLayout } from './components/GameLayout';
+import { ThemeDebugger } from './components/ThemeDebugger';
 import './styles/global.css';
 
 const queryClient = new QueryClient();
@@ -143,6 +144,7 @@ root.render(
           </Routes>
         </GameSessionProvider>
       </BrowserRouter>
+      <ThemeDebugger />
     </QueryClientProvider>
   </React.StrictMode>,
 );

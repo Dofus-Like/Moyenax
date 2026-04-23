@@ -482,7 +482,7 @@ export function FarmingPage() {
     <div className="resource-map-container">
 
       <div className="resource-map-layout">
-        <aside className="resource-map-sidebar resource-map-sidebar--player">
+        <aside className="resource-map-sidebar resource-map-sidebar--player parchment-container">
           <section className="resource-sidebar-card resource-sidebar-card--inventory">
             <div className="resource-sidebar-card__header">
               <span className="resource-sidebar-card__eyebrow">Sacoche</span>
@@ -584,7 +584,7 @@ export function FarmingPage() {
           )}
         </section>
 
-        <aside className="resource-map-sidebar resource-map-sidebar--map">
+        <aside className="resource-map-sidebar resource-map-sidebar--map parchment-container">
           <section className="resource-sidebar-card">
             <div className="resource-sidebar-card__header">
               <span className="resource-sidebar-card__eyebrow">Ressources</span>

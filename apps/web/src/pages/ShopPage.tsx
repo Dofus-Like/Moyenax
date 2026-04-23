@@ -48,12 +48,6 @@ export function ShopPage() {
   const sessionPo = getSessionPo(activeSession, player?.id);
   const spendableGold = activeSession ? (sessionPo ?? 0) : (player?.gold ?? 0);
 
-  const renderStats = (stats?: any) => {
-    if (!stats) return null;
-    return Object.entries(stats)
-      .map(([key, value]) => `+${value} ${key.toUpperCase()}`)
-      .join(', ');
-  };
 
   return (
     <div className="shop-container">
@@ -94,7 +88,17 @@ export function ShopPage() {
                 <h3 className="shop-item-name">{item.name}</h3>
                 
                 <div className="shop-item-stats-compact">
-                  {renderStats(item.statsBonus) || 'Pas de bonus'}
+                  {item.statsBonus ? (
+                    <div className="item-stats-preview">
+                      {Object.entries(item.statsBonus as Record<string, number>).map(([stat, val]) => (
+                        <span key={stat} className="stat-badge">
+                          {stat.toUpperCase()} <strong>+{val}</strong>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="no-stats-label">Pas de bonus</span>
+                  )}
                 </div>
 
                 <div className="shop-item-footer">

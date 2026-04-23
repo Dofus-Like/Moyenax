@@ -1,62 +1,71 @@
 .mannequin-wrapper {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 2rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  padding: 2.5rem 1.5rem 1.5rem 1.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
   min-width: 300px;
+  border: 1px solid var(--color-border);
 }
 
 .mannequin-grid {
   position: relative;
-  width: 250px;
-  height: 400px;
+  width: 320px; /* Increased to accommodate sidebar labels */
+  height: 420px;
   display: grid;
+  grid-template-columns: 1fr 72px 1fr; /* Fixed central column, fluid sides */
   grid-template-areas: 
     ". head ."
     "w-l chest w-r"
     ". legs ."
     ". acc .";
-  gap: 15px;
+  gap: 20px 0; /* Vertical gap, no horizontal gap to keep alignment control */
+  justify-items: center;
+  align-items: center;
 }
 
-.equipment-slot {
-  width: 70px;
-  height: 70px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+.slot-wrapper {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  font-size: 0.7rem;
-  color: #888;
-  cursor: pointer;
-  transition: all 0.2s;
+  gap: 8px; /* Space between label and slot */
   z-index: 2;
 }
 
+.equipment-slot {
+  width: 72px;
+  height: 72px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid var(--color-primary);
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+}
+
 .equipment-slot:hover {
-  border-color: #ffd700;
-  background: rgba(255, 215, 0, 0.1);
+  border-color: var(--color-accent);
+  background: var(--color-bg-card);
+  transform: scale(1.05);
 }
 
 .equipment-slot.filled {
-  border-color: #ffd700;
-  color: #fff;
-  background: rgba(255, 215, 0, 0.2);
+  border-color: var(--color-accent);
+  background: var(--color-bg-card);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
 }
 
 .slot-label {
-  margin-bottom: 5px;
-}
-
-.item-name {
-  font-weight: bold;
-  text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .mannequin-silhouette {
@@ -64,12 +73,12 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
+  width: 110%;
+  height: 110%;
   display: flex;
   justify-content: center;
   align-items: center;
-  opacity: 0.6;
+  opacity: 0.35;
   pointer-events: none;
   z-index: 1;
 }
@@ -78,11 +87,10 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: contrast(1.1) brightness(0.9);
+  filter: sepia(0.5) contrast(1.2);
 }
 
-
-/* Grille spécifique */
+/* Slot grid areas applied to wrappers */
 .slot-head { grid-area: head; }
 .slot-chest { grid-area: chest; }
 .slot-legs { grid-area: legs; }

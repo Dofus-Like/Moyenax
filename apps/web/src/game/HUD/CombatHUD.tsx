@@ -136,7 +136,7 @@ export function CombatHUD() {
       {/* HUD de fin de combat */}
       {showCombatEnd && (
         <div className={`combat-end-overlay ${isWinner ? 'victory' : 'defeat'}`}>
-          <div className="end-modal">
+          <div className="end-modal parchment-container">
             <h1>{isWinner ? '🏆 VICTOIRE' : '💀 DÉFAITE'}</h1>
             <p>{isWinner ? 'Félicitations, vous avez terrassé votre adversaire !' : 'Dommage... Vous ferez mieux la prochaine fois !'}</p>
             <div className="end-modal-actions">

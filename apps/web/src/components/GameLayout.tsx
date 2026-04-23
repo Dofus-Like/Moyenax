@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useGameSession } from '../pages/GameTunnel';
 import { getSessionPo } from '../utils/sessionPo';
+import { ThemeDebugger } from './ThemeDebugger';
 import './GameLayout.css';
 
 export function GameLayout({ children }: { children: React.ReactNode }) {
@@ -70,6 +71,9 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
       <main className="game-content">
         {children}
       </main>
+
+      {/* ThemeDebugger is always available to tune the look */}
+      <ThemeDebugger showUI={true} />
     </div>
   );
 }

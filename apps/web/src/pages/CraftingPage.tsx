@@ -252,7 +252,7 @@ export function CraftingPage() {
   };
 
   return (
-    <div className="crafting-page">
+    <div className="crafting-page parchment-container">
       {message && (
         <div className={`message-banner ${message.type}`}>
           {message.text}
@@ -312,6 +312,17 @@ export function CraftingPage() {
                             </div>
                             <h3>{recipe.name}</h3>
                             <p>{recipe.description}</p>
+                            
+                            {/* Stats Display */}
+                            {(recipe as unknown as Item).statsBonus && (
+                              <div className="item-stats-preview">
+                                {Object.entries((recipe as unknown as Item).statsBonus || {}).map(([stat, val]) => (
+                                  <span key={stat} className="stat-badge">
+                                    {stat.toUpperCase()} <strong>+{val}</strong>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
                           <div className="recipe-requirements">
