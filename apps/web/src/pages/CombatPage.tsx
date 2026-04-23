@@ -12,6 +12,7 @@ import { TerrainType } from '@game/shared-types';
 import { useGameSession } from './GameTunnel';
 import { gameSessionApi } from '../api/game-session.api';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
+import { CameraEffects } from '../game/Combat/CameraEffects';
 import './CombatPage.css';
 
 /**
@@ -217,9 +218,9 @@ export function CombatPage() {
                 wheel: CameraControlsImpl.ACTION.DOLLY
               }}
               dollyToCursor={true}
-              minZoom={20} 
-              maxZoom={100}
             />
+            
+            <CameraEffects controlsRef={controlsRef} />
             
             <ambientLight intensity={1.5} />
             <directionalLight
