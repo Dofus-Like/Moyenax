@@ -1,5 +1,13 @@
 import { SpellResolverService } from './spell-resolver.service';
-import { Item, Spell, SpellFamily, ItemType, SpellType, SpellVisualType, SpellEffectKind } from '@prisma/client';
+import {
+  Item,
+  Spell,
+  SpellFamily,
+  ItemType,
+  SpellType,
+  SpellVisualType,
+  SpellEffectKind,
+} from '@prisma/client';
 
 describe('SpellResolverService', () => {
   let service: SpellResolverService;
@@ -60,23 +68,23 @@ describe('SpellResolverService', () => {
   it('grants Bond when Sword and Shield are equipped (Combo)', () => {
     const epee = mockItem('epee-id', 'Épée');
     const bouclier = mockItem('bouclier-id', 'Bouclier');
-    
+
     const result = service.resolveSpells([epee, bouclier], [allSpells[0]], [], allSpells);
-    
+
     expect(result['bond-id']).toBe(1);
     expect(result['claque-id']).toBe(1);
   });
 
   it('grants Warrior spells with +1 level when Full Set is equipped', () => {
     const items = [
-        mockItem('h', 'Heaume'),
-        mockItem('a', 'Armure'),
-        mockItem('b', 'Bottes de fer'),
-        mockItem('r', 'Anneau du Guerrier'),
+      mockItem('h', 'Heaume'),
+      mockItem('a', 'Armure'),
+      mockItem('b', 'Bottes de fer'),
+      mockItem('r', 'Anneau du Guerrier'),
     ];
 
     const result = service.resolveSpells(items, [allSpells[0]], [], allSpells);
-    
+
     // Warrior spells should be at 1 because they are granted by the set
     expect(result['frappe-id']).toBe(1);
     expect(result['bond-id']).toBe(1);
@@ -89,7 +97,7 @@ describe('SpellResolverService', () => {
     const grants = [{ itemId: 'epee-id', spellId: 'bond-id' }];
 
     const result = service.resolveSpells([epee, bouclier], [], grants, allSpells);
-    
+
     // Bond from combo (1) + Bond from item grant (1) = 2
     expect(result['bond-id']).toBe(2);
   });

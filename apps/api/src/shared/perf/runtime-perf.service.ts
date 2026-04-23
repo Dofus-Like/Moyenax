@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  OnApplicationShutdown,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { PerfLoggerService } from './perf-logger.service';
 
@@ -75,11 +71,7 @@ export class RuntimePerfService implements OnModuleInit, OnApplicationShutdown {
     );
   }
 
-  recordSseEvent(
-    sessionId: string,
-    eventType: string,
-    activeSubscribers: number,
-  ): void {
+  recordSseEvent(sessionId: string, eventType: string, activeSubscribers: number): void {
     this.totalSseEvents += 1;
     this.perfLogger.logMetric(
       'sse',
@@ -101,13 +93,7 @@ export class RuntimePerfService implements OnModuleInit, OnApplicationShutdown {
   private flushEventLoopLag(force = false): void {
     const lagMs = this.readEventLoopLagP95Ms();
     if (lagMs > 0) {
-      this.perfLogger.logMetric(
-        'runtime',
-        'event_loop.lag',
-        lagMs,
-        {},
-        { force },
-      );
+      this.perfLogger.logMetric('runtime', 'event_loop.lag', lagMs, {}, { force });
     }
 
     this.eventLoopDelay.reset();
@@ -123,10 +109,7 @@ export class RuntimePerfService implements OnModuleInit, OnApplicationShutdown {
   }
 
   private getEventLoopSampleIntervalMs(): number {
-    const parsed = Number.parseInt(
-      process.env.PERF_EVENT_LOOP_SAMPLE_MS ?? '1000',
-      10,
-    );
+    const parsed = Number.parseInt(process.env.PERF_EVENT_LOOP_SAMPLE_MS ?? '1000', 10);
 
     if (!Number.isFinite(parsed) || parsed < 100) {
       return 1000;

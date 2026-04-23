@@ -55,15 +55,10 @@ export class StatsCalculatorService {
       slots as EquippedSlotWithItem[],
     );
 
-    this.perfLogger.logDuration(
-      'player',
-      'stats.compute',
-      performance.now() - startedAt,
-      {
-        player_id: playerId,
-        equipment_slot_count: slots.length,
-      },
-    );
+    this.perfLogger.logDuration('player', 'stats.compute', performance.now() - startedAt, {
+      player_id: playerId,
+      equipment_slot_count: slots.length,
+    });
 
     return effectiveStats;
   }

@@ -65,7 +65,7 @@ export function CombatBackgroundShader() {
     if (meshRef.current) {
       const material = meshRef.current.material as THREE.ShaderMaterial;
       material.uniforms.uTime.value = state.clock.getElapsedTime() * config.speed;
-      
+
       // Use fixed timeOfDay from config
       material.uniforms.uPhase.value = config.timeOfDay;
 
@@ -79,15 +79,15 @@ export function CombatBackgroundShader() {
       material.uniforms.uSunB.value.set(config.sunB);
       material.uniforms.uSunC.value.set(config.sunC);
       material.uniforms.uOpacity.value = config.opacity;
-      
+
       // Move to camera position to surround it
       meshRef.current.position.copy(camera.position);
     }
   });
 
   return (
-    <mesh 
-      ref={meshRef} 
+    <mesh
+      ref={meshRef}
       renderOrder={-1000} // Explicitly very low to render first
       visible={config.visible}
       scale={config.scale}

@@ -32,11 +32,7 @@ describe('InventoryService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new InventoryService(
-      prisma as any,
-      eventEmitter as any,
-      gameSession as any,
-    );
+    service = new InventoryService(prisma as any, eventEmitter as any, gameSession as any);
   });
 
   it('returns only unequipped session items during an active session', async () => {

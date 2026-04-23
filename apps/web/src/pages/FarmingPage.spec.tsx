@@ -62,7 +62,11 @@ vi.mock('camera-controls', () => ({
 }));
 
 vi.mock('../game/UnifiedMap/UnifiedMapScene', () => ({
-  UnifiedMapScene: ({ onTileClick }: { onTileClick?: (x: number, y: number, terrain: any) => void }) => (
+  UnifiedMapScene: ({
+    onTileClick,
+  }: {
+    onTileClick?: (x: number, y: number, terrain: any) => void;
+  }) => (
     <div data-testid="map-scene">
       <button type="button" onClick={() => onTileClick?.(0, 1, 'HERB')}>
         Harvest tile
@@ -100,7 +104,8 @@ vi.mock('./GameTunnel', () => ({
 }));
 
 vi.mock('../store/farming.store', () => {
-  const hook = (selector?: (state: any) => unknown) => (selector ? selector(mocks.farmingState) : mocks.farmingState);
+  const hook = (selector?: (state: any) => unknown) =>
+    selector ? selector(mocks.farmingState) : mocks.farmingState;
   return {
     useFarmingStore: Object.assign(hook, {
       getState: () => mocks.farmingState,

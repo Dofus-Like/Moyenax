@@ -118,19 +118,13 @@ export class GameSessionController {
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @Post('end/:id')
-  async endSession(
-    @Param('id') id: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  async endSession(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.gameSessionService.endSession(id, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('session/:id/stream-ticket')
-  async issueStreamTicket(
-    @Param('id') id: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  async issueStreamTicket(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.gameSessionService.issueStreamTicket(id, req.user.id);
   }
 

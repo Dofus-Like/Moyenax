@@ -189,8 +189,11 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
     id: 'FORGE_NATURE',
     label: '🔴🟢 FORGE+NATURE',
     resources: [
-      TerrainType.IRON, TerrainType.LEATHER, TerrainType.WOOD,
-      TerrainType.HERB, TerrainType.GOLD,
+      TerrainType.IRON,
+      TerrainType.LEATHER,
+      TerrainType.WOOD,
+      TerrainType.HERB,
+      TerrainType.GOLD,
     ],
     families: [ResourceFamily.FORGE, ResourceFamily.NATURE, ResourceFamily.SPECIAL],
     dominantBuild: 'Ninja / Guerrier',
@@ -200,8 +203,12 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
     id: 'ARCANE_NATURE',
     label: '🟣🟢 ARCANE+NATURE',
     resources: [
-      TerrainType.CRYSTAL, TerrainType.FABRIC, TerrainType.WOOD,
-      TerrainType.HERB, TerrainType.LEATHER, TerrainType.GOLD,
+      TerrainType.CRYSTAL,
+      TerrainType.FABRIC,
+      TerrainType.WOOD,
+      TerrainType.HERB,
+      TerrainType.LEATHER,
+      TerrainType.GOLD,
     ],
     families: [ResourceFamily.ARCANE, ResourceFamily.NATURE, ResourceFamily.SPECIAL],
     dominantBuild: 'Mage / Ninja',
@@ -211,8 +218,11 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
     id: 'FORGE_ARCANE',
     label: '🔴🟣 FORGE+ARCANE',
     resources: [
-      TerrainType.IRON, TerrainType.LEATHER, TerrainType.CRYSTAL,
-      TerrainType.FABRIC, TerrainType.GOLD,
+      TerrainType.IRON,
+      TerrainType.LEATHER,
+      TerrainType.CRYSTAL,
+      TerrainType.FABRIC,
+      TerrainType.GOLD,
     ],
     families: [ResourceFamily.FORGE, ResourceFamily.ARCANE, ResourceFamily.SPECIAL],
     dominantBuild: 'Guerrier / Mage',
@@ -221,5 +231,10 @@ export const SEED_CONFIGS: Record<SeedId, SeedConfig> = {
 };
 
 export const ALL_SEED_IDS: SeedId[] = [
-  'FORGE', 'ARCANE', 'NATURE', 'FORGE_NATURE', 'ARCANE_NATURE', 'FORGE_ARCANE',
+  'FORGE',
+  'ARCANE',
+  'NATURE',
+  'FORGE_NATURE',
+  'ARCANE_NATURE',
+  'FORGE_ARCANE',
 ];

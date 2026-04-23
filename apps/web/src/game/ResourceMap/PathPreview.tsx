@@ -15,10 +15,10 @@ export const PathPreview = ({ path, gridSize, tileSize = 1, color }: PathPreview
 
   return (
     <group>
-      <BoundaryOutline 
-        tiles={path} 
-        gridSize={gridSize} 
-        color={color || COMBAT_COLORS.PM_VIOLET} 
+      <BoundaryOutline
+        tiles={path}
+        gridSize={gridSize}
+        color={color || COMBAT_COLORS.PM_VIOLET}
         width={3}
         yOffset={0.07} // Slightly higher than range outlines
       />
@@ -30,11 +30,7 @@ export const PathPreview = ({ path, gridSize, tileSize = 1, color }: PathPreview
         const wz = node.y - gridSize / 2 + 0.5;
 
         return (
-          <mesh
-            key={`path-${i}`}
-            position={[wx, 0.02, wz]}
-            rotation={[-Math.PI / 2, 0, 0]}
-          >
+          <mesh key={`path-${i}`} position={[wx, 0.02, wz]} rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[tileSize, tileSize]} />
             <meshBasicMaterial
               color={color || COMBAT_COLORS.PM_VIOLET}
@@ -46,4 +42,4 @@ export const PathPreview = ({ path, gridSize, tileSize = 1, color }: PathPreview
       })}
     </group>
   );
-}
+};

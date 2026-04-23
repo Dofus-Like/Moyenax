@@ -110,8 +110,8 @@ async function ensureSeeded() {
   }
 
   console.log('[seed] DB vide, lancement du seed...');
-  const compiledSeedPath = ['seed-build/prisma/seed.js', '/app/seed-build/prisma/seed.js'].find((candidate) =>
-    existsSync(candidate),
+  const compiledSeedPath = ['seed-build/prisma/seed.js', '/app/seed-build/prisma/seed.js'].find(
+    (candidate) => existsSync(candidate),
   );
 
   if (compiledSeedPath) {
@@ -143,6 +143,9 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('[startup] api-setup failed:', error instanceof Error ? error.message : String(error));
+  console.error(
+    '[startup] api-setup failed:',
+    error instanceof Error ? error.message : String(error),
+  );
   process.exitCode = 1;
 });

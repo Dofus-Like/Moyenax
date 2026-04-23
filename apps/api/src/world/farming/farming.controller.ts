@@ -16,7 +16,13 @@ export class FarmingController {
 
   @Post('gather')
   async gather(@Request() req: { user: { id: string } }, @Body() body: GatherResourceDto) {
-    return this.farmingService.gatherResource(req.user.id, body.targetX, body.targetY, body.playerX, body.playerY);
+    return this.farmingService.gatherResource(
+      req.user.id,
+      body.targetX,
+      body.targetY,
+      body.playerX,
+      body.playerY,
+    );
   }
 
   @Post('end-farming-phase')

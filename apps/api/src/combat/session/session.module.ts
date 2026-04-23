@@ -9,8 +9,7 @@ import { SessionController } from './session.controller';
 import { SessionDebugController } from './session.debug.controller';
 import { SessionService } from './session.service';
 
-const debugControllers =
-  process.env.ENABLE_DEBUG_ROUTES === 'true' ? [SessionDebugController] : [];
+const debugControllers = process.env.ENABLE_DEBUG_ROUTES === 'true' ? [SessionDebugController] : [];
 
 @Module({
   imports: [PrismaModule, RedisModule, SecurityModule, SseModule, PlayerModule, MapModule],

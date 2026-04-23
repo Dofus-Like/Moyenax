@@ -37,7 +37,7 @@ function CombatPreloader() {
 export function CombatPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  
+
   const combatState = useCombatStore((s) => s.combatState);
   const winnerId = useCombatStore((s) => s.winnerId);
   const connectToSession = useCombatStore((s) => s.connectToSession);
@@ -57,7 +57,9 @@ export function CombatPage() {
 
   const handleEndSession = React.useCallback(async () => {
     if (!activeSession) return;
-    const ok = window.confirm("Êtes-vous sûr de vouloir abandonner la partie ? Cela mettra fin au match pour tous les joueurs.");
+    const ok = window.confirm(
+      'Êtes-vous sûr de vouloir abandonner la partie ? Cela mettra fin au match pour tous les joueurs.',
+    );
     if (!ok) return;
 
     try {
@@ -109,15 +111,17 @@ export function CombatPage() {
       return;
     }
     const phase = activeSession.phase;
-    const combatIdFromUrl = sessionId; 
+    const combatIdFromUrl = sessionId;
     const latestCombatId = activeSession.combats?.[0]?.id;
-    
-    // Si la phase globale repasse en FARMING mais que notre combat est toujours le dernier 
+
+    // Si la phase globale repasse en FARMING mais que notre combat est toujours le dernier
     // et qu'on vient d'arriver (moins de 3s), on reste sur la page pour laisser le temps
     // au state de se stabiliser et au joueur de voir le résultat.
     const isRecentlyMounted = Date.now() - mountedAtRef.current < 3000;
 
-    console.log(`[CombatPage] Phase monitor [UrlId: ${combatIdFromUrl}, LatestId: ${latestCombatId}]: phase=${phase}, status=${activeSession.status}, isRecentlyMounted=${isRecentlyMounted}`);
+    console.log(
+      `[CombatPage] Phase monitor [UrlId: ${combatIdFromUrl}, LatestId: ${latestCombatId}]: phase=${phase}, status=${activeSession.status}, isRecentlyMounted=${isRecentlyMounted}`,
+    );
 
     if (activeSession.status === 'FINISHED' && !isRecentlyMounted) {
       console.log('[CombatPage] Session completely finished, redirecting to root');
@@ -126,7 +130,9 @@ export function CombatPage() {
 
     // On ignore le passage à FARMING si on est en plein milieu du combat ou si on vient de le lancer
     if (phase === 'FARMING' && latestCombatId === combatIdFromUrl && isRecentlyMounted) {
-      console.warn('[CombatPage] Ignoring FARMING phase flip due to recent mount / latest match match');
+      console.warn(
+        '[CombatPage] Ignoring FARMING phase flip due to recent mount / latest match match',
+      );
       return;
     }
 
@@ -136,20 +142,20 @@ export function CombatPage() {
   // Construire une GameMap fictive à partir de combatState pour UnifiedMapScene
   const gameMap = useMemo(() => {
     if (!combatState?.map?.tiles) return null;
-    
+
     const grid = Array(combatState.map.height)
       .fill(0)
       .map(() => Array(combatState.map.width).fill(TerrainType.GROUND));
-    
+
     combatState.map.tiles.forEach((t) => {
       if (grid[t.y] && grid[t.y][t.x] !== undefined) {
         grid[t.y][t.x] = t.type;
       }
     });
-    
-    return { 
-      width: combatState.map.width, 
-      height: combatState.map.height, 
+
+    return {
+      width: combatState.map.width,
+      height: combatState.map.height,
       grid,
       seedId: 'FORGE' as const,
     };
@@ -161,7 +167,7 @@ export function CombatPage() {
     <div className="combat-page-container">
       <header className="combat-toolbar">
         <button className="combat-toolbar-back" onClick={() => navigate('/farming')}>
-           Retour
+          Retour
         </button>
         <h2 className="combat-toolbar-title">Combat</h2>
         <div className="toolbar-actions">
@@ -170,10 +176,19 @@ export function CombatPage() {
           )}
           {combatState && !winnerId && (
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="toolbar-btn surrender" onClick={surrender} title="Abandonner uniquement ce combat (défaite instantanée)">
+              <button
+                className="toolbar-btn surrender"
+                onClick={surrender}
+                title="Abandonner uniquement ce combat (défaite instantanée)"
+              >
                 🏳️ Abandonner combat
               </button>
-              <button className="toolbar-btn surrender" onClick={handleEndSession} title="Quitter la partie pour tout le monde" style={{ opacity: 0.7 }}>
+              <button
+                className="toolbar-btn surrender"
+                onClick={handleEndSession}
+                title="Quitter la partie pour tout le monde"
+                style={{ opacity: 0.7 }}
+              >
                 🔴 Abandonner session
               </button>
             </div>
@@ -205,9 +220,9 @@ export function CombatPage() {
               near={0.1}
               far={1000}
             />
-            <CameraControls 
-              ref={controlsRef} 
-              onRest={onRest} 
+            <CameraControls
+              ref={controlsRef}
+              onRest={onRest}
               onStart={onStart}
               minPolarAngle={0}
               maxPolarAngle={Math.PI / 2.1}
@@ -215,13 +230,13 @@ export function CombatPage() {
                 left: CameraControlsImpl.ACTION.NONE,
                 right: CameraControlsImpl.ACTION.TRUCK,
                 middle: CameraControlsImpl.ACTION.NONE,
-                wheel: CameraControlsImpl.ACTION.DOLLY
+                wheel: CameraControlsImpl.ACTION.DOLLY,
               }}
               dollyToCursor={true}
             />
-            
+
             <CameraEffects controlsRef={controlsRef} />
-            
+
             <ambientLight intensity={1.5} />
             <directionalLight
               position={[5, 10, 5]}
@@ -234,19 +249,19 @@ export function CombatPage() {
               shadow-camera-top={10}
               shadow-camera-bottom={-10}
             />
-            
+
             {/* Préchargement des assets critiques pour éviter les sauts lors des premiers sorts/mouvements */}
             <Suspense fallback={null}>
-               <CombatPreloader />
+              <CombatPreloader />
             </Suspense>
 
             {gameMap && (
               <Suspense fallback={null}>
-                <UnifiedMapScene 
-                  mode="combat" 
-                  map={gameMap} 
-                  sessionId={sessionId} 
-                  isCameraMoving={isCameraMoving} 
+                <UnifiedMapScene
+                  mode="combat"
+                  map={gameMap}
+                  sessionId={sessionId}
+                  isCameraMoving={isCameraMoving}
                 />
               </Suspense>
             )}
@@ -257,15 +272,15 @@ export function CombatPage() {
 
         {/* RIGHT WINDOW: LOGS (Desktop only via CSS) */}
         <div className="combat-logs-side">
-            <div className="logs-sidebar-header">Journal de Combat</div>
-            <div className="logs-sidebar-content">
-               {logs.map((log) => (
-                 <div key={log.id} className={`log-entry type-${log.type}`}>
-                   <span className="log-msg">{log.message}</span>
-                 </div>
-               ))}
-               {logs.length === 0 && <div className="logs-empty">Aucune action...</div>}
-            </div>
+          <div className="logs-sidebar-header">Journal de Combat</div>
+          <div className="logs-sidebar-content">
+            {logs.map((log) => (
+              <div key={log.id} className={`log-entry type-${log.type}`}>
+                <span className="log-msg">{log.message}</span>
+              </div>
+            ))}
+            {logs.length === 0 && <div className="logs-empty">Aucune action...</div>}
+          </div>
         </div>
       </div>
     </div>

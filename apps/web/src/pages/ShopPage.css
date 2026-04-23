@@ -31,7 +31,6 @@
   gap: 16px;
 }
 
-
 .shop-header-nav {
   display: flex;
   gap: 16px;
@@ -89,7 +88,8 @@
   gap: 8px;
 }
 
-.back-button, .nav-link-btn {
+.back-button,
+.nav-link-btn {
   padding: 10px 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
@@ -101,7 +101,8 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.back-button:hover, .nav-link-btn:hover {
+.back-button:hover,
+.nav-link-btn:hover {
   transform: translateY(-2px);
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.3);
@@ -187,7 +188,7 @@
   width: 90%;
   height: 90%;
   object-fit: contain;
-  filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
   transition: transform 0.4s;
 }
 
@@ -282,14 +283,9 @@
   display: inline-block;
 }
 
-
-
 .shop-item-card.compact .shop-buy-button {
   margin-top: 0;
   padding: 8px;
   font-size: 0.85rem;
   border-radius: 8px;
 }
-
-
-

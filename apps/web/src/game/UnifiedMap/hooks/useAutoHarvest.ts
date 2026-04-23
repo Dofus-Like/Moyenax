@@ -20,15 +20,18 @@ export function useAutoHarvest({ currentPosition, terrain, onHarvest }: UseAutoH
     // Vérifier si la position a changé
     if (
       previousPosition.current &&
-      (previousPosition.current.x !== currentPosition.x || previousPosition.current.y !== currentPosition.y)
+      (previousPosition.current.x !== currentPosition.x ||
+        previousPosition.current.y !== currentPosition.y)
     ) {
       // Le joueur vient d'arriver sur une nouvelle tuile
       const terrainProps = TERRAIN_PROPERTIES[terrain];
 
       if (terrainProps.harvestable && terrainProps.resourceName) {
         // Déclencher la récolte automatique
-        console.log(`Auto-harvest: ${terrainProps.resourceName} at (${currentPosition.x}, ${currentPosition.y})`);
-        
+        console.log(
+          `Auto-harvest: ${terrainProps.resourceName} at (${currentPosition.x}, ${currentPosition.y})`,
+        );
+
         setHarvesting(true);
 
         if (onHarvest) {

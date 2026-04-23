@@ -56,8 +56,7 @@ async function main() {
     printSection(
       'Client p95/p99',
       Object.entries(baseline.client).map(
-        ([name, stats]) =>
-          `${name}: p95=${stats?.p95 ?? 'n/a'} ms p99=${stats?.p99 ?? 'n/a'} ms`,
+        ([name, stats]) => `${name}: p95=${stats?.p95 ?? 'n/a'} ms p99=${stats?.p99 ?? 'n/a'} ms`,
       ),
     );
 

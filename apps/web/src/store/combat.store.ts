@@ -57,7 +57,7 @@ interface CombatStore {
   lastHealEvent: HealEvent | null;
   lastJumpEvent: JumpEvent | null;
   winnerId: string | null;
-   showEnemyHp: boolean;
+  showEnemyHp: boolean;
   showMannequins: boolean;
   uiMessage: UiMessage | null;
   _currentConnectionId: string | null;
@@ -82,9 +82,12 @@ function getErrorMessage(error: unknown, fallback: string) {
     typeof error === 'object' &&
     error !== null &&
     'response' in error &&
-    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string'
+    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+      'string'
   ) {
-    return (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback;
+    return (
+      (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback
+    );
   }
 
   if (error instanceof Error && error.message) {
@@ -218,7 +221,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         );
 
         const withConnectionGuard =
-          <T,>(handler: (data: T) => void) =>
+          <T>(handler: (data: T) => void) =>
           (event: MessageEvent) => {
             if (get()._currentConnectionId !== connectionId) {
               eventSource.close();
@@ -314,7 +317,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         }
 
         console.error('Failed to open combat SSE', error);
-        get().setUiMessage(getErrorMessage(error, 'Impossible d ouvrir le flux temps reel.'), 'error');
+        get().setUiMessage(
+          getErrorMessage(error, 'Impossible d ouvrir le flux temps reel.'),
+          'error',
+        );
         scheduleReconnect();
       }
     };
@@ -351,7 +357,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     if (window.confirm('Voulez-vous vraiment abandonner ?')) {
       try {
-        const response = await combatApi.playAction(sessionId, { type: CombatActionType.SURRENDER });
+        const response = await combatApi.playAction(sessionId, {
+          type: CombatActionType.SURRENDER,
+        });
         if (response?.data) {
           get().setCombatState(response.data);
         }

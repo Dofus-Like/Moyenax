@@ -13,9 +13,15 @@ import { GameLayout } from './components/GameLayout';
 import './styles/global.css';
 
 const queryClient = new QueryClient();
-const FarmingPage = lazy(() => import('./pages/FarmingPage').then((module) => ({ default: module.FarmingPage })));
-const CombatPage = lazy(() => import('./pages/CombatPage').then((module) => ({ default: module.CombatPage })));
-const CraftingPage = lazy(() => import('./pages/CraftingPage').then((module) => ({ default: module.CraftingPage })));
+const FarmingPage = lazy(() =>
+  import('./pages/FarmingPage').then((module) => ({ default: module.FarmingPage })),
+);
+const CombatPage = lazy(() =>
+  import('./pages/CombatPage').then((module) => ({ default: module.CombatPage })),
+);
+const CraftingPage = lazy(() =>
+  import('./pages/CraftingPage').then((module) => ({ default: module.CraftingPage })),
+);
 
 function PageLoader({ message = 'Chargement...' }: { message?: string }) {
   return (
@@ -146,4 +152,3 @@ root.render(
     </QueryClientProvider>
   </React.StrictMode>,
 );
-

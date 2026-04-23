@@ -18,11 +18,6 @@ import { RuntimePerfService } from './runtime-perf.service';
       useClass: HttpPerfInterceptor,
     },
   ],
-  exports: [
-    PerfLoggerService,
-    RuntimePerfService,
-    RequestContextService,
-    RequestContextMiddleware,
-  ],
+  exports: [PerfLoggerService, RuntimePerfService, RequestContextService, RequestContextMiddleware],
 })
 export class PerfModule {}

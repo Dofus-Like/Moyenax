@@ -13,10 +13,7 @@ export class CraftingController {
   }
 
   @Post('craft')
-  async craft(
-    @Body('itemId') itemId: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  async craft(@Body('itemId') itemId: string, @Request() req: { user: { id: string } }) {
     return this.craftingService.craft(req.user.id, itemId);
   }
 

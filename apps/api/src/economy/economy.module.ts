@@ -22,7 +22,13 @@ import { EconomyListenerService } from './economy-listener.service';
     SpendableGoldModule,
   ],
   providers: [EconomyListenerService],
-  exports: [InventoryModule, ItemsModule, ShopModule, CraftingModule, EquipmentModule, SpendableGoldModule],
+  exports: [
+    InventoryModule,
+    ItemsModule,
+    ShopModule,
+    CraftingModule,
+    EquipmentModule,
+    SpendableGoldModule,
+  ],
 })
 export class EconomyModule {}
-

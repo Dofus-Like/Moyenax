@@ -20,8 +20,10 @@ const env = {
   JWT_SECRET: process.env.JWT_SECRET ?? 'change-this-secret-in-production-minimum-32-chars',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '7d',
   DEV_WATCH_INTERVAL_MS: process.env.DEV_WATCH_INTERVAL_MS ?? '1000',
-  FRONTEND_URL: process.env.FRONTEND_URL ?? `http://127.0.0.1:${process.env.DEV_WEB_PORT ?? '18080'}`,
-  DEV_LOCAL_WORKSPACE_IMAGE: process.env.DEV_LOCAL_WORKSPACE_IMAGE ?? 'dofus-like-workspace:dev-local',
+  FRONTEND_URL:
+    process.env.FRONTEND_URL ?? `http://127.0.0.1:${process.env.DEV_WEB_PORT ?? '18080'}`,
+  DEV_LOCAL_WORKSPACE_IMAGE:
+    process.env.DEV_LOCAL_WORKSPACE_IMAGE ?? 'dofus-like-workspace:dev-local',
 };
 
 function runCompose(args) {
@@ -43,7 +45,9 @@ function runCompose(args) {
   }
 
   if (result.status !== 0) {
-    throw new Error(`docker compose ${args.join(' ')} failed with exit code ${result.status ?? 'unknown'}`);
+    throw new Error(
+      `docker compose ${args.join(' ')} failed with exit code ${result.status ?? 'unknown'}`,
+    );
   }
 }
 

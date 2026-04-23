@@ -75,8 +75,10 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
     geometry.translate(-center.x, -bottom, -center.z);
 
     const matValue = (bestMesh as THREE.Mesh).material;
-    const material = (Array.isArray(matValue) ? matValue[0] : matValue).clone() as THREE.MeshStandardMaterial;
-    
+    const material = (
+      Array.isArray(matValue) ? matValue[0] : matValue
+    ).clone() as THREE.MeshStandardMaterial;
+
     material.map = texture;
     material.map.colorSpace = THREE.SRGBColorSpace;
     material.color.setHex(0xffffff);
@@ -100,10 +102,20 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
       for (let x = 0; x < map.width; x++) {
         const terrain = map.grid[y][x] as TerrainType;
         const props = TERRAIN_PROPERTIES[terrain];
-        
+
         if (props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD) {
-          list.push({ x, y, type: 'tree', variant: Math.floor(seededRandom(x * 1000 + y) * TREE_URLS.length), seed: x * 1000 + y });
-        } else if (props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain === TerrainType.HERB) {
+          list.push({
+            x,
+            y,
+            type: 'tree',
+            variant: Math.floor(seededRandom(x * 1000 + y) * TREE_URLS.length),
+            seed: x * 1000 + y,
+          });
+        } else if (
+          props.combatType === CombatTerrainType.FLAT &&
+          props.harvestable &&
+          terrain === TerrainType.HERB
+        ) {
           list.push({ x, y, type: 'bush', variant: 0, seed: x * 1000 + y });
         }
       }
@@ -124,7 +136,7 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
     const allRefs = [bushMeshRef, ...treeMeshRefs];
     const zeroMatrix = new THREE.Matrix4().makeScale(0, 0, 0);
 
-    allRefs.forEach(ref => {
+    allRefs.forEach((ref) => {
       if (ref.current) {
         for (let i = 0; i < ref.current.count; i++) {
           ref.current.setMatrixAt(i, zeroMatrix);
@@ -133,7 +145,9 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
     });
 
     if (foliageList.length === 0) {
-      allRefs.forEach(ref => { if (ref.current) ref.current.instanceMatrix.needsUpdate = true; });
+      allRefs.forEach((ref) => {
+        if (ref.current) ref.current.instanceMatrix.needsUpdate = true;
+      });
       return;
     }
 
@@ -151,20 +165,20 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
 
       const worldX = item.x - map.width / 2 + 0.5;
       const worldZ = item.y - map.height / 2 + 0.5;
-      const s = item.type === 'bush' ? 0.01 : 0.015 * 0.35; 
+      const s = item.type === 'bush' ? 0.01 : 0.015 * 0.35;
       const rotY = seededRandom(item.seed * (item.type === 'bush' ? 3 : 7)) * Math.PI * 2;
-      
+
       position.set(worldX, 0, worldZ);
       euler.set(0, rotY, 0);
       rotation.setFromEuler(euler);
       scale.set(s, s, s);
-      
+
       matrix.compose(position, rotation, scale);
       ref.current.setMatrixAt(counts[idx], matrix);
       counts[idx]++;
     });
 
-    allRefs.forEach(ref => {
+    allRefs.forEach((ref) => {
       if (ref.current) ref.current.instanceMatrix.needsUpdate = true;
     });
   }, [foliageList, map]);
@@ -172,10 +186,14 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
   return (
     <group>
       {foliageAssets[0] && (
-        <instancedMesh 
-          ref={bushMeshRef} 
-          args={[foliageAssets[0].geometry, foliageAssets[0].material, foliageList.filter(f => f.type === 'bush').length || 1]} 
-          castShadow 
+        <instancedMesh
+          ref={bushMeshRef}
+          args={[
+            foliageAssets[0].geometry,
+            foliageAssets[0].material,
+            foliageList.filter((f) => f.type === 'bush').length || 1,
+          ]}
+          castShadow
           receiveShadow
           raycast={() => null}
         />
@@ -184,11 +202,15 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
         const asset = foliageAssets[i + 1];
         if (!asset) return null;
         return (
-          <instancedMesh 
+          <instancedMesh
             key={`tree-${i}`}
-            ref={ref} 
-            args={[asset.geometry, asset.material, foliageList.filter(f => f.type === 'tree' && f.variant === i).length || 1]} 
-            castShadow 
+            ref={ref}
+            args={[
+              asset.geometry,
+              asset.material,
+              foliageList.filter((f) => f.type === 'tree' && f.variant === i).length || 1,
+            ]}
+            castShadow
             receiveShadow
             raycast={() => null}
           />
@@ -199,5 +221,5 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
 });
 
 useFBX.preload(BUSH_URL);
-TREE_URLS.forEach(url => useFBX.preload(url));
+TREE_URLS.forEach((url) => useFBX.preload(url));
 useTexture.preload(TEXTURE_PATH);

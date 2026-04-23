@@ -8,7 +8,7 @@ interface FireballParticlesProps {
 
 export function FireballParticles({ count = 40 }: FireballParticlesProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  
+
   // On prépare les données des particules (vitesse, taille, vie)
   const particles = useMemo(() => {
     const temp = [];
@@ -31,7 +31,7 @@ export function FireballParticles({ count = 40 }: FireballParticlesProps) {
 
     particles.forEach((particle, i) => {
       let { t, factor, speed, xFactor, yFactor, zFactor } = particle;
-      
+
       // On fait avancer le temps de la particule
       t = particle.t += speed / 2;
       const a = Math.cos(t) + Math.sin(t * 1) / 10;
@@ -39,9 +39,9 @@ export function FireballParticles({ count = 40 }: FireballParticlesProps) {
       const s = Math.cos(t);
 
       // Mouvement en spirale derrière la boule
-      particle.mx += (xFactor * a) * 0.05;
-      particle.my += (yFactor * b) * 0.05;
-      particle.mz += (zFactor * s) * 0.05;
+      particle.mx += xFactor * a * 0.05;
+      particle.my += yFactor * b * 0.05;
+      particle.mz += zFactor * s * 0.05;
 
       dummy.position.set(particle.mx, particle.my, particle.mz);
       dummy.scale.set(s, s, s);
@@ -50,18 +50,18 @@ export function FireballParticles({ count = 40 }: FireballParticlesProps) {
 
       meshRef.current?.setMatrixAt(i, dummy.matrix);
     });
-    
+
     meshRef.current.instanceMatrix.needsUpdate = true;
   });
 
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
       <sphereGeometry args={[0.1, 8, 8]} />
-      <meshStandardMaterial 
-        color="#ff4d00" 
-        emissive="#ffcc00" 
-        emissiveIntensity={4} 
-        transparent 
+      <meshStandardMaterial
+        color="#ff4d00"
+        emissive="#ffcc00"
+        emissiveIntensity={4}
+        transparent
         opacity={0.6}
       />
     </instancedMesh>

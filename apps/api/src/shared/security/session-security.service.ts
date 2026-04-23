@@ -164,10 +164,12 @@ export class SessionSecurityService {
     }
 
     const isBot =
-      (await this.prisma.player.findUnique({
-        where: { id: userId },
-        select: { username: true },
-      }))?.username === 'Bot';
+      (
+        await this.prisma.player.findUnique({
+          where: { id: userId },
+          select: { username: true },
+        })
+      )?.username === 'Bot';
 
     if (!isBot) {
       await this.assertPlayerAvailableForPublicRoom(userId, {

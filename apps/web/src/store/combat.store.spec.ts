@@ -49,12 +49,9 @@ vi.mock('../api/combat.api', () => ({
 }));
 
 vi.mock('./auth.store', () => ({
-  useAuthStore: Object.assign(
-    () => mocks.authStoreState,
-    {
-      getState: () => mocks.authStoreState,
-    },
-  ),
+  useAuthStore: Object.assign(() => mocks.authStoreState, {
+    getState: () => mocks.authStoreState,
+  }),
 }));
 
 import { useCombatStore } from './combat.store';

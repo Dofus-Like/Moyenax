@@ -3,8 +3,6 @@ import { performance } from 'node:perf_hooks';
 import { PrismaClient } from '@prisma/client';
 import { PerfLoggerService } from '../perf/perf-logger.service';
 
-
-
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor(private readonly perfLogger: PerfLoggerService) {
@@ -15,10 +13,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       try {
         return await next(params);
       } finally {
-        this.perfLogger.logDuration('prisma', `${params.model ?? 'raw'}.${params.action}`, performance.now() - startedAt, {
-          db_model: params.model ?? 'raw',
-          db_action: params.action,
-        });
+        this.perfLogger.logDuration(
+          'prisma',
+          `${params.model ?? 'raw'}.${params.action}`,
+          performance.now() - startedAt,
+          {
+            db_model: params.model ?? 'raw',
+            db_action: params.action,
+          },
+        );
       }
     });
   }

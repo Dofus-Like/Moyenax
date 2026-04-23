@@ -85,8 +85,12 @@ export class SpellsService {
       return { events: [] };
     }
 
-    const defBuffs = targetPlayer.buffs.filter((buff) => buff.type === 'DEF').reduce((sum, buff) => sum + buff.value, 0);
-    const resBuffs = targetPlayer.buffs.filter((buff) => buff.type === 'RES').reduce((sum, buff) => sum + buff.value, 0);
+    const defBuffs = targetPlayer.buffs
+      .filter((buff) => buff.type === 'DEF')
+      .reduce((sum, buff) => sum + buff.value, 0);
+    const resBuffs = targetPlayer.buffs
+      .filter((buff) => buff.type === 'RES')
+      .reduce((sum, buff) => sum + buff.value, 0);
 
     const effectiveStats = {
       ...targetPlayer.stats,
@@ -158,7 +162,9 @@ export class SpellsService {
       throw new BadRequestException('Case occupée');
     }
 
-    const tile = state.map.tiles.find((entry) => entry.x === targetPos.x && entry.y === targetPos.y);
+    const tile = state.map.tiles.find(
+      (entry) => entry.x === targetPos.x && entry.y === targetPos.y,
+    );
     if (!tile || !(TERRAIN_PROPERTIES[tile.type as TerrainType]?.traversable ?? false)) {
       throw new BadRequestException('Terrain invalide');
     }
@@ -180,7 +186,10 @@ export class SpellsService {
     };
   }
 
-  private applyVitBuff(caster: CombatPlayer, effectConfig: Record<string, unknown> | null): SpellExecutionResult {
+  private applyVitBuff(
+    caster: CombatPlayer,
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
     const buffValue = this.readNumber(effectConfig, 'buffValue', 20);
     const buffDuration = this.readNumber(effectConfig, 'buffDuration', 99);
 
@@ -203,7 +212,9 @@ export class SpellsService {
       throw new BadRequestException('Case occupée');
     }
 
-    const tile = state.map.tiles.find((entry) => entry.x === targetPos.x && entry.y === targetPos.y);
+    const tile = state.map.tiles.find(
+      (entry) => entry.x === targetPos.x && entry.y === targetPos.y,
+    );
     if (!tile) {
       throw new BadRequestException('Case introuvable');
     }
@@ -300,7 +311,10 @@ export class SpellsService {
     return { events: [] };
   }
 
-  private applyPmBuff(caster: CombatPlayer, effectConfig: Record<string, unknown> | null): SpellExecutionResult {
+  private applyPmBuff(
+    caster: CombatPlayer,
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
     const buffValue = this.readNumber(effectConfig, 'buffValue', 2);
     const buffDuration = this.readNumber(effectConfig, 'buffDuration', 1);
     const applyImmediately = effectConfig?.applyImmediately !== false;

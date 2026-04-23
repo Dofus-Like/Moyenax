@@ -93,7 +93,7 @@ describe('TurnService', () => {
       redisService.getJson.mockResolvedValue(null);
 
       await expect(
-        service.playAction(sessionId, playerId, { type: CombatActionType.END_TURN })
+        service.playAction(sessionId, playerId, { type: CombatActionType.END_TURN }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -103,7 +103,7 @@ describe('TurnService', () => {
       } as unknown as CombatState);
 
       await expect(
-        service.playAction(sessionId, playerId, { type: CombatActionType.END_TURN })
+        service.playAction(sessionId, playerId, { type: CombatActionType.END_TURN }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -132,9 +132,13 @@ describe('TurnService', () => {
       expect(newState.players[playerId].position).toEqual({ x: 2, y: 1 });
       expect(newState.players[playerId].remainingPm).toBe(2);
       expect(sseService.emit).toHaveBeenCalledWith(sessionId, 'STATE_UPDATED', expect.any(Object));
-      expect(redisService.setJson).toHaveBeenCalledWith(`combat:${sessionId}`, expect.any(Object), 3600);
+      expect(redisService.setJson).toHaveBeenCalledWith(
+        `combat:${sessionId}`,
+        expect.any(Object),
+        3600,
+      );
     });
-    
+
     it('should allow JUMP action when valid', async () => {
       const mockState = {
         sessionId,
@@ -197,7 +201,9 @@ describe('TurnService', () => {
       expect(newState.players['player-2'].remainingPa).toBe(6);
       expect(newState.players['player-2'].remainingPm).toBe(3);
       expect(newState.players['player-2'].spellCooldowns['spell1']).toBe(0);
-      expect(sseService.emit).toHaveBeenCalledWith(sessionId, 'TURN_STARTED', { playerId: 'player-2' });
+      expect(sseService.emit).toHaveBeenCalledWith(sessionId, 'TURN_STARTED', {
+        playerId: 'player-2',
+      });
     });
   });
 });

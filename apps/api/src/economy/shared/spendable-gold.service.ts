@@ -19,7 +19,8 @@ export class SpendableGoldService {
   ) {}
 
   async getContext(playerId: string, session?: OpenGameSession | null) {
-    const resolvedSession = session === undefined ? await this.gameSession.getActiveSession(playerId) : session;
+    const resolvedSession =
+      session === undefined ? await this.gameSession.getActiveSession(playerId) : session;
 
     if (resolvedSession) {
       return {
@@ -194,6 +195,6 @@ export class SpendableGoldService {
   }
 
   private getSessionBalance(playerId: string, session: OpenGameSession) {
-    return session.player1Id === playerId ? session.player1Po ?? 0 : session.player2Po ?? 0;
+    return session.player1Id === playerId ? (session.player1Po ?? 0) : (session.player2Po ?? 0);
   }
 }

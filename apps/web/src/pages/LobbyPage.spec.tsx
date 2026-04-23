@@ -129,7 +129,8 @@ describe('LobbyPage', () => {
 
     expect(await screen.findByRole('button', { name: 'Lancer VS AI' })).toBeInTheDocument();
 
-    const header = container.querySelector('.lobby-header') || container.querySelector('.lobby-section-header');
+    const header =
+      container.querySelector('.lobby-header') || container.querySelector('.lobby-section-header');
     expect(header?.textContent).not.toContain('VS AI');
   });
 });

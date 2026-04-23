@@ -19,12 +19,20 @@ function seededRandom(seed: number): number {
 /**
  * BushModel – Affiche le buisson (modèle 03) avec texture et centrage
  */
-function BushModel({ url, rotationY, texture }: { url: string; rotationY: number; texture: THREE.Texture }) {
+function BushModel({
+  url,
+  rotationY,
+  texture,
+}: {
+  url: string;
+  rotationY: number;
+  texture: THREE.Texture;
+}) {
   const fbx = useFBX(url);
 
   const { clonedBush, offset } = useMemo(() => {
     const clone = fbx.clone(true);
-    
+
     // Calcul de la Bounding Box pour centrer au pied
     const box = new THREE.Box3().setFromObject(clone);
     const center = box.getCenter(new THREE.Vector3());
@@ -36,10 +44,10 @@ function BushModel({ url, rotationY, texture }: { url: string; rotationY: number
         const mesh = child as THREE.Mesh;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-        
+
         if (mesh.material) {
           const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          mats.forEach(m => {
+          mats.forEach((m) => {
             if ('map' in m) {
               (m as any).map = texture;
               (m as any).map.colorSpace = THREE.SRGBColorSpace;
@@ -52,9 +60,9 @@ function BushModel({ url, rotationY, texture }: { url: string; rotationY: number
       }
     });
 
-    return { 
-      clonedBush: clone, 
-      offset: [-center.x, -bottom, -center.z] as [number, number, number] 
+    return {
+      clonedBush: clone,
+      offset: [-center.x, -bottom, -center.z] as [number, number, number],
     };
   }, [fbx, texture]);
 
@@ -68,7 +76,7 @@ function BushModel({ url, rotationY, texture }: { url: string; rotationY: number
 
 export function Bush({ position, scale = 1.0, seed = 0 }: BushProps) {
   const texture = useTexture(TEXTURE_PATH);
-  
+
   // On utilise uniquement le buisson 3 comme demandé
   const rotationY = seededRandom(seed * 3) * Math.PI * 2;
 

@@ -36,7 +36,7 @@ describe('BotService', () => {
     service = module.get<BotService>(BotService);
     turnService = module.get(TurnService);
     redisService = module.get(RedisService);
-    
+
     // Silence console logs during tests
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
   });
@@ -62,7 +62,7 @@ describe('BotService', () => {
       } as unknown as CombatState);
 
       await service.handleTurnStarted({ sessionId, playerId: botId });
-      
+
       expect(turnService.forcePlayAction).not.toHaveBeenCalled();
     });
 
@@ -90,12 +90,12 @@ describe('BotService', () => {
 
       // On simule deux états : un avec PA, un sans PA pour arrêter la récursion
       const stateWithPa = { ...mockState };
-      const stateWithoutPa = { 
-        ...mockState, 
-        players: { 
-          ...mockState.players, 
-          [botId]: { ...mockState.players[botId], remainingPa: 0 } 
-        } 
+      const stateWithoutPa = {
+        ...mockState,
+        players: {
+          ...mockState.players,
+          [botId]: { ...mockState.players[botId], remainingPa: 0 },
+        },
       };
 
       redisService.getJson
@@ -109,142 +109,140 @@ describe('BotService', () => {
       expect(turnService.forcePlayAction).toHaveBeenCalledWith(
         sessionId,
         botId,
-        expect.objectContaining({ type: CombatActionType.CAST_SPELL, spellId: 'spell-1' })
+        expect.objectContaining({ type: CombatActionType.CAST_SPELL, spellId: 'spell-1' }),
       );
     });
 
     it('should move towards enemy if out of range', async () => {
-        const mockState = {
-          sessionId,
-          map: { 
-            width: 10, 
-            height: 10, 
-            tiles: [
-                { x: 5, y: 6, type: TerrainType.GROUND }
-            ] 
+      const mockState = {
+        sessionId,
+        map: {
+          width: 10,
+          height: 10,
+          tiles: [{ x: 5, y: 6, type: TerrainType.GROUND }],
+        },
+        players: {
+          [botId]: {
+            playerId: botId,
+            username: 'Bot_Aggro',
+            position: { x: 5, y: 5 },
+            remainingPa: 6,
+            remainingPm: 3,
+            spells: [{ id: 'spell-1', paCost: 3, minRange: 1, maxRange: 1, name: 'Slash' }],
+            type: 'PLAYER',
           },
-          players: {
-            [botId]: {
-              playerId: botId,
-              username: 'Bot_Aggro',
-              position: { x: 5, y: 5 },
-              remainingPa: 6,
-              remainingPm: 3,
-              spells: [{ id: 'spell-1', paCost: 3, minRange: 1, maxRange: 1, name: 'Slash' }],
-              type: 'PLAYER',
-            },
-            [enemyId]: {
-              playerId: enemyId,
-              username: 'Target',
-              position: { x: 5, y: 8 },
-            },
+          [enemyId]: {
+            playerId: enemyId,
+            username: 'Target',
+            position: { x: 5, y: 8 },
           },
-        } as unknown as CombatState;
-  
-        // Simuler la consommation de PM
-        const stateWithPm = { ...mockState };
-        const stateWithoutPm = { 
-            ...mockState, 
-            players: { 
-              ...mockState.players, 
-              [botId]: { ...mockState.players[botId], remainingPm: 0 } 
-            } 
-        };
+        },
+      } as unknown as CombatState;
 
-        redisService.getJson
-            .mockResolvedValueOnce(stateWithPm as any)
-            .mockResolvedValueOnce(stateWithoutPm as any);
-        (gameEngine.isInRange as jest.Mock).mockReturnValue(false);
-  
-        // @ts-ignore
-        await service.makeMove(sessionId, botId);
-  
-        expect(turnService.forcePlayAction).toHaveBeenCalledWith(
-          sessionId,
-          botId,
-          expect.objectContaining({ type: CombatActionType.MOVE, targetX: 5, targetY: 6 })
-        );
-      });
+      // Simuler la consommation de PM
+      const stateWithPm = { ...mockState };
+      const stateWithoutPm = {
+        ...mockState,
+        players: {
+          ...mockState.players,
+          [botId]: { ...mockState.players[botId], remainingPm: 0 },
+        },
+      };
 
-      it('should recurse with afterMove=true after a movement', async () => {
-        const mockState = {
-          sessionId,
-          map: { width: 10, height: 10, tiles: [{ x: 5, y: 6, type: TerrainType.GROUND }] },
-          players: {
-            [botId]: {
-              playerId: botId,
-              username: 'Bot',
-              position: { x: 5, y: 5 },
-              remainingPa: 6,
-              remainingPm: 3,
-              spells: [{ id: 'spell-1', paCost: 3, minRange: 1, maxRange: 1, name: 'Slash' }],
-              type: 'PLAYER',
-            },
-            [enemyId]: {
-              playerId: enemyId,
-              username: 'Target',
-              position: { x: 5, y: 7 }, // Need to move one step to be in range (5,6)
-            },
+      redisService.getJson
+        .mockResolvedValueOnce(stateWithPm as any)
+        .mockResolvedValueOnce(stateWithoutPm as any);
+      (gameEngine.isInRange as jest.Mock).mockReturnValue(false);
+
+      // @ts-ignore
+      await service.makeMove(sessionId, botId);
+
+      expect(turnService.forcePlayAction).toHaveBeenCalledWith(
+        sessionId,
+        botId,
+        expect.objectContaining({ type: CombatActionType.MOVE, targetX: 5, targetY: 6 }),
+      );
+    });
+
+    it('should recurse with afterMove=true after a movement', async () => {
+      const mockState = {
+        sessionId,
+        map: { width: 10, height: 10, tiles: [{ x: 5, y: 6, type: TerrainType.GROUND }] },
+        players: {
+          [botId]: {
+            playerId: botId,
+            username: 'Bot',
+            position: { x: 5, y: 5 },
+            remainingPa: 6,
+            remainingPm: 3,
+            spells: [{ id: 'spell-1', paCost: 3, minRange: 1, maxRange: 1, name: 'Slash' }],
+            type: 'PLAYER',
           },
-        } as unknown as CombatState;
-
-        // Important : On doit vider les PM au 2ème appel pour arrêter la récursion du test
-        const stateWithPm = { ...mockState };
-        const stateWithoutPm = { 
-            ...mockState, 
-            players: { 
-                ...mockState.players, 
-                [botId]: { ...mockState.players[botId], remainingPm: 0 } 
-            } 
-        };
-
-        redisService.getJson
-            .mockResolvedValueOnce(stateWithPm as any)
-            .mockResolvedValueOnce(stateWithoutPm as any);
-
-        const spy = jest.spyOn(service as any, 'makeMove');
-
-        // @ts-ignore
-        await service.makeMove(sessionId, botId);
-
-        // First call: afterMove=false
-        // Second call (after move): afterMove=true
-        expect(spy).toHaveBeenCalledWith(sessionId, botId, true);
-        spy.mockRestore();
-      });
-
-      it('should end turn if no actions possible', async () => {
-        const mockState = {
-          sessionId,
-          map: { width: 10, height: 10, tiles: [] },
-          players: {
-            [botId]: {
-              playerId: botId,
-              username: 'Bot_Aggro',
-              position: { x: 5, y: 5 },
-              remainingPa: 0,
-              remainingPm: 0,
-              spells: [],
-              type: 'PLAYER',
-            },
-            [enemyId]: {
-              playerId: enemyId,
-              username: 'Target',
-              position: { x: 8, y: 8 },
-            },
+          [enemyId]: {
+            playerId: enemyId,
+            username: 'Target',
+            position: { x: 5, y: 7 }, // Need to move one step to be in range (5,6)
           },
-        } as unknown as CombatState;
-  
-        redisService.getJson.mockResolvedValue(mockState);
-        
-        // @ts-ignore
-        await service.makeMove(sessionId, botId);
-  
-        expect(turnService.forcePlayAction).toHaveBeenCalledWith(
-          sessionId,
-          botId,
-          expect.objectContaining({ type: CombatActionType.END_TURN })
-        );
-      });
+        },
+      } as unknown as CombatState;
+
+      // Important : On doit vider les PM au 2ème appel pour arrêter la récursion du test
+      const stateWithPm = { ...mockState };
+      const stateWithoutPm = {
+        ...mockState,
+        players: {
+          ...mockState.players,
+          [botId]: { ...mockState.players[botId], remainingPm: 0 },
+        },
+      };
+
+      redisService.getJson
+        .mockResolvedValueOnce(stateWithPm as any)
+        .mockResolvedValueOnce(stateWithoutPm as any);
+
+      const spy = jest.spyOn(service as any, 'makeMove');
+
+      // @ts-ignore
+      await service.makeMove(sessionId, botId);
+
+      // First call: afterMove=false
+      // Second call (after move): afterMove=true
+      expect(spy).toHaveBeenCalledWith(sessionId, botId, true);
+      spy.mockRestore();
+    });
+
+    it('should end turn if no actions possible', async () => {
+      const mockState = {
+        sessionId,
+        map: { width: 10, height: 10, tiles: [] },
+        players: {
+          [botId]: {
+            playerId: botId,
+            username: 'Bot_Aggro',
+            position: { x: 5, y: 5 },
+            remainingPa: 0,
+            remainingPm: 0,
+            spells: [],
+            type: 'PLAYER',
+          },
+          [enemyId]: {
+            playerId: enemyId,
+            username: 'Target',
+            position: { x: 8, y: 8 },
+          },
+        },
+      } as unknown as CombatState;
+
+      redisService.getJson.mockResolvedValue(mockState);
+
+      // @ts-ignore
+      await service.makeMove(sessionId, botId);
+
+      expect(turnService.forcePlayAction).toHaveBeenCalledWith(
+        sessionId,
+        botId,
+        expect.objectContaining({ type: CombatActionType.END_TURN }),
+      );
+    });
   });
 });

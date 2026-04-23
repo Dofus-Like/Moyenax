@@ -151,7 +151,9 @@ async function createRollbackSnapshot(stack) {
   }
 
   if (!Array.isArray(env)) {
-    throw new Error(`Unable to read current Portainer environment variables for stack '${stackName}'.`);
+    throw new Error(
+      `Unable to read current Portainer environment variables for stack '${stackName}'.`,
+    );
   }
 
   return {

@@ -2,8 +2,6 @@ import { EquipmentSlotType, InventoryItem } from '@game/shared-types';
 import mannequinBg from '../assets/mannequin-bg.gif';
 import './Mannequin.css';
 
-
-
 interface MannequinProps {
   equipment: Record<EquipmentSlotType, InventoryItem | null>;
   onEquip: (slot: EquipmentSlotType, inventoryItemId: string) => void;
@@ -47,10 +45,9 @@ export const Mannequin: React.FC<MannequinProps> = ({ equipment, onEquip, onUneq
             onDragOver={handleDragOver}
             onDoubleClick={() => equipment[s.type] && onUnequip(s.type)}
           >
-
             <span className="slot-label">{s.label}</span>
             {equipment[s.type] && (
-              <div 
+              <div
                 className="equipped-item"
                 draggable
                 onDragStart={(e) => handleDragStart(e, s.type)}
@@ -63,7 +60,6 @@ export const Mannequin: React.FC<MannequinProps> = ({ equipment, onEquip, onUneq
         <div className="mannequin-silhouette">
           <img src={mannequinBg} alt="Silhouette" />
         </div>
-
       </div>
     </div>
   );

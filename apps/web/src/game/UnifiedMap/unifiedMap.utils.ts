@@ -18,7 +18,7 @@ export function buildOccupiedPositionSet(positions: PathNode[]) {
 
 export interface BoundaryEdge {
   start: [number, number]; // [x, z] relative to tile center
-  end: [number, number];   // [x, z] relative to tile center
+  end: [number, number]; // [x, z] relative to tile center
 }
 
 /**
@@ -26,23 +26,23 @@ export interface BoundaryEdge {
  * Useful for drawing silhouettes/outlines around reachable areas.
  */
 export function calculateBoundaryEdges(tiles: { x: number; y: number }[]): BoundaryEdge[] {
-  const tileSet = new Set(tiles.map(t => toPositionKey(t.x, t.y)));
+  const tileSet = new Set(tiles.map((t) => toPositionKey(t.x, t.y)));
   const boundaryEdges: BoundaryEdge[] = [];
 
-  tiles.forEach(tile => {
+  tiles.forEach((tile) => {
     // Neighbors: Top (dy -1), Bottom (dy +1), Left (dx -1), Right (dx +1)
     const neighbors = [
       { dx: 0, dy: -1, start: [-0.5, -0.5], end: [0.5, -0.5] }, // Top
-      { dx: 0, dy: 1, start: [-0.5, 0.5], end: [0.5, 0.5] },   // Bottom
+      { dx: 0, dy: 1, start: [-0.5, 0.5], end: [0.5, 0.5] }, // Bottom
       { dx: -1, dy: 0, start: [-0.5, -0.5], end: [-0.5, 0.5] }, // Left
-      { dx: 1, dy: 0, start: [0.5, -0.5], end: [0.5, 0.5] },   // Right
+      { dx: 1, dy: 0, start: [0.5, -0.5], end: [0.5, 0.5] }, // Right
     ];
 
     neighbors.forEach(({ dx, dy, start, end }) => {
       if (!tileSet.has(toPositionKey(tile.x + dx, tile.y + dy))) {
-        boundaryEdges.push({ 
-          start: [tile.x + start[0], tile.y + start[1]], 
-          end: [tile.x + end[0], tile.y + end[1]]
+        boundaryEdges.push({
+          start: [tile.x + start[0], tile.y + start[1]],
+          end: [tile.x + end[0], tile.y + end[1]],
         });
       }
     });

@@ -15,9 +15,7 @@ export class MapController {
   @UseGuards(JwtAuthGuard)
   @Post('reset')
   async resetMap(@Query('seed') seed?: string) {
-    const seedId = seed && ALL_SEED_IDS.includes(seed as SeedId)
-      ? (seed as SeedId)
-      : undefined;
+    const seedId = seed && ALL_SEED_IDS.includes(seed as SeedId) ? (seed as SeedId) : undefined;
     return this.mapGenerator.resetMap(seedId);
   }
 }

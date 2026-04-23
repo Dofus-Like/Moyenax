@@ -120,9 +120,7 @@ export function DebugPage() {
           <h2>Farming</h2>
           <p>Generer une map et lancer le mode farming.</p>
           <div style={{ marginBottom: 12 }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-              Seed :
-            </span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>Seed :</span>
             <div className="seed-selector">
               <button
                 className={`seed-chip ${!selectedSeed ? 'active' : ''}`}
@@ -185,7 +183,10 @@ export function DebugPage() {
             <button className="debug-btn secondary" onClick={() => navigate('/inventory')}>
               Inventaire
             </button>
-            <button className="debug-btn secondary" onClick={() => navigate('/crafting?debug=true')}>
+            <button
+              className="debug-btn secondary"
+              onClick={() => navigate('/crafting?debug=true')}
+            >
               Forge (craft)
             </button>
           </div>
@@ -194,7 +195,9 @@ export function DebugPage() {
         {/* Inventaire Farming */}
         <div className="debug-card">
           <h2>Farming State</h2>
-          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 8 }}>
+          <div
+            style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 8 }}
+          >
             Position: {farmingPos ? `(${farmingPos.x}, ${farmingPos.y})` : 'non definie'}
           </div>
           <div className="debug-json">
@@ -208,21 +211,21 @@ export function DebugPage() {
         <div className="debug-card debug-state-panel">
           <h2>Etat Combat (JSON)</h2>
           {lastResult && (
-            <div style={{
-              padding: '8px 12px',
-              marginBottom: 12,
-              borderRadius: 'var(--radius)',
-              background: 'rgba(99, 102, 241, 0.1)',
-              border: '1px solid var(--color-primary)',
-              fontSize: '0.8rem',
-            }}>
+            <div
+              style={{
+                padding: '8px 12px',
+                marginBottom: 12,
+                borderRadius: 'var(--radius)',
+                background: 'rgba(99, 102, 241, 0.1)',
+                border: '1px solid var(--color-primary)',
+                fontSize: '0.8rem',
+              }}
+            >
               {lastResult}
             </div>
           )}
           <div className="debug-json">
-            {combatState
-              ? JSON.stringify(combatState, null, 2)
-              : 'Aucun combat en cours'}
+            {combatState ? JSON.stringify(combatState, null, 2) : 'Aucun combat en cours'}
           </div>
         </div>
       </div>

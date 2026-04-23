@@ -32,7 +32,7 @@ export function LoginPage() {
 
       navigate('/');
     } catch (err) {
-      setError('Erreur d\'authentification. Vérifiez vos identifiants.');
+      setError("Erreur d'authentification. Vérifiez vos identifiants.");
     }
   };
 
@@ -94,38 +94,44 @@ export function LoginPage() {
         </form>
 
         {!isRegister && (
-            <div className="quick-login">
-                <p className="quick-login-title">⚡ Test: Connexion Rapide</p>
-                <div className="quick-login-buttons">
-                    {[
-                        { name: 'Warrior', emoji: '🛡️', email: 'warrior@test.com', class: 'warrior' },
-                        { name: 'Mage', emoji: '🧙', email: 'mage@test.com', class: 'mage' },
-                        { name: 'Ninja', emoji: '🥷', email: 'ninja@test.com', class: 'ninja' },
-                        { name: 'Troll', emoji: '👺', email: 'troll@test.com', class: 'troll' },
-                    ].map(user => (
-                        <button 
-                            key={user.email}
-                            type="button"
-                            className={`quick-btn ${user.class}`}
-                            onClick={async () => {
-                                try {
-                                    const res = await authApi.login({ email: user.email, password: 'password123' });
-                                    setToken(res.data.accessToken);
-                                    const me = await authApi.getMe();
-                                    setPlayer(me.data);
-                                    navigate('/');
-                                } catch (e) { 
-                                    console.error('Quick login error:', e);
-                                    setError('Seed non effectuée ou API hors ligne ?'); 
-                                }
-                            }}
-                        >
-                            {user.emoji} {user.name}
-                        </button>
-                    ))}
-                </div>
-                <p className="quick-login-tip">💡 Pour jouer à deux, utilisez un <strong>onglet navigation privée</strong> pour la 2ème instance.</p>
+          <div className="quick-login">
+            <p className="quick-login-title">⚡ Test: Connexion Rapide</p>
+            <div className="quick-login-buttons">
+              {[
+                { name: 'Warrior', emoji: '🛡️', email: 'warrior@test.com', class: 'warrior' },
+                { name: 'Mage', emoji: '🧙', email: 'mage@test.com', class: 'mage' },
+                { name: 'Ninja', emoji: '🥷', email: 'ninja@test.com', class: 'ninja' },
+                { name: 'Troll', emoji: '👺', email: 'troll@test.com', class: 'troll' },
+              ].map((user) => (
+                <button
+                  key={user.email}
+                  type="button"
+                  className={`quick-btn ${user.class}`}
+                  onClick={async () => {
+                    try {
+                      const res = await authApi.login({
+                        email: user.email,
+                        password: 'password123',
+                      });
+                      setToken(res.data.accessToken);
+                      const me = await authApi.getMe();
+                      setPlayer(me.data);
+                      navigate('/');
+                    } catch (e) {
+                      console.error('Quick login error:', e);
+                      setError('Seed non effectuée ou API hors ligne ?');
+                    }
+                  }}
+                >
+                  {user.emoji} {user.name}
+                </button>
+              ))}
             </div>
+            <p className="quick-login-tip">
+              💡 Pour jouer à deux, utilisez un <strong>onglet navigation privée</strong> pour la
+              2ème instance.
+            </p>
+          </div>
         )}
       </div>
     </div>

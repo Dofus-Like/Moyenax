@@ -25,9 +25,12 @@ function getCombatErrorMessage(error: unknown, fallback: string) {
     typeof error === 'object' &&
     error !== null &&
     'response' in error &&
-    typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+    typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message ===
+      'string'
   ) {
-    return (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback;
+    return (
+      (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback
+    );
   }
 
   if (error instanceof Error && error.message) {
@@ -57,9 +60,10 @@ export function CombatHUD() {
   const navigate = useNavigate();
   const { activeSession } = useGameSession();
 
-  const currentPlayer = (combatState && user) ? combatState.players[user.id] : null;
-  const enemyId = combatState && user ? Object.keys(combatState.players).find(id => id !== user.id) : null;
-  const isMyTurn = (combatState && user) ? combatState.currentTurnPlayerId === user.id : false;
+  const currentPlayer = combatState && user ? combatState.players[user.id] : null;
+  const enemyId =
+    combatState && user ? Object.keys(combatState.players).find((id) => id !== user.id) : null;
+  const isMyTurn = combatState && user ? combatState.currentTurnPlayerId === user.id : false;
 
   const skinConfig = React.useMemo(() => {
     return getSkinById(currentPlayer?.skin || 'soldier-classic');
@@ -70,9 +74,9 @@ export function CombatHUD() {
 
   React.useEffect(() => {
     if (turnRef.current && !isMyTurn) {
-        setIsClosing(true);
-        const timer = setTimeout(() => setIsClosing(false), 450);
-        return () => clearTimeout(timer);
+      setIsClosing(true);
+      const timer = setTimeout(() => setIsClosing(false), 450);
+      return () => clearTimeout(timer);
     }
     turnRef.current = isMyTurn;
   }, [isMyTurn]);
@@ -127,18 +131,18 @@ export function CombatHUD() {
 
   return (
     <div className="combat-hud">
-      {uiMessage && (
-        <div className={`combat-toast ${uiMessage.type}`}>
-          {uiMessage.text}
-        </div>
-      )}
+      {uiMessage && <div className={`combat-toast ${uiMessage.type}`}>{uiMessage.text}</div>}
 
       {/* HUD de fin de combat */}
       {showCombatEnd && (
         <div className={`combat-end-overlay ${isWinner ? 'victory' : 'defeat'}`}>
           <div className="end-modal">
             <h1>{isWinner ? '🏆 VICTOIRE' : '💀 DÉFAITE'}</h1>
-            <p>{isWinner ? 'Félicitations, vous avez terrassé votre adversaire !' : 'Dommage... Vous ferez mieux la prochaine fois !'}</p>
+            <p>
+              {isWinner
+                ? 'Félicitations, vous avez terrassé votre adversaire !'
+                : 'Dommage... Vous ferez mieux la prochaine fois !'}
+            </p>
             <div className="end-modal-actions">
               <button className="exit-button" onClick={handleCombatExit}>
                 {activeSession?.status === 'ACTIVE' ? 'Continuer' : 'Retour au Lobby'}
@@ -163,26 +167,26 @@ export function CombatHUD() {
             const isHovered = hoveredSpellId === spell.id;
 
             return (
-              <div 
+              <div
                 key={spell.id}
                 className={`spell-card ${disabled ? 'disabled' : ''} ${isActive ? 'active' : ''} ${familyClassName}`}
                 onMouseEnter={() => setHoveredSpellId(spell.id)}
                 onMouseLeave={() => setHoveredSpellId(null)}
                 onClick={() => !disabled && setSelectedSpell(isActive ? null : spell.id)}
               >
-                {isHovered && (
-                  <div className="spell-hover-tag">
-                    {spell.name}
+                {isHovered && <div className="spell-hover-tag">{spell.name}</div>}
+
+                <div className="spell-pa-cost">{spell.paCost}</div>
+                <img
+                  src={spell.iconPath ?? '/assets/pack/spells/epee.png'}
+                  className="spell-icon-img"
+                  alt={spell.name}
+                />
+                {onCooldown && (
+                  <div className="spell-cooldown-timer">
+                    {currentPlayer.spellCooldowns[spell.id]}
                   </div>
                 )}
-                
-                <div className="spell-pa-cost">{spell.paCost}</div>
-                <img 
-                  src={spell.iconPath ?? '/assets/pack/spells/epee.png'}
-                  className="spell-icon-img" 
-                  alt={spell.name} 
-                />
-                {onCooldown && <div className="spell-cooldown-timer">{currentPlayer.spellCooldowns[spell.id]}</div>}
               </div>
             );
           })}

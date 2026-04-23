@@ -47,7 +47,7 @@ export class PlayerSpellProjectionService {
 
   async buildPlayerSpellAssignments(playerId: string) {
     const projectedSpells = await this.getProjectedSpellRows(playerId);
-    
+
     // Pour T4.4.4 (Comptage de sources), on va avoir besoin des sources brutes
     const sources = await this.getSpellSources(playerId);
 
@@ -60,9 +60,6 @@ export class PlayerSpellProjectionService {
       };
     });
   }
-
-
-
 
   async syncPlayerSpells(playerId: string) {
     const assignments = await this.buildPlayerSpellAssignments(playerId);
@@ -109,10 +106,10 @@ export class PlayerSpellProjectionService {
 
     if (spellIds.length === 0) return [];
 
-    const projectedSpells = await this.prisma.spell.findMany({ 
-      where: { id: { in: spellIds } } 
+    const projectedSpells = await this.prisma.spell.findMany({
+      where: { id: { in: spellIds } },
     });
-    
+
     return projectedSpells.sort((left, right) => this.compareSpellRows(left, right));
   }
 
@@ -135,13 +132,16 @@ export class PlayerSpellProjectionService {
     const [defaultSpells, grants, allSpells] = await Promise.all([
       this.prisma.spell.findMany({ where: { isDefault: true } }),
       this.prisma.itemGrantedSpell.findMany(),
-      this.prisma.spell.findMany()
+      this.prisma.spell.findMany(),
     ]);
 
     return this.spellResolver.resolveSpells(equippedItems as any, defaultSpells, grants, allSpells);
   }
 
-  private compareSpellRows(left: Pick<SpellRow, 'sortOrder' | 'name' | 'code'>, right: Pick<SpellRow, 'sortOrder' | 'name' | 'code'>) {
+  private compareSpellRows(
+    left: Pick<SpellRow, 'sortOrder' | 'name' | 'code'>,
+    right: Pick<SpellRow, 'sortOrder' | 'name' | 'code'>,
+  ) {
     if (left.sortOrder !== right.sortOrder) {
       return left.sortOrder - right.sortOrder;
     }

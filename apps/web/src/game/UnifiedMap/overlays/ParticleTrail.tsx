@@ -30,18 +30,9 @@ export function ParticleTrail({ position, color, count = 20, spread = 0.5 }: Par
   return (
     <points ref={particlesRef} position={position}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-      <pointsMaterial
-        size={0.08}
-        color={color}
-        transparent
-        opacity={0.8}
-        sizeAttenuation
-      />
+      <pointsMaterial size={0.08} color={color} transparent opacity={0.8} sizeAttenuation />
     </points>
   );
 }

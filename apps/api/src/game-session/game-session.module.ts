@@ -11,7 +11,15 @@ import { GameSessionService } from './game-session.service';
 import { MatchmakingService } from './matchmaking.service';
 
 @Module({
-  imports: [PrismaModule, RedisModule, SecurityModule, SseModule, SessionModule, PlayerModule, CombatModule],
+  imports: [
+    PrismaModule,
+    RedisModule,
+    SecurityModule,
+    SseModule,
+    SessionModule,
+    PlayerModule,
+    CombatModule,
+  ],
   controllers: [GameSessionController],
   providers: [GameSessionService, MatchmakingService],
   exports: [GameSessionService],

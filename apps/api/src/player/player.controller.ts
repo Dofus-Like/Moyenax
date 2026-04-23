@@ -9,7 +9,6 @@ export class PlayerController {
 
   @Get('stats')
   async getStats(@Request() req: any) {
-
     return this.playerStatsService.getEffectiveStats(req.user.id);
   }
 }

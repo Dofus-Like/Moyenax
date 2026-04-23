@@ -32,7 +32,6 @@
   gap: 16px;
 }
 
-
 .inventory-header-nav {
   display: flex;
   gap: 12px;
@@ -268,7 +267,9 @@
   color: #000;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .equip-button:hover:not(:disabled) {
@@ -308,8 +309,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .inventory-card.equipped-variant {

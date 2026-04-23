@@ -82,7 +82,7 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
+
       const response = await gameSessionApi.getActiveSession({ signal: controller.signal });
       clearTimeout(timeoutId);
       setActiveSession(response.data ?? null);
@@ -90,7 +90,7 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
       if (getErrorStatus(error) === 401) {
         setActiveSession(null);
       }
-      console.error("[GameTunnel] Failed to refresh session:", error);
+      console.error('[GameTunnel] Failed to refresh session:', error);
     } finally {
       if (!silent) {
         setLoading(false);
@@ -173,7 +173,9 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
         }
 
         setActiveSession((prev) => {
-          console.log(`[GameTunnel] SSE Update for session ${next.id}: status=${next.status}, phase=${next.phase}, combats=${next.combats?.length}`);
+          console.log(
+            `[GameTunnel] SSE Update for session ${next.id}: status=${next.status}, phase=${next.phase}, combats=${next.combats?.length}`,
+          );
           return prev && prev.id === next.id ? { ...prev, ...next } : next;
         });
       } catch (error) {

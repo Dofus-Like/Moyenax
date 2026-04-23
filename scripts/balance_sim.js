@@ -21,27 +21,23 @@ function calculateInitiative(ini) {
 
 const BUILDS = {
   WARRIOR: {
-    name: "Warrior",
+    name: 'Warrior',
     stats: { vit: 185, atk: 30, mag: 10, def: 15, res: 5, ini: 100, pa: 7, pm: 3 },
-    spells: [
-      { name: "Frappe", cost: 3, range: [1, 1], dmg: [35, 45], type: 'PHYSICAL' }
-    ]
+    spells: [{ name: 'Frappe', cost: 3, range: [1, 1], dmg: [35, 45], type: 'PHYSICAL' }],
   },
   MAGE: {
-    name: "Mage",
+    name: 'Mage',
     stats: { vit: 140, atk: 10, mag: 35, def: 5, res: 20, ini: 100, pa: 7, pm: 3 },
     spells: [
-      { name: "Fireball", cost: 3, range: [1, 7], dmg: [25, 35], type: 'MAGICAL' },
-      { name: "Heal", cost: 3, range: [0, 4], heal: [15, 25], type: 'HEAL' }
-    ]
+      { name: 'Fireball', cost: 3, range: [1, 7], dmg: [25, 35], type: 'MAGICAL' },
+      { name: 'Heal', cost: 3, range: [0, 4], heal: [15, 25], type: 'HEAL' },
+    ],
   },
   NINJA: {
-    name: "Ninja",
+    name: 'Ninja',
     stats: { vit: 150, atk: 25, mag: 15, def: 5, res: 5, ini: 150, pa: 7, pm: 4 },
-    spells: [
-      { name: "Kunai", cost: 3, range: [1, 6], dmg: [15, 20], type: 'PHYSICAL' }
-    ]
-  }
+    spells: [{ name: 'Kunai', cost: 3, range: [1, 6], dmg: [15, 20], type: 'PHYSICAL' }],
+  },
 };
 
 // --- AISimulation Logic ---
@@ -69,7 +65,7 @@ class Fighter {
     let pm = this.stats.pm;
 
     // Movement: Simply get as close as needed for spells
-    const targetRange = this.name === "Warrior" ? 1 : (this.name === "Mage" ? 7 : 6);
+    const targetRange = this.name === 'Warrior' ? 1 : this.name === 'Mage' ? 7 : 6;
     let dist = this.getDist(other);
 
     if (dist > targetRange) {
@@ -77,22 +73,25 @@ class Fighter {
       if (this.pos < other.pos) this.pos += move;
       else this.pos -= move;
       dist = this.getDist(other);
-    } else if (this.name !== "Warrior" && dist < targetRange) {
-        // Ranged classes try to keep distance if possible? 
-        // For simplicity, let's just move towards the sweet spot if moving is free
+    } else if (this.name !== 'Warrior' && dist < targetRange) {
+      // Ranged classes try to keep distance if possible?
+      // For simplicity, let's just move towards the sweet spot if moving is free
     }
 
     // Action Logic
     while (pa >= 2) {
-      if (this.name === "Mage" && this.currentVit < this.stats.vit * 0.6 && pa >= 2) {
+      if (this.name === 'Mage' && this.currentVit < this.stats.vit * 0.6 && pa >= 2) {
         // Heal
-        const healSpell = this.spells.find(s => s.type === 'HEAL');
-        this.currentVit = Math.min(this.stats.vit, this.currentVit + calculateHeal(healSpell.heal[0], healSpell.heal[1], this.stats.mag));
+        const healSpell = this.spells.find((s) => s.type === 'HEAL');
+        this.currentVit = Math.min(
+          this.stats.vit,
+          this.currentVit + calculateHeal(healSpell.heal[0], healSpell.heal[1], this.stats.mag),
+        );
         pa -= healSpell.cost;
         continue;
       }
 
-      const attackSpell = this.spells.find(s => s.type !== 'HEAL');
+      const attackSpell = this.spells.find((s) => s.type !== 'HEAL');
       if (pa >= attackSpell.cost && dist >= attackSpell.range[0] && dist <= attackSpell.range[1]) {
         const power = attackSpell.type === 'MAGICAL' ? this.stats.mag : this.stats.atk;
         const defense = attackSpell.type === 'MAGICAL' ? other.stats.res : other.stats.def;
@@ -146,16 +145,16 @@ const TOTAL_SESSIONS = 100000;
 const results = {
   Manche: {},
   Session: {},
-  Counts: {}
+  Counts: {},
 };
 
 const pairs = [
-  ["WARRIOR", "MAGE"],
-  ["WARRIOR", "NINJA"],
-  ["MAGE", "NINJA"],
-  ["WARRIOR", "WARRIOR"],
-  ["MAGE", "MAGE"],
-  ["NINJA", "NINJA"]
+  ['WARRIOR', 'MAGE'],
+  ['WARRIOR', 'NINJA'],
+  ['MAGE', 'NINJA'],
+  ['WARRIOR', 'WARRIOR'],
+  ['MAGE', 'MAGE'],
+  ['NINJA', 'NINJA'],
 ];
 
 pairs.forEach(([p1, p2]) => {
@@ -199,17 +198,17 @@ for (let i = 0; i < TOTAL_SESSIONS; i++) {
 
 // --- Post-Processing & Output ---
 
-console.log("\n--- SIMULATION RESULTS ---");
+console.log('\n--- SIMULATION RESULTS ---');
 pairs.forEach(([p1, p2]) => {
   const key = `${p1} vs ${p2}`;
   const count = results.Counts[key];
   const winP1 = results.Session[key][p1];
   const winP2 = results.Session[key][p2];
-  
+
   console.log(`\nMatchup: ${key} (${count} matches)`);
   console.log(`  Session Win Rate ${p1}: ${((winP1 / count) * 100).toFixed(2)}%`);
   console.log(`  Session Win Rate ${p2}: ${((winP2 / count) * 100).toFixed(2)}%`);
 });
 
 fs.writeFileSync('balance_results.json', JSON.stringify(results, null, 2));
-console.log("\nResults saved to balance_results.json");
+console.log('\nResults saved to balance_results.json');

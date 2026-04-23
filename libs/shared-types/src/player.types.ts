@@ -1,12 +1,12 @@
 export interface PlayerStats {
-  vit: number;    // Vitalité effective
-  atk: number;    // Attaque physique effective
-  mag: number;    // Magie effective
-  def: number;    // Défense physique effective
-  res: number;    // Résistance magique effective
-  ini: number;    // Initiative effective
-  pa: number;     // Points d'Action effectifs
-  pm: number;     // Points de Mouvement effectifs
+  vit: number; // Vitalité effective
+  atk: number; // Attaque physique effective
+  mag: number; // Magie effective
+  def: number; // Défense physique effective
+  res: number; // Résistance magique effective
+  ini: number; // Initiative effective
+  pa: number; // Points d'Action effectifs
+  pm: number; // Points de Mouvement effectifs
 
   baseVit: number; // Vitalité de base
   baseAtk: number;
@@ -17,7 +17,6 @@ export interface PlayerStats {
   basePa: number;
   basePm: number;
 }
-
 
 export interface ItemDefinition {
   id: string;
@@ -32,15 +31,12 @@ export interface ItemDefinition {
   rank: number;
 }
 
-
-
 export interface InventoryItem {
   id: string;
   itemId: string;
   quantity: number;
   item: ItemDefinition;
 }
-
 
 export enum ItemType {
   WEAPON = 'WEAPON',
@@ -68,4 +64,3 @@ export interface EquipmentSlot {
 }
 
 export type Equipment = Record<EquipmentSlotType, InventoryItem | null>;
-

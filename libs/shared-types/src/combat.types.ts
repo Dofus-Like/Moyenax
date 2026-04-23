@@ -57,7 +57,6 @@ export interface SpellDefinition {
   effectConfig: Record<string, unknown> | null;
 }
 
-
 export interface Tile {
   x: number;
   y: number;
@@ -79,7 +78,7 @@ export interface CombatPlayer {
   spells: SpellDefinition[];
   remainingPa: number;
   remainingPm: number;
-  currentVit: number;      
+  currentVit: number;
   spellCooldowns: Record<string, number>;
   buffs: Buff[];
   skin?: string;

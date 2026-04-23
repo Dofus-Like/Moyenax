@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from '../shared/redis/redis.service';
-import {
-  MATCHMAKING_QUEUE_LOCK_KEY,
-} from '../shared/security/security.constants';
+import { MATCHMAKING_QUEUE_LOCK_KEY } from '../shared/security/security.constants';
 import { MatchmakingQueueStore } from '../shared/security/matchmaking-queue.store';
 import { SessionSecurityService } from '../shared/security/session-security.service';
 import { GameSessionService } from './game-session.service';
@@ -24,11 +22,7 @@ export class MatchmakingService {
       return { status: 'already_in_queue' };
     }
 
-    const lockAcquired = await this.redis.setIfNotExists(
-      MATCHMAKING_QUEUE_LOCK_KEY,
-      playerId,
-      5,
-    );
+    const lockAcquired = await this.redis.setIfNotExists(MATCHMAKING_QUEUE_LOCK_KEY, playerId, 5);
 
     if (!lockAcquired) {
       return { status: 'searching' };

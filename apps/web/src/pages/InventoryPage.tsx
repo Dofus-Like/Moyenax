@@ -111,14 +111,28 @@ export function InventoryPage() {
               <div className="stats-vertical-list">
                 {(
                   [
-                    { label: 'VIT', current: stats?.data.vit ?? 100, base: stats?.data.baseVit ?? 100 },
+                    {
+                      label: 'VIT',
+                      current: stats?.data.vit ?? 100,
+                      base: stats?.data.baseVit ?? 100,
+                    },
                     { label: 'ATK', current: stats?.data.atk ?? 0, base: stats?.data.baseAtk ?? 0 },
                     { label: 'MAG', current: stats?.data.mag ?? 0, base: stats?.data.baseMag ?? 0 },
                     { label: 'DEF', current: stats?.data.def ?? 0, base: stats?.data.baseDef ?? 0 },
                     { label: 'RES', current: stats?.data.res ?? 0, base: stats?.data.baseRes ?? 0 },
                     { label: 'INI', current: stats?.data.ini ?? 0, base: stats?.data.baseIni ?? 0 },
-                    { label: 'PA', current: stats?.data.pa ?? 6, base: stats?.data.basePa ?? 6, className: 'stat-pa' },
-                    { label: 'PM', current: stats?.data.pm ?? 3, base: stats?.data.basePm ?? 3, className: 'stat-pm' },
+                    {
+                      label: 'PA',
+                      current: stats?.data.pa ?? 6,
+                      base: stats?.data.basePa ?? 6,
+                      className: 'stat-pa',
+                    },
+                    {
+                      label: 'PM',
+                      current: stats?.data.pm ?? 3,
+                      base: stats?.data.basePm ?? 3,
+                      className: 'stat-pm',
+                    },
                   ] as { label: string; current: number; base: number; className?: string }[]
                 ).map((stat) => (
                   <div key={stat.label} className="stat-item">
@@ -156,50 +170,87 @@ export function InventoryPage() {
           <div className="list-header">
             <h3>Inventaire</h3>
             <div className="item-filters">
-              <button className={`filter-btn ${activeFilter === 'ALL' ? 'active' : ''}`} onClick={() => setActiveFilter('ALL')}>Tout</button>
-              <button className={`filter-btn ${activeFilter === 'WEAPON' ? 'active' : ''}`} onClick={() => setActiveFilter('WEAPON')}>⚔️ Armes</button>
-              <button className={`filter-btn ${activeFilter === 'ARMOR' ? 'active' : ''}`} onClick={() => setActiveFilter('ARMOR')}>🛡️ Armures</button>
-              <button className={`filter-btn ${activeFilter === 'OTHER' ? 'active' : ''}`} onClick={() => setActiveFilter('OTHER')}>🎒 Autres</button>
+              <button
+                className={`filter-btn ${activeFilter === 'ALL' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('ALL')}
+              >
+                Tout
+              </button>
+              <button
+                className={`filter-btn ${activeFilter === 'WEAPON' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('WEAPON')}
+              >
+                ⚔️ Armes
+              </button>
+              <button
+                className={`filter-btn ${activeFilter === 'ARMOR' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('ARMOR')}
+              >
+                🛡️ Armures
+              </button>
+              <button
+                className={`filter-btn ${activeFilter === 'OTHER' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('OTHER')}
+              >
+                🎒 Autres
+              </button>
             </div>
           </div>
-          <div 
-            className="inventory-grid"
-            onDrop={handleDropUnequip}
-            onDragOver={handleDragOver}
-          >
+          <div className="inventory-grid" onDrop={handleDropUnequip} onDragOver={handleDragOver}>
             {invLoading && <p className="inventory-loading">Chargement...</p>}
-            {inventory?.data?.filter((inv: InventoryItem) => {
-              if (activeFilter === 'ALL') return true;
-              if (activeFilter === 'WEAPON' && inv.item.type === 'WEAPON') return true;
-              if (activeFilter === 'ARMOR' && ['ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(inv.item.type)) return true;
-              if (activeFilter === 'OTHER' && !['WEAPON', 'ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(inv.item.type)) return true;
-              return false;
-            }).map((inv: InventoryItem) => {
-              const isCurrentlyEquipped = Object.values(equipment?.data || {}).some(
-                (equipped: any) => equipped?.id === inv.id
-              );
+            {inventory?.data
+              ?.filter((inv: InventoryItem) => {
+                if (activeFilter === 'ALL') return true;
+                if (activeFilter === 'WEAPON' && inv.item.type === 'WEAPON') return true;
+                if (
+                  activeFilter === 'ARMOR' &&
+                  ['ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(inv.item.type)
+                )
+                  return true;
+                if (
+                  activeFilter === 'OTHER' &&
+                  !['WEAPON', 'ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(inv.item.type)
+                )
+                  return true;
+                return false;
+              })
+              .map((inv: InventoryItem) => {
+                const isCurrentlyEquipped = Object.values(equipment?.data || {}).some(
+                  (equipped: any) => equipped?.id === inv.id,
+                );
 
-              return (
-                <div
-                  key={inv.id}
-                  className={`inventory-card ${selectedItem?.id === inv.id ? 'selected' : ''} ${isCurrentlyEquipped ? 'equipped-variant' : ''}`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, inv.id)}
-                  onClick={() => setSelectedItem(inv)}
-                  onDoubleClick={() => handleDoubleClick(inv)}
-                >
-                  {isCurrentlyEquipped && <div className="equipped-badge">EQUIPÉ</div>}
-                  <div className="item-icon">
-                    {(() => { const v = getItemVisualMeta(inv.item); return v.iconPath ? <img src={v.iconPath} alt={inv.item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span>{v.icon}</span>; })()}
+                return (
+                  <div
+                    key={inv.id}
+                    className={`inventory-card ${selectedItem?.id === inv.id ? 'selected' : ''} ${isCurrentlyEquipped ? 'equipped-variant' : ''}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, inv.id)}
+                    onClick={() => setSelectedItem(inv)}
+                    onDoubleClick={() => handleDoubleClick(inv)}
+                  >
+                    {isCurrentlyEquipped && <div className="equipped-badge">EQUIPÉ</div>}
+                    <div className="item-icon">
+                      {(() => {
+                        const v = getItemVisualMeta(inv.item);
+                        return v.iconPath ? (
+                          <img
+                            src={v.iconPath}
+                            alt={inv.item.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          />
+                        ) : (
+                          <span>{v.icon}</span>
+                        );
+                      })()}
+                    </div>
+                    <div className="item-info">
+                      <span className="item-name">{inv.item.name}</span>
+                      <span className="item-type">{inv.item.type}</span>
+                    </div>
+                    <span className="item-qty">x{inv.quantity}</span>
                   </div>
-                  <div className="item-info">
-                    <span className="item-name">{inv.item.name}</span>
-                    <span className="item-type">{inv.item.type}</span>
-                  </div>
-                  <span className="item-qty">x{inv.quantity}</span>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </main>
 
@@ -209,7 +260,23 @@ export function InventoryPage() {
             <div className="item-details-card">
               <div className="item-details-header">
                 <div className="item-details-icon">
-                  {(() => { const v = getItemVisualMeta(selectedItem.item); return v.iconPath ? <img src={v.iconPath} alt={selectedItem.item.name} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }} /> : <span style={{ fontSize: '2.5rem' }}>{v.icon}</span>; })()}
+                  {(() => {
+                    const v = getItemVisualMeta(selectedItem.item);
+                    return v.iconPath ? (
+                      <img
+                        src={v.iconPath}
+                        alt={selectedItem.item.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                          borderRadius: 8,
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '2.5rem' }}>{v.icon}</span>
+                    );
+                  })()}
                 </div>
                 <h4>{selectedItem.item.name}</h4>
                 <p className="item-details-type">{selectedItem.item.type}</p>
@@ -217,7 +284,8 @@ export function InventoryPage() {
 
               <div className="item-details-description">
                 <p>
-                  &quot;{selectedItem.item.description || 'Un objet mystérieux sans description...'}&quot;
+                  &quot;{selectedItem.item.description || 'Un objet mystérieux sans description...'}
+                  &quot;
                 </p>
               </div>
 
@@ -244,7 +312,9 @@ export function InventoryPage() {
                     selectedItem.item.type === ItemType.CONSUMABLE
                   }
                 >
-                  {Object.values(equipment?.data || {}).some((e) => (e as InventoryItem | null)?.id === selectedItem.id)
+                  {Object.values(equipment?.data || {}).some(
+                    (e) => (e as InventoryItem | null)?.id === selectedItem.id,
+                  )
                     ? '📤 Déséquiper'
                     : '🚀 Équiper'}
                 </button>

@@ -121,9 +121,9 @@ describe('GameSessionService', () => {
       basePa: 6,
       basePm: 3,
     });
-    playerSpellProjection.buildPlayerSpellAssignments.mockImplementation(async (playerId: string) => [
-      { playerId, spellId: 'spell-claque-id', level: 1 },
-    ]);
+    playerSpellProjection.buildPlayerSpellAssignments.mockImplementation(
+      async (playerId: string) => [{ playerId, spellId: 'spell-claque-id', level: 1 }],
+    );
     service = new GameSessionService(
       prisma as any,
       redis as any,
@@ -157,8 +157,14 @@ describe('GameSessionService', () => {
     prisma.gameSession.updateMany.mockResolvedValue({ count: 1 });
     prisma.gameSession.findUnique.mockResolvedValue(updatedSession);
 
-    await expect(service.joinPrivateSession('session-1', 'player-2')).resolves.toEqual(updatedSession);
-    expect(sse.emit).toHaveBeenCalledWith('game-session:session-1', 'SESSION_UPDATED', updatedSession);
+    await expect(service.joinPrivateSession('session-1', 'player-2')).resolves.toEqual(
+      updatedSession,
+    );
+    expect(sse.emit).toHaveBeenCalledWith(
+      'game-session:session-1',
+      'SESSION_UPDATED',
+      updatedSession,
+    );
   });
 
   it('maps a unique constraint collision to a room conflict error', async () => {
@@ -206,8 +212,14 @@ describe('GameSessionService', () => {
     prisma.gameSession.create.mockResolvedValue(createdSession);
 
     await expect(service.createSession('player-1', 'player-2')).resolves.toEqual(createdSession);
-    expect(sessionSecurity.assertPlayerAvailableForPublicRoom).toHaveBeenNthCalledWith(1, 'player-1');
-    expect(sessionSecurity.assertPlayerAvailableForPublicRoom).toHaveBeenNthCalledWith(2, 'player-2');
+    expect(sessionSecurity.assertPlayerAvailableForPublicRoom).toHaveBeenNthCalledWith(
+      1,
+      'player-1',
+    );
+    expect(sessionSecurity.assertPlayerAvailableForPublicRoom).toHaveBeenNthCalledWith(
+      2,
+      'player-2',
+    );
     expect(prisma.gameSession.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -229,7 +241,10 @@ describe('GameSessionService', () => {
     };
 
     prisma.player.findUnique.mockResolvedValue({ id: 'bot-1', username: 'Bot' });
-    prisma.combatSession.findMany.mockResolvedValue([{ id: 'combat-stale-1' }, { id: 'combat-stale-2' }]);
+    prisma.combatSession.findMany.mockResolvedValue([
+      { id: 'combat-stale-1' },
+      { id: 'combat-stale-2' },
+    ]);
     sessionSecurity.assertPlayerAvailableForPublicRoom.mockResolvedValue(undefined);
     prisma.gameSession.create.mockResolvedValue(createdSession);
 
@@ -317,7 +332,11 @@ describe('GameSessionService', () => {
 
     await expect(service.endSession('session-1', 'player-1')).resolves.toEqual(finishedSession);
     expect(sessionService.endCombat).toHaveBeenCalledWith('combat-1', 'player-2', 'player-1');
-    expect(sse.emit).toHaveBeenCalledWith('game-session:session-1', 'SESSION_UPDATED', finishedSession);
+    expect(sse.emit).toHaveBeenCalledWith(
+      'game-session:session-1',
+      'SESSION_UPDATED',
+      finishedSession,
+    );
   });
 
   it('cleans farming state for both players when a session is abandoned', async () => {

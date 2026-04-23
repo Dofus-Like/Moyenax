@@ -49,16 +49,9 @@ export function logStep(message, prefix = 'prod-local') {
 }
 
 export function run(command, args, options = {}) {
-  const {
-    allowFailure = false,
-    capture = false,
-    env = ciEnv,
-    input,
-  } = options;
+  const { allowFailure = false, capture = false, env = ciEnv, input } = options;
 
-  const stdio = capture
-    ? [input === undefined ? 'inherit' : 'pipe', 'pipe', 'pipe']
-    : 'inherit';
+  const stdio = capture ? [input === undefined ? 'inherit' : 'pipe', 'pipe', 'pipe'] : 'inherit';
 
   const result = spawnSync(command, args, {
     cwd: repoRoot,
@@ -75,7 +68,11 @@ export function run(command, args, options = {}) {
   if (!allowFailure && result.status !== 0) {
     const stderr = typeof result.stderr === 'string' ? result.stderr.trim() : '';
     const stdout = typeof result.stdout === 'string' ? result.stdout.trim() : '';
-    throw new Error(stderr || stdout || `${command} ${args.join(' ')} failed with exit code ${result.status ?? 'unknown'}`);
+    throw new Error(
+      stderr ||
+        stdout ||
+        `${command} ${args.join(' ')} failed with exit code ${result.status ?? 'unknown'}`,
+    );
   }
 
   return result;
@@ -141,7 +138,12 @@ export async function waitForApiHealthy(timeoutMs, { env = ciEnv } = {}) {
   while (Date.now() < deadline) {
     const inspection = run(
       'docker',
-      ['inspect', '--format', '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}|{{.State.Status}}', apiContainerName],
+      [
+        'inspect',
+        '--format',
+        '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}|{{.State.Status}}',
+        apiContainerName,
+      ],
       { allowFailure: true, capture: true, env },
     );
 
@@ -167,11 +169,11 @@ export async function waitForWeb(timeoutMs, { env = ciEnv } = {}) {
   const url = getWebUrl(env);
 
   while (Date.now() < deadline) {
-    const state = run(
-      'docker',
-      ['inspect', '--format', '{{.State.Status}}', webContainerName],
-      { allowFailure: true, capture: true, env },
-    );
+    const state = run('docker', ['inspect', '--format', '{{.State.Status}}', webContainerName], {
+      allowFailure: true,
+      capture: true,
+      env,
+    });
 
     if (state.status === 0 && state.stdout.trim() === 'exited') {
       throw new Error('web container exited before becoming reachable');
@@ -215,12 +217,27 @@ export function buildImages({ prefix = 'prod-local', env = ciEnv } = {}) {
   run('docker', ['compose', 'version'], { env });
 
   logStep('Building API image', prefix);
-  run('docker', ['build', '--progress', 'plain', '-f', 'apps/api/Dockerfile', '-t', apiImage, '.'], { env });
+  run(
+    'docker',
+    ['build', '--progress', 'plain', '-f', 'apps/api/Dockerfile', '-t', apiImage, '.'],
+    { env },
+  );
 
   logStep('Building Web image', prefix);
   run(
     'docker',
-    ['build', '--progress', 'plain', '-f', 'apps/web/Dockerfile', '--build-arg', 'VITE_API_URL=/api/v1', '-t', webImage, '.'],
+    [
+      'build',
+      '--progress',
+      'plain',
+      '-f',
+      'apps/web/Dockerfile',
+      '--build-arg',
+      'VITE_API_URL=/api/v1',
+      '-t',
+      webImage,
+      '.',
+    ],
     { env },
   );
 }
@@ -228,7 +245,18 @@ export function buildImages({ prefix = 'prod-local', env = ciEnv } = {}) {
 export function runPsql(sql, { capture = false, env = ciEnv } = {}) {
   return run(
     'docker',
-    ['exec', '-i', postgresContainerName, 'psql', '-U', 'game_user', '-d', 'game_db', '-v', 'ON_ERROR_STOP=1'],
+    [
+      'exec',
+      '-i',
+      postgresContainerName,
+      'psql',
+      '-U',
+      'game_user',
+      '-d',
+      'game_db',
+      '-v',
+      'ON_ERROR_STOP=1',
+    ],
     { capture, env, input: sql },
   );
 }
@@ -240,7 +268,20 @@ export function runSqlFile(filePath, { env = ciEnv } = {}) {
 export function querySingleValue(sql, { env = ciEnv } = {}) {
   const result = run(
     'docker',
-    ['exec', '-i', postgresContainerName, 'psql', '-U', 'game_user', '-d', 'game_db', '-v', 'ON_ERROR_STOP=1', '-t', '-A'],
+    [
+      'exec',
+      '-i',
+      postgresContainerName,
+      'psql',
+      '-U',
+      'game_user',
+      '-d',
+      'game_db',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-t',
+      '-A',
+    ],
     { capture: true, env, input: `${sql.trim()}\n` },
   );
 
@@ -248,7 +289,8 @@ export function querySingleValue(sql, { env = ciEnv } = {}) {
 }
 
 export function assertSecurityRecoveryState({ env = ciEnv } = {}) {
-  const indexCount = querySingleValue(`
+  const indexCount = querySingleValue(
+    `
     SELECT COUNT(*)
     FROM pg_indexes
     WHERE schemaname = 'public'
@@ -258,13 +300,16 @@ export function assertSecurityRecoveryState({ env = ciEnv } = {}) {
         'CombatSession_player1Id_open_public_key',
         'CombatSession_player2Id_open_public_key'
       );
-  `, { env });
+  `,
+    { env },
+  );
 
   if (indexCount !== '4') {
     throw new Error(`expected 4 security indexes after recovery, got ${indexCount}`);
   }
 
-  const duplicateCount = querySingleValue(`
+  const duplicateCount = querySingleValue(
+    `
     WITH game_player1_dupes AS (
       SELECT COUNT(*) AS duplicate_count
       FROM (
@@ -319,14 +364,21 @@ export function assertSecurityRecoveryState({ env = ciEnv } = {}) {
       ) + (
         SELECT duplicate_count FROM combat_player2_dupes
       );
-  `, { env });
+  `,
+    { env },
+  );
 
   if (duplicateCount !== '0') {
-    throw new Error(`expected duplicate open sessions to be repaired, got ${duplicateCount} remaining duplicate groups`);
+    throw new Error(
+      `expected duplicate open sessions to be repaired, got ${duplicateCount} remaining duplicate groups`,
+    );
   }
 }
 
-export async function fetchJson(path, { baseUrl = getApiBaseUrl(), body, method = 'GET', token } = {}) {
+export async function fetchJson(
+  path,
+  { baseUrl = getApiBaseUrl(), body, method = 'GET', token } = {},
+) {
   const response = await fetch(`${baseUrl}${path}`, {
     method,
     headers: {

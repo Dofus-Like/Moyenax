@@ -1,4 +1,6 @@
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -17,7 +19,7 @@
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-heal: #34d399;
-  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-main: "Inter", system-ui, -apple-system, sans-serif;
   --radius: 8px;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
@@ -48,7 +50,8 @@ button {
   font-family: var(--font-main);
 }
 
-input, select {
+input,
+select {
   font-family: var(--font-main);
 }
 
@@ -82,15 +85,25 @@ input, select {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fallDown {
-  0% { transform: translateY(-50px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -109,7 +122,7 @@ input, select {
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-heal: #34d399;
-  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-main: "Inter", system-ui, -apple-system, sans-serif;
   --radius: 8px;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
@@ -140,7 +153,8 @@ button {
   font-family: var(--font-main);
 }
 
-input, select {
+input,
+select {
   font-family: var(--font-main);
 }
 
@@ -174,18 +188,32 @@ input, select {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fallDown {
-  0% { transform: translateY(-50px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes pulseSubtle {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ==========================================================================
@@ -230,5 +258,5 @@ input, select {
 .filter-btn.active {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
