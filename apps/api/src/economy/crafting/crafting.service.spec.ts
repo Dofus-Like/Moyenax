@@ -37,13 +37,11 @@ describe('CraftingService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    prisma.$transaction.mockImplementation(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx));
-    spendableGold.debitOrThrowInTransaction.mockResolvedValue(0);
-    service = new CraftingService(
-      prisma as any,
-      gameSession as any,
-      spendableGold as any,
+    prisma.$transaction.mockImplementation(
+      async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx),
     );
+    spendableGold.debitOrThrowInTransaction.mockResolvedValue(0);
+    service = new CraftingService(prisma as any, gameSession as any, spendableGold as any);
   });
 
   it('uses the player wallet for Or costs outside a session', async () => {

@@ -1,9 +1,4 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { performance } from 'node:perf_hooks';
 import type { Request, Response } from 'express';
 import { Observable } from 'rxjs';
@@ -50,7 +45,14 @@ export class HttpPerfInterceptor implements NestInterceptor {
       finalize(() => {
         const durationMs = performance.now() - startedAt;
         const slow = durationMs >= 100;
-        this.perfStats.recordHttp(req.method, routePath, durationMs, res.statusCode, slow, requestId);
+        this.perfStats.recordHttp(
+          req.method,
+          routePath,
+          durationMs,
+          res.statusCode,
+          slow,
+          requestId,
+        );
         if (requestId) {
           this.perfStats.finishTrace(requestId, res.statusCode, durationMs);
         }

@@ -1,9 +1,4 @@
-import {
-  SpellEffectKind,
-  SpellFamily,
-  SpellType,
-  SpellVisualType,
-} from '@game/shared-types';
+import { SpellEffectKind, SpellFamily, SpellType, SpellVisualType } from '@game/shared-types';
 import { PlayerSpellProjectionService } from './player-spell-projection.service';
 
 const defaultSpell = {
@@ -95,7 +90,7 @@ describe('PlayerSpellProjectionService', () => {
       createMany: jest.fn(),
     },
     itemGrantedSpell: {
-        findMany: jest.fn(),
+      findMany: jest.fn(),
     },
     $transaction: jest.fn(),
   };
@@ -116,9 +111,9 @@ describe('PlayerSpellProjectionService', () => {
     prisma.equipmentSlot.findMany.mockResolvedValue([]);
     prisma.spell.findMany.mockResolvedValue([defaultSpell]);
     prisma.itemGrantedSpell.findMany.mockResolvedValue([]);
-    
+
     spellResolver.resolveSpells.mockReturnValue({
-        'spell-claque-id': 1
+      'spell-claque-id': 1,
     });
 
     await expect(service.buildPlayerSpellAssignments('player-1')).resolves.toEqual([

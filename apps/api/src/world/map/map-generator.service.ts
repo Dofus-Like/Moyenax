@@ -107,7 +107,12 @@ export class MapGeneratorService {
       const current = queue.shift()!;
       if (current.x === end.x && current.y === end.y) return;
 
-      for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+      for (const [dx, dy] of [
+        [0, 1],
+        [0, -1],
+        [1, 0],
+        [-1, 0],
+      ]) {
         const nx = current.x + dx;
         const ny = current.y + dy;
         if (nx < 0 || nx >= MAP_SIZE || ny < 0 || ny >= MAP_SIZE) continue;
@@ -119,7 +124,8 @@ export class MapGeneratorService {
       }
     }
 
-    let cx = 0, cy = 0;
+    let cx = 0,
+      cy = 0;
     while (cx < MAP_SIZE - 1 || cy < MAP_SIZE - 1) {
       if (!TERRAIN_PROPERTIES[grid[cy][cx]].traversable) {
         grid[cy][cx] = TerrainType.GROUND;
@@ -154,20 +160,25 @@ export class MapGeneratorService {
       placed++;
 
       const toExpand = Math.min(clusterSize - 1, count - placed);
-      const neighbors = this.shuffleArray([
-        [sx - 1, sy],
-        [sx + 1, sy],
-        [sx, sy - 1],
-        [sx, sy + 1],
-        [sx - 1, sy - 1],
-        [sx + 1, sy + 1],
-      ], nextRandom);
+      const neighbors = this.shuffleArray(
+        [
+          [sx - 1, sy],
+          [sx + 1, sy],
+          [sx, sy - 1],
+          [sx, sy + 1],
+          [sx - 1, sy - 1],
+          [sx + 1, sy + 1],
+        ],
+        nextRandom,
+      );
 
       for (const [nx, ny] of neighbors) {
         if (placed >= count) break;
         if (
-          nx >= 0 && nx < MAP_SIZE &&
-          ny >= 0 && ny < MAP_SIZE &&
+          nx >= 0 &&
+          nx < MAP_SIZE &&
+          ny >= 0 &&
+          ny < MAP_SIZE &&
           grid[ny][nx] === TerrainType.GROUND &&
           !spawnZones.has(`${nx},${ny}`)
         ) {

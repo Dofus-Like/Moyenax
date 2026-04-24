@@ -23,10 +23,7 @@ export class SseService {
     return defer(() => {
       const entry = this.getOrCreateStream(sessionId);
       entry.subscribers += 1;
-      this.runtimePerf.updateSseCounts(
-        this.streams.size,
-        this.getActiveSubscriberCount(),
-      );
+      this.runtimePerf.updateSseCounts(this.streams.size, this.getActiveSubscriberCount());
 
       return entry.subject.asObservable().pipe(
         finalize(() => {
@@ -50,10 +47,7 @@ export class SseService {
     if (entry) {
       entry.subject.complete();
       this.streams.delete(sessionId);
-      this.runtimePerf.updateSseCounts(
-        this.streams.size,
-        this.getActiveSubscriberCount(),
-      );
+      this.runtimePerf.updateSseCounts(this.streams.size, this.getActiveSubscriberCount());
     }
   }
 
@@ -68,10 +62,7 @@ export class SseService {
       subscribers: 0,
     };
     this.streams.set(sessionId, created);
-    this.runtimePerf.updateSseCounts(
-      this.streams.size,
-      this.getActiveSubscriberCount(),
-    );
+    this.runtimePerf.updateSseCounts(this.streams.size, this.getActiveSubscriberCount());
     return created;
   }
 
@@ -87,10 +78,7 @@ export class SseService {
       return;
     }
 
-    this.runtimePerf.updateSseCounts(
-      this.streams.size,
-      this.getActiveSubscriberCount(),
-    );
+    this.runtimePerf.updateSseCounts(this.streams.size, this.getActiveSubscriberCount());
   }
 
   private getActiveSubscriberCount(): number {

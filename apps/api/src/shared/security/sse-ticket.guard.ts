@@ -14,10 +14,10 @@ export class SseTicketGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const ticket = request.query?.ticket;
     const resourceId = request.params?.id;
-    const resourceType = this.reflector.getAllAndOverride<SseResourceType>(
-      SSE_RESOURCE_TYPE_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const resourceType = this.reflector.getAllAndOverride<SseResourceType>(SSE_RESOURCE_TYPE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (typeof ticket !== 'string' || !ticket) {
       throw new ForbiddenException('Ticket SSE requis');

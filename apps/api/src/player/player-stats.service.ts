@@ -76,10 +76,7 @@ export class PlayerStatsService {
     const typedSlots = slots as EquippedSlotWithItem[];
     return {
       items: this.mapEquippedItems(typedSlots),
-      stats: this.statsCalculator.computeEffectiveStatsFromSnapshot(
-        baseStats,
-        typedSlots,
-      ),
+      stats: this.statsCalculator.computeEffectiveStatsFromSnapshot(baseStats, typedSlots),
     };
   }
 

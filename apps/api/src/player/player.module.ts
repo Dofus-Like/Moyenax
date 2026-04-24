@@ -7,11 +7,22 @@ import { SpellResolverService } from './spell-resolver.service';
 import { PlayerController } from './player.controller';
 import { PrismaModule } from '../shared/prisma/prisma.module';
 
-
 @Module({
   imports: [PrismaModule],
-  providers: [PlayerService, PlayerStatsService, StatsCalculatorService, PlayerSpellProjectionService, SpellResolverService],
+  providers: [
+    PlayerService,
+    PlayerStatsService,
+    StatsCalculatorService,
+    PlayerSpellProjectionService,
+    SpellResolverService,
+  ],
   controllers: [PlayerController],
-  exports: [PlayerService, PlayerStatsService, StatsCalculatorService, PlayerSpellProjectionService, SpellResolverService],
+  exports: [
+    PlayerService,
+    PlayerStatsService,
+    StatsCalculatorService,
+    PlayerSpellProjectionService,
+    SpellResolverService,
+  ],
 })
 export class PlayerModule {}

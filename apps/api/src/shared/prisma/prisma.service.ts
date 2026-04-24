@@ -5,8 +5,6 @@ import { PerfLoggerService } from '../perf/perf-logger.service';
 import { PerfStatsService } from '../perf/perf-stats.service';
 import { RequestContextService } from '../perf/request-context.service';
 
-
-
 function isDebugEnabled(): boolean {
   const flag = (process.env.SHOW_DEBUG ?? '').toLowerCase().trim();
   return flag === '1' || flag === 'true' || flag === 'on' || flag === 'yes';

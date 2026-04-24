@@ -70,16 +70,12 @@ async function main() {
         db_seed_ms: seedResult.dbSeedMs,
         api_prod_ready_ms: server.wallReadyMs,
         api_bootstrap_ms:
-          server.readyRecord.api_bootstrap_ms ??
-          server.readyRecord.api_dev_ready_ms ??
-          null,
+          server.readyRecord.api_bootstrap_ms ?? server.readyRecord.api_dev_ready_ms ?? null,
         rss_mb_at_ready: server.readyRecord.rss_mb_at_ready ?? null,
         heap_mb_at_ready: server.readyRecord.heap_mb_at_ready ?? null,
-        event_loop_lag_p95_ms:
-          server.readyRecord.event_loop_lag_p95_ms ?? null,
+        event_loop_lag_p95_ms: server.readyRecord.event_loop_lag_p95_ms ?? null,
         active_sse_streams: server.readyRecord.active_sse_streams ?? null,
-        active_sse_subscribers:
-          server.readyRecord.active_sse_subscribers ?? null,
+        active_sse_subscribers: server.readyRecord.active_sse_subscribers ?? null,
         port: server.readyRecord.port ?? null,
       },
     };
@@ -87,14 +83,8 @@ async function main() {
     const stamp = timestampId();
     await writeJson(path.join(perfDir, `prod-startup-${stamp}.json`), summary);
     await writeJson(path.join(perfDir, 'latest-prod-startup.json'), summary);
-    await writeJsonl(
-      path.join(perfDir, `prod-startup-records-${stamp}.jsonl`),
-      server.perfRecords,
-    );
-    await writeJsonl(
-      path.join(perfDir, 'latest-prod-startup-records.jsonl'),
-      server.perfRecords,
-    );
+    await writeJsonl(path.join(perfDir, `prod-startup-records-${stamp}.jsonl`), server.perfRecords);
+    await writeJsonl(path.join(perfDir, 'latest-prod-startup-records.jsonl'), server.perfRecords);
 
     console.log(JSON.stringify(summary, null, 2));
   } finally {

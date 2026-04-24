@@ -25,7 +25,10 @@ describe('SessionSecurityService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new SessionSecurityService(prisma as any, matchmakingQueue as unknown as MatchmakingQueueStore);
+    service = new SessionSecurityService(
+      prisma as any,
+      matchmakingQueue as unknown as MatchmakingQueueStore,
+    );
     matchmakingQueue.isQueued.mockResolvedValue(false);
     prisma.gameSession.findFirst.mockResolvedValue(null);
     prisma.combatSession.findFirst.mockResolvedValue(null);
@@ -48,9 +51,9 @@ describe('SessionSecurityService', () => {
       player2Id: 'invited-player',
     });
 
-    await expect(service.assertCanAcceptCombatSession('combat-1', 'random-player')).rejects.toBeInstanceOf(
-      ForbiddenException,
-    );
+    await expect(
+      service.assertCanAcceptCombatSession('combat-1', 'random-player'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('allows the invited player to accept a targeted challenge without conflicting on the same session', async () => {
@@ -66,9 +69,9 @@ describe('SessionSecurityService', () => {
       .spyOn(service, 'assertPlayerAvailableForPublicRoom')
       .mockResolvedValue(undefined);
 
-    await expect(service.assertCanAcceptCombatSession('combat-1', 'invited-player')).resolves.toEqual(
-      session,
-    );
+    await expect(
+      service.assertCanAcceptCombatSession('combat-1', 'invited-player'),
+    ).resolves.toEqual(session);
     expect(availabilitySpy).toHaveBeenCalledWith('invited-player', {
       ignoreCombatSessionId: 'combat-1',
     });
@@ -88,9 +91,9 @@ describe('SessionSecurityService', () => {
       .spyOn(service, 'assertPlayerAvailableForPublicRoom')
       .mockResolvedValue(undefined);
 
-    await expect(service.assertCanAcceptCombatSession('combat-1', 'invited-player')).resolves.toEqual(
-      session,
-    );
+    await expect(
+      service.assertCanAcceptCombatSession('combat-1', 'invited-player'),
+    ).resolves.toEqual(session);
     expect(availabilitySpy).toHaveBeenCalledWith('invited-player', {
       ignoreCombatSessionId: 'combat-1',
       ignoreGameSessionId: 'game-session-1',

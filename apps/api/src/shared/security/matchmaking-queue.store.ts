@@ -117,7 +117,10 @@ export class MatchmakingQueueStore implements OnModuleInit {
   private parseLegacyQueue(rawQueue: string): string[] | null {
     try {
       const parsed = JSON.parse(rawQueue);
-      if (!Array.isArray(parsed) || !parsed.every((entry) => typeof entry === 'string' && entry.length > 0)) {
+      if (
+        !Array.isArray(parsed) ||
+        !parsed.every((entry) => typeof entry === 'string' && entry.length > 0)
+      ) {
         return null;
       }
 

@@ -24,9 +24,14 @@ async function bootstrap() {
   );
   app.use(helmet());
 
-  perfLogger.logDuration('bootstrap', 'nest_factory.create', performance.now() - bootstrapStartedAt, {
-    stage: 'create',
-  });
+  perfLogger.logDuration(
+    'bootstrap',
+    'nest_factory.create',
+    performance.now() - bootstrapStartedAt,
+    {
+      stage: 'create',
+    },
+  );
 
   app.setGlobalPrefix('api/v1');
 

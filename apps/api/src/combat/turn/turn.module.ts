@@ -7,8 +7,7 @@ import { TurnController } from './turn.controller';
 import { TurnDebugController } from './turn.debug.controller';
 import { TurnService } from './turn.service';
 
-const debugControllers =
-  process.env.ENABLE_DEBUG_ROUTES === 'true' ? [TurnDebugController] : [];
+const debugControllers = process.env.ENABLE_DEBUG_ROUTES === 'true' ? [TurnDebugController] : [];
 
 @Module({
   imports: [RedisModule, SseModule, SpellsModule, EventEmitterModule.forRoot()],

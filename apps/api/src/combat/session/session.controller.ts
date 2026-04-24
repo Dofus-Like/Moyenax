@@ -37,20 +37,14 @@ export class SessionController {
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @Post('challenge/:targetId')
-  async challenge(
-    @Param('targetId') targetId: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  async challenge(@Param('targetId') targetId: string, @Request() req: { user: { id: string } }) {
     return this.sessionService.challenge(req.user.id, targetId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @Post('accept/:sessionId')
-  async accept(
-    @Param('sessionId') sessionId: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  async accept(@Param('sessionId') sessionId: string, @Request() req: { user: { id: string } }) {
     return this.sessionService.accept(sessionId, req.user.id);
   }
 
@@ -62,10 +56,7 @@ export class SessionController {
 
   @UseGuards(JwtAuthGuard)
   @Post('session/:id/stream-ticket')
-  async issueStreamTicket(
-    @Param('id') id: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  async issueStreamTicket(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.sessionService.issueStreamTicket(id, req.user.id);
   }
 

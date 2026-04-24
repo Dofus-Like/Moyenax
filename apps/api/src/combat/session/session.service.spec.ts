@@ -130,8 +130,12 @@ describe('SessionService', () => {
 
       const result = await service.challenge('player-1', 'player-2');
 
-      expect(sessionSecurityService.assertPlayerAvailableForPublicRoom).toHaveBeenCalledWith('player-1');
-      expect(sessionSecurityService.assertPlayerAvailableForPublicRoom).toHaveBeenCalledWith('player-2');
+      expect(sessionSecurityService.assertPlayerAvailableForPublicRoom).toHaveBeenCalledWith(
+        'player-1',
+      );
+      expect(sessionSecurityService.assertPlayerAvailableForPublicRoom).toHaveBeenCalledWith(
+        'player-2',
+      );
       expect(prismaService.combatSession.create).toHaveBeenCalledWith({
         data: {
           player1Id: 'player-1',
@@ -179,9 +183,14 @@ describe('SessionService', () => {
         player2Id,
       });
 
-      playerStatsService.getCombatLoadout.mockResolvedValue({ stats: { vit: 100, pa: 6, pm: 3 } } as any);
+      playerStatsService.getCombatLoadout.mockResolvedValue({
+        stats: { vit: 100, pa: 6, pm: 3 },
+      } as any);
       playerSpellProjection.getCombatSpellDefinitions.mockResolvedValue([]);
-      (prismaService.player.findUnique as jest.Mock).mockResolvedValue({ username: 'Player', skin: 'skin1' });
+      (prismaService.player.findUnique as jest.Mock).mockResolvedValue({
+        username: 'Player',
+        skin: 'skin1',
+      });
 
       const state = await service.accept(sessionId, player2Id);
 

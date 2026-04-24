@@ -103,7 +103,10 @@ export class SessionService {
 
   async accept(sessionId: string, player2Id: string) {
     const startedAt = performance.now();
-    const requestedSession = await this.sessionSecurity.assertCanAcceptCombatSession(sessionId, player2Id);
+    const requestedSession = await this.sessionSecurity.assertCanAcceptCombatSession(
+      sessionId,
+      player2Id,
+    );
 
     if (!requestedSession.player2Id) {
       const linked = await this.prisma.combatSession.updateMany({
@@ -230,7 +233,9 @@ export class SessionService {
   async handleCombatEndedEvent(payload: { winnerId: string; loserId: string; sessionId: string }) {
     // This handles cases where TurnService ended the combat (surrender/death)
     // We call endCombat to ensure DB is updated and POs are awarded
-    console.log(`[SessionService] Received COMBAT_ENDED event for ${payload.sessionId}. Synchronizing DB.`);
+    console.log(
+      `[SessionService] Received COMBAT_ENDED event for ${payload.sessionId}. Synchronizing DB.`,
+    );
     await this.endCombat(payload.sessionId, payload.winnerId, payload.loserId);
   }
 
@@ -269,7 +274,7 @@ export class SessionService {
         }),
       ]);
 
-      // SSE emission removed from here. GameSessionService will emit it after 
+      // SSE emission removed from here. GameSessionService will emit it after
       // correctly reconciling the phase (FARMING or FINISHED).
     } else {
       await this.prisma.$transaction([
@@ -289,11 +294,11 @@ export class SessionService {
     }
 
     await this.redis.del(`combat:${combatSessionId}`);
-    
+
     // Notify internal services (like GameSessionService)
-    this.eventEmitter.emit(GAME_EVENTS.COMBAT_ENDED, { 
-      winnerId, 
-      loserId, 
+    this.eventEmitter.emit(GAME_EVENTS.COMBAT_ENDED, {
+      winnerId,
+      loserId,
       sessionId: combatSessionId, // CRITICAL: This MUST be the combat session ID for lookup
       gameSessionId: gameSessionId, // Optional but good for logs
     });

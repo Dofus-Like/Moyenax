@@ -31,75 +31,53 @@ function isPerfRecordAfter(record, benchmarkStartedAt) {
 }
 
 function buildServerSummary(records, benchmarkStartedAt) {
-  const ignoredHttpOverallRoutes = new Set([
-    'GET /api/v1/combat/session/:id/events',
-  ]);
+  const ignoredHttpOverallRoutes = new Set(['GET /api/v1/combat/session/:id/events']);
   const runtimeRecords = records.filter(
-    (record) =>
-      record.scope !== 'bootstrap' &&
-      isPerfRecordAfter(record, benchmarkStartedAt),
+    (record) => record.scope !== 'bootstrap' && isPerfRecordAfter(record, benchmarkStartedAt),
   );
 
   const httpAllRecords = runtimeRecords.filter(
-    (record) =>
-      record.scope === 'http' && typeof record.duration_ms === 'number',
+    (record) => record.scope === 'http' && typeof record.duration_ms === 'number',
   );
-  const httpRecords = httpAllRecords.filter(
-    (record) => !ignoredHttpOverallRoutes.has(record.name),
-  );
+  const httpRecords = httpAllRecords.filter((record) => !ignoredHttpOverallRoutes.has(record.name));
   const prismaRecords = runtimeRecords.filter(
-    (record) =>
-      record.scope === 'prisma' && typeof record.duration_ms === 'number',
+    (record) => record.scope === 'prisma' && typeof record.duration_ms === 'number',
   );
   const redisRecords = runtimeRecords.filter(
-    (record) =>
-      record.scope === 'redis' && typeof record.duration_ms === 'number',
+    (record) => record.scope === 'redis' && typeof record.duration_ms === 'number',
   );
   const eventLoopRecords = runtimeRecords.filter(
-    (record) =>
-      record.scope === 'runtime' && record.name === 'event_loop.lag',
+    (record) => record.scope === 'runtime' && record.name === 'event_loop.lag',
   );
   const sseStreamRecords = runtimeRecords.filter(
     (record) => record.scope === 'sse' && record.name === 'streams.active',
   );
   const sseSubscriberRecords = runtimeRecords.filter(
-    (record) =>
-      record.scope === 'sse' && record.name === 'subscribers.active',
+    (record) => record.scope === 'sse' && record.name === 'subscribers.active',
   );
   const sseFanoutRecords = runtimeRecords.filter(
     (record) => record.scope === 'sse' && record.name === 'event.fanout',
   );
   const combatActionSseRecords = runtimeRecords.filter(
-    (record) =>
-      record.scope === 'combat' && record.name === 'action.sse_events',
+    (record) => record.scope === 'combat' && record.name === 'action.sse_events',
   );
   const combatPayloadRecords = runtimeRecords.filter(
-    (record) =>
-      record.scope === 'combat_state' && record.name === 'payload.bytes',
+    (record) => record.scope === 'combat_state' && record.name === 'payload.bytes',
   );
   const slowLogCount = runtimeRecords.filter(
     (record) =>
       record.slow === true &&
-      !(
-        record.scope === 'http' &&
-        ignoredHttpOverallRoutes.has(record.name)
-      ),
+      !(record.scope === 'http' && ignoredHttpOverallRoutes.has(record.name)),
   ).length;
 
   return {
     http_overall: computeStats(httpRecords.map((record) => record.duration_ms)),
-    prisma_overall: computeStats(
-      prismaRecords.map((record) => record.duration_ms),
-    ),
+    prisma_overall: computeStats(prismaRecords.map((record) => record.duration_ms)),
     redis_overall: computeStats(redisRecords.map((record) => record.duration_ms)),
-    event_loop_lag_overall: computeStats(
-      eventLoopRecords.map((record) => record.metric_value),
-    ),
+    event_loop_lag_overall: computeStats(eventLoopRecords.map((record) => record.metric_value)),
     active_sse_streams: buildGaugeSummary(sseStreamRecords),
     active_sse_subscribers: buildGaugeSummary(sseSubscriberRecords),
-    sse_event_fanout: computeStats(
-      sseFanoutRecords.map((record) => record.metric_value),
-    ),
+    sse_event_fanout: computeStats(sseFanoutRecords.map((record) => record.metric_value)),
     combat_sse_events_per_action: computeStats(
       combatActionSseRecords.map((record) => record.metric_value),
     ),
@@ -151,10 +129,7 @@ async function measureScenario(baseUrl, scenario) {
   const durations = [];
 
   for (let runIndex = 0; runIndex < PERF_RUNS; runIndex += 1) {
-    const result = await timedRequest(
-      `${baseUrl}${scenario.path}`,
-      scenario.request(),
-    );
+    const result = await timedRequest(`${baseUrl}${scenario.path}`, scenario.request());
     if (!result.response.ok) {
       throw new Error(
         `${scenario.name} failed with status ${result.response.status}: ${result.bodyText}`,
@@ -188,9 +163,7 @@ async function createCombatSession(baseUrl, authHeaders) {
   });
 
   if (!result.response.ok) {
-    throw new Error(
-      `Combat test failed with status ${result.response.status}: ${result.bodyText}`,
-    );
+    throw new Error(`Combat test failed with status ${result.response.status}: ${result.bodyText}`);
   }
 
   return JSON.parse(result.bodyText);
@@ -207,22 +180,19 @@ async function exerciseCombatFlow(baseUrl, authHeaders, initialState) {
 
     let state = initialState;
     for (let runIndex = 0; runIndex < 3; runIndex += 1) {
-      const result = await timedRequest(
-        `${baseUrl}/combat/action/${state.sessionId}/force`,
-        {
-          method: 'POST',
-          headers: {
-            ...authHeaders,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            asPlayerId: state.currentTurnPlayerId,
-            action: {
-              type: 'END_TURN',
-            },
-          }),
+      const result = await timedRequest(`${baseUrl}/combat/action/${state.sessionId}/force`, {
+        method: 'POST',
+        headers: {
+          ...authHeaders,
+          'content-type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          asPlayerId: state.currentTurnPlayerId,
+          action: {
+            type: 'END_TURN',
+          },
+        }),
+      });
 
       if (!result.response.ok) {
         throw new Error(
@@ -332,16 +302,10 @@ async function main() {
 
     const clientSummary = {};
     for (const scenario of scenarios) {
-      clientSummary[scenario.name] = await measureScenario(
-        defaultApiBaseUrl,
-        scenario,
-      );
+      clientSummary[scenario.name] = await measureScenario(defaultApiBaseUrl, scenario);
     }
 
-    const combatState = await createCombatSession(
-      defaultApiBaseUrl,
-      authHeaders,
-    );
+    const combatState = await createCombatSession(defaultApiBaseUrl, authHeaders);
     combatSessionId = combatState.sessionId;
     await exerciseCombatFlow(defaultApiBaseUrl, authHeaders, combatState);
 
@@ -353,16 +317,12 @@ async function main() {
       startup: {
         api_dev_ready_ms: server.wallReadyMs,
         api_bootstrap_ms:
-          server.readyRecord.api_bootstrap_ms ??
-          server.readyRecord.api_dev_ready_ms ??
-          null,
+          server.readyRecord.api_bootstrap_ms ?? server.readyRecord.api_dev_ready_ms ?? null,
         rss_mb_at_ready: server.readyRecord.rss_mb_at_ready ?? null,
         heap_mb_at_ready: server.readyRecord.heap_mb_at_ready ?? null,
-        event_loop_lag_p95_ms:
-          server.readyRecord.event_loop_lag_p95_ms ?? null,
+        event_loop_lag_p95_ms: server.readyRecord.event_loop_lag_p95_ms ?? null,
         active_sse_streams: server.readyRecord.active_sse_streams ?? null,
-        active_sse_subscribers:
-          server.readyRecord.active_sse_subscribers ?? null,
+        active_sse_subscribers: server.readyRecord.active_sse_subscribers ?? null,
       },
       client: clientSummary,
       server: buildServerSummary(server.perfRecords, benchmarkStartedAt),
@@ -371,14 +331,8 @@ async function main() {
     const stamp = timestampId();
     await writeJson(path.join(perfDir, `baseline-${stamp}.json`), summary);
     await writeJson(path.join(perfDir, 'latest-baseline.json'), summary);
-    await writeJsonl(
-      path.join(perfDir, `baseline-records-${stamp}.jsonl`),
-      server.perfRecords,
-    );
-    await writeJsonl(
-      path.join(perfDir, 'latest-baseline-records.jsonl'),
-      server.perfRecords,
-    );
+    await writeJsonl(path.join(perfDir, `baseline-records-${stamp}.jsonl`), server.perfRecords);
+    await writeJsonl(path.join(perfDir, 'latest-baseline-records.jsonl'), server.perfRecords);
 
     console.log(JSON.stringify(summary, null, 2));
   } finally {

@@ -10,8 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const repoRoot = path.resolve(__dirname, '../..');
 export const perfDir = path.join(repoRoot, 'tmp', 'perf');
 export const defaultApiBaseUrl =
-  process.env.PERF_API_BASE_URL ??
-  `http://localhost:${process.env.PERF_API_PORT ?? '3100'}/api/v1`;
+  process.env.PERF_API_BASE_URL ?? `http://localhost:${process.env.PERF_API_PORT ?? '3100'}/api/v1`;
 
 export async function ensurePerfDir() {
   await fs.mkdir(perfDir, { recursive: true });
@@ -33,10 +32,7 @@ export function computeStats(values) {
   const sorted = [...values].sort((left, right) => left - right);
   const total = sorted.reduce((accumulator, value) => accumulator + value, 0);
   const percentile = (ratio) => {
-    const index = Math.min(
-      sorted.length - 1,
-      Math.floor(sorted.length * ratio),
-    );
+    const index = Math.min(sorted.length - 1, Math.floor(sorted.length * ratio));
     return round(sorted[index]);
   };
 
@@ -57,11 +53,7 @@ export async function writeJson(filePath, payload) {
 
 export async function writeJsonl(filePath, records) {
   const content = records.map((record) => JSON.stringify(record)).join('\n');
-  await fs.writeFile(
-    filePath,
-    content.length > 0 ? `${content}\n` : '',
-    'utf8',
-  );
+  await fs.writeFile(filePath, content.length > 0 ? `${content}\n` : '', 'utf8');
 }
 
 export async function readJson(filePath) {
@@ -72,9 +64,7 @@ export async function readJson(filePath) {
 export async function findLatestPerfFile(prefix) {
   try {
     const entries = await fs.readdir(perfDir);
-    const candidates = entries
-      .filter((entry) => entry.startsWith(prefix))
-      .sort();
+    const candidates = entries.filter((entry) => entry.startsWith(prefix)).sort();
     if (candidates.length === 0) {
       return null;
     }
@@ -285,9 +275,7 @@ export async function startCommandServer({
 
   const timeout = setTimeout(() => {
     if (!resolved) {
-      readyReject(
-        new Error('Timed out while waiting for the API to become ready.'),
-      );
+      readyReject(new Error('Timed out while waiting for the API to become ready.'));
     }
   }, 90000);
 

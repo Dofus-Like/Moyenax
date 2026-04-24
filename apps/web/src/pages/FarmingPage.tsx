@@ -550,7 +550,13 @@ export function FarmingPage() {
             <div className="resource-map-canvas">
               <Canvas key={`farming-canvas-${activeSession?.id || 'default'}`}>
                 <CanvasPerfOverlay />
-                <OrthographicCamera makeDefault position={[15, 20, 15]} zoom={30} near={0.1} far={100} />
+                <OrthographicCamera
+                  makeDefault
+                  position={[15, 20, 15]}
+                  zoom={30}
+                  near={0.1}
+                  far={100}
+                />
                 <CameraControls
                   ref={setControls}
                   makeDefault

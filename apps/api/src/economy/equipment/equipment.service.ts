@@ -209,7 +209,9 @@ export class EquipmentService {
     };
 
     if (!validSlots[itemType]?.includes(slot)) {
-      throw new BadRequestException(`L'item de type ${itemType} ne peut pas être équipé dans le slot ${slot}`);
+      throw new BadRequestException(
+        `L'item de type ${itemType} ne peut pas être équipé dans le slot ${slot}`,
+      );
     }
   }
 }

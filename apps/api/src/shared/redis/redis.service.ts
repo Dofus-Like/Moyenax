@@ -80,7 +80,9 @@ export class RedisService {
   }
 
   async zAdd(key: string, score: number, member: string): Promise<void> {
-    await this.measure('zadd', key, () => this.client.zadd(key, score, member).then(() => undefined));
+    await this.measure('zadd', key, () =>
+      this.client.zadd(key, score, member).then(() => undefined),
+    );
   }
 
   async zAddMany(
@@ -95,7 +97,9 @@ export class RedisService {
     }
 
     const args = entries.flatMap((entry) => [entry.score, entry.member]);
-    await this.measure('zadd_many', key, () => this.client.zadd(key, ...args).then(() => undefined));
+    await this.measure('zadd_many', key, () =>
+      this.client.zadd(key, ...args).then(() => undefined),
+    );
   }
 
   async zRange(key: string, start: number, stop: number): Promise<string[]> {

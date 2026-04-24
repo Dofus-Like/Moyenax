@@ -126,7 +126,11 @@ describe('FarmingService', () => {
       expect.objectContaining({ pips: 3, spendableGold: 10 }),
     );
     expect(inventory.addResourceByName).toHaveBeenCalledWith('player-1', 'Herbe médicinale');
-    expect(redis.setJson).toHaveBeenCalledWith('farming:player-1', expect.objectContaining({ pips: 3 }), 86400);
+    expect(redis.setJson).toHaveBeenCalledWith(
+      'farming:player-1',
+      expect.objectContaining({ pips: 3 }),
+      86400,
+    );
   });
 
   it('credits spendable gold instead of inventory when gathering gold', async () => {
@@ -156,7 +160,9 @@ describe('FarmingService', () => {
   it('rejects gather attempts when there is no active farming state', async () => {
     redis.getJson.mockResolvedValue(null);
 
-    await expect(service.gatherResource('player-1', 0, 0, 0, 0)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.gatherResource('player-1', 0, 0, 0, 0)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('closes farming for the round by setting pips to 0', async () => {

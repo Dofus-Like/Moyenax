@@ -10,7 +10,6 @@ export class EquipmentController {
 
   @Get()
   async getEquipment(@Request() req: any) {
-
     return this.equipmentService.getEquipment(req.user.id);
   }
 
@@ -19,14 +18,13 @@ export class EquipmentController {
     @Request() req: any,
 
     @Param('slot') slot: EquipmentSlotType,
-    @Body('inventoryItemId') inventoryItemId: string
+    @Body('inventoryItemId') inventoryItemId: string,
   ) {
     return this.equipmentService.equip(req.user.id, inventoryItemId, slot);
   }
 
   @Delete(':slot')
   async unequip(@Request() req: any, @Param('slot') slot: EquipmentSlotType) {
-
     return this.equipmentService.unequip(req.user.id, slot);
   }
 }

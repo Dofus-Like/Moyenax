@@ -17,11 +17,7 @@ export class SseTicketService {
 
   async issueTicket(payload: SseTicketPayload) {
     const ticket = randomUUID();
-    await this.redis.setJson(
-      `${SSE_TICKET_PREFIX}:${ticket}`,
-      payload,
-      SSE_TICKET_TTL_SECONDS,
-    );
+    await this.redis.setJson(`${SSE_TICKET_PREFIX}:${ticket}`, payload, SSE_TICKET_TTL_SECONDS);
 
     return {
       ticket,

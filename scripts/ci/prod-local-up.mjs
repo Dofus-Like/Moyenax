@@ -1,4 +1,11 @@
-import { bootApplicationStack, buildImages, dumpLogs, getApiUrl, getWebUrl, logStep } from './local-prod-lib.mjs';
+import {
+  bootApplicationStack,
+  buildImages,
+  dumpLogs,
+  getApiUrl,
+  getWebUrl,
+  logStep,
+} from './local-prod-lib.mjs';
 
 const prefix = 'stack:prod-local';
 

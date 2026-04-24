@@ -14,4 +14,3 @@ import { GameSessionModule } from '../../game-session/game-session.module';
   exports: [EquipmentService],
 })
 export class EquipmentModule {}
-
