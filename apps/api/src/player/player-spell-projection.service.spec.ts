@@ -122,17 +122,25 @@ describe('PlayerSpellProjectionService', () => {
   });
 
   it('maps DB spell rows to combat definitions exposed to the combat state', async () => {
-    prisma.playerSpell.findMany.mockResolvedValue([
-      { spell: defaultSpell },
-      { spell: warriorSpellRows[1] },
-    ]);
+    // Mock the chain of calls for getCombatSpellDefinitions -> getProjectedSpellRows -> getSpellSources
+    prisma.equipmentSlot.findMany.mockResolvedValue([]);
+    prisma.spell.findMany
+      .mockResolvedValueOnce([defaultSpell]) // isDefault: true
+      .mockResolvedValueOnce([]) // grants
+      .mockResolvedValueOnce([defaultSpell, warriorSpellRows[1]]); // allSpells
+    prisma.itemGrantedSpell.findMany.mockResolvedValue([]);
+
+    spellResolver.resolveSpells.mockReturnValue({
+      'spell-claque-id': 1,
+      'spell-bond-id': 1,
+    });
 
     await expect(service.getCombatSpellDefinitions('player-1')).resolves.toEqual([
       {
         id: 'spell-bond',
         code: 'spell-bond',
         name: 'Bond',
-        description: 'Une gifle universelle.', // In our mock it inherits from defaultSpell
+        description: 'Une gifle universelle.',
         paCost: 4,
         minRange: 1,
         maxRange: 4,

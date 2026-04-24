@@ -10,7 +10,7 @@ describe('CraftingService', () => {
       create: jest.fn(),
     },
     sessionItem: {
-      findUnique: jest.fn(),
+      findFirst: jest.fn(),
       delete: jest.fn(),
       update: jest.fn(),
       create: jest.fn(),
@@ -59,8 +59,8 @@ describe('CraftingService', () => {
     gameSession.getActiveSession.mockResolvedValue(null);
     tx.inventoryItem.findFirst
       .mockResolvedValueOnce({ id: 'inv-iron', quantity: 2 })
-      .mockResolvedValueOnce({ id: 'inv-iron', quantity: 2 });
-    tx.inventoryItem.findUnique.mockResolvedValue(null);
+      .mockResolvedValueOnce({ id: 'inv-iron', quantity: 2 })
+      .mockResolvedValueOnce(null);
     tx.inventoryItem.create.mockResolvedValue({ id: 'crafted-row' });
 
     await service.craft('player-1', 'crafted-item');
@@ -72,7 +72,7 @@ describe('CraftingService', () => {
       null,
       'Or insuffisant pour le craft',
     );
-    expect(tx.inventoryItem.findFirst).toHaveBeenCalledTimes(2);
+    expect(tx.inventoryItem.findFirst).toHaveBeenCalledTimes(3);
     expect(tx.inventoryItem.create).toHaveBeenCalledWith({
       data: { playerId: 'player-1', itemId: 'crafted-item', quantity: 1, rank: 1 },
       include: { item: true },
@@ -100,10 +100,11 @@ describe('CraftingService', () => {
       { id: 'gold-item', name: 'Or' },
     ]);
     gameSession.getActiveSession.mockResolvedValue(session);
-    tx.sessionItem.findUnique
+    tx.sessionItem.findFirst
       .mockResolvedValueOnce({ id: 'session-iron', quantity: 1 })
       .mockResolvedValueOnce({ id: 'session-iron', quantity: 1 })
       .mockResolvedValueOnce(null);
+    tx.inventoryItem.findFirst.mockResolvedValueOnce(null);
     tx.sessionItem.create.mockResolvedValue({ id: 'crafted-session-row' });
 
     await service.craft('player-1', 'crafted-item');

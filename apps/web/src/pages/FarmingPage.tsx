@@ -163,8 +163,7 @@ export function FarmingPage() {
   }, [queryClient, refreshPlayer]);
 
   const mappedSpells = useMemo((): SpellBarItem[] => {
-    console.log('FarmingPage: spellData', spellData);
-    return (spellData || []).map((s: any) => ({
+    return (Array.isArray(spellData) ? spellData : []).map((s: any) => ({
       id: s.id,
       name: s.name,
       iconPath: s.iconPath,

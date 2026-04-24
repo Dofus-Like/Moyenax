@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -45,6 +46,13 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('@react-three/fiber', () => ({
   Canvas: ({ children }: { children: ReactNode }) => <div data-testid="canvas">{children}</div>,
+  useThree: () => ({ camera: {} }),
+  useLoader: () => ({
+    repeat: { set: vi.fn() },
+    offset: { set: vi.fn() },
+    center: { set: vi.fn() },
+  }),
+  useFrame: vi.fn(),
 }));
 
 vi.mock('@react-three/drei', () => ({
@@ -82,15 +90,43 @@ vi.mock('../api/game-session.api', () => ({
   },
 }));
 
-vi.mock('../store/auth.store', () => ({
-  useAuthStore: (selector?: (state: any) => unknown) => {
-    const state = {
-      player: { id: 'player-1' },
-      refreshPlayer: mocks.refreshPlayer,
-    };
-    return selector ? selector(state) : state;
+vi.mock('../api/inventory.api', () => ({
+  inventoryApi: { getInventory: vi.fn().mockResolvedValue({ data: [] }) },
+}));
+
+vi.mock('../api/player.api', () => ({
+  playerApi: { getSpells: vi.fn().mockResolvedValue([]) },
+}));
+
+vi.mock('../api/equipment.api', () => ({
+  equipmentApi: {
+    getEquipment: vi.fn().mockResolvedValue({ data: [] }),
+    equip: vi.fn().mockResolvedValue({ data: {} }),
   },
 }));
+
+vi.mock('../api/shop.api', () => ({
+  shopApi: { getItems: vi.fn().mockResolvedValue({ data: [] }) },
+}));
+
+vi.mock('../api/crafting.api', () => ({
+  craftingApi: { craft: vi.fn().mockResolvedValue({ data: {} }) },
+}));
+
+vi.mock('../store/auth.store', () => {
+  const state = {
+    player: { id: 'player-1' },
+    token: 'fake-token',
+    refreshPlayer: mocks.refreshPlayer,
+    logout: vi.fn(),
+  };
+  const hook = (selector?: (state: any) => unknown) => (selector ? selector(state) : state);
+  return {
+    useAuthStore: Object.assign(hook, {
+      getState: () => state,
+    }),
+  };
+});
 
 vi.mock('./GameTunnel', () => ({
   useGameSession: () => ({
@@ -109,6 +145,14 @@ vi.mock('../store/farming.store', () => {
 });
 
 import { FarmingPage } from './FarmingPage';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
 
 describe('FarmingPage', () => {
   beforeEach(() => {
@@ -136,12 +180,14 @@ describe('FarmingPage', () => {
 
   it('does not render the end round button in normal game flow', async () => {
     render(
-      <MemoryRouter initialEntries={['/farming']}>
-        <FarmingPage />
-      </MemoryRouter>,
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/farming']}>
+          <FarmingPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
-    await screen.findByText('Récoltes');
+    await screen.findByText(/ROUND/i);
     expect(screen.queryByRole('button', { name: 'Terminer la manche' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Debug refill' })).not.toBeInTheDocument();
   });
@@ -150,16 +196,18 @@ describe('FarmingPage', () => {
     mocks.farmingState.pips = 0;
 
     render(
-      <MemoryRouter initialEntries={['/farming']}>
-        <FarmingPage />
-      </MemoryRouter>,
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/farming']}>
+          <FarmingPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
-    await screen.findByText('Récoltes');
+    await screen.findByText(/ROUND/i);
     await waitFor(() => expect(mocks.navigate).not.toHaveBeenCalled());
   });
 
-  it('navigates to crafting once after the last successful harvest', async () => {
+  it('does NOT navigate after the last successful harvest', async () => {
     mocks.farmingState.gatherNode.mockImplementation(async () => {
       mocks.farmingState.pips = 0;
       return {
@@ -170,17 +218,18 @@ describe('FarmingPage', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/farming']}>
-        <FarmingPage />
-      </MemoryRouter>,
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/farming']}>
+          <FarmingPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
     fireEvent.click(await screen.findByRole('button', { name: 'Harvest tile' }));
 
     await waitFor(() => {
       expect(mocks.farmingState.gatherNode).toHaveBeenCalledWith(0, 1);
-      expect(mocks.navigate).toHaveBeenCalledTimes(1);
-      expect(mocks.navigate).toHaveBeenCalledWith('/crafting');
+      expect(mocks.navigate).not.toHaveBeenCalled();
     });
   });
 });
