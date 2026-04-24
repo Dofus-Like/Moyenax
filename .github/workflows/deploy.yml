@@ -1,5 +1,9 @@
-name: Deploy to Portainer
+name: Deploy
 
+# Triggers:
+#   - push to dev  → deploy to test
+#   - push to main → deploy to production
+#   - manual dispatch → choose target
 on:
   push:
     branches:
@@ -22,13 +26,20 @@ on:
 permissions:
   contents: read
 
+# Prevent parallel deploys to the same environment.
+# Prod deploys are NEVER cancelled — test deploys can be superseded by a newer commit.
+concurrency:
+  group: deploy-${{ github.ref_name }}-${{ github.event_name }}
+  cancel-in-progress: false
+
 jobs:
   resolve-context:
-    name: Resolve Deployment Context
+    name: Resolve deployment context
     runs-on: ubuntu-latest
     outputs:
       environment_name: ${{ steps.context.outputs.environment_name }}
       stable_tag: ${{ steps.context.outputs.stable_tag }}
+      build_time: ${{ steps.context.outputs.build_time }}
 
     steps:
       - name: Resolve deployment target
@@ -65,15 +76,31 @@ jobs:
             stable_tag="dev"
           fi
 
+          build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
           echo "environment_name=$environment_name" >> "$GITHUB_OUTPUT"
           echo "stable_tag=$stable_tag" >> "$GITHUB_OUTPUT"
+          echo "build_time=$build_time" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Deployment context"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Target environment | \`$environment_name\` |"
+            echo "| Stable tag | \`$stable_tag\` |"
+            echo "| Commit SHA | \`${{ github.sha }}\` |"
+            echo "| Build time | \`$build_time\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   quality-gates:
+    name: Quality gates
     uses: ./.github/workflows/_quality-gates.yml
 
   build-and-push:
-    name: Build and Push Docker Images
+    name: Build & push images
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs:
       - resolve-context
       - quality-gates
@@ -135,17 +162,24 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Build & Push API image
+      # BUILD_SHA/BUILD_TIME are baked into the images so the running containers
+      # can report which revision they are on. The deploy smoke check uses this
+      # to verify the new version is actually serving traffic before declaring
+      # success (prevents the false-green "old containers still responding" bug).
+      - name: Build & push API image
         uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/api/Dockerfile
           push: true
           tags: ${{ steps.tags.outputs.api_tags }}
+          build-args: |
+            BUILD_SHA=${{ github.sha }}
+            BUILD_TIME=${{ needs.resolve-context.outputs.build_time }}
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
 
-      - name: Build & Push Web image
+      - name: Build & push Web image
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -154,12 +188,15 @@ jobs:
           tags: ${{ steps.tags.outputs.web_tags }}
           build-args: |
             VITE_API_URL=/api/v1
+            BUILD_SHA=${{ github.sha }}
+            BUILD_TIME=${{ needs.resolve-context.outputs.build_time }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
 
   verify-manifests:
-    name: Wait for GHCR Manifests
+    name: Wait for GHCR manifests
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
       - build-and-push
     permissions:
@@ -207,16 +244,14 @@ jobs:
           wait_for_manifest "${WEB_IMAGE}:${IMAGE_TAG}"
 
   deploy:
-    name: Deploy Stack
+    name: Deploy stack
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs:
       - resolve-context
       - build-and-push
       - verify-manifests
     environment: ${{ needs.resolve-context.outputs.environment_name }}
-    concurrency:
-      group: deploy-${{ needs.resolve-context.outputs.environment_name }}
-      cancel-in-progress: ${{ needs.resolve-context.outputs.environment_name == 'test' }}
     permissions:
       contents: read
 
@@ -284,19 +319,44 @@ jobs:
           API_IMAGE: ${{ needs.build-and-push.outputs.api_image }}
           WEB_IMAGE: ${{ needs.build-and-push.outputs.web_image }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          EXPECTED_BUILD_SHA: ${{ github.sha }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          # Prod gets automatic rollback on smoke failure; test doesn't, so developers
+          # can inspect the broken state and fix forward.
           ROLLBACK_ON_FAILURE: ${{ needs.resolve-context.outputs.environment_name == 'production' && 'true' || 'false' }}
         run: node scripts/ci/portainer-deploy.mjs
 
       - name: Deployment summary
         if: always()
+        shell: bash
+        env:
+          TARGET_ENV: ${{ needs.resolve-context.outputs.environment_name }}
+          STACK_NAME: ${{ steps.stack.outputs.stack_name }}
+          API_IMAGE: ${{ needs.build-and-push.outputs.api_image }}
+          WEB_IMAGE: ${{ needs.build-and-push.outputs.web_image }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          SMOKE_API_URL: ${{ steps.stack.outputs.smoke_api_url }}
+          SMOKE_WEB_URL: ${{ steps.stack.outputs.smoke_web_url }}
+          JOB_STATUS: ${{ job.status }}
         run: |
-          echo "Commit  : ${{ github.sha }}"
-          echo "Branch  : ${{ github.ref_name }}"
-          echo "Target  : ${{ needs.resolve-context.outputs.environment_name }}"
-          echo "Stack   : ${{ steps.stack.outputs.stack_name }}"
-          echo "API     : ${{ needs.build-and-push.outputs.api_image }}:${{ needs.build-and-push.outputs.image_tag }}"
-          echo "Web     : ${{ needs.build-and-push.outputs.web_image }}:${{ needs.build-and-push.outputs.image_tag }}"
-          echo "URL API : ${{ steps.stack.outputs.smoke_api_url }}"
-          echo "URL Web : ${{ steps.stack.outputs.smoke_web_url }}"
+          {
+            echo "### Deploy result: \`$JOB_STATUS\`"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Environment | \`$TARGET_ENV\` |"
+            echo "| Stack | \`$STACK_NAME\` |"
+            echo "| Commit SHA | \`${{ github.sha }}\` |"
+            echo "| API image | \`$API_IMAGE:$IMAGE_TAG\` |"
+            echo "| Web image | \`$WEB_IMAGE:$IMAGE_TAG\` |"
+            echo "| Web URL | $SMOKE_WEB_URL |"
+            echo "| API health | $SMOKE_API_URL |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Target  : $TARGET_ENV"
+          echo "Stack   : $STACK_NAME"
+          echo "API     : $API_IMAGE:$IMAGE_TAG"
+          echo "Web     : $WEB_IMAGE:$IMAGE_TAG"
+          echo "URL API : $SMOKE_API_URL"
+          echo "URL Web : $SMOKE_WEB_URL"

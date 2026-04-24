@@ -13,4 +13,12 @@ RUN npx nx build web --configuration=production
 FROM nginx:alpine AS runner
 COPY --from=builder /app/dist/apps/web /usr/share/nginx/html
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+
+ARG BUILD_SHA=unknown
+ARG BUILD_TIME=unknown
+# /version.txt is served by nginx as a static asset, used by the deploy pipeline
+# to verify the new image is actually live before declaring a deploy successful.
+RUN printf '{"sha":"%s","builtAt":"%s"}\n' "${BUILD_SHA}" "${BUILD_TIME}" > /usr/share/nginx/html/version.json \
+  && printf '%s\n' "${BUILD_SHA}" > /usr/share/nginx/html/version.txt
+
 EXPOSE 80

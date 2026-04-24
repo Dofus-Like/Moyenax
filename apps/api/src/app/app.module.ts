@@ -17,6 +17,7 @@ import { EconomyModule } from '../economy/economy.module';
 import { CombatModule } from '../combat/combat.module';
 import { GameSessionModule } from '../game-session/game-session.module';
 import { HealthModule } from '../health/health.module';
+import { VersionModule } from '../version/version.module';
 import { SseModule } from '../shared/sse/sse.module';
 
 @Module({
@@ -42,6 +43,7 @@ import { SseModule } from '../shared/sse/sse.module';
     CombatModule,
     GameSessionModule,
     HealthModule,
+    VersionModule,
   ],
   providers: [
     {

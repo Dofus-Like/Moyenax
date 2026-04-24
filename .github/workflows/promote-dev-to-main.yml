@@ -1,0 +1,70 @@
+name: Promote dev to main
+
+# Manually opens a PR from dev → main. Merging that PR triggers the production deploy
+# via deploy.yml. Required because all feature PRs target dev, so main never advances
+# on its own.
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "PR title (optional — auto-generated if blank)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open-pr:
+    name: Open dev → main PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Open or update PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE_INPUT: ${{ inputs.title }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Refuse to open an empty promotion PR.
+          ahead="$(git rev-list --count origin/main..origin/dev)"
+          if [[ "$ahead" == "0" ]]; then
+            echo "::warning::dev is not ahead of main. Nothing to promote."
+            exit 0
+          fi
+
+          if [[ -n "${PR_TITLE_INPUT}" ]]; then
+            title="${PR_TITLE_INPUT}"
+          else
+            title="release: promote dev to main ($(date -u +%Y-%m-%d))"
+          fi
+
+          commit_list="$(git log origin/main..origin/dev --pretty=format:'- %h %s' | head -n 50)"
+          body=$(cat <<EOF
+          Promote \`dev\` to \`main\` for a production deploy.
+
+          **Commits included ($ahead):**
+
+          $commit_list
+
+          _Auto-opened by the \`promote-dev-to-main\` workflow._
+          EOF
+          )
+
+          existing_pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head dev --state open --json number --jq '.[0].number // empty')"
+
+          if [[ -n "$existing_pr" ]]; then
+            echo "Updating existing PR #$existing_pr"
+            gh pr edit "$existing_pr" --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+            gh pr view "$existing_pr" --repo "$GITHUB_REPOSITORY" --json url --jq .url >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Opening new PR"
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head dev --title "$title" --body "$body" >> "$GITHUB_STEP_SUMMARY"
+          fi
