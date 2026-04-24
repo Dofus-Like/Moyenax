@@ -25,22 +25,27 @@
   right: 26px;
 }
 
-/* Diamond corners — 2 angles sup (bas = bougies) */
+/* Gemmes violettes aux 2 angles sup */
 .combat-player-panel.glass::before,
 .combat-player-panel.glass::after {
   content: '';
   position: absolute;
-  width: 9px;
-  height: 9px;
-  background: linear-gradient(135deg, #e9d5ff, #a78bfa);
+  width: 13px;
+  height: 13px;
+  background:
+    radial-gradient(circle at 30% 30%, #f5ebff 0%, #c4b5fd 30%, #8b5cf6 65%, #5b21b6 100%);
   transform: rotate(45deg);
-  box-shadow: 0 0 10px rgba(196, 181, 253, 0.75), inset 0 0 4px rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 0 15px rgba(196, 181, 253, 0.9),
+    0 0 30px rgba(139, 92, 246, 0.45),
+    inset 0 0 5px rgba(255, 255, 255, 0.55);
   pointer-events: none;
-  z-index: 3;
+  z-index: 4;
 }
 
-.combat-player-panel.glass::before { top: -5px; left: -5px; }
-.combat-player-panel.glass::after  { top: -5px; right: -5px; }
+.combat-player-panel.glass::before { top: -7px; left: -7px; }
+.combat-player-panel.glass::after  { top: -7px; right: -7px; }
 
 /* Background grimoire sur la carte elle-même (glass override) */
 .combat-player-panel.glass {
