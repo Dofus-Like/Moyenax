@@ -201,9 +201,6 @@ export function canJumpTo(
   if (!targetTile || !TERRAIN_PROPERTIES[targetTile.type as TerrainType].traversable) return false;
 
   const isOccupied = occupiedPositions.some((p) => p.x === to.x && p.y === to.y);
-  if (isOccupied) {
-    console.log(`[canJumpTo] Failed: occupied at ${to.x},${to.y}`);
-    return false;
-  }
+  if (isOccupied) return false;
   return true;
 }

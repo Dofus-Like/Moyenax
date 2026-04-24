@@ -1,8 +1,8 @@
 import { Body, Controller, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { Throttle, seconds } from '@nestjs/throttler';
-import type { CombatAction } from '@game/shared-types';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { TurnService } from './turn.service';
+import { CombatActionDto } from './dto/combat-action.dto';
 
 @Controller('combat/action')
 @UseGuards(JwtAuthGuard)
@@ -13,7 +13,7 @@ export class TurnController {
   @Post(':sessionId')
   async playAction(
     @Param('sessionId') sessionId: string,
-    @Body() action: CombatAction,
+    @Body() action: CombatActionDto,
     @Request() req: { user: { id: string } },
   ) {
     return this.turnService.playAction(sessionId, req.user.id, action);

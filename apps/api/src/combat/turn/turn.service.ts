@@ -341,6 +341,17 @@ export class TurnService {
 
     // Décrémenter les buffs du joueur qui finit son tour
     currentPlayer.buffs.forEach((b) => b.remainingTurns--);
+
+    // Nettoyage à l'expiration: certains buffs mutent stats permanentes (VIT_MAX).
+    // On doit inverser ces mutations avant de filtrer les buffs expirés, sinon le
+    // bonus reste appliqué après expiration (cf. bug d'exploit VIT).
+    const expired = currentPlayer.buffs.filter((b) => b.remainingTurns <= 0);
+    for (const buff of expired) {
+      if (buff.type === 'VIT_MAX') {
+        currentPlayer.stats.vit -= buff.value;
+        currentPlayer.currentVit = Math.min(currentPlayer.currentVit, currentPlayer.stats.vit);
+      }
+    }
     currentPlayer.buffs = currentPlayer.buffs.filter((b) => b.remainingTurns > 0);
 
     state.currentTurnPlayerId = nextPlayerId;
