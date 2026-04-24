@@ -5,15 +5,19 @@ import { PlayerSpellProjectionService } from '../player/player-spell-projection.
 import { StatsCalculatorService } from '../player/stats-calculator.service';
 import { PrismaService } from '../shared/prisma/prisma.service';
 import { RedisService } from '../shared/redis/redis.service';
+import {
+  DistributedLockService,
+  LockNotAcquiredError,
+} from '../shared/security/distributed-lock.service';
 import { SessionSecurityService } from '../shared/security/session-security.service';
 import { SseTicketService } from '../shared/security/sse-ticket.service';
 import { SseService } from '../shared/sse/sse.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+const START_MATCH_LOCK_TTL_SECONDS = 30;
+
 @Injectable()
 export class GameSessionService {
-  private readonly startMatchLocks = new Set<string>();
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -24,6 +28,7 @@ export class GameSessionService {
     private readonly statsCalculator: StatsCalculatorService,
     private readonly playerSpellProjection: PlayerSpellProjectionService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly distributedLock: DistributedLockService,
   ) {}
 
   async createSession(player1Id: string, player2Id: string | null, opts?: { vsAi?: boolean }) {
@@ -277,16 +282,27 @@ export class GameSessionService {
   }
 
   private async startMatch(sessionId: string) {
-    if (this.startMatchLocks.has(sessionId)) {
-      console.warn(`[GameSession] startMatch already in progress for session ${sessionId}.`);
-      return this.prisma.gameSession.findUnique({
-        where: { id: sessionId },
-        include: { combats: { orderBy: { createdAt: 'desc' }, take: 1 } },
-      });
-    }
-
+    const lockKey = `game-session:startMatch:${sessionId}`;
     try {
-      this.startMatchLocks.add(sessionId);
+      return await this.distributedLock.withLock(
+        lockKey,
+        START_MATCH_LOCK_TTL_SECONDS,
+        () => this.runStartMatch(sessionId),
+      );
+    } catch (error) {
+      if (error instanceof LockNotAcquiredError) {
+        console.warn(`[GameSession] startMatch already in progress for session ${sessionId}.`);
+        return this.prisma.gameSession.findUnique({
+          where: { id: sessionId },
+          include: { combats: { orderBy: { createdAt: 'desc' }, take: 1 } },
+        });
+      }
+      throw error;
+    }
+  }
+
+  private async runStartMatch(sessionId: string) {
+    try {
       const session = await (this.prisma as any).gameSession.findUnique({
         where: { id: sessionId },
       });
@@ -362,8 +378,6 @@ export class GameSessionService {
         error: (error as Error).message,
       });
       return this.prisma.gameSession.findUnique({ where: { id: sessionId } });
-    } finally {
-      this.startMatchLocks.delete(sessionId);
     }
   }
 

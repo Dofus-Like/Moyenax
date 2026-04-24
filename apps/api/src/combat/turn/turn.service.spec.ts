@@ -74,6 +74,15 @@ describe('TurnService', () => {
           provide: PerfStatsService,
           useValue: { recordGameMetric: jest.fn() },
         },
+        {
+          provide: (await import('../../shared/security/distributed-lock.service')).DistributedLockService,
+          useValue: {
+            withLock: jest.fn(async (_k, _ttl, fn) => fn()),
+            tryWithLock: jest.fn(async (_k, _ttl, fn) => fn()),
+            acquire: jest.fn().mockResolvedValue('test-fingerprint'),
+            release: jest.fn().mockResolvedValue(true),
+          },
+        },
       ],
     }).compile();
 

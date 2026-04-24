@@ -106,6 +106,14 @@ describe('TurnService - END_TURN buff expiration regressions', () => {
         },
         { provide: RuntimePerfService, useValue: { getTotalSseEvents: jest.fn().mockReturnValue(0) } },
         { provide: PerfStatsService, useValue: { recordGameMetric: jest.fn() } },
+        {
+          provide: (await import('../../shared/security/distributed-lock.service')).DistributedLockService,
+          useValue: {
+            withLock: jest.fn(async (_k: string, _t: number, fn: () => Promise<unknown>) => fn()),
+            acquire: jest.fn().mockResolvedValue('fp'),
+            release: jest.fn().mockResolvedValue(true),
+          },
+        },
       ],
     }).compile();
     service = module.get(TurnService);

@@ -1,0 +1,30 @@
+{
+  "$schema": "../../node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation testing pour libs/game-engine. Lancer avec: yarn nx run game-engine:mutation-test (ou depuis libs/game-engine: npx stryker run)",
+  "packageManager": "yarn",
+  "testRunner": "jest",
+  "jest": {
+    "projectType": "custom",
+    "configFile": "jest.config.cts",
+    "enableFindRelatedTests": true
+  },
+  "reporters": ["html", "clear-text", "progress"],
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "src/**/*.ts",
+    "!src/**/*.spec.ts",
+    "!src/index.ts"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 75
+  },
+  "htmlReporter": {
+    "fileName": "../../coverage/libs/game-engine/stryker/mutation.html"
+  },
+  "checkers": ["typescript"],
+  "tsconfigFile": "tsconfig.lib.json",
+  "timeoutMS": 30000,
+  "concurrency": 2
+}

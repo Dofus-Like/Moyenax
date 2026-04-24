@@ -8,4 +8,5 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../coverage/libs/game-engine',
+  coverageReporters: ['text', 'html', 'lcov', 'json-summary'],
 };

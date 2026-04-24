@@ -4,6 +4,7 @@ import { GameSessionService } from './game-session.service';
 import { RedisService } from '../shared/redis/redis.service';
 import { MatchmakingQueueStore } from '../shared/security/matchmaking-queue.store';
 import { SessionSecurityService } from '../shared/security/session-security.service';
+import { DistributedLockService } from '../shared/security/distributed-lock.service';
 import { PerfStatsService } from '../shared/perf/perf-stats.service';
 import { ConflictException } from '@nestjs/common';
 
@@ -21,6 +22,12 @@ describe('MatchmakingService', () => {
   let sessionSecurity: {
     assertPlayerAvailableForPublicRoom: jest.Mock;
     isPlayerQueued: jest.Mock;
+  };
+  let lock: {
+    tryWithLock: jest.Mock;
+    withLock: jest.Mock;
+    acquire: jest.Mock;
+    release: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -42,6 +49,13 @@ describe('MatchmakingService', () => {
       assertPlayerAvailableForPublicRoom: jest.fn().mockResolvedValue(undefined),
       isPlayerQueued: jest.fn().mockResolvedValue(false),
     };
+    // Par défaut, le lock est acquis et on exécute la fn
+    lock = {
+      tryWithLock: jest.fn(async (_k, _ttl, fn) => fn()),
+      withLock: jest.fn(async (_k, _ttl, fn) => fn()),
+      acquire: jest.fn().mockResolvedValue('fp'),
+      release: jest.fn().mockResolvedValue(true),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -51,6 +65,7 @@ describe('MatchmakingService', () => {
         { provide: GameSessionService, useValue: gameSession },
         { provide: SessionSecurityService, useValue: sessionSecurity },
         { provide: PerfStatsService, useValue: { recordGameMetric: jest.fn() } },
+        { provide: DistributedLockService, useValue: lock },
       ],
     }).compile();
 
@@ -76,11 +91,11 @@ describe('MatchmakingService', () => {
     });
 
     it('retourne searching si lock non acquis (autre instance en cours)', async () => {
-      redis.setIfNotExists.mockResolvedValue(false);
+      // tryWithLock retourne null si lock pas acquis
+      lock.tryWithLock.mockResolvedValue(null);
       const result = await service.joinQueue('p1');
       expect(result).toEqual({ status: 'searching' });
       expect(queue.add).not.toHaveBeenCalled();
-      expect(redis.del).not.toHaveBeenCalled(); // pas dans le finally si on sort avant
     });
 
     it('ajoute le joueur à la queue et retourne searching si < 2 joueurs', async () => {
@@ -88,7 +103,6 @@ describe('MatchmakingService', () => {
       const result = await service.joinQueue('p1');
       expect(result).toEqual({ status: 'searching' });
       expect(queue.add).toHaveBeenCalledWith('p1', expect.any(Number));
-      expect(redis.del).toHaveBeenCalledTimes(1); // finally libère le lock
     });
 
     it('crée une session si >= 2 joueurs en queue', async () => {
@@ -116,35 +130,34 @@ describe('MatchmakingService', () => {
       expect(gameSession.createSession).not.toHaveBeenCalled();
     });
 
-    it('libère toujours le lock dans le finally, même en cas d\'erreur', async () => {
+    it('propage l\'erreur si createSession throw (le lock distribué gère la release)', async () => {
       queue.size.mockResolvedValue(2);
       queue.range.mockResolvedValue(['p1', 'p2']);
       gameSession.createSession.mockRejectedValue(new Error('boom'));
+      // Simuler que tryWithLock relance l'erreur (comme le ferait la vraie impl)
+      lock.tryWithLock.mockImplementation(async (_k, _ttl, fn) => fn());
 
       await expect(service.joinQueue('p1')).rejects.toThrow('boom');
-      expect(redis.del).toHaveBeenCalledTimes(1);
     });
 
-    it('utilise la clé de lock MATCHMAKING_QUEUE_LOCK_KEY avec TTL 5s', async () => {
+    it('utilise la clé de lock MATCHMAKING_QUEUE_LOCK_KEY avec TTL >= 10s (bug #6 fix)', async () => {
       await service.joinQueue('p1');
-      expect(redis.setIfNotExists).toHaveBeenCalledWith(expect.any(String), 'p1', 5);
+      const [key, ttl] = lock.tryWithLock.mock.calls[0];
+      expect(key).toBe('matchmaking:queue:lock');
+      expect(ttl).toBeGreaterThanOrEqual(10);
     });
 
-    /**
-     * Test de régression pour la race condition identifiée:
-     * - TTL du lock = 5s
-     * - Si createSession prend > 5s, le lock expire et un autre client peut matcher avec même joueur
-     * On ne peut pas tester directement le timing mais on vérifie qu'on libère proprement.
-     */
-    it('[concurrence] nettoie même si createSession prend beaucoup de temps', async () => {
+    it('retire les joueurs de la queue AVANT createSession (pas de re-match possible)', async () => {
       queue.size.mockResolvedValue(2);
       queue.range.mockResolvedValue(['p1', 'p2']);
-      gameSession.createSession.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ id: 's' }), 10)),
-      );
+      let removeCalledBeforeCreate = false;
+      gameSession.createSession.mockImplementation(async () => {
+        removeCalledBeforeCreate = queue.remove.mock.calls.length > 0;
+        return { id: 's' };
+      });
 
       await service.joinQueue('p1');
-      expect(redis.del).toHaveBeenCalledTimes(1);
+      expect(removeCalledBeforeCreate).toBe(true);
     });
   });
 

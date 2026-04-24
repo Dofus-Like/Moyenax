@@ -10,12 +10,22 @@ import { GAME_EVENTS } from '@game/shared-types';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 import { PerfStatsService } from '../../shared/perf/perf-stats.service';
 import { RuntimePerfService } from '../../shared/perf/runtime-perf.service';
+import {
+  DistributedLockService,
+  LockNotAcquiredError,
+} from '../../shared/security/distributed-lock.service';
 import { SpellsService } from '../spells/spells.service';
+
+/**
+ * TTL du lock par action. Choisi pour être > pire cas de latence d'une action,
+ * mais < timeout front. Si une action dépasse, le lock expire et un autre peut
+ * passer (mais Redis.setJson() final est quand même cohérent car le state est
+ * toujours relu avant modification).
+ */
+const TURN_LOCK_TTL_SECONDS = 10;
 
 @Injectable()
 export class TurnService {
-  private readonly sessionLocks = new Set<string>();
-
   constructor(
     private readonly redis: RedisService,
     private readonly sse: SseService,
@@ -24,6 +34,7 @@ export class TurnService {
     private readonly perfLogger: PerfLoggerService,
     private readonly perfStats: PerfStatsService,
     private readonly runtimePerf: RuntimePerfService,
+    private readonly distributedLock: DistributedLockService,
   ) {}
 
   async playAction(
@@ -31,20 +42,34 @@ export class TurnService {
     playerId: string,
     action: CombatAction,
   ): Promise<CombatState> {
-    if (this.sessionLocks.has(sessionId)) {
-      this.perfLogger.logEvent(
-        'combat',
-        'turn.session.locked',
-        {
-          session_id: sessionId,
-          player_id: playerId,
-          action_type: action.type,
-        },
-        { level: 'warn' },
+    const lockKey = `combat:lock:${sessionId}`;
+    try {
+      return await this.distributedLock.withLock(lockKey, TURN_LOCK_TTL_SECONDS, () =>
+        this.runAction(sessionId, playerId, action),
       );
-      throw new BadRequestException('Une action est déjà en cours de traitement');
+    } catch (error) {
+      if (error instanceof LockNotAcquiredError) {
+        this.perfLogger.logEvent(
+          'combat',
+          'turn.session.locked',
+          {
+            session_id: sessionId,
+            player_id: playerId,
+            action_type: action.type,
+          },
+          { level: 'warn' },
+        );
+        throw new BadRequestException('Une action est déjà en cours de traitement');
+      }
+      throw error;
     }
-    this.sessionLocks.add(sessionId);
+  }
+
+  private async runAction(
+    sessionId: string,
+    playerId: string,
+    action: CombatAction,
+  ): Promise<CombatState> {
     const startedAt = performance.now();
     const sseEventsBefore = this.runtimePerf.getTotalSseEvents();
 
@@ -127,6 +152,9 @@ export class TurnService {
       // Vérification de victoire / mort
       await this.checkVictory(newState);
 
+      // Timestamp pour le watchdog (bug #8: détecte les sessions bloquées)
+      (newState as CombatState & { lastActionAt?: number }).lastActionAt = Date.now();
+
       await this.redis.setJson(`combat:${sessionId}`, newState, 3600);
       this.sse.emit(sessionId, 'STATE_UPDATED', newState);
       const sseEventsEmitted = this.runtimePerf.getTotalSseEvents() - sseEventsBefore;
@@ -165,8 +193,6 @@ export class TurnService {
         { level: 'warn' },
       );
       throw error;
-    } finally {
-      this.sessionLocks.delete(sessionId);
     }
   }
 

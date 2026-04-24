@@ -6,5 +6,10 @@
     "moduleResolution": "node",
     "types": ["jest", "node"]
   },
-  "include": ["src/**/*.spec.ts", "src/**/*.test.ts", "src/**/*.d.ts"]
+  "include": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.d.ts",
+    "test/**/*.ts"
+  ]
 }
