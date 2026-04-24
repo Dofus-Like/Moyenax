@@ -1,0 +1,103 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wax" x1="30" y1="25" x2="98" y2="115" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fff8df"/>
+      <stop offset="50%" stop-color="#f2ddb0"/>
+      <stop offset="100%" stop-color="#cfa96f"/>
+    </linearGradient>
+
+    <radialGradient id="flameGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff2a8" stop-opacity="0.9"/>
+      <stop offset="55%" stop-color="#ff9f2f" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ff5a00" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="flame" x1="64" y1="10" x2="64" y2="45">
+      <stop offset="0%" stop-color="#fff7a8"/>
+      <stop offset="45%" stop-color="#ffb347"/>
+      <stop offset="100%" stop-color="#ff5a00"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    .flame {
+      transform-origin: 64px 34px;
+      animation: flicker 1.2s infinite ease-in-out;
+    }
+
+    .glow {
+      transform-origin: 64px 34px;
+      animation: glowPulse 1.2s infinite ease-in-out;
+    }
+
+    @keyframes flicker {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(0.92, 1.08) rotate(-3deg); }
+      50% { transform: scale(1.08, 0.95) rotate(3deg); }
+      75% { transform: scale(0.96, 1.05) rotate(-2deg); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.65; transform: scale(1); }
+      50% { opacity: 0.9; transform: scale(1.12); }
+    }
+  </style>
+
+  <!-- Glow -->
+  <ellipse class="glow" cx="64" cy="34" rx="28" ry="32" fill="url(#flameGlow)"/>
+
+  <!-- Flame teardrop -->
+  <path class="flame"
+        d="M64 10
+           C76 24 74 39 64 47
+           C54 39 52 24 64 10Z"
+        fill="url(#flame)"
+        stroke="#7a2f00"
+        stroke-width="2"
+        stroke-linejoin="round"/>
+
+  <!-- Wick -->
+  <path d="M64 47 C62 40 63 35 66 29"
+        fill="none"
+        stroke="#151515"
+        stroke-width="3"
+        stroke-linecap="round"/>
+
+  <!-- Candle body -->
+  <ellipse cx="64" cy="54" rx="32" ry="9" fill="#fff4cf" stroke="#9f7a42" stroke-width="3"/>
+  <path d="M32 54
+           C32 50 96 50 96 54
+           L96 105
+           C96 112 32 112 32 105
+           Z"
+        fill="url(#wax)"
+        stroke="#9f7a42"
+        stroke-width="3"
+        stroke-linejoin="round"/>
+
+  <!-- Top wax surface -->
+  <ellipse cx="64" cy="54" rx="32" ry="9" fill="#fff8df" opacity="0.85"/>
+
+  <!-- Wax drips -->
+  <path d="M47 56 C46 66 52 67 51 77"
+        fill="none"
+        stroke="#e8c98f"
+        stroke-width="5"
+        stroke-linecap="round"/>
+  <path d="M82 57 C80 68 88 70 85 84"
+        fill="none"
+        stroke="#e8c98f"
+        stroke-width="5"
+        stroke-linecap="round"/>
+
+  <!-- Highlights -->
+  <path d="M45 63 C43 75 43 92 45 101"
+        fill="none"
+        stroke="#fff9df"
+        stroke-width="3"
+        stroke-linecap="round"
+        opacity="0.65"/>
+
+  <!-- Bottom ellipse -->
+  <ellipse cx="64" cy="105" rx="32" ry="9" fill="#cfa96f" opacity="0.55"/>
+</svg>

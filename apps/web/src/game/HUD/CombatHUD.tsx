@@ -6,6 +6,7 @@ import { useGameSession } from '../../pages/GameTunnel';
 import { combatApi } from '../../api/combat.api';
 import { CombatActionType, SpellFamily } from '@game/shared-types';
 import { CombatPlayerPanel } from './CombatPlayerPanel';
+import { SpellBookModal } from './SpellBookModal';
 import './CombatHUD.css';
 
 const SPELL_FAMILY_ORDER: Record<SpellFamily, number> = {
@@ -49,6 +50,7 @@ export function CombatHUD() {
   const uiMessage = useCombatStore((s) => s.uiMessage);
   const setUiMessage = useCombatStore((s) => s.setUiMessage);
   const [hoveredSpellId, setHoveredSpellId] = React.useState<string | null>(null);
+  const [showSpellBook, setShowSpellBook] = React.useState(false);
   const user = useAuthStore((s) => s.player);
   const navigate = useNavigate();
   const { activeSession } = useGameSession();
@@ -135,11 +137,11 @@ export function CombatHUD() {
               key={f.playerId}
               className={`hud-initiative-row ${active ? 'active' : ''} ${self ? 'self' : 'foe'}`}
             >
-              <div className="hud-initiative-token" />
               <div className="hud-initiative-info">
                 <div className="hud-initiative-name">{f.username}</div>
                 <div className="hud-initiative-ini">INI {f.stats?.ini ?? '—'}</div>
               </div>
+              <div className="hud-initiative-token" />
             </div>
           );
         })}
@@ -193,14 +195,14 @@ export function CombatHUD() {
           {/* Separator */}
           <div className="spell-bar-separator" />
 
-          {/* Grimoire / Equipment toggle */}
+          {/* Grimoire des sorts */}
           <button
             type="button"
-            className={`spell-bar-action grimoire ${showMannequins ? 'active' : ''}`}
-            onClick={() => toggleShowMannequins()}
-            title="Grimoire / Équipement"
+            className="spell-bar-action grimoire"
+            onClick={() => setShowSpellBook(true)}
+            title="Grimoire des sorts"
           >
-            📖
+            <img src="/assets/ui/grimoire.png" alt="Grimoire" className="grimoire-icon" />
           </button>
 
           {/* Passer = End turn */}
@@ -211,8 +213,7 @@ export function CombatHUD() {
             onClick={handleEndTurn}
             title="Passer le tour"
           >
-            <span className="pass-icon">⏭</span>
-            <span className="pass-label">Passer</span>
+            <img src="/assets/ui/passer.png" alt="Passer" className="pass-icon-img" />
           </button>
         </div>
 
@@ -223,6 +224,13 @@ export function CombatHUD() {
           </div>
         )}
       </div>
+
+      {showSpellBook && currentPlayer && (
+        <SpellBookModal
+          spells={currentPlayer.spells}
+          onClose={() => setShowSpellBook(false)}
+        />
+      )}
     </div>
   );
 }

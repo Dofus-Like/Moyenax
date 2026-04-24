@@ -165,16 +165,12 @@ export function CombatPage() {
     <div className="combat-page-container">
       <div className="combat-ambient" aria-hidden="true">
         <div className="combat-ambient-runes" />
-        <div className="combat-candle candle-left-top" />
-        <div className="combat-candle candle-left-bottom" />
-        <div className="combat-candle candle-right-top" />
-        <div className="combat-candle candle-right-bottom" />
+        <img src="/assets/ui/bougie.svg" className="combat-candle candle-left-top"   alt="" />
+        <img src="/assets/ui/bougie.svg" className="combat-candle candle-left-bottom"  alt="" />
+        <img src="/assets/ui/bougie.svg" className="combat-candle candle-right-top"  alt="" />
+        <img src="/assets/ui/bougie.svg" className="combat-candle candle-right-bottom" alt="" />
       </div>
       <header className="combat-toolbar ornate-frame">
-        <span className="ornate-corner ornate-corner-tl" aria-hidden="true" />
-        <span className="ornate-corner ornate-corner-tr" aria-hidden="true" />
-        <span className="ornate-corner ornate-corner-bl" aria-hidden="true" />
-        <span className="ornate-corner ornate-corner-br" aria-hidden="true" />
         <button className="combat-toolbar-back ornate-btn" onClick={() => navigate('/farming')}>
           <span className="toolbar-back-arrow">←</span>
           <span>Retour</span>
@@ -280,10 +276,6 @@ export function CombatPage() {
 
         {/* RIGHT WINDOW: LOGS (Desktop only via CSS) */}
         <div className="combat-logs-side ornate-frame">
-            <span className="ornate-corner ornate-corner-tl" aria-hidden="true" />
-            <span className="ornate-corner ornate-corner-tr" aria-hidden="true" />
-            <span className="ornate-corner ornate-corner-bl" aria-hidden="true" />
-            <span className="ornate-corner ornate-corner-br" aria-hidden="true" />
             <div className="logs-sidebar-header">JOURNAL DE COMBAT</div>
             <div className="logs-sidebar-content">
                {logs.map((log) => (
