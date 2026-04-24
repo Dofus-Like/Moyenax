@@ -39,6 +39,7 @@ async function bootstrap() {
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Server-Timing', 'x-request-id'],
   });
 
   const swaggerEnabled = configService.get<string>('ENABLE_SWAGGER', 'false') === 'true';

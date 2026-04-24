@@ -1,16 +1,19 @@
 // Bot service for handles AI turns
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { performance } from 'node:perf_hooks';
 import { GAME_EVENTS, CombatState, CombatActionType, TerrainType, GameMap, findPathToAdjacent } from '@game/shared-types';
 import { TurnService } from '../turn/turn.service';
 import { isInRange } from '@game/game-engine';
 import { RedisService } from '../../shared/redis/redis.service';
+import { PerfStatsService } from '../../shared/perf/perf-stats.service';
 
 @Injectable()
 export class BotService {
   constructor(
     private readonly turnService: TurnService,
     private readonly redis: RedisService,
+    private readonly perfStats: PerfStatsService,
   ) {}
 
   @OnEvent(GAME_EVENTS.TURN_STARTED)
@@ -104,8 +107,10 @@ export class BotService {
             }
         });
 
+        const pathStartedAt = performance.now();
         const path = findPathToAdjacent(gameMap, bot.position, enemy.position, occupiedSet);
-        
+        this.perfStats.recordGameMetric('game.pathfinding', 'bot.findPathToAdjacent', performance.now() - pathStartedAt);
+
         if (path && path.length > 0) {
             const nextStep = path[0];
             

@@ -128,6 +128,43 @@ game-monorepo/
 - Les budgets versionnés sont stockés dans `apps/api/perf-budgets.json`.
 - Les scripts perf lot 1 sont majoritairement read-only et utilisent les comptes seedés existants.
 
+## 🔬 Debug HUD (monitoring temps réel)
+
+Panneau intégré à l'app qui agrège FPS, Web Vitals, network, renders React, long tasks, SSE, event loop lag, GC pauses, routes/Prisma/Redis p50/p95/p99, métriques métier et plan Postgres `EXPLAIN ANALYZE` — le tout en dev only, derrière un flag d'env.
+
+### Activation
+
+Dans `.env` :
+
+```bash
+SHOW_DEBUG=1         # backend (endpoints /debug/perf*, Prisma query events, GC observer)
+VITE_SHOW_DEBUG=1    # frontend (HUD, interceptors, observers, r3f-perf)
+```
+
+Redémarre les deux dev servers. Un badge **⚡ Perf** apparaît en bas à droite. Ouvre avec `Shift+P`.
+
+### Onglets disponibles
+
+| Onglet | Quoi |
+|---|---|
+| **Overview** | FPS, Web Vitals, résumé backend, JS heap Chrome |
+| **Network** | Requêtes HTTP les plus lentes + trace Prisma par `x-request-id` |
+| **Renders** | Composants React re-renderés, via `<Profiler>` + `<ProfiledRegion id="…">` |
+| **SSE** | Flux Server-Sent Events avec type, taille, payload |
+| **Tasks** | Long tasks main-thread >50ms (causes directes des FPS drops) |
+| **Backend** | Event loop lag, heap history, GC par kind (major/minor), routes p50/p95/p99 |
+| **Prisma** | Ops agrégées + Raw SQL avec bouton **🔍 Run EXPLAIN** (plan arboré, SELECT-only read-only tx) |
+| **Game** | Métriques métier : durée tour de combat, résolution sort, pathfinding, matchmaking wait |
+| **Redis** | Hit/miss ratio par préfixe, latence par commande |
+| **Snap** | Sauvegarde/diff de snapshots dans localStorage (avant/après un fix) |
+
+### Partage IA
+
+- **📋 IA** — copie un rapport Markdown structuré (contexte, toutes les métriques, liste de questions) prêt à coller dans une conversation IA.
+- **💾 JSON** — télécharge le snapshot brut.
+
+**Doc complète** : [docs/debug/README.md](docs/debug/README.md) — variables d'env détaillées, interprétation de chaque métrique, architecture, troubleshooting.
+
 ## 🐳 Stack Prod-Like Locale
 
 - `yarn stack:prod-local` construit les images locales API/Web puis lance la stack issue de `docker-compose.portainer.yml` avec l’override local.

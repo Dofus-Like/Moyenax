@@ -5,6 +5,7 @@ import { SseService } from '../../shared/sse/sse.service';
 import { SpellsService } from '../spells/spells.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
+import { PerfStatsService } from '../../shared/perf/perf-stats.service';
 import { RuntimePerfService } from '../../shared/perf/runtime-perf.service';
 import { BadRequestException } from '@nestjs/common';
 import { CombatActionType, CombatState, TerrainType } from '@game/shared-types';
@@ -68,6 +69,10 @@ describe('TurnService', () => {
           useValue: {
             getTotalSseEvents: jest.fn().mockReturnValue(0),
           },
+        },
+        {
+          provide: PerfStatsService,
+          useValue: { recordGameMetric: jest.fn() },
         },
       ],
     }).compile();

@@ -4,6 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
+import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
 import { gameSessionApi } from '../api/game-session.api';
 import { useAuthStore } from '../store/auth.store';
 import { useFarmingStore } from '../store/farming.store';
@@ -548,6 +549,7 @@ export function FarmingPage() {
           {map && isReadyToRender && (
             <div className="resource-map-canvas">
               <Canvas key={`farming-canvas-${activeSession?.id || 'default'}`}>
+                <CanvasPerfOverlay />
                 <OrthographicCamera makeDefault position={[15, 20, 15]} zoom={30} near={0.1} far={100} />
                 <CameraControls
                   ref={setControls}

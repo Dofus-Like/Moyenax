@@ -13,6 +13,8 @@ import { useGameSession } from './GameTunnel';
 import { gameSessionApi } from '../api/game-session.api';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CameraEffects } from '../game/Combat/CameraEffects';
+import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
+import { ProfiledRegion } from '../perf/render-profiler';
 import './CombatPage.css';
 
 /**
@@ -158,6 +160,7 @@ export function CombatPage() {
   if (!sessionId) return null;
 
   return (
+    <ProfiledRegion id="CombatPage">
     <div className="combat-page-container">
       <header className="combat-toolbar">
         <button className="combat-toolbar-back" onClick={() => navigate('/farming')}>
@@ -197,6 +200,7 @@ export function CombatPage() {
             camera={{ fov: 30 }}
             onPointerMissed={() => setSelectedSpell(null)}
           >
+            <CanvasPerfOverlay />
             <CombatBackgroundShader />
             <OrthographicCamera
               makeDefault
@@ -269,5 +273,6 @@ export function CombatPage() {
         </div>
       </div>
     </div>
+    </ProfiledRegion>
   );
 }
