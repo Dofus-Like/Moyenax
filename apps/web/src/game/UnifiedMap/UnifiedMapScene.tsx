@@ -23,7 +23,11 @@ import {
   TransientEffectsLayer,
   UnifiedMapOverlayLayer,
 } from './UnifiedMapLayers';
-import { buildOccupiedPositionSet, buildTileIndex, toPositionKey } from './unifiedMap.utils';
+import {
+  buildOccupiedPositionSet,
+  buildTileIndex,
+  toPositionKey,
+} from './unifiedMap.utils';
 import { PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
 
 interface UnifiedMapSceneProps {
@@ -75,12 +79,8 @@ export const UnifiedMapScene = React.memo(
 
     const user = useAuthStore((state) => state.player);
 
-    const [popups, setPopups] = useState<
-      { id: string; pos: [number, number, number]; val: number }[]
-    >([]);
-    const [vfx, setVfx] = useState<
-      { id: string; type: string; from: { x: number; y: number }; to: { x: number; y: number } }[]
-    >([]);
+    const [popups, setPopups] = useState<{ id: string; pos: [number, number, number]; val: number }[]>([]);
+    const [vfx, setVfx] = useState<{ id: string; type: string; from: { x: number; y: number }; to: { x: number; y: number } }[]>([]);
     const [playerPaths, setPlayerPaths] = useState<Record<string, PathNode[]>>({});
     const [jumpingPlayers, setJumpingPlayers] = useState<Record<string, boolean>>({});
     const [visualPositions, setVisualPositions] = useState<Record<string, PathNode>>({});
@@ -129,24 +129,20 @@ export const UnifiedMapScene = React.memo(
     const activeMap = mode === 'combat' ? gameMap : map;
 
     // Global time of day sync
-    const { timeOfDay } = useControls(
-      'Background Shader',
-      {
-        timeOfDay: { value: 0, min: 0, max: 2, step: 1 },
-      },
-      { collapsed: true },
-    );
+    const { timeOfDay } = useControls('Background Shader', {
+      timeOfDay: { value: 0, min: 0, max: 2, step: 1 }
+    }, { collapsed: true });
 
     // Debug controls for the tiles per phase
     const tileConfig = useControls('Background Shader', {
       'Tile Colors': folder({
-        tileDayA: { value: COMBAT_COLORS.TILE_DAY_A },
+        tileDayA: { value: COMBAT_COLORS.TILE_DAY_A }, 
         tileDayB: { value: COMBAT_COLORS.TILE_DAY_B },
         tileSideDay: { value: COMBAT_COLORS.TILE_SIDE_DAY },
-        tileSunA: { value: COMBAT_COLORS.TILE_SUNSET_A },
+        tileSunA: { value: COMBAT_COLORS.TILE_SUNSET_A }, 
         tileSunB: { value: COMBAT_COLORS.TILE_SUNSET_B },
         tileSideSun: { value: COMBAT_COLORS.TILE_SIDE_SUNSET },
-        tileNightA: { value: COMBAT_COLORS.TILE_NIGHT_A },
+        tileNightA: { value: COMBAT_COLORS.TILE_NIGHT_A }, 
         tileNightB: { value: COMBAT_COLORS.TILE_NIGHT_B },
         tileSideNight: { value: COMBAT_COLORS.TILE_SIDE_NIGHT },
       }),
@@ -182,39 +178,15 @@ export const UnifiedMapScene = React.memo(
       if (timeOfDay <= 1) {
         // Day to Sun
         const t = timeOfDay;
-        c1.lerpColors(
-          new THREE.Color(tileConfig.tileDayA),
-          new THREE.Color(tileConfig.tileSunA),
-          t,
-        );
-        c2.lerpColors(
-          new THREE.Color(tileConfig.tileDayB),
-          new THREE.Color(tileConfig.tileSunB),
-          t,
-        );
-        cs.lerpColors(
-          new THREE.Color(tileConfig.tileSideDay),
-          new THREE.Color(tileConfig.tileSideSun),
-          t,
-        );
+        c1.lerpColors(new THREE.Color(tileConfig.tileDayA), new THREE.Color(tileConfig.tileSunA), t);
+        c2.lerpColors(new THREE.Color(tileConfig.tileDayB), new THREE.Color(tileConfig.tileSunB), t);
+        cs.lerpColors(new THREE.Color(tileConfig.tileSideDay), new THREE.Color(tileConfig.tileSideSun), t);
       } else {
         // Sun to Night
         const t = timeOfDay - 1;
-        c1.lerpColors(
-          new THREE.Color(tileConfig.tileSunA),
-          new THREE.Color(tileConfig.tileNightA),
-          t,
-        );
-        c2.lerpColors(
-          new THREE.Color(tileConfig.tileSunB),
-          new THREE.Color(tileConfig.tileNightB),
-          t,
-        );
-        cs.lerpColors(
-          new THREE.Color(tileConfig.tileSideSun),
-          new THREE.Color(tileConfig.tileSideNight),
-          t,
-        );
+        c1.lerpColors(new THREE.Color(tileConfig.tileSunA), new THREE.Color(tileConfig.tileNightA), t);
+        c2.lerpColors(new THREE.Color(tileConfig.tileSunB), new THREE.Color(tileConfig.tileNightB), t);
+        cs.lerpColors(new THREE.Color(tileConfig.tileSideSun), new THREE.Color(tileConfig.tileSideNight), t);
       }
 
       return {
@@ -230,10 +202,7 @@ export const UnifiedMapScene = React.memo(
     );
     const combatTiles = combatState?.map?.tiles ?? [];
     const tileIndex = useMemo(() => buildTileIndex(combatTiles), [combatTiles]);
-    const occupiedPositions = useMemo(
-      () => combatPlayers.map((player) => player.position),
-      [combatPlayers],
-    );
+    const occupiedPositions = useMemo(() => combatPlayers.map((player) => player.position), [combatPlayers]);
     const occupiedPositionSet = useMemo(
       () => buildOccupiedPositionSet(occupiedPositions),
       [occupiedPositions],
@@ -253,12 +222,12 @@ export const UnifiedMapScene = React.memo(
       if (!activeMap) return;
 
       raycaster.setFromCamera(mouse, camera);
-
+      
       // 1. Raycast against players (still need this for tooltips/selection)
       const target = mapGroupRef.current || scene;
       const intersects = raycaster.intersectObjects([target], true);
       const playerIntersect = intersects.find(
-        (intersection) => intersection.object.userData?.type === 'player-pawn',
+        (intersection) => intersection.object.userData?.type === 'player-pawn'
       );
 
       if (playerIntersect) {
@@ -269,7 +238,7 @@ export const UnifiedMapScene = React.memo(
 
       // 2. Math-based raycast against the ground plane
       const planeIntersect = intersects.find(
-        (intersection) => intersection.object.name === 'map-hit-plane',
+        (intersection) => intersection.object.name === 'map-hit-plane'
       );
 
       if (!planeIntersect) {
@@ -284,10 +253,7 @@ export const UnifiedMapScene = React.memo(
       if (!planeIntersect.uv) return;
 
       const gx = Math.min(activeMap.width - 1, Math.floor(planeIntersect.uv.x * activeMap.width));
-      const gz = Math.min(
-        activeMap.height - 1,
-        Math.floor((1 - planeIntersect.uv.y) * activeMap.height),
-      );
+      const gz = Math.min(activeMap.height - 1, Math.floor((1 - planeIntersect.uv.y) * activeMap.height));
 
       if (gx < 0 || gx >= activeMap.width || gz < 0 || gz >= activeMap.height) {
         setHoveredTile(null);
@@ -296,10 +262,8 @@ export const UnifiedMapScene = React.memo(
       }
 
       const terrain = activeMap.grid[gz][gx] as TerrainType;
-
-      setHoveredTile((previous) =>
-        previous?.x === gx && previous?.y === gz ? previous : { x: gx, y: gz, terrain },
-      );
+      
+      setHoveredTile((previous) => (previous?.x === gx && previous?.y === gz ? previous : { x: gx, y: gz, terrain }));
 
       if (mode === 'farming') {
         onTileHover?.({ x: gx, y: gz, terrain });
@@ -442,11 +406,11 @@ export const UnifiedMapScene = React.memo(
         }
 
         targetPositionsRef.current[player.playerId] = player.position;
-
+        
         // On exclut la position cible du joueur lui-même pour que le pathfinder accepte d'y aller
         const filteredOccupied = new Set(occupiedPositionSet);
         filteredOccupied.delete(toPositionKey(player.position.x, player.position.y));
-
+        
         const path = findPath(gameMap, visualPosition, player.position, filteredOccupied);
 
         if (path && path.length > 0) {
@@ -509,7 +473,12 @@ export const UnifiedMapScene = React.memo(
           const next = { x: current.x + direction.x, y: current.y + direction.y };
           const key = toPositionKey(next.x, next.y);
 
-          if (next.x < 0 || next.x >= gameMap.width || next.y < 0 || next.y >= gameMap.height) {
+          if (
+            next.x < 0 ||
+            next.x >= gameMap.width ||
+            next.y < 0 ||
+            next.y >= gameMap.height
+          ) {
             continue;
           }
 
@@ -560,22 +529,12 @@ export const UnifiedMapScene = React.memo(
     }, [mode, selectedSpellId, hoveredPlayerId, currentUserId, reachableTiles]);
 
     const combatPreviewPath = useMemo(() => {
-      if (
-        mode !== 'combat' ||
-        !isMyTurn ||
-        !currentPlayer ||
-        !deferredHoveredTile ||
-        !gameMap ||
-        selectedSpellId
-      ) {
+      if (mode !== 'combat' || !isMyTurn || !currentPlayer || !deferredHoveredTile || !gameMap || selectedSpellId) {
         return [];
       }
 
       // Pas de preview si on survole sa propre case
-      if (
-        deferredHoveredTile.x === currentPlayer.position.x &&
-        deferredHoveredTile.y === currentPlayer.position.y
-      ) {
+      if (deferredHoveredTile.x === currentPlayer.position.x && deferredHoveredTile.y === currentPlayer.position.y) {
         return [];
       }
 
@@ -583,8 +542,7 @@ export const UnifiedMapScene = React.memo(
       let minDistance = Infinity;
 
       reachableTiles.forEach((tile) => {
-        const distance =
-          Math.abs(tile.x - deferredHoveredTile.x) + Math.abs(tile.y - deferredHoveredTile.y);
+        const distance = Math.abs(tile.x - deferredHoveredTile.x) + Math.abs(tile.y - deferredHoveredTile.y);
         if (distance < minDistance) {
           minDistance = distance;
           closestTile = tile;
@@ -595,19 +553,10 @@ export const UnifiedMapScene = React.memo(
 
       // Pour la preview du trajet, on exclut le joueur local du set d'obstacles pour ne pas bloquer le point de départ
       const obstacles = new Set(occupiedPositionSet);
-      if (currentUserId)
-        obstacles.delete(toPositionKey(currentPlayer.position.x, currentPlayer.position.y));
+      if (currentUserId) obstacles.delete(toPositionKey(currentPlayer.position.x, currentPlayer.position.y));
 
       return findPath(gameMap, currentPlayer.position, closestTile, obstacles) ?? [];
-    }, [
-      currentPlayer,
-      gameMap,
-      deferredHoveredTile,
-      isMyTurn,
-      mode,
-      reachableTiles,
-      selectedSpellId,
-    ]);
+    }, [currentPlayer, gameMap, deferredHoveredTile, isMyTurn, mode, reachableTiles, selectedSpellId]);
 
     const spellRangeTiles = useMemo(() => {
       if (mode !== 'combat' || !currentPlayer || !selectedSpellId || !combatState?.map?.tiles) {
@@ -631,8 +580,7 @@ export const UnifiedMapScene = React.memo(
 
           if (
             targetInRange &&
-            (!spell.requiresLineOfSight ||
-              hasLineOfSight(currentPlayer.position, target, combatState.map.tiles)) &&
+            (!spell.requiresLineOfSight || hasLineOfSight(currentPlayer.position, target, combatState.map.tiles)) &&
             (!spell.requiresLinearTargeting ||
               currentPlayer.position.x === target.x ||
               currentPlayer.position.y === target.y)
@@ -665,28 +613,14 @@ export const UnifiedMapScene = React.memo(
           } else {
             const target = { x, y };
 
-            if (
-              canMoveTo(
-                target,
-                currentPlayer.remainingPm,
-                currentPlayer.position,
-                combatState.map.tiles,
-                occupiedPositions,
-              )
-            ) {
+            if (canMoveTo(target, currentPlayer.remainingPm, currentPlayer.position, combatState.map.tiles, occupiedPositions)) {
               response = await combatApi.playAction(sessionId, {
                 type: CombatActionType.MOVE,
                 targetX: x,
                 targetY: y,
               });
             } else if (
-              canJumpTo(
-                target,
-                currentPlayer.remainingPm,
-                currentPlayer.position,
-                combatState.map.tiles,
-                occupiedPositions,
-              )
+              canJumpTo(target, currentPlayer.remainingPm, currentPlayer.position, combatState.map.tiles, occupiedPositions)
             ) {
               response = await combatApi.playAction(sessionId, {
                 type: CombatActionType.JUMP,
@@ -708,8 +642,7 @@ export const UnifiedMapScene = React.memo(
             typeof error === 'object' &&
             error !== null &&
             'response' in error &&
-            typeof (error as { response?: { data?: { message?: string } } }).response?.data
-              ?.message === 'string'
+            typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
               ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
               : "L'action a échoué.";
 
@@ -744,27 +677,24 @@ export const UnifiedMapScene = React.memo(
       [handleCombatTileClick, mode, onTileClick],
     );
 
-    const handlePointerDown = useCallback(
-      (e: ThreeEvent<PointerEvent>) => {
-        // If we just finished a camera drag, ignore this click for map actions
-        if (wasDraggingRef.current) return;
+    const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
+      // If we just finished a camera drag, ignore this click for map actions
+      if (wasDraggingRef.current) return;
 
-        // Manage right click for spell cancel
-        if (e.button === 2) {
-          rightClickStartTimeRef.current = Date.now();
-          return;
-        }
+      // Manage right click for spell cancel
+      if (e.button === 2) {
+        rightClickStartTimeRef.current = Date.now();
+        return;
+      }
 
-        if (e.button !== 0 || !e.uv || !activeMap) return;
+      if (e.button !== 0 || !e.uv || !activeMap) return;
+      
+      const gx = Math.min(activeMap.width - 1, Math.floor(e.uv.x * activeMap.width));
+      const gz = Math.min(activeMap.height - 1, Math.floor((1 - e.uv.y) * activeMap.height));
 
-        const gx = Math.min(activeMap.width - 1, Math.floor(e.uv.x * activeMap.width));
-        const gz = Math.min(activeMap.height - 1, Math.floor((1 - e.uv.y) * activeMap.height));
-
-        const terrain = activeMap.grid[gz][gx] as TerrainType;
-        handleTileClickDispatcher(gx, gz, terrain);
-      },
-      [activeMap, handleTileClickDispatcher],
-    );
+      const terrain = activeMap.grid[gz][gx] as TerrainType;
+      handleTileClickDispatcher(gx, gz, terrain);
+    }, [activeMap, handleTileClickDispatcher]);
 
     const handlePointerUp = useCallback(
       (event: ThreeEvent<PointerEvent>) => {
@@ -796,7 +726,7 @@ export const UnifiedMapScene = React.memo(
 
         const delta = event.clientX - previousX;
         dragDistanceRef.current += Math.abs(delta);
-
+        
         // If moved more than 5 pixels, consider it a drag
         if (dragDistanceRef.current > 5) {
           wasDraggingRef.current = true;
@@ -879,19 +809,23 @@ export const UnifiedMapScene = React.memo(
         <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
           {mode === 'combat' && (
             <Suspense fallback={null}>
-              <Castle position={[-1.07, 5.34, -0.94]} targetSize={14.0} rotation={[0, 0, 0]} />
+              <Castle 
+                position={[-1.07, 5.34, -0.94]} 
+                targetSize={14.0} 
+                rotation={[0, 0, 0]} 
+              />
             </Suspense>
           )}
-          <TerrainLayer
-            map={activeMap}
-            onTileClick={handleTileClickDispatcher}
+          <TerrainLayer 
+            map={activeMap} 
+            onTileClick={handleTileClickDispatcher} 
             checkerColorA={mode === 'combat' ? currentTileColors.checkerColorA : undefined}
             checkerColorB={mode === 'combat' ? currentTileColors.checkerColorB : undefined}
             sideColor={mode === 'combat' ? currentTileColors.sideColor : undefined}
             tileSize={mode === 'combat' ? tileConfig.tileSize : undefined}
             tileRadius={mode === 'combat' ? tileConfig.tileRadius : undefined}
           />
-
+          
           {/* Interaction Plane - Must be visible=true for raycasting but transparent for user */}
           <mesh
             name="map-hit-plane"

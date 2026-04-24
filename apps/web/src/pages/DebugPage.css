@@ -146,7 +146,7 @@
   background: rgba(0, 0, 0, 0.3);
   border-radius: var(--radius);
   padding: 12px;
-  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.75rem;
   line-height: 1.5;
   max-height: 300px;

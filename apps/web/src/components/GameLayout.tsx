@@ -11,22 +11,19 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
   const [searchParams] = useSearchParams();
   const isDebugMode = searchParams.get('debug') === 'true';
   const tunnelQuery = isDebugMode ? '?debug=true' : '';
-
+  
   const { player, logout } = useAuthStore();
   const { activeSession } = useGameSession();
 
-  const spendableGold = activeSession
-    ? (getSessionPo(activeSession, player?.id) ?? 0)
+  const spendableGold = activeSession 
+    ? (getSessionPo(activeSession, player?.id) ?? 0) 
     : (player?.gold ?? 0);
 
   const navItems = [
     { label: '🏛️ Lobby', path: '/' },
-    {
-      label:
-        location.pathname === '/farming' || activeSession?.phase === 'FARMING'
-          ? '🚜 Récolte'
-          : '⚔️ Combat',
-      path: '/farming',
+    { 
+      label: (location.pathname === '/farming' || (activeSession?.phase === 'FARMING')) ? '🚜 Récolte' : '⚔️ Combat', 
+      path: '/farming' 
     },
     { label: '💰 Boutique', path: '/shop' },
     { label: '🎒 Sac', path: '/inventory' },
@@ -44,20 +41,19 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
         <div className="nav-logo" onClick={() => navigate('/')}>
           ⚔️ Moyenax
         </div>
-
+        
         <div className="nav-links">
-          {location.pathname !== '/' &&
-            navItems
-              .filter((item) => item.path !== '/')
-              .map((item) => (
-                <button
-                  key={item.path}
-                  className={`nav-btn ${location.pathname === item.path ? 'active' : ''}`}
-                  onClick={() => navigate(`${item.path}${tunnelQuery}`)}
-                >
-                  {item.label}
-                </button>
-              ))}
+          {location.pathname !== '/' && navItems
+            .filter(item => item.path !== '/')
+            .map((item) => (
+              <button
+                key={item.path}
+                className={`nav-btn ${location.pathname === item.path ? 'active' : ''}`}
+                onClick={() => navigate(`${item.path}${tunnelQuery}`)}
+              >
+                {item.label}
+              </button>
+            ))}
         </div>
 
         <div className="nav-user-info">
@@ -70,8 +66,10 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </nav>
-
-      <main className="game-content">{children}</main>
+      
+      <main className="game-content">
+        {children}
+      </main>
     </div>
   );
 }

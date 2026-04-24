@@ -6,14 +6,8 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .lobby-header {
@@ -46,10 +40,7 @@
   letter-spacing: 1px;
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(255, 0, 0, 0.2);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -222,12 +213,8 @@
 }
 
 @keyframes lobby-portrait-idle {
-  from {
-    background-position-x: -98px;
-  }
-  to {
-    background-position-x: -1698px;
-  }
+  from { background-position-x: -98px; }
+  to { background-position-x: -1698px; }
 }
 
 .skin-info {
@@ -352,28 +339,18 @@
   animation: bounce 1.4s infinite ease-in-out both;
 }
 
-.loader-dots span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-.loader-dots span:nth-child(2) {
-  animation-delay: -0.16s;
-}
+.loader-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loader-dots span:nth-child(2) { animation-delay: -0.16s; }
 
 @keyframes bounce {
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1.0); }
 }
 
 /* Combat Section */
 .lobby-combat {
   margin-bottom: 48px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 24px;
   padding: 32px;

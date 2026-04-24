@@ -90,7 +90,7 @@
 .toolbar-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 .combat-toolbar-turn {
@@ -169,30 +169,13 @@
 }
 
 @keyframes logFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-.log-entry.type-info {
-  border-left-color: #60a5fa;
-  color: #e2e8f0;
-}
-.log-entry.type-damage {
-  border-left-color: #ef4444;
-  color: #fecaca;
-  background: rgba(239, 68, 68, 0.05);
-}
-.log-entry.type-victory {
-  border-left-color: #f59e0b;
-  color: #fef3c7;
-  background: rgba(245, 158, 11, 0.05);
-}
+.log-entry.type-info { border-left-color: #60a5fa; color: #e2e8f0; }
+.log-entry.type-damage { border-left-color: #ef4444; color: #fecaca; background: rgba(239, 68, 68, 0.05); }
+.log-entry.type-victory { border-left-color: #f59e0b; color: #fef3c7; background: rgba(245, 158, 11, 0.05); }
 
 .logs-empty {
   text-align: center;
@@ -225,9 +208,7 @@
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 /* MEDIA QUERIES MOBILE / TABLETTE : On cache la sidebar */

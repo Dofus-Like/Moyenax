@@ -29,22 +29,22 @@ export function CombatUIManager() {
   const surrender = useCombatStore((s) => s.surrender);
   const disconnect = useCombatStore((s) => s.disconnect);
   const uiMessage = useCombatStore((s) => s.uiMessage);
-
+  
   const [showMannequins, setShowMannequins] = useState(false);
   const user = useAuthStore((s) => s.player);
   const navigate = useNavigate();
 
-  const currentPlayer = combatState && user ? combatState.players[user.id] : null;
-  const isMyTurn = combatState && user ? combatState.currentTurnPlayerId === user.id : false;
+  const currentPlayer = (combatState && user) ? combatState.players[user.id] : null;
+  const isMyTurn = (combatState && user) ? combatState.currentTurnPlayerId === user.id : false;
 
   const [isClosing, setIsClosing] = useState(false);
   const turnRef = useRef(isMyTurn);
 
   useEffect(() => {
     if (turnRef.current && !isMyTurn) {
-      setIsClosing(true);
-      const timer = setTimeout(() => setIsClosing(false), 450);
-      return () => clearTimeout(timer);
+        setIsClosing(true);
+        const timer = setTimeout(() => setIsClosing(false), 450);
+        return () => clearTimeout(timer);
     }
     turnRef.current = isMyTurn;
   }, [isMyTurn]);
@@ -76,7 +76,9 @@ export function CombatUIManager() {
   return (
     <div className="combat-ui-manager">
       {/* Notifications */}
-      {uiMessage && <div className={`combat-toast ${uiMessage.type}`}>{uiMessage.text}</div>}
+      {uiMessage && (
+        <div className={`combat-toast ${uiMessage.type}`}>{uiMessage.text}</div>
+      )}
 
       {/* Victoire/Défaite */}
       {showCombatEnd && (
@@ -84,15 +86,7 @@ export function CombatUIManager() {
           <div className="end-modal">
             <h1>{isWinner ? '🏆 VICTOIRE' : '💀 DÉFAITE'}</h1>
             <p>{isWinner ? 'Bravo !' : 'Dommage...'}</p>
-            <button
-              className="exit-button"
-              onClick={() => {
-                disconnect();
-                navigate('/');
-              }}
-            >
-              Retour
-            </button>
+            <button className="exit-button" onClick={() => { disconnect(); navigate('/'); }}>Retour</button>
           </div>
         </div>
       )}
@@ -101,50 +95,38 @@ export function CombatUIManager() {
       <div className="ui-top-zone">
         <div className="ui-player-corner">
           <div className="portrait-block">
-            <div className={`portrait-circle ${isMyTurn ? 'active' : ''}`}>
-              <PlayerAvatar
-                skin={currentPlayer.skin || 'soldier-classic'}
-                size={64}
-                animation="idle"
-              />
-            </div>
-            <div className="portrait-stats">
-              <span className="player-name">{user.username}</span>
-              <div className="hp-bar-bg">
-                <div className="hp-bar-fill" style={{ width: `${hpPercent}%` }} />
-              </div>
-              <div className="res-row">
-                <div className="res-badge pa">{currentPlayer.remainingPa} PA</div>
-                <div className="res-badge pm">{currentPlayer.remainingPm} PM</div>
-              </div>
-            </div>
-            {(isMyTurn || isClosing) && (
-              <button
-                className={`btn-end-turn ${isClosing ? 'closing' : ''}`}
-                onClick={handleEndTurn}
-              >
-                FIN DE TOUR
-              </button>
-            )}
+             <div className={`portrait-circle ${isMyTurn ? 'active' : ''}`}>
+                <PlayerAvatar 
+                  skin={currentPlayer.skin || 'soldier-classic'} 
+                  size={64} 
+                  animation="idle" 
+                />
+             </div>
+             <div className="portrait-stats">
+                <span className="player-name">{user.username}</span>
+                <div className="hp-bar-bg"><div className="hp-bar-fill" style={{ width: `${hpPercent}%` }} /></div>
+                <div className="res-row">
+                   <div className="res-badge pa">{currentPlayer.remainingPa} PA</div>
+                   <div className="res-badge pm">{currentPlayer.remainingPm} PM</div>
+                </div>
+             </div>
+             {(isMyTurn || isClosing) && (
+               <button className={`btn-end-turn ${isClosing ? 'closing' : ''}`} onClick={handleEndTurn}>FIN DE TOUR</button>
+             )}
           </div>
-
+          
           <div className="ui-controls">
-            <button className="btn-surrender" onClick={() => surrender()}>
-              ABANDONNER
-            </button>
+            <button className="btn-surrender" onClick={() => surrender()}>ABANDONNER</button>
             <div className="mannequins-control-group">
-              <button
-                className={`btn-view ${showMannequins ? 'active' : ''}`}
-                onClick={() => setShowMannequins(!showMannequins)}
-              >
-                {showMannequins ? 'Cacher Inventaires' : 'Voir Inventaires'}
-              </button>
-              <div className={`ui-mannequins-layer-embedded ${showMannequins ? 'visible' : ''}`}>
-                <CombatMannequins minimized={!showMannequins} />
-              </div>
+                <button className={`btn-view ${showMannequins ? 'active' : ''}`} onClick={() => setShowMannequins(!showMannequins)}>
+                  {showMannequins ? 'Cacher Inventaires' : 'Voir Inventaires'}
+                </button>
+                <div className={`ui-mannequins-layer-embedded ${showMannequins ? 'visible' : ''}`}>
+                    <CombatMannequins minimized={!showMannequins} />
+                </div>
             </div>
             <button className="btn-eye" onClick={() => toggleShowEnemyHp()}>
-              {showEnemyHp ? '👁️' : '🚫'}
+                {showEnemyHp ? '👁️' : '🚫'}
             </button>
           </div>
         </div>
@@ -158,18 +140,16 @@ export function CombatUIManager() {
             const notEnoughPa = currentPlayer.remainingPa < spell.paCost;
             const isActive = selectedSpellId === spell.id;
             const disabled = !isMyTurn || onCooldown || notEnoughPa;
-
+            
             return (
-              <div
+              <div 
                 key={spell.id}
                 className={`spell-slot ${disabled ? 'disabled' : ''} ${isActive ? 'active' : ''} family-${spell.family.toLowerCase()}`}
                 onClick={() => !disabled && setSelectedSpell(isActive ? null : spell.id)}
               >
                 <div className="spell-cost">{spell.paCost}</div>
                 <img src={spell.iconPath || '/assets/pack/spells/epee.png'} alt={spell.name} />
-                {onCooldown && (
-                  <div className="cooldown-overlay">{currentPlayer.spellCooldowns[spell.id]}</div>
-                )}
+                {onCooldown && <div className="cooldown-overlay">{currentPlayer.spellCooldowns[spell.id]}</div>}
               </div>
             );
           })}

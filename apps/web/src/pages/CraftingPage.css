@@ -34,6 +34,7 @@
   -webkit-text-fill-color: transparent;
 }
 
+
 .crafting-header .nav-link-btn,
 .crafting-header .back-button {
   padding: 10px 20px;
@@ -104,8 +105,7 @@
   gap: 12px;
 }
 
-.recipes-grid,
-.fusion-grid {
+.recipes-grid, .fusion-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 32px;
@@ -154,7 +154,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
 }
 
 .recipe-emoji {
@@ -204,12 +204,8 @@
   font-size: 0.9rem;
 }
 
-.cost-item.met {
-  color: #4ade80;
-}
-.cost-item.missing {
-  color: #f87171;
-}
+.cost-item.met { color: #4ade80; }
+.cost-item.missing { color: #f87171; }
 
 .res-details strong {
   margin-left: 4px;
@@ -259,11 +255,7 @@
 }
 
 .filter-btn.craftable-filter.active {
-  background: linear-gradient(
-    135deg,
-    rgba(16, 185, 129, 0.4) 0%,
-    rgba(5, 150, 105, 0.4) 100%
-  ) !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.4) 0%, rgba(5, 150, 105, 0.4) 100%) !important;
   color: #6ee7b7 !important;
   border: 1px solid rgba(16, 185, 129, 0.3) !important;
 }
@@ -284,14 +276,8 @@
 }
 
 @keyframes slideIn1 {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 .message-banner.success {
@@ -335,7 +321,7 @@
 /* ── Left panel ─────────────────────────────────────── */
 .fusion-inventory-panel {
   background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255,255,255,0.07);
   border-radius: 20px;
   padding: 20px 16px;
   display: flex;
@@ -351,7 +337,7 @@
   color: #94a3b8;
   margin: 0 0 8px 0;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .fusion-item-list {
@@ -366,20 +352,18 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255,255,255,0.06);
   background: rgba(30, 41, 59, 0.4);
   cursor: grab;
   transition: all 0.2s ease;
   position: relative;
 }
 
-.fusion-inv-item:active {
-  cursor: grabbing;
-}
+.fusion-inv-item:active { cursor: grabbing; }
 
 .fusion-inv-item:hover:not(.in-slot) {
   background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255,255,255,0.2);
   transform: translateX(4px);
 }
 
@@ -401,7 +385,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255,255,255,0.04);
   font-size: 1.4rem;
 }
 
@@ -481,7 +465,7 @@
 .fusion-slot {
   flex: 1;
   min-height: 120px;
-  border: 2px dashed rgba(255, 255, 255, 0.12);
+  border: 2px dashed rgba(255,255,255,0.12);
   border-radius: 18px;
   background: rgba(15, 23, 42, 0.45);
   display: flex;
@@ -502,7 +486,7 @@
 
 .fusion-slot.has-item {
   border-style: solid;
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255,255,255,0.18);
   background: rgba(30, 41, 59, 0.6);
   justify-content: flex-start;
 }
@@ -534,7 +518,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255,255,255,0.04);
   border-radius: 12px;
 }
 
@@ -641,14 +625,8 @@
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .fusion-preview-header {
@@ -682,9 +660,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255,255,255,0.05);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
 .fusion-preview-icon img {

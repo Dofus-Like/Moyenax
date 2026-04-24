@@ -22,12 +22,9 @@ function getErrorMessage(error: unknown, fallback: string) {
     typeof error === 'object' &&
     error !== null &&
     'response' in error &&
-    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
-      'string'
+    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string'
   ) {
-    return (
-      (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback
-    );
+    return (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback;
   }
 
   return fallback;
@@ -126,11 +123,7 @@ export function LobbyPage() {
   };
 
   const handleResetSession = async () => {
-    if (
-      !window.confirm(
-        'Êtes-vous sûr de vouloir réinitialiser votre session ? Toute progression non sauvegardée sera perdue.',
-      )
-    ) {
+    if (!window.confirm('Êtes-vous sûr de vouloir réinitialiser votre session ? Toute progression non sauvegardée sera perdue.')) {
       return;
     }
 
@@ -345,9 +338,13 @@ export function LobbyPage() {
           >
             {hasOpenSession ? 'Reprendre la partie' : 'Lancer VS AI'}
           </button>
-
+          
           {hasOpenSession && (
-            <button type="button" className="reset-session-link" onClick={handleResetSession}>
+            <button
+              type="button"
+              className="reset-session-link"
+              onClick={handleResetSession}
+            >
               🔄 Réinitialiser
             </button>
           )}

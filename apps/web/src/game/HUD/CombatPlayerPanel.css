@@ -70,11 +70,11 @@
 }
 
 .portrait-image.avatar-orc {
-  background-image: url("/assets/sprites/orc/idle.png");
+  background-image: url('/assets/sprites/orc/idle.png');
 }
 
 .portrait-image.avatar-soldier {
-  background-image: url("/assets/sprites/soldier/idle.png");
+  background-image: url('/assets/sprites/soldier/idle.png');
 }
 
 /* INFO */

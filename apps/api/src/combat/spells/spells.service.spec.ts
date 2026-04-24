@@ -94,7 +94,8 @@ describe('SpellsService', () => {
   let service: SpellsService;
 
   beforeEach(() => {
-    service = new SpellsService();
+    const perfStats = { recordGameMetric: jest.fn() } as never;
+    service = new SpellsService(perfStats);
   });
 
   it('applies physical damage to the target on the tile', () => {

@@ -13,12 +13,12 @@ export function CameraEffects({ controlsRef }: CameraEffectsProps) {
   const combatState = useCombatStore((s) => s.combatState);
   const lastDamageEvent = useCombatStore((s) => s.lastDamageEvent);
   const lastSpellCast = useCombatStore((s) => s.lastSpellCast);
-
+  
   // State for shake
   const [shakeIntensity, setShakeIntensity] = useState(0);
   const shakeDecay = 0.9; // Fast decay
   const lastUserInteractionRef = useRef(0);
-
+  
   // Refs to avoid processed events
   const lastProcessedDamageTime = useRef(0);
   const lastProcessedSpellTime = useRef(0);
@@ -41,7 +41,7 @@ export function CameraEffects({ controlsRef }: CameraEffectsProps) {
   useEffect(() => {
     if (!lastDamageEvent || lastDamageEvent.timestamp === lastProcessedDamageTime.current) return;
     lastProcessedDamageTime.current = lastDamageEvent.timestamp;
-
+    
     // Strong shake for damage
     setShakeIntensity((prev) => Math.min(prev + 0.4, 0.8));
   }, [lastDamageEvent]);
@@ -49,7 +49,7 @@ export function CameraEffects({ controlsRef }: CameraEffectsProps) {
   useEffect(() => {
     if (!lastSpellCast || lastSpellCast.timestamp === lastProcessedSpellTime.current) return;
     lastProcessedSpellTime.current = lastSpellCast.timestamp;
-
+    
     // Light shake for spell cast
     setShakeIntensity((prev) => Math.min(prev + 0.15, 0.3));
 
@@ -57,13 +57,13 @@ export function CameraEffects({ controlsRef }: CameraEffectsProps) {
     if (controlsRef.current && Date.now() - lastUserInteractionRef.current > 2000) {
       const targetX = lastSpellCast.targetX - (combatState?.map?.width || 10) / 2 + 0.5;
       const targetY = lastSpellCast.targetY - (combatState?.map?.height || 10) / 2 + 0.5;
-
+      
       // Subtle nudge
       const currentPos = new THREE.Vector3();
       controlsRef.current.getTarget(currentPos);
       const nudgeX = (targetX + currentPos.x) / 2;
       const nudgeZ = (targetY + currentPos.z) / 2;
-
+      
       controlsRef.current.setLookAt(
         camera.position.x + (nudgeX - currentPos.x) * 0.2,
         camera.position.y,
@@ -71,7 +71,7 @@ export function CameraEffects({ controlsRef }: CameraEffectsProps) {
         nudgeX,
         0,
         nudgeZ,
-        true,
+        true
       );
     }
   }, [lastSpellCast, combatState, camera, controlsRef]);
@@ -80,7 +80,7 @@ export function CameraEffects({ controlsRef }: CameraEffectsProps) {
   useEffect(() => {
     if (!combatState || !controlsRef.current) return;
     if (combatState.currentTurnPlayerId === lastTurnPlayerId.current) return;
-
+    
     const prevPlayerId = lastTurnPlayerId.current;
     lastTurnPlayerId.current = combatState.currentTurnPlayerId;
 
@@ -90,17 +90,13 @@ export function CameraEffects({ controlsRef }: CameraEffectsProps) {
       if (activePlayer) {
         const targetX = activePlayer.position.x - combatState.map.width / 2 + 0.5;
         const targetZ = activePlayer.position.y - combatState.map.height / 2 + 0.5;
-
+        
         // Find center between current view and player for a smoother "feel"
         // or just center on player
         controlsRef.current.setLookAt(
-          targetX + 10,
-          10,
-          targetZ + 10, // Offset for orthographic angle
-          targetX,
-          0,
-          targetZ,
-          true,
+          targetX + 10, 10, targetZ + 10, // Offset for orthographic angle
+          targetX, 0, targetZ,
+          true
         );
       }
     }
@@ -112,11 +108,11 @@ export function CameraEffects({ controlsRef }: CameraEffectsProps) {
       const shakeX = (Math.random() - 0.5) * shakeIntensity;
       const shakeY = (Math.random() - 0.5) * shakeIntensity;
       const shakeZ = (Math.random() - 0.5) * shakeIntensity;
-
+      
       camera.position.x += shakeX;
       camera.position.y += shakeY;
       camera.position.z += shakeZ;
-
+      
       setShakeIntensity((prev) => prev * shakeDecay);
     }
   });

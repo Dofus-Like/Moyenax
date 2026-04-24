@@ -57,97 +57,61 @@ export function ShopPage() {
 
   return (
     <div className="shop-container">
+
       <div className="item-filters">
         <div className="filter-group">
-          <button
-            className={`filter-btn ${activeFilter === 'ALL' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('ALL')}
-          >
-            Tout
-          </button>
-          <button
-            className={`filter-btn ${activeFilter === 'WEAPON' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('WEAPON')}
-          >
-            ⚔️ Armes
-          </button>
-          <button
-            className={`filter-btn ${activeFilter === 'ARMOR' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('ARMOR')}
-          >
-            🛡️ Armures
-          </button>
-          <button
-            className={`filter-btn ${activeFilter === 'OTHER' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('OTHER')}
-          >
-            🎒 Autres
-          </button>
+          <button className={`filter-btn ${activeFilter === 'ALL' ? 'active' : ''}`} onClick={() => setActiveFilter('ALL')}>Tout</button>
+          <button className={`filter-btn ${activeFilter === 'WEAPON' ? 'active' : ''}`} onClick={() => setActiveFilter('WEAPON')}>⚔️ Armes</button>
+          <button className={`filter-btn ${activeFilter === 'ARMOR' ? 'active' : ''}`} onClick={() => setActiveFilter('ARMOR')}>🛡️ Armures</button>
+          <button className={`filter-btn ${activeFilter === 'OTHER' ? 'active' : ''}`} onClick={() => setActiveFilter('OTHER')}>🎒 Autres</button>
         </div>
       </div>
 
       <div className="shop-grid compact">
         {isLoading && <p className="shop-loading">Chargement...</p>}
-        {items?.data
-          ?.filter((item: any) => {
-            if (activeFilter === 'ALL') return true;
-            if (activeFilter === 'WEAPON' && item.type === 'WEAPON') return true;
-            if (
-              activeFilter === 'ARMOR' &&
-              ['ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(item.type)
-            )
-              return true;
-            if (
-              activeFilter === 'OTHER' &&
-              !['WEAPON', 'ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(item.type)
-            )
-              return true;
-            return false;
-          })
-          .map((item: any) => {
-            const inSeed = isSeedItem(item.family);
-            const price = item.shopPrice ?? 0;
-            const visual = getItemVisualMeta(item);
-            return (
-              <div
-                key={item.id}
-                className={`shop-item-card compact ${!inSeed ? 'out-of-seed' : ''}`}
-              >
-                <div className="shop-item-visual">
-                  {visual.iconPath ? (
-                    <img src={visual.iconPath} alt={item.name} />
-                  ) : (
-                    <span className="shop-item-emoji">{visual.icon}</span>
-                  )}
+        {items?.data?.filter((item: any) => {
+          if (activeFilter === 'ALL') return true;
+          if (activeFilter === 'WEAPON' && item.type === 'WEAPON') return true;
+          if (activeFilter === 'ARMOR' && ['ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(item.type)) return true;
+          if (activeFilter === 'OTHER' && !['WEAPON', 'ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(item.type)) return true;
+          return false;
+        }).map((item: any) => {
+          const inSeed = isSeedItem(item.family);
+          const price = item.shopPrice ?? 0;
+          const visual = getItemVisualMeta(item);
+          return (
+            <div key={item.id} className={`shop-item-card compact ${!inSeed ? 'out-of-seed' : ''}`}>
+              <div className="shop-item-visual">
+                {visual.iconPath ? (
+                  <img src={visual.iconPath} alt={item.name} />
+                ) : (
+                  <span className="shop-item-emoji">{visual.icon}</span>
+                )}
+              </div>
+
+              <div className="shop-item-content">
+                <div className="shop-item-type">{item.type}</div>
+                <h3 className="shop-item-name">{item.name}</h3>
+                
+                <div className="shop-item-stats-compact">
+                  {renderStats(item.statsBonus) || 'Pas de bonus'}
                 </div>
 
-                <div className="shop-item-content">
-                  <div className="shop-item-type">{item.type}</div>
-                  <h3 className="shop-item-name">{item.name}</h3>
-
-                  <div className="shop-item-stats-compact">
-                    {renderStats(item.statsBonus) || 'Pas de bonus'}
-                  </div>
-
-                  <div className="shop-item-footer">
-                    <p className="shop-item-price">💰 {item.shopPrice} Po</p>
-                    <button
-                      type="button"
-                      className="shop-buy-button"
-                      onClick={() => buyMutation.mutate({ itemId: item.id, quantity: 1 })}
-                      disabled={buyMutation.isPending || spendableGold < price}
-                    >
-                      {buyMutation.isPending
-                        ? 'Achat...'
-                        : spendableGold < price
-                          ? 'Or insuffisant'
-                          : 'Acheter'}
-                    </button>
-                  </div>
+                <div className="shop-item-footer">
+                  <p className="shop-item-price">💰 {item.shopPrice} Po</p>
+                  <button
+                    type="button"
+                    className="shop-buy-button"
+                    onClick={() => buyMutation.mutate({ itemId: item.id, quantity: 1 })}
+                    disabled={buyMutation.isPending || spendableGold < price}
+                  >
+                    {buyMutation.isPending ? 'Achat...' : spendableGold < price ? 'Or insuffisant' : 'Acheter'}
+                  </button>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

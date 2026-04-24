@@ -3,6 +3,7 @@ import { RedisService } from '../shared/redis/redis.service';
 import { MATCHMAKING_QUEUE_LOCK_KEY } from '../shared/security/security.constants';
 import { MatchmakingQueueStore } from '../shared/security/matchmaking-queue.store';
 import { SessionSecurityService } from '../shared/security/session-security.service';
+import { PerfStatsService } from '../shared/perf/perf-stats.service';
 import { GameSessionService } from './game-session.service';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class MatchmakingService {
     private readonly matchmakingQueue: MatchmakingQueueStore,
     private readonly gameSessionService: GameSessionService,
     private readonly sessionSecurity: SessionSecurityService,
+    private readonly perfStats: PerfStatsService,
   ) {}
 
   async joinQueue(playerId: string) {
@@ -40,6 +42,12 @@ export class MatchmakingService {
       if (!p1 || !p2) {
         return { status: 'searching' };
       }
+
+      const now = Date.now();
+      const p1Score = await this.matchmakingQueue.getScore(p1);
+      const p2Score = await this.matchmakingQueue.getScore(p2);
+      if (p1Score !== null) this.perfStats.recordGameMetric('game.matchmaking', 'wait', now - p1Score);
+      if (p2Score !== null) this.perfStats.recordGameMetric('game.matchmaking', 'wait', now - p2Score);
 
       await this.matchmakingQueue.remove(p1, p2);
       const session = await this.gameSessionService.createSession(p1, p2);

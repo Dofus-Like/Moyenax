@@ -26,15 +26,7 @@ function seededRandom(seed: number): number {
 /**
  * TreeModel – Affiche un arbre FBX avec sa texture et correction de position
  */
-function TreeModel({
-  url,
-  rotationY,
-  texture,
-}: {
-  url: string;
-  rotationY: number;
-  texture: THREE.Texture;
-}) {
+function TreeModel({ url, rotationY, texture }: { url: string; rotationY: number; texture: THREE.Texture }) {
   const fbx = useFBX(url);
 
   const { clonedTree, offset } = useMemo(() => {
@@ -54,7 +46,7 @@ function TreeModel({
 
         if (mesh.material) {
           const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          mats.forEach((m) => {
+          mats.forEach(m => {
             // Appliquer la texture PNG
             if ('map' in m) {
               (m as any).map = texture;
@@ -70,7 +62,7 @@ function TreeModel({
 
     return {
       clonedTree: clone,
-      offset: [-center.x, -bottom, -center.z] as [number, number, number],
+      offset: [-center.x, -bottom, -center.z] as [number, number, number]
     };
   }, [fbx, texture]);
 
@@ -96,5 +88,5 @@ export function Tree({ position, scale = 0.35, seed = 0 }: TreeProps) {
 }
 
 // Pré-chargement
-TREE_URLS.forEach((url) => useFBX.preload(url));
+TREE_URLS.forEach(url => useFBX.preload(url));
 useTexture.preload(TEXTURE_PATH);

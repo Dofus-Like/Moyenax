@@ -1,11 +1,11 @@
 import React, { Suspense, useMemo } from 'react';
-import {
-  CombatPlayer,
-  GameMap,
-  PathNode,
-  TerrainType,
-  TERRAIN_PROPERTIES,
-  CombatTerrainType,
+import { 
+  CombatPlayer, 
+  GameMap, 
+  PathNode, 
+  TerrainType, 
+  TERRAIN_PROPERTIES, 
+  CombatTerrainType 
 } from '@game/shared-types';
 import { TerrainTile } from '../ResourceMap/TerrainTile';
 import { TileHoverEffect } from '../ResourceMap/TileHoverEffect';
@@ -27,56 +27,54 @@ interface TerrainLayerProps {
   tileRadius?: number;
 }
 
-export const TerrainLayer = React.memo(
-  ({ map, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius }: TerrainLayerProps) => {
-    const decorations = useMemo(() => {
-      const result: React.ReactElement[] = [];
+export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius }: TerrainLayerProps) => {
+  const decorations = useMemo(() => {
+    const result: React.ReactElement[] = [];
 
-      for (let y = 0; y < map.height; y++) {
-        for (let x = 0; x < map.width; x++) {
-          const terrain = map.grid[y][x] as TerrainType;
-          const props = TERRAIN_PROPERTIES[terrain];
+    for (let y = 0; y < map.height; y++) {
+      for (let x = 0; x < map.width; x++) {
+        const terrain = map.grid[y][x] as TerrainType;
+        const props = TERRAIN_PROPERTIES[terrain];
 
-          // Check if this decoration is now handled by InstancedFoliage
-          const isInstancedFoliage =
-            (props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD) ||
-            (props.combatType === CombatTerrainType.FLAT &&
-              props.harvestable &&
-              terrain === TerrainType.HERB);
+        // Check if this decoration is now handled by InstancedFoliage
+        const isInstancedFoliage = (props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD) || 
+                                   (props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain === TerrainType.HERB);
 
-          // Only render TerrainTile if it has non-ground decorations that are NOT instanced foliage
-          if (
-            !isInstancedFoliage &&
-            (props.combatType !== CombatTerrainType.FLAT || props.harvestable)
-          ) {
-            result.push(
-              <TerrainTile key={x + '-' + y} x={x} y={y} terrain={terrain} gridSize={map.width} />,
-            );
-          }
+        // Only render TerrainTile if it has non-ground decorations that are NOT instanced foliage
+        if (!isInstancedFoliage && (props.combatType !== CombatTerrainType.FLAT || props.harvestable)) {
+          result.push(
+            <TerrainTile 
+              key={x + '-' + y} 
+              x={x} 
+              y={y} 
+              terrain={terrain} 
+              gridSize={map.width} 
+            />
+          );
         }
       }
+    }
 
-      return result;
-    }, [map]);
+    return result;
+  }, [map]);
 
-    return (
-      <group>
-        <InstancedTerrain
-          map={map}
-          checkerColorA={checkerColorA}
-          checkerColorB={checkerColorB}
-          sideColor={sideColor}
-          tileSize={tileSize}
-          tileRadius={tileRadius}
-        />
-        <Suspense fallback={null}>
-          <InstancedFoliage map={map} />
-        </Suspense>
-        {decorations}
-      </group>
-    );
-  },
-);
+  return (
+    <group>
+      <InstancedTerrain 
+        map={map}
+        checkerColorA={checkerColorA}
+        checkerColorB={checkerColorB}
+        sideColor={sideColor}
+        tileSize={tileSize}
+        tileRadius={tileRadius}
+      />
+      <Suspense fallback={null}>
+        <InstancedFoliage map={map} />
+      </Suspense>
+      {decorations}
+    </group>
+  );
+});
 
 interface HoverLayerProps {
   hoveredTile: { x: number; y: number } | null;
@@ -134,9 +132,7 @@ export const UnifiedMapOverlayLayer = React.memo(
           <CombatHighlightsLayer
             reachableTiles={selectedSpellId ? [] : reachableTiles}
             spellRangeTiles={spellRangeTiles}
-            pathTarget={
-              combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null
-            }
+            pathTarget={combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null}
             gridSize={map.width}
             tileSize={tileSize}
             pmColor={pmColor}
@@ -145,13 +141,9 @@ export const UnifiedMapOverlayLayer = React.memo(
           />
         )}
 
+
         {mode === 'combat' && isMyTurn && currentUserId && !playerPaths[currentUserId] && (
-          <PathPreview
-            path={combatPreviewPath}
-            gridSize={map.width}
-            tileSize={tileSize}
-            color={pmColor}
-          />
+          <PathPreview path={combatPreviewPath} gridSize={map.width} tileSize={tileSize} color={pmColor} />
         )}
       </Suspense>
     );
@@ -213,9 +205,7 @@ export const PlayersLayer = React.memo(
       <>
         {combatPlayers.map((player) => {
           const position = visualPositions[player.playerId] || player.position;
-          const opponent = combatPlayers.find(
-            (candidate) => candidate.playerId !== player.playerId,
-          );
+          const opponent = combatPlayers.find((candidate) => candidate.playerId !== player.playerId);
           const opponentPosition = opponent
             ? visualPositions[opponent.playerId] || opponent.position
             : null;

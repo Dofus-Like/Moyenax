@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await authApi.updateSkin(skin);
       const player = get().player;
       if (player) {
-        set({ player: { ...player, skin } });
+         set({ player: { ...player, skin } });
       }
     } catch (err) {
       console.error('Failed to update skin', err);

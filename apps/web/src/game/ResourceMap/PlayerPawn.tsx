@@ -37,44 +37,26 @@ function toWorld(gx: number, gy: number, gridSize: number): [number, number, num
 }
 
 export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
-  (
-    {
-      gridPosition,
-      gridSize,
-      path,
-      onPathComplete,
-      playerData,
-      lookAtPosition,
-      isJumping,
-      onTileReached,
-      mode = 'farming',
-    },
-    ref,
-  ) => {
+  ({ gridPosition, gridSize, path, onPathComplete, playerData, lookAtPosition, isJumping, onTileReached, mode = 'farming' }, ref) => {
     const groupRef = useRef<THREE.Group>(null);
     const spriteRef = useRef<THREE.Sprite>(null);
     const { camera } = useThree();
-
+    
     const [isMoving, setIsMoving] = useState(false);
     const [isAttacking, setIsAttacking] = useState(false);
-
+    
     const [currentPath, setCurrentPath] = useState<PathNode[]>([]);
     const [pathIndex, setPathIndex] = useState(0);
-
+    
     const progressRef = useRef(0);
     const animFrameRef = useRef(0);
     const frameCounterRef = useRef(0);
 
-    const fromRef = useRef<[number, number, number]>(
-      toWorld(gridPosition.x, gridPosition.y, gridSize),
-    );
-    const toRef = useRef<[number, number, number]>(
-      toWorld(gridPosition.x, gridPosition.y, gridSize),
-    );
+    const fromRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
+    const toRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
 
     const skinConfig = useMemo(() => {
-      if (playerData?.skin === 'menhir')
-        return { id: 'menhir', name: 'Menhir', type: 'menhir', hue: 0, saturation: 1 };
+      if (playerData?.skin === 'menhir') return { id: 'menhir', name: 'Menhir', type: 'menhir', hue: 0, saturation: 1 };
       return getSkinById(playerData?.skin || 'soldier-classic');
     }, [playerData?.skin]);
 
@@ -83,8 +65,8 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
 
     // Charger et isoler les textures (Seulement si ce n'est pas une invocation sans sprites)
     const skipSprites = isSummon && spriteType === 'menhir';
-
-    // On utilise un try/catch ou un fallback pour le loader en React-Three-Fiber est complexe,
+    
+    // On utilise un try/catch ou un fallback pour le loader en React-Three-Fiber est complexe, 
     // on va plutôt utiliser des chemins valides (soldier par défaut) si on skip.
     const pathPrefix = skipSprites ? 'soldier' : spriteType;
     const texIdle = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/idle.png`);
@@ -92,19 +74,18 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
     const texAttack = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/attack.png`);
 
     const { textureIdle, textureWalk, textureAttack } = useMemo(() => {
-      if (skipSprites)
-        return { textureIdle: texIdle, textureWalk: texWalk, textureAttack: texAttack };
+      if (skipSprites) return { textureIdle: texIdle, textureWalk: texWalk, textureAttack: texAttack };
       const tIdle = texIdle.clone();
       const tWalk = texWalk.clone();
       const tAttack = texAttack.clone();
-
+      
       // Config Idle (6 frames)
       tIdle.magFilter = tIdle.minFilter = THREE.NearestFilter;
       tIdle.generateMipmaps = false;
       tIdle.colorSpace = THREE.SRGBColorSpace;
       tIdle.wrapS = tIdle.wrapT = THREE.ClampToEdgeWrapping;
       tIdle.repeat.set(1 / IDLE_FRAMES, 1);
-
+      
       // Config Walk (8 frames)
       tWalk.magFilter = tWalk.minFilter = THREE.NearestFilter;
       tWalk.generateMipmaps = false;
@@ -118,37 +99,34 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
       tAttack.colorSpace = THREE.SRGBColorSpace;
       tAttack.wrapS = tAttack.wrapT = THREE.ClampToEdgeWrapping;
       tAttack.repeat.set(1 / ATTACK_FRAMES, 1);
-
+      
       tIdle.needsUpdate = true;
       tWalk.needsUpdate = true;
       tAttack.needsUpdate = true;
-
+      
       return { textureIdle: tIdle, textureWalk: tWalk, textureAttack: tAttack };
     }, [texIdle, texWalk, texAttack]);
 
     // Uniforms pour le shader de couleur
-    const uniforms = useMemo(
-      () => ({
+    const uniforms = useMemo(() => ({
         uHue: { value: (skinConfig.hue * Math.PI) / 180 },
-        uSat: { value: skinConfig.saturation },
-      }),
-      [skinConfig],
-    );
+        uSat: { value: skinConfig.saturation }
+    }), [skinConfig]);
 
     // Memoïser le matériau pour éviter les fuites WebGL et les recompilations massives
     const spriteMaterial = useMemo(() => {
-      const mat = new THREE.SpriteMaterial({
-        map: textureIdle,
-        transparent: true,
-        alphaTest: 0.5,
-        precision: 'highp',
-      });
+        const mat = new THREE.SpriteMaterial({
+            map: textureIdle,
+            transparent: true,
+            alphaTest: 0.5,
+            precision: 'highp',
+        });
+        
+        mat.onBeforeCompile = (shader: any) => {
+            shader.uniforms.uHue = uniforms.uHue;
+            shader.uniforms.uSat = uniforms.uSat;
 
-      mat.onBeforeCompile = (shader: any) => {
-        shader.uniforms.uHue = uniforms.uHue;
-        shader.uniforms.uSat = uniforms.uSat;
-
-        shader.fragmentShader = `
+            shader.fragmentShader = `
                 uniform float uHue;
                 uniform float uSat;
                 vec3 applyHue(vec3 rgb, float hueOffset) {
@@ -162,27 +140,27 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
                 }
                 ${shader.fragmentShader}
             `.replace(
-          '#include <map_fragment>',
-          `
+                '#include <map_fragment>',
+                `
                 #ifdef USE_MAP
                     vec4 texelColor = texture2D( map, vMapUv );
                     texelColor.rgb = applyHue(texelColor.rgb, uHue);
                     texelColor.rgb = applySat(texelColor.rgb, uSat);
                     diffuseColor *= texelColor;
                 #endif
-                `,
-        );
-      };
-      mat.customProgramCacheKey = () => `pawn-mat-${skinConfig.id}`;
-      return mat;
+                `
+            );
+        };
+        mat.customProgramCacheKey = () => `pawn-mat-${skinConfig.id}`;
+        return mat;
     }, [textureIdle, skinConfig.id, uniforms]);
 
     // Update du map du mat en fonction de l'état (marche/attaque)
     useEffect(() => {
-      if (isAttacking) spriteMaterial.map = textureAttack;
-      else if (isMoving) spriteMaterial.map = textureWalk;
-      else spriteMaterial.map = textureIdle;
-      spriteMaterial.needsUpdate = true;
+        if (isAttacking) spriteMaterial.map = textureAttack;
+        else if (isMoving) spriteMaterial.map = textureWalk;
+        else spriteMaterial.map = textureIdle;
+        spriteMaterial.needsUpdate = true;
     }, [isAttacking, isMoving, textureIdle, textureWalk, textureAttack, spriteMaterial]);
 
     // Exposer triggerAttack
@@ -191,18 +169,14 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
         setIsAttacking(true);
         animFrameRef.current = 0;
         frameCounterRef.current = 0;
-      },
+      }
     }));
 
     useEffect(() => {
       if (path && path.length > 0) {
-        const myWorld = groupRef.current
-          ? ([groupRef.current.position.x, 0, groupRef.current.position.z] as [
-              number,
-              number,
-              number,
-            ])
-          : toWorld(gridPosition.x, gridPosition.y, gridSize);
+        const myWorld = groupRef.current 
+            ? [groupRef.current.position.x, 0, groupRef.current.position.z] as [number, number, number]
+            : toWorld(gridPosition.x, gridPosition.y, gridSize);
 
         setCurrentPath(path);
         setIsMoving(true);
@@ -211,19 +185,19 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
 
         // Chercher la première vraie destination (différente du point actuel)
         let nextIdx = 0;
-        while (nextIdx < path.length) {
-          const pt = toWorld(path[nextIdx].x, path[nextIdx].y, gridSize);
-          const dSquare = (pt[0] - myWorld[0]) ** 2 + (pt[2] - myWorld[2]) ** 2;
-          if (dSquare > 0.01) break; // Assez loin
-          nextIdx++;
+        while(nextIdx < path.length) {
+            const pt = toWorld(path[nextIdx].x, path[nextIdx].y, gridSize);
+            const dSquare = (pt[0]-myWorld[0])**2 + (pt[2]-myWorld[2])**2;
+            if (dSquare > 0.01) break; // Assez loin
+            nextIdx++;
         }
 
         if (nextIdx < path.length) {
-          setPathIndex(nextIdx);
-          toRef.current = toWorld(path[nextIdx].x, path[nextIdx].y, gridSize);
+            setPathIndex(nextIdx);
+            toRef.current = toWorld(path[nextIdx].x, path[nextIdx].y, gridSize);
         } else {
-          setIsMoving(false);
-          setPathIndex(0);
+            setIsMoving(false);
+            setPathIndex(0);
         }
       }
     }, [path]);
@@ -241,88 +215,88 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
         activeTex = textureWalk;
       }
 
-      const currentAnimSpeed = mode === 'farming' ? FARMING_ANIM_SPEED : COMBAT_ANIM_SPEED;
-      frameCounterRef.current += delta * (isAttacking ? currentAnimSpeed * 0.8 : currentAnimSpeed);
-      if (frameCounterRef.current >= 1) {
-        if (isAttacking) {
-          animFrameRef.current++;
-          if (animFrameRef.current >= frames) {
-            setIsAttacking(false);
-            animFrameRef.current = 0;
+          const currentAnimSpeed = mode === 'farming' ? FARMING_ANIM_SPEED : COMBAT_ANIM_SPEED;
+          frameCounterRef.current += delta * (isAttacking ? currentAnimSpeed * 0.8 : currentAnimSpeed);
+          if (frameCounterRef.current >= 1) {
+             if (isAttacking) {
+                animFrameRef.current++;
+                if (animFrameRef.current >= frames) {
+                    setIsAttacking(false);
+                    animFrameRef.current = 0;
+                }
+             } else {
+                animFrameRef.current = (animFrameRef.current + 1) % frames;
+             }
+             frameCounterRef.current = 0;
+             
+             if (spriteRef.current) {
+                spriteRef.current.material.map = activeTex;
+                activeTex.offset.x = animFrameRef.current / frames;
+             }
           }
-        } else {
-          animFrameRef.current = (animFrameRef.current + 1) % frames;
-        }
-        frameCounterRef.current = 0;
-
-        if (spriteRef.current) {
-          spriteRef.current.material.map = activeTex;
-          activeTex.offset.x = animFrameRef.current / frames;
-        }
-      }
 
       // 2. Déplacement souple
       if (!isMoving || !groupRef.current || currentPath.length === 0) {
-        if (!isMoving && groupRef.current) {
-          const targetPos = toWorld(gridPosition.x, gridPosition.y, gridSize);
-          groupRef.current.position.lerp(new THREE.Vector3(targetPos[0], 0, targetPos[2]), 0.1);
-        }
-      } else {
-        const currentMoveSpeed = mode === 'farming' ? FARMING_MOVE_SPEED : COMBAT_MOVE_SPEED;
-        const nextSpeed = isJumping ? currentMoveSpeed * 1.5 : currentMoveSpeed;
-        progressRef.current += delta * nextSpeed;
-        const t = Math.min(progressRef.current, 1);
-        const x = THREE.MathUtils.lerp(fromRef.current[0], toRef.current[0], t);
-        const z = THREE.MathUtils.lerp(fromRef.current[2], toRef.current[2], t);
-
-        // Arc de saut si besoin
-        let y = 0;
-        if (isJumping) {
-          y = Math.sin(t * Math.PI) * 3.5;
-        }
-
-        groupRef.current.position.set(x, y, z);
-        if (t >= 1) {
-          const nextIndex = pathIndex + 1;
-          if (nextIndex < currentPath.length) {
-            groupRef.current.position.set(toRef.current[0], 0, toRef.current[2]);
-            onTileReached?.(currentPath[pathIndex]);
-            fromRef.current = [...toRef.current];
-            toRef.current = toWorld(currentPath[nextIndex].x, currentPath[nextIndex].y, gridSize);
-            setPathIndex(nextIndex);
-            progressRef.current = 0;
-          } else {
-            groupRef.current.position.set(toRef.current[0], 0, toRef.current[2]);
-            onTileReached?.(currentPath[pathIndex]);
-            setIsMoving(false);
-            setCurrentPath([]);
-            setPathIndex(0);
-            onPathComplete();
+          if (!isMoving && groupRef.current) {
+              const targetPos = toWorld(gridPosition.x, gridPosition.y, gridSize);
+              groupRef.current.position.lerp(new THREE.Vector3(targetPos[0], 0, targetPos[2]), 0.1);
           }
-        }
+      } else {
+          const currentMoveSpeed = mode === 'farming' ? FARMING_MOVE_SPEED : COMBAT_MOVE_SPEED;
+          const nextSpeed = isJumping ? currentMoveSpeed * 1.5 : currentMoveSpeed;
+          progressRef.current += delta * nextSpeed;
+          const t = Math.min(progressRef.current, 1);
+          const x = THREE.MathUtils.lerp(fromRef.current[0], toRef.current[0], t);
+          const z = THREE.MathUtils.lerp(fromRef.current[2], toRef.current[2], t);
+          
+          // Arc de saut si besoin
+          let y = 0;
+          if (isJumping) {
+            y = Math.sin(t * Math.PI) * 3.5;
+          }
+
+          groupRef.current.position.set(x, y, z);
+          if (t >= 1) {
+            const nextIndex = pathIndex + 1;
+            if (nextIndex < currentPath.length) {
+              groupRef.current.position.set(toRef.current[0], 0, toRef.current[2]);
+              onTileReached?.(currentPath[pathIndex]);
+              fromRef.current = [...toRef.current];
+              toRef.current = toWorld(currentPath[nextIndex].x, currentPath[nextIndex].y, gridSize);
+              setPathIndex(nextIndex);
+              progressRef.current = 0;
+            } else {
+              groupRef.current.position.set(toRef.current[0], 0, toRef.current[2]);
+              onTileReached?.(currentPath[pathIndex]);
+              setIsMoving(false);
+              setCurrentPath([]);
+              setPathIndex(0);
+              onPathComplete();
+            }
+          }
       }
 
       // 3. Orientation dynamique (Face-à-Face)
       if (groupRef.current && camera) {
-        const myPos = new THREE.Vector3().setFromMatrixPosition(groupRef.current.matrixWorld);
-        const myScreen = myPos.clone().project(camera);
+          const myPos = new THREE.Vector3().setFromMatrixPosition(groupRef.current.matrixWorld);
+          const myScreen = myPos.clone().project(camera);
 
-        // Cible (adversaire ou centre si solo)
-        let targetX = 0;
-        if (lookAtPosition) {
-          const targetWorld = toWorld(lookAtPosition.x, lookAtPosition.y, gridSize);
-          const targetScreen = new THREE.Vector3(targetWorld[0], 0, targetWorld[2]).project(camera);
-          targetX = targetScreen.x;
-        }
+          // Cible (adversaire ou centre si solo)
+          let targetX = 0; 
+          if (lookAtPosition) {
+             const targetWorld = toWorld(lookAtPosition.x, lookAtPosition.y, gridSize);
+             const targetScreen = new THREE.Vector3(targetWorld[0], 0, targetWorld[2]).project(camera);
+             targetX = targetScreen.x;
+          }
 
-        const isTargetAtRight = targetX > myScreen.x;
-        const isOrc = spriteType === 'orc';
-
-        // L'orc regarde par défaut à gauche, le guerrier à droite
-        const finalFlip = isOrc ? isTargetAtRight : !isTargetAtRight;
-        if (spriteRef.current) {
-          spriteRef.current.scale.x = finalFlip ? -6.0 : 6.0;
-        }
+          const isTargetAtRight = targetX > myScreen.x;
+          const isOrc = spriteType === 'orc';
+          
+          // L'orc regarde par défaut à gauche, le guerrier à droite
+          const finalFlip = isOrc ? isTargetAtRight : !isTargetAtRight;
+          if (spriteRef.current) {
+            spriteRef.current.scale.x = finalFlip ? -6.0 : 6.0;
+          }
       }
     });
 
@@ -338,19 +312,22 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
 
     // Calcul de la vie pour la barre
     const hpPercent = useMemo(() => {
-      if (!playerData?.stats?.vit) return 1;
-      return Math.max(0, Math.min(1, (playerData.currentVit ?? 100) / playerData.stats.vit));
+        if (!playerData?.stats?.vit) return 1;
+        return Math.max(0, Math.min(1, (playerData.currentVit ?? 100) / playerData.stats.vit));
     }, [playerData]);
 
     return (
-      <group ref={groupRef} position={initialWorld}>
+      <group 
+        ref={groupRef} 
+        position={initialWorld}
+      >
         {/* HITBOX invisible (laissée pour d'autres clics éventuels) */}
-        <mesh
-          visible={false}
+        <mesh 
+          visible={false} 
           position={[0, 0.5, 0]}
           userData={{ type: 'player-pawn', playerId: playerData?.playerId }}
         >
-          <boxGeometry args={[1, 1.5, 1]} />
+            <boxGeometry args={[1, 1.5, 1]} />
         </mesh>
 
         <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -360,15 +337,19 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
 
         {isSummon && spriteType === 'menhir' ? (
           <mesh position={[0, 0.4, 0]}>
-            <capsuleGeometry args={[0.3, 0.4, 4, 8]} />
-            <meshStandardMaterial color="#64748b" roughness={0.9} />
+             <capsuleGeometry args={[0.3, 0.4, 4, 8]} />
+             <meshStandardMaterial color="#64748b" roughness={0.9} />
           </mesh>
         ) : (
-          <sprite ref={spriteRef} position={[0, 0.45, 0]} scale={[6, 6, 1]}>
-            <primitive
-              object={spriteMaterial}
-              attach="material"
-              key={`${skinConfig.id}-${spriteType}`}
+          <sprite 
+            ref={spriteRef} 
+            position={[0, 0.45, 0]} 
+            scale={[6, 6, 1]}
+          >
+            <primitive 
+                object={spriteMaterial} 
+                attach="material" 
+                key={`${skinConfig.id}-${spriteType}`}
             />
           </sprite>
         )}
@@ -382,12 +363,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
             </RoundedBox>
 
             {/* Fond Arrondi (Pill shape) */}
-            <RoundedBox
-              position={[0, 0, 0.01]}
-              args={[1.5, 0.16, 0.01]}
-              radius={0.08}
-              smoothness={4}
-            >
+            <RoundedBox position={[0, 0, 0.01]} args={[1.5, 0.16, 0.01]} radius={0.08} smoothness={4}>
               <meshBasicMaterial color="#0f172a" />
             </RoundedBox>
 
@@ -416,5 +392,5 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
         )}
       </group>
     );
-  },
+  }
 );

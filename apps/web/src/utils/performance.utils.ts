@@ -15,12 +15,12 @@ export function updateInstanceMatrix(
   y: number,
   z: number,
   scale: number = 1,
-  rotationY: number = 0,
+  rotationY: number = 0
 ) {
   tempPosition.set(x, y, z);
   tempRotation.set(0, rotationY, 0);
   tempScale.set(scale, scale, scale);
-
+  
   tempMatrix.compose(tempPosition, new THREE.Quaternion().setFromEuler(tempRotation), tempScale);
   mesh.setMatrixAt(index, tempMatrix);
 }
@@ -38,5 +38,9 @@ export function worldToGrid(point: THREE.Vector3, gridSize: number): { x: number
  * Calculates world position from grid coordinates
  */
 export function gridToWorld(x: number, z: number, gridSize: number): [number, number, number] {
-  return [x - gridSize / 2 + 0.5, 0, z - gridSize / 2 + 0.5];
+  return [
+    x - gridSize / 2 + 0.5,
+    0,
+    z - gridSize / 2 + 0.5
+  ];
 }

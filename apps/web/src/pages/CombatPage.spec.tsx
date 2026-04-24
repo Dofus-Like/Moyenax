@@ -36,9 +36,9 @@ vi.mock('@react-three/fiber', () => ({
   useLoader: vi.fn(),
   useThree: () => ({
     viewport: { width: 100, height: 100 },
-    camera: {
-      position: new THREE.Vector3(),
-      getWorldDirection: vi.fn().mockReturnValue(new THREE.Vector3()),
+    camera: { 
+      position: new THREE.Vector3(), 
+      getWorldDirection: vi.fn().mockReturnValue(new THREE.Vector3()) 
     },
   }),
   useFrame: vi.fn(),

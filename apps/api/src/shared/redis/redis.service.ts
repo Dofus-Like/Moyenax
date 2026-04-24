@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { performance } from 'node:perf_hooks';
 import Redis from 'ioredis';
 import { PerfLoggerService } from '../perf/perf-logger.service';
+import { PerfStatsService } from '../perf/perf-stats.service';
 
 @Injectable()
 export class RedisService {
@@ -11,12 +12,13 @@ export class RedisService {
   constructor(
     private readonly config: ConfigService,
     private readonly perfLogger: PerfLoggerService,
+    private readonly perfStats: PerfStatsService,
   ) {
     this.client = new Redis(this.config.get<string>('REDIS_URL', 'redis://localhost:6379'));
   }
 
   async get(key: string): Promise<string | null> {
-    return this.measure('get', key, () => this.client.get(key));
+    return this.measure('get', key, () => this.client.get(key), (value) => value !== null);
   }
 
   async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
@@ -127,20 +129,34 @@ export class RedisService {
     return this.measure('ping', 'health:ping', () => this.client.ping());
   }
 
-  private async measure<T>(operation: string, key: string, callback: () => Promise<T>): Promise<T> {
+  private async measure<T>(
+    operation: string,
+    key: string,
+    callback: () => Promise<T>,
+    hitFn?: (result: T) => boolean,
+  ): Promise<T> {
     const startedAt = performance.now();
+    let result: T;
     try {
-      return await callback();
+      result = await callback();
+      return result;
     } finally {
-      this.perfLogger.logDuration(
-        'redis',
-        `${operation}:${this.getKeyPrefix(key)}`,
-        performance.now() - startedAt,
-        {
-          redis_op: operation,
-          key_prefix: this.getKeyPrefix(key),
-        },
-      );
+      const durationMs = performance.now() - startedAt;
+      const prefix = this.getKeyPrefix(key);
+      let hit: boolean | undefined;
+      if (hitFn) {
+        try {
+          hit = hitFn(result!);
+        } catch {
+          hit = undefined;
+        }
+      }
+      this.perfStats.recordRedis(operation, prefix, durationMs, hit);
+      this.perfLogger.logDuration('redis', `${operation}:${prefix}`, durationMs, {
+        redis_op: operation,
+        key_prefix: prefix,
+        ...(hit !== undefined ? { hit } : {}),
+      });
     }
   }
 

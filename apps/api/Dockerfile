@@ -55,6 +55,11 @@ COPY --from=builder /app/apps/api/prisma ./prisma
 COPY --from=builder /app/apps/api/scripts ./scripts
 COPY --from=builder /tmp/seed-build ./seed-build
 
+ARG BUILD_SHA=unknown
+ARG BUILD_TIME=unknown
+ENV BUILD_SHA=${BUILD_SHA}
+ENV BUILD_TIME=${BUILD_TIME}
+
 EXPOSE 3000
 
 CMD ["node", "dist/main.js"]

@@ -22,10 +22,10 @@ export function CombatPlayerPanel({ playerId, side }: CombatPlayerPanelProps) {
   const showMannequins = useCombatStore((s) => s.showMannequins);
   const toggleShowMannequins = useCombatStore((s) => s.toggleShowMannequins);
   const surrender = useCombatStore((s) => s.surrender);
-
+  
   const user = useAuthStore((s) => s.player);
   const isMe = user?.id === playerId;
-
+  
   const player = combatState?.players[playerId];
   if (!player) return null;
 
@@ -52,11 +52,9 @@ export function CombatPlayerPanel({ playerId, side }: CombatPlayerPanelProps) {
         {/* AVATAR & RESOURCES */}
         <div className="portrait-wrapper">
           <div className={`portrait-circle ${isMyTurn ? 'pulse' : ''}`}>
-            <div
+            <div 
               className={`portrait-image avatar-${avatarClass}`}
-              style={{
-                filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})`,
-              }}
+              style={{ filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` }}
             />
           </div>
         </div>
@@ -67,20 +65,18 @@ export function CombatPlayerPanel({ playerId, side }: CombatPlayerPanelProps) {
             <span className="player-name">{player.username}</span>
             {isMe && <span className="me-badge">VOUS</span>}
           </div>
-
+          
           <div className="hp-container">
             <div className="hp-bar">
               <div className="hp-fill" style={{ width: `${Math.max(0, hpPercent)}%` }} />
             </div>
-
+            
             <div className="hp-values-row">
               <div className="resources-row">
                 <div className="res-minimal pa">{player.remainingPa}</div>
                 <div className="res-minimal pm">{player.remainingPm}</div>
               </div>
-              <span className="hp-text">
-                {player.currentVit} / {player.stats.vit} PV
-              </span>
+              <span className="hp-text">{player.currentVit} / {player.stats.vit} PV</span>
             </div>
           </div>
         </div>
@@ -92,15 +88,15 @@ export function CombatPlayerPanel({ playerId, side }: CombatPlayerPanelProps) {
           <button className="util-btn surrender" onClick={() => surrender()} title="Surrender">
             🏳️ Quitter
           </button>
-          <button
-            className={`util-btn ${showEnemyHp ? 'active' : ''}`}
+          <button 
+            className={`util-btn ${showEnemyHp ? 'active' : ''}`} 
             onClick={() => toggleShowEnemyHp()}
             title="Toggle HP"
           >
             👁 HP
           </button>
-          <button
-            className={`util-btn ${showMannequins ? 'active' : ''}`}
+          <button 
+            className={`util-btn ${showMannequins ? 'active' : ''}`} 
             onClick={() => toggleShowMannequins()}
             title="Toggle Mannequins"
           >
@@ -114,11 +110,7 @@ export function CombatPlayerPanel({ playerId, side }: CombatPlayerPanelProps) {
         <div className="equipment-grid">
           {player.items && player.items.length > 0 ? (
             player.items.map((it: any) => (
-              <div
-                key={it.id}
-                className={`eq-item rank-${it.rank || 1}`}
-                title={it.description || ''}
-              >
+              <div key={it.id} className={`eq-item rank-${it.rank || 1}`} title={it.description || ''}>
                 <span className="eq-name">{it.name}</span>
               </div>
             ))
@@ -126,24 +118,12 @@ export function CombatPlayerPanel({ playerId, side }: CombatPlayerPanelProps) {
             <div className="eq-empty">Aucun équipement</div>
           )}
         </div>
-
+        
         <div className="stats-grid">
-          <div className="stat-box">
-            <span>ATK</span>
-            <strong>{player.stats.atk}</strong>
-          </div>
-          <div className="stat-box">
-            <span>DEF</span>
-            <strong>{player.stats.def}</strong>
-          </div>
-          <div className="stat-box">
-            <span>MAG</span>
-            <strong>{player.stats.mag}</strong>
-          </div>
-          <div className="stat-box">
-            <span>RES</span>
-            <strong>{player.stats.res}</strong>
-          </div>
+          <div className="stat-box"><span>ATK</span><strong>{player.stats.atk}</strong></div>
+          <div className="stat-box"><span>DEF</span><strong>{player.stats.def}</strong></div>
+          <div className="stat-box"><span>MAG</span><strong>{player.stats.mag}</strong></div>
+          <div className="stat-box"><span>RES</span><strong>{player.stats.res}</strong></div>
         </div>
       </div>
 

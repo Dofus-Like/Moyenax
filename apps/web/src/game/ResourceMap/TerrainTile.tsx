@@ -48,14 +48,14 @@ function WallObstacle({
   const isMetal = terrain === TerrainType.IRON || terrain === TerrainType.GOLD;
   const isCrystal = terrain === TerrainType.CRYSTAL;
 
-  const metalness = isMetal ? 0.8 : isCrystal ? 0.3 : 0.1;
-  const roughness = isMetal ? 0.4 : isCrystal ? 0.2 : 0.7;
+  const metalness = isMetal ? 0.8 : (isCrystal ? 0.3 : 0.1);
+  const roughness = isMetal ? 0.4 : (isCrystal ? 0.2 : 0.7);
 
   const [x, , z] = position;
 
   const leftEdge = neighbors?.left ? -0.5 : -0.35;
   const rightEdge = neighbors?.right ? 0.5 : 0.35;
-  const topEdge = neighbors?.top ? -0.5 : -0.35;
+  const topEdge = neighbors?.top ? -0.5 : -0.35; 
   const bottomEdge = neighbors?.bottom ? 0.5 : 0.35;
 
   const width = rightEdge - leftEdge;
@@ -63,27 +63,21 @@ function WallObstacle({
   const offsetX = (leftEdge + rightEdge) / 2;
   const offsetZ = (topEdge + bottomEdge) / 2;
 
-  const hasNeighbors = !!(
-    neighbors?.top ||
-    neighbors?.bottom ||
-    neighbors?.left ||
-    neighbors?.right
-  );
+  const hasNeighbors = !!(neighbors?.top || neighbors?.bottom || neighbors?.left || neighbors?.right);
   const isWood = terrain === TerrainType.WOOD;
 
   return (
-    <mesh
-      position={[x + offsetX, height / 2, z + offsetZ]}
-      castShadow
-      receiveShadow
-      raycast={() => null}
-    >
+    <mesh position={[x + offsetX, height / 2, z + offsetZ]} castShadow receiveShadow raycast={() => null}>
       {isWood && !hasNeighbors ? (
         <cylinderGeometry args={[0.35, 0.35, height, 8]} />
       ) : (
         <boxGeometry args={[width, height, depth]} />
       )}
-      <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} />
+      <meshStandardMaterial 
+        color={color} 
+        metalness={metalness}
+        roughness={roughness}
+      />
     </mesh>
   );
 }
@@ -107,7 +101,11 @@ function FlatResource({ position, color }: { position: [number, number, number];
   return (
     <mesh position={[position[0], 0.08, position[2]]} castShadow receiveShadow raycast={() => null}>
       <cylinderGeometry args={[0.25, 0.25, 0.08, 16]} />
-      <meshStandardMaterial color={color} metalness={0.1} roughness={0.8} />
+      <meshStandardMaterial 
+        color={color}
+        metalness={0.1}
+        roughness={0.8}
+      />
     </mesh>
   );
 }
@@ -116,35 +114,41 @@ function FlatResource({ position, color }: { position: [number, number, number];
  * TerrainTile now ONLY renders visual decorations.
  * Interaction is delegated to the unified 'map-hit-plane' for 100% precision and performance.
  */
-export const TerrainTile = React.memo(
-  ({ x, y, terrain, gridSize, neighbors }: TerrainTileProps) => {
-    const colors = TERRAIN_COLORS[terrain];
-    const props = TERRAIN_PROPERTIES[terrain];
+export const TerrainTile = React.memo(({ 
+  x, y, terrain, gridSize, neighbors 
+}: TerrainTileProps) => {
+  const colors = TERRAIN_COLORS[terrain];
+  const props = TERRAIN_PROPERTIES[terrain];
 
-    const worldX = x - gridSize / 2 + 0.5;
-    const worldZ = y - gridSize / 2 + 0.5;
-    const pos: [number, number, number] = [worldX, 0, worldZ];
+  const worldX = x - gridSize / 2 + 0.5;
+  const worldZ = y - gridSize / 2 + 0.5;
+  const pos: [number, number, number] = [worldX, 0, worldZ];
 
-    return (
-      <group userData={{ x, y, terrain, type: 'decoration' }}>
-        {props.combatType === CombatTerrainType.WALL && terrain !== TerrainType.WOOD && (
-          <WallObstacle
-            position={pos}
-            color={colors.base}
-            height={0.6}
-            terrain={terrain}
-            neighbors={neighbors}
-          />
-        )}
+  return (
+    <group userData={{ x, y, terrain, type: 'decoration' }}>
+      {props.combatType === CombatTerrainType.WALL && terrain !== TerrainType.WOOD && (
+        <WallObstacle
+          position={pos}
+          color={colors.base}
+          height={0.6}
+          terrain={terrain}
+          neighbors={neighbors}
+        />
+      )}
 
-        {props.combatType === CombatTerrainType.HOLE && (
-          <HoleTerrain position={pos} color={colors.base} />
-        )}
+      {props.combatType === CombatTerrainType.HOLE && (
+        <HoleTerrain
+          position={pos}
+          color={colors.base}
+        />
+      )}
 
-        {props.combatType === CombatTerrainType.FLAT &&
-          props.harvestable &&
-          terrain !== TerrainType.HERB && <FlatResource position={pos} color={colors.base} />}
-      </group>
-    );
-  },
-);
+      {props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain !== TerrainType.HERB && (
+        <FlatResource
+          position={pos}
+          color={colors.base}
+        />
+      )}
+    </group>
+  );
+});

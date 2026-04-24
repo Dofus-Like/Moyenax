@@ -14,8 +14,6 @@ export const combatApi = {
   startVsAiCombat: () => apiClient.post('/combat/vs-ai'),
   getState: (sessionId: string) => apiClient.get(`/combat/session/${sessionId}`),
   getStreamTicket: (sessionId: string) =>
-    apiClient.post<{ ticket: string; expiresIn: number }>(
-      `/combat/session/${sessionId}/stream-ticket`,
-    ),
+    apiClient.post<{ ticket: string; expiresIn: number }>(`/combat/session/${sessionId}/stream-ticket`),
   getHistory: () => apiClient.get('/combat/history'),
 };

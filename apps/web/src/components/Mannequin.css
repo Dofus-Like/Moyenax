@@ -13,7 +13,7 @@
   width: 250px;
   height: 400px;
   display: grid;
-  grid-template-areas:
+  grid-template-areas: 
     ". head ."
     "w-l chest w-r"
     ". legs ."
@@ -81,22 +81,11 @@
   filter: contrast(1.1) brightness(0.9);
 }
 
+
 /* Grille spécifique */
-.slot-head {
-  grid-area: head;
-}
-.slot-chest {
-  grid-area: chest;
-}
-.slot-legs {
-  grid-area: legs;
-}
-.slot-weapon-left {
-  grid-area: w-l;
-}
-.slot-weapon-right {
-  grid-area: w-r;
-}
-.slot-accessory {
-  grid-area: acc;
-}
+.slot-head { grid-area: head; }
+.slot-chest { grid-area: chest; }
+.slot-legs { grid-area: legs; }
+.slot-weapon-left { grid-area: w-l; }
+.slot-weapon-right { grid-area: w-r; }
+.slot-accessory { grid-area: acc; }

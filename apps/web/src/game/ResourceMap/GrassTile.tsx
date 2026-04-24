@@ -26,7 +26,7 @@ export function GrassTile({ position, seed = 0, scale = 1.0 }: GrassTileProps) {
 
     // Chercher les objets utilisables dans la scène
     const candidates = fullClone.children.filter(
-      (c) => c.type === 'Group' || c.type === 'Object3D' || (c as THREE.Mesh).isMesh,
+      (c) => c.type === 'Group' || c.type === 'Object3D' || (c as THREE.Mesh).isMesh
     );
 
     let models = candidates;
@@ -34,7 +34,7 @@ export function GrassTile({ position, seed = 0, scale = 1.0 }: GrassTileProps) {
     // Si un seul groupe racine, regarder ses enfants
     if (candidates.length === 1 && candidates[0].children.length >= 2) {
       const subCandidates = candidates[0].children.filter(
-        (c) => c.type === 'Group' || c.type === 'Object3D' || (c as THREE.Mesh).isMesh,
+        (c) => c.type === 'Group' || c.type === 'Object3D' || (c as THREE.Mesh).isMesh
       );
       if (subCandidates.length > 0) {
         models = subCandidates;

@@ -10,6 +10,7 @@ const stackName = requiredEnv('STACK_NAME');
 const apiImage = requiredEnv('API_IMAGE');
 const webImage = requiredEnv('WEB_IMAGE');
 const imageTag = requiredEnv('IMAGE_TAG');
+const expectedBuildSha = envOrDefault('EXPECTED_BUILD_SHA', imageTag);
 const jwtSecret = requiredEnv('JWT_SECRET');
 const postgresPassword = requiredEnv('POSTGRES_PASSWORD');
 const stackContainerPrefix = requiredEnv('STACK_CONTAINER_PREFIX');
@@ -24,8 +25,19 @@ const smokeWebUrl = requiredEnv('SMOKE_WEB_URL');
 const jwtExpiresIn = envOrDefault('JWT_EXPIRES_IN', '7d');
 const maxDeployAttempts = Number(envOrDefault('MAX_DEPLOY_ATTEMPTS', '4'));
 const deployRetryDelayMs = Number(envOrDefault('DEPLOY_RETRY_DELAY_MS', '15000'));
-const smokeTimeoutMs = Number(envOrDefault('SMOKE_TIMEOUT_MS', '300000'));
+
+// Version-match polling: waits until /api/v1/version and /version.txt both report the
+// expected SHA. This is what makes the deploy actually reliable — previously the smoke
+// check passed as soon as the OLD containers responded, which gave false greens.
+const versionCheckTimeoutMs = Number(envOrDefault('VERSION_CHECK_TIMEOUT_MS', '600000'));
+const versionCheckIntervalMs = Number(envOrDefault('VERSION_CHECK_INTERVAL_MS', '5000'));
+
+// Functional smoke (health + web root). Only runs after the version match succeeds,
+// so by this point we know we're hitting the new containers.
+const smokeTimeoutMs = Number(envOrDefault('SMOKE_TIMEOUT_MS', '120000'));
 const smokeIntervalMs = Number(envOrDefault('SMOKE_INTERVAL_MS', '5000'));
+
+const rollbackVersionCheckTimeoutMs = Number(envOrDefault('ROLLBACK_VERSION_CHECK_TIMEOUT_MS', '300000'));
 const rollbackSmokeTimeoutMs = Number(envOrDefault('ROLLBACK_SMOKE_TIMEOUT_MS', '180000'));
 const rollbackOnFailure = envOrDefault('ROLLBACK_ON_FAILURE', 'false') === 'true';
 const skipTlsVerify = envOrDefault('PORTAINER_INSECURE', 'true') === 'true';
@@ -34,39 +46,60 @@ if (skipTlsVerify) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 }
 
+const apiVersionUrl = deriveApiVersionUrl(smokeApiUrl);
+const webVersionUrl = deriveWebVersionUrl(smokeWebUrl);
+
 async function main() {
+  logBanner('Deployment starting', {
+    stack: stackName,
+    expectedSha: expectedBuildSha,
+    apiImage: `${apiImage}:${imageTag}`,
+    webImage: `${webImage}:${imageTag}`,
+  });
+
   const composeContent = readFileSync(composeFile, 'utf8');
   const desiredEnv = buildStackEnv();
   const stack = await getStackByName(stackName);
   const rollbackSnapshot = rollbackOnFailure && stack ? await createRollbackSnapshot(stack) : null;
 
+  if (rollbackSnapshot) {
+    console.log(`Rollback snapshot captured for stack '${stackName}'.`);
+  }
+
   try {
-    await deployStack({
-      stack,
-      composeContent,
-      desiredEnv,
+    await deployStack({ stack, composeContent, desiredEnv });
+
+    // Critical: wait for the NEW containers to actually be serving traffic
+    // before we declare success. This is what catches silent redeploy failures
+    // (migration crashed, container OOM, wrong env var, etc.).
+    await verifyBuildSha({
+      expectedSha: expectedBuildSha,
+      timeoutMs: versionCheckTimeoutMs,
     });
 
     await runSmokeChecks(smokeTimeoutMs);
 
-    console.log(`Deployment succeeded for stack '${stackName}'.`);
-    console.log(`API image: ${apiImage}:${imageTag}`);
-    console.log(`Web image: ${webImage}:${imageTag}`);
-    console.log(`API URL  : ${smokeApiUrl}`);
-    console.log(`Web URL  : ${smokeWebUrl}`);
+    logBanner('Deployment succeeded', {
+      stack: stackName,
+      sha: expectedBuildSha,
+      apiUrl: smokeApiUrl,
+      webUrl: smokeWebUrl,
+    });
   } catch (error) {
     const message = toMessage(error);
-    console.error(`Deployment failed for stack '${stackName}': ${message}`);
+    console.error(`::error::Deployment failed for stack '${stackName}': ${message}`);
 
     if (rollbackOnFailure && rollbackSnapshot) {
-      console.log(`Attempting rollback on stack '${stackName}'...`);
+      console.log(`::warning::Attempting rollback on stack '${stackName}'...`);
 
       try {
         await updateStack(getStackId(stack), rollbackSnapshot);
+        // On rollback we don't know the SHA that was running before, so we only
+        // run the functional smoke — we know it's a previously-live config.
         await runSmokeChecks(rollbackSmokeTimeoutMs);
         console.log(`Rollback completed successfully for stack '${stackName}'.`);
       } catch (rollbackError) {
-        console.error(`Rollback failed: ${toMessage(rollbackError)}`);
+        console.error(`::error::Rollback failed: ${toMessage(rollbackError)}`);
       }
     }
 
@@ -95,6 +128,7 @@ async function deployStack({ stack, composeContent, desiredEnv }) {
     try {
       console.log(`Updating stack '${stackName}' (attempt ${attempt}/${maxDeployAttempts})...`);
       await updateStack(getStackId(stack), payload);
+      console.log(`Portainer accepted stack update for '${stackName}'.`);
       return;
     } catch (error) {
       lastError = error;
@@ -103,7 +137,7 @@ async function deployStack({ stack, composeContent, desiredEnv }) {
         throw error;
       }
 
-      console.log(`Portainer update failed with a retryable error: ${toMessage(error)}`);
+      console.log(`::warning::Portainer update failed (retryable): ${toMessage(error)}`);
       console.log(`Waiting ${deployRetryDelayMs}ms before retrying...`);
       await sleep(deployRetryDelayMs);
     }
@@ -165,6 +199,104 @@ async function createRollbackSnapshot(stack) {
   };
 }
 
+async function verifyBuildSha({ expectedSha, timeoutMs }) {
+  console.log(`Waiting for live containers to report SHA ${expectedSha} ...`);
+  console.log(`  API  : ${apiVersionUrl}`);
+  console.log(`  Web  : ${webVersionUrl}`);
+
+  const deadline = Date.now() + timeoutMs;
+  const nextLogAt = { api: 0, web: 0 };
+  let apiMatched = false;
+  let webMatched = false;
+  let lastApiSha = null;
+  let lastWebSha = null;
+  let lastApiError = null;
+  let lastWebError = null;
+
+  while (Date.now() < deadline) {
+    if (!apiMatched) {
+      try {
+        const sha = await fetchApiVersion();
+        lastApiError = null;
+        if (sha && sha === expectedSha) {
+          console.log(`API is live on SHA ${expectedSha}.`);
+          apiMatched = true;
+        } else if (sha !== lastApiSha || Date.now() >= nextLogAt.api) {
+          console.log(`  API currently reports sha=${sha ?? 'unknown'} (want ${expectedSha})`);
+          lastApiSha = sha;
+          nextLogAt.api = Date.now() + 30_000;
+        }
+      } catch (error) {
+        lastApiError = error;
+        if (Date.now() >= nextLogAt.api) {
+          console.log(`  API version probe error: ${toMessage(error)}`);
+          nextLogAt.api = Date.now() + 30_000;
+        }
+      }
+    }
+
+    if (!webMatched) {
+      try {
+        const sha = await fetchWebVersion();
+        lastWebError = null;
+        if (sha && sha === expectedSha) {
+          console.log(`Web is live on SHA ${expectedSha}.`);
+          webMatched = true;
+        } else if (sha !== lastWebSha || Date.now() >= nextLogAt.web) {
+          console.log(`  Web currently reports sha=${sha ?? 'unknown'} (want ${expectedSha})`);
+          lastWebSha = sha;
+          nextLogAt.web = Date.now() + 30_000;
+        }
+      } catch (error) {
+        lastWebError = error;
+        if (Date.now() >= nextLogAt.web) {
+          console.log(`  Web version probe error: ${toMessage(error)}`);
+          nextLogAt.web = Date.now() + 30_000;
+        }
+      }
+    }
+
+    if (apiMatched && webMatched) {
+      return;
+    }
+
+    await sleep(versionCheckIntervalMs);
+  }
+
+  const parts = [];
+  if (!apiMatched) {
+    parts.push(
+      `API still on sha=${lastApiSha ?? 'unknown'} (want ${expectedSha})` +
+        (lastApiError ? ` — last error: ${toMessage(lastApiError)}` : ''),
+    );
+  }
+  if (!webMatched) {
+    parts.push(
+      `Web still on sha=${lastWebSha ?? 'unknown'} (want ${expectedSha})` +
+        (lastWebError ? ` — last error: ${toMessage(lastWebError)}` : ''),
+    );
+  }
+  throw new Error(`SHA verification timed out. ${parts.join(' | ')}`);
+}
+
+async function fetchApiVersion() {
+  const response = await fetch(apiVersionUrl, { redirect: 'follow', cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`API version endpoint returned HTTP ${response.status}`);
+  }
+  const payload = await response.json().catch(() => null);
+  return typeof payload?.sha === 'string' ? payload.sha : null;
+}
+
+async function fetchWebVersion() {
+  const response = await fetch(webVersionUrl, { redirect: 'follow', cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`Web version endpoint returned HTTP ${response.status}`);
+  }
+  const raw = (await response.text()).trim();
+  return raw.length > 0 ? raw : null;
+}
+
 async function runSmokeChecks(timeoutMs) {
   await waitForHttpCheck({
     label: 'API health',
@@ -196,7 +328,7 @@ async function waitForHttpCheck({ label, timeoutMs, url, validate }) {
 
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(url, { redirect: 'follow' });
+      const response = await fetch(url, { redirect: 'follow', cache: 'no-store' });
       await validate(response);
       console.log(`${label} check passed on ${url}`);
       return;
@@ -301,6 +433,18 @@ function normalizeBaseUrl(url) {
   return url.endsWith('/') ? url : `${url}/`;
 }
 
+function deriveApiVersionUrl(healthUrl) {
+  // smoke API url is ".../api/v1/health" — the version endpoint lives alongside it.
+  if (/\/health\/?$/.test(healthUrl)) {
+    return healthUrl.replace(/\/health\/?$/, '/version');
+  }
+  return new URL('/api/v1/version', healthUrl).toString();
+}
+
+function deriveWebVersionUrl(webRootUrl) {
+  return new URL('/version.txt', normalizeBaseUrl(webRootUrl)).toString();
+}
+
 function requiredEnv(name) {
   const value = process.env[name];
 
@@ -321,6 +465,16 @@ function toMessage(error) {
   }
 
   return String(error);
+}
+
+function logBanner(title, fields) {
+  const border = '═'.repeat(60);
+  console.log(border);
+  console.log(`  ${title}`);
+  for (const [key, value] of Object.entries(fields)) {
+    console.log(`    ${key.padEnd(12)} ${value}`);
+  }
+  console.log(border);
 }
 
 void main();

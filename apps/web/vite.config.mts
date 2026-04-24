@@ -9,9 +9,7 @@ const devHost = process.env.VITE_HOST ?? 'localhost';
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000';
 const watchInterval = Number(process.env.CHOKIDAR_INTERVAL ?? '1000');
 const usePolling = process.env.CHOKIDAR_USEPOLLING === 'true';
-const hmrClientPort = process.env.VITE_HMR_CLIENT_PORT
-  ? Number(process.env.VITE_HMR_CLIENT_PORT)
-  : undefined;
+const hmrClientPort = process.env.VITE_HMR_CLIENT_PORT ? Number(process.env.VITE_HMR_CLIENT_PORT) : undefined;
 
 export default defineConfig(() => ({
   root: import.meta.dirname,

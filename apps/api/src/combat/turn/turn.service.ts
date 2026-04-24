@@ -8,6 +8,7 @@ import { canMoveTo, canJumpTo, isInRange, hasLineOfSight } from '@game/game-engi
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GAME_EVENTS } from '@game/shared-types';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
+import { PerfStatsService } from '../../shared/perf/perf-stats.service';
 import { RuntimePerfService } from '../../shared/perf/runtime-perf.service';
 import { SpellsService } from '../spells/spells.service';
 
@@ -21,6 +22,7 @@ export class TurnService {
     private readonly spells: SpellsService,
     private readonly eventEmitter: EventEmitter2,
     private readonly perfLogger: PerfLoggerService,
+    private readonly perfStats: PerfStatsService,
     private readonly runtimePerf: RuntimePerfService,
   ) {}
 
@@ -129,7 +131,9 @@ export class TurnService {
       this.sse.emit(sessionId, 'STATE_UPDATED', newState);
       const sseEventsEmitted = this.runtimePerf.getTotalSseEvents() - sseEventsBefore;
 
-      this.perfLogger.logDuration('combat', 'turn.play_action', performance.now() - startedAt, {
+      const durationMs = performance.now() - startedAt;
+      this.perfStats.recordGameMetric('game.turn', `action.${action.type}`, durationMs);
+      this.perfLogger.logDuration('combat', 'turn.play_action', durationMs, {
         session_id: sessionId,
         player_id: playerId,
         action_type: action.type,

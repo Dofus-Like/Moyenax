@@ -1,11 +1,5 @@
 import { create } from 'zustand';
-import {
-  PathNode,
-  SeedId,
-  GameMap,
-  TerrainType,
-  FarmingState as FarmingApiState,
-} from '@game/shared-types';
+import { PathNode, SeedId, GameMap, TerrainType, FarmingState as FarmingApiState } from '@game/shared-types';
 import { farmingApi } from '../api/farming.api';
 import { inventoryApi } from '../api/inventory.api';
 
