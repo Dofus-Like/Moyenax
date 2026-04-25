@@ -44,6 +44,8 @@ export interface SpellExecutionResult {
 
 @Injectable()
 export class SpellsService {
+  private nextSummonSeq = 0;
+
   constructor(private readonly perfStats: PerfStatsService) {}
 
   executeEffect(
@@ -202,9 +204,20 @@ export class SpellsService {
     const buffValue = this.readNumber(effectConfig, 'buffValue', 20);
     const buffDuration = this.readNumber(effectConfig, 'buffDuration', 99);
 
+    // Dedup: un seul VIT_MAX actif à la fois.
+    // Si un buff existant a déjà augmenté stats.vit, on soustrait l'ancienne valeur
+    // avant d'appliquer la nouvelle, pour éviter le stacking permanent.
+    const existing = caster.buffs.find((b) => b.type === 'VIT_MAX');
+    if (existing) {
+      caster.stats.vit -= existing.value;
+      existing.value = buffValue;
+      existing.remainingTurns = buffDuration;
+    } else {
+      caster.buffs.push({ type: 'VIT_MAX', value: buffValue, remainingTurns: buffDuration });
+    }
+
     caster.stats.vit += buffValue;
-    caster.currentVit += buffValue;
-    caster.buffs.push({ type: 'VIT_MAX', value: buffValue, remainingTurns: buffDuration });
+    caster.currentVit = Math.min(caster.stats.vit, caster.currentVit + buffValue);
 
     return { events: [] };
   }
@@ -247,7 +260,7 @@ export class SpellsService {
       basePm: 0,
     };
 
-    const summonId = `summon-menhir-${Date.now()}`;
+    const summonId = `summon-menhir-${Date.now()}-${this.nextSummonSeq++}`;
     state.players[summonId] = {
       playerId: summonId,
       username: 'Menhir',
@@ -328,9 +341,22 @@ export class SpellsService {
     const buffDuration = this.readNumber(effectConfig, 'buffDuration', 1);
     const applyImmediately = effectConfig?.applyImmediately !== false;
 
-    caster.buffs.push({ type: 'PM', value: buffValue, remainingTurns: buffDuration });
-    if (applyImmediately) {
-      caster.remainingPm += buffValue;
+    // Dedup: un seul buff PM actif à la fois (refresh durée + remplace valeur).
+    // Le cumul précédent permettait un spam sans limite de remainingPm.
+    const existing = caster.buffs.find((b) => b.type === 'PM');
+    if (existing) {
+      // On ne re-applique l'effet immédiat que si la nouvelle valeur est strictement supérieure,
+      // et seulement le delta.
+      if (applyImmediately && buffValue > existing.value) {
+        caster.remainingPm += buffValue - existing.value;
+      }
+      existing.value = Math.max(existing.value, buffValue);
+      existing.remainingTurns = Math.max(existing.remainingTurns, buffDuration);
+    } else {
+      caster.buffs.push({ type: 'PM', value: buffValue, remainingTurns: buffDuration });
+      if (applyImmediately) {
+        caster.remainingPm += buffValue;
+      }
     }
 
     return { events: [] };

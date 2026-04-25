@@ -124,6 +124,12 @@ describe('GameSessionService', () => {
     playerSpellProjection.buildPlayerSpellAssignments.mockImplementation(
       async (playerId: string) => [{ playerId, spellId: 'spell-claque-id', level: 1 }],
     );
+    const distributedLock = {
+      withLock: jest.fn(async (_k: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
+      tryWithLock: jest.fn(async (_k: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
+      acquire: jest.fn().mockResolvedValue('fp'),
+      release: jest.fn().mockResolvedValue(true),
+    };
     service = new GameSessionService(
       prisma as any,
       redis as any,
@@ -134,6 +140,7 @@ describe('GameSessionService', () => {
       statsCalculator as any,
       playerSpellProjection as any,
       eventEmitter as any,
+      distributedLock as any,
     );
   });
 

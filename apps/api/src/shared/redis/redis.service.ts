@@ -129,6 +129,15 @@ export class RedisService {
     return this.measure('ping', 'health:ping', () => this.client.ping());
   }
 
+  /**
+   * Retourne toutes les clés qui matchent un pattern.
+   * ⚠️ Utilise KEYS en interne qui bloque Redis sur gros datasets —
+   * préférer pour petits volumes / tâches de maintenance (watchdog).
+   */
+  async keys(pattern: string): Promise<string[]> {
+    return this.measure('keys', pattern, () => this.client.keys(pattern));
+  }
+
   private async measure<T>(
     operation: string,
     key: string,

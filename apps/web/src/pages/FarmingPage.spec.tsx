@@ -183,4 +183,57 @@ describe('FarmingPage', () => {
       expect(mocks.navigate).toHaveBeenCalledWith('/crafting');
     });
   });
+
+  it('shows inventory resource names from the farming store', async () => {
+    mocks.farmingState.inventory = { Bois: 3 };
+
+    render(
+      <MemoryRouter initialEntries={['/farming']}>
+        <FarmingPage />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('Récoltes');
+    // "Bois" appears in the inventory list AND the legend — verify it shows up at least once
+    expect(screen.getAllByText('Bois').length).toBeGreaterThan(0);
+    // The inventory count should be visible
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  it('calls fetchState on mount to hydrate the map', async () => {
+    render(
+      <MemoryRouter initialEntries={['/farming']}>
+        <FarmingPage />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('Récoltes');
+    expect(mocks.farmingState.fetchState).toHaveBeenCalled();
+  });
+
+  it('shows pips remaining text from the store', async () => {
+    mocks.farmingState.pips = 2;
+
+    render(
+      <MemoryRouter initialEntries={['/farming']}>
+        <FarmingPage />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('Récoltes');
+    expect(screen.getByText('2 / 4 récoltes')).toBeInTheDocument();
+  });
+
+  it('shows "Aucune ressource" when inventory is empty', async () => {
+    mocks.farmingState.inventory = {};
+
+    render(
+      <MemoryRouter initialEntries={['/farming']}>
+        <FarmingPage />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('Récoltes');
+    expect(screen.getByText('Aucune ressource récoltée.')).toBeInTheDocument();
+  });
 });

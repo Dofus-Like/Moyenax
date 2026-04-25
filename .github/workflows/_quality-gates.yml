@@ -5,16 +5,19 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write # pour commenter les PRs avec le delta coverage
 
 jobs:
   validate:
-    name: Unit Tests
+    name: Unit Tests + Coverage
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # nécessaire pour nx affected
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -28,8 +31,65 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate --schema=apps/api/prisma/schema.prisma
 
-      - name: Test
-        run: yarn test
+      - name: Derive NX base/head SHAs (for affected)
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Lint (affected)
+        run: yarn nx affected -t lint --parallel=3
+        continue-on-error: true # ne bloque pas encore (violations existantes)
+
+      - name: Test avec coverage
+        run: yarn nx run-many -t test --all --coverage --parallel=3
+
+      - name: Upload coverage report (API)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-api
+          path: coverage/apps/api/
+          retention-days: 30
+
+      - name: Upload coverage report (Web)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-web
+          path: coverage/apps/web/
+          retention-days: 30
+
+      - name: Upload coverage report (game-engine)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-game-engine
+          path: coverage/libs/game-engine/
+          retention-days: 30
+
+      - name: Compute coverage summary
+        id: coverage
+        if: always()
+        run: |
+          set -euo pipefail
+          bash scripts/ci/coverage-summary.sh > coverage-summary.md
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          cat coverage-summary.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        continue-on-error: true
+        with:
+          header: coverage-report
+          message: |
+            ## 📊 Coverage report
+
+            ${{ steps.coverage.outputs.summary }}
+
+            [Full HTML reports available in workflow artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: Enforce coverage thresholds
+        run: bash scripts/ci/check-coverage-thresholds.sh
 
   prod-like-smoke:
     name: Prod-like Docker Smoke

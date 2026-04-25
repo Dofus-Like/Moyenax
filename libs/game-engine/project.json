@@ -4,5 +4,14 @@
   "sourceRoot": "libs/game-engine/src",
   "projectType": "library",
   "tags": ["scope:shared", "type:feature"],
-  "implicitDependencies": ["shared-types"]
+  "implicitDependencies": ["shared-types"],
+  "targets": {
+    "mutation-test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx stryker run",
+        "cwd": "libs/game-engine"
+      }
+    }
+  }
 }
