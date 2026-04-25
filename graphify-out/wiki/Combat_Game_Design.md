@@ -1,0 +1,56 @@
+# Combat Game Design
+
+> 38 nodes · cohesion 0.07
+
+## Key Concepts
+
+- **Combat Phase** (10 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Team A: World & Economy** (7 connections) — `TEAMS_SCOPE.md`
+- **Economy and Equipment Phase** (6 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Main Gameplay Loop** (5 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Equipment System** (5 connections) — `cahier_des_charges_technique_8600ab3c.plan.md`
+- **Spell System (9 Spells)** (5 connections) — `cahier_des_charges_technique_8600ab3c.plan.md`
+- **Farming Phase** (4 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Game Engine Library** (4 connections) — `TECHNICAL_DOCUMENT.md`
+- **Team B: Combat System** (4 connections) — `TEAMS_SCOPE.md`
+- **Seed System** (3 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Archetype System (Warrior, Mage, Ninja)** (3 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Damage Calculation System** (3 connections) — `cahier_des_charges_technique_8600ab3c.plan.md`
+- **Combat Turn System** (3 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Dofus-Like Game Project** (2 connections) — `README.md`
+- **Resource Families (FORGE, ARCANE, NATURE, SPECIAL)** (2 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Crafting System** (2 connections) — `cahier_des_charges_technique_8600ab3c.plan.md`
+- **Map Generation by Seed** (2 connections) — `cahier_des_charges_technique_8600ab3c.plan.md`
+- **Line of Sight Algorithm** (2 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Player Stats System** (2 connections) — `cahier_des_charges_technique_8600ab3c.plan.md`
+- **Inventory System** (2 connections) — `TEAMS_SCOPE.md`
+- **Item System** (2 connections) — `cahier_des_charges_technique_8600ab3c.plan.md`
+- **Item Rank System (Merge Mechanic)** (2 connections) — `cahier_des_charges_technique_8600ab3c.plan.md`
+- **Match Victory Condition** (2 connections) — `cahier_des_charges_technique_8600ab3c.plan.md`
+- **Terrain Types (MUR, TROU, PLAT)** (1 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- **Counter-Play Triangle** (1 connections) — `GAME_DESIGN_DOCUMENT_v2.md`
+- *... and 13 more nodes in this community*
+
+## Relationships
+
+- [[NestJS App Infrastructure]] (2 shared connections)
+- [[Project Tech Stack]] (1 shared connections)
+
+## Source Files
+
+- `GAME_DESIGN_DOCUMENT_v2.md`
+- `GUIDE_COMBAT.md`
+- `README.md`
+- `TEAMS_SCOPE.md`
+- `TECHNICAL_DOCUMENT.md`
+- `cahier_des_charges_technique_8600ab3c.plan.md`
+
+## Audit Trail
+
+- EXTRACTED: 93 (96%)
+- INFERRED: 4 (4%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [[index]] to navigate.*

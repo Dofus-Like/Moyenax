@@ -1,0 +1,69 @@
+# Character Animation Assets
+
+> 29 nodes · cohesion 0.09
+
+## Key Concepts
+
+- **Soldier Character** (9 connections) — `pack/Characters(100x100)/Soldier/Soldier/Soldier.png`
+- **Visual Variant** (8 connections) — `unknown`
+- **Character Animation State** (4 connections) — `unknown`
+- **Effect Asset** (4 connections) — `unknown`
+- **Soldier Idle State** (3 connections) — `pack/Characters(100x100)/Soldier/Soldier/Soldier-Idle.png`
+- **Soldier Walk Animation** (3 connections) — `pack/Characters(100x100)/Soldier/Soldier/Soldier-Walk.png`
+- **Soldier Attack 01** (3 connections) — `pack/Characters(100x100)/Soldier/Soldier/Soldier-Attack01.png`
+- **Soldier Attack 02** (3 connections) — `pack/Characters(100x100)/Soldier/Soldier/Soldier-Attack02.png`
+- **Soldier Attack 03** (3 connections) — `pack/Characters(100x100)/Soldier/Soldier/Soldier-Attack03.png`
+- **Combat Action** (3 connections) — `unknown`
+- **Shadow Asset** (3 connections) — `unknown`
+- **Soldier Hurt State** (2 connections) — `pack/Characters(100x100)/Soldier/Soldier/Soldier-Hurt.png`
+- **Soldier Death State** (2 connections) — `pack/Characters(100x100)/Soldier/Soldier/Soldier-Death.png`
+- **Soldier Shadow Sprite** (2 connections) — `pack/Characters(100x100)/Soldier/Soldier/Shadow sprites/Soldier-Shadow.png`
+- **Soldier With Shadows Base** (2 connections) — `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier.png`
+- **Soldier Attack 01 Effect** (2 connections) — `pack/Characters(100x100)/Soldier/Soldier(Split Effects)/Soldier-Attack01_Effect.png`
+- **Soldier Attack 02 Effect** (2 connections) — `pack/Characters(100x100)/Soldier/Soldier(Split Effects)/Soldier-Attack02_Effect.png`
+- **Soldier Attack 03 Effect** (2 connections) — `pack/Characters(100x100)/Soldier/Soldier(Split Effects)/Soldier-Attack03_Effect.png`
+- **Fire Mage Character** (2 connections) — `pack/FireMage_Free/FireMage_1.png`
+- **Soldier Shadow Attack 2** (1 connections) — `pack/Characters(100x100)/Soldier/Soldier/Soldier-Shadow_attack2.png`
+- **Soldier Shadow Death** (1 connections) — `pack/Characters(100x100)/Soldier/Soldier/Shadow sprites/Soldier-Shadow_death.png`
+- **Soldier With Shadows Idle** (1 connections) — `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Idle.png`
+- **Soldier With Shadows Walk** (1 connections) — `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Walk.png`
+- **Soldier With Shadows Attack 01** (1 connections) — `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Attack01.png`
+- **Soldier With Shadows Attack 02** (1 connections) — `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Attack02.png`
+- *... and 4 more nodes in this community*
+
+## Relationships
+
+- [[FireMage Sprite Frames]] (2 shared connections)
+
+## Source Files
+
+- `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Attack01.png`
+- `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Attack02.png`
+- `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Attack03.png`
+- `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Death.png`
+- `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Hurt.png`
+- `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Idle.png`
+- `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier-Walk.png`
+- `pack/Characters(100x100)/Soldier/Soldier with shadows/Soldier.png`
+- `pack/Characters(100x100)/Soldier/Soldier(Split Effects)/Soldier-Attack01_Effect.png`
+- `pack/Characters(100x100)/Soldier/Soldier(Split Effects)/Soldier-Attack02_Effect.png`
+- `pack/Characters(100x100)/Soldier/Soldier(Split Effects)/Soldier-Attack03_Effect.png`
+- `pack/Characters(100x100)/Soldier/Soldier/Shadow sprites/Soldier-Shadow.png`
+- `pack/Characters(100x100)/Soldier/Soldier/Shadow sprites/Soldier-Shadow_death.png`
+- `pack/Characters(100x100)/Soldier/Soldier/Soldier-Attack01.png`
+- `pack/Characters(100x100)/Soldier/Soldier/Soldier-Attack02.png`
+- `pack/Characters(100x100)/Soldier/Soldier/Soldier-Attack03.png`
+- `pack/Characters(100x100)/Soldier/Soldier/Soldier-Death.png`
+- `pack/Characters(100x100)/Soldier/Soldier/Soldier-Hurt.png`
+- `pack/Characters(100x100)/Soldier/Soldier/Soldier-Idle.png`
+- `pack/Characters(100x100)/Soldier/Soldier/Soldier-Shadow_attack2.png`
+
+## Audit Trail
+
+- EXTRACTED: 28 (39%)
+- INFERRED: 42 (58%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [[index]] to navigate.*

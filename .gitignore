@@ -48,4 +48,11 @@ Thumbs.db
 vite.config.*.timestamp*
 .cursor
 .claude
-graphify-out/
+
+# graphify - fichiers temp générés (non commités)
+.graphify_*.json
+.graphify_python
+graphify-out/cache/
+graphify-out/.graphify_*
+graphify-out/manifest.json
+graphify-out/cost.json
