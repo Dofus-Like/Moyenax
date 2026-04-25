@@ -75,6 +75,26 @@ export default [
       'no-console': ['error', { allow: ['warn', 'error'] }],
       'unicorn/no-array-for-each': 'error',
       'unicorn/prefer-node-protocol': 'error',
+      // Charte qualité (KISS) — voir docs/CODE_QUALITY.md §3.
+      // En `warn` pendant la phase d'adoption pour ne pas bloquer le code legacy ;
+      // passer en `error` après la PR `chore/quality-baseline`.
+      complexity: ['warn', { max: 10 }],
+      'max-lines-per-function': [
+        'warn',
+        { max: 50, skipBlankLines: true, skipComments: true, IIFEs: true },
+      ],
+      'max-depth': ['warn', { max: 4 }],
+      'max-params': ['warn', { max: 4 }],
+      'no-nested-ternary': 'error',
+    },
+  },
+  // Règles plus souples pour les tests (fixtures, mocks, builders volumineux).
+  {
+    files: ['**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx'],
+    rules: {
+      'max-lines-per-function': 'off',
+      complexity: 'off',
+      'max-depth': 'off',
     },
   },
 ];

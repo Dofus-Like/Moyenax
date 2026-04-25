@@ -1,60 +1,76 @@
-# Agent Instructions
+# AGENTS.md
 
-## Knowledge Graph (graphify)
+Source unique de vérité pour humains et IA (Claude Code, Antigravity/Gemini, Cursor, Copilot…).
+`CLAUDE.md` et `GEMINI.md` redirigent ici.
 
-This project has a graphify knowledge graph at `graphify-out/`.
+## Lectures obligatoires
+1. Ce fichier.
+2. [`docs/PROJECT_LAYOUT.md`](./docs/PROJECT_LAYOUT.md) — où ranger quoi.
+3. [`docs/CODE_QUALITY.md`](./docs/CODE_QUALITY.md) — SOLID/DRY/KISS/YAGNI avec exemples.
+4. [`docs/TESTING.md`](./docs/TESTING.md) — TDD, pyramide, seuils.
+5. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — couches, boundaries NX, god nodes.
+6. [`TEAMS_SCOPE.md`](./TEAMS_SCOPE.md) — Équipe A (World/Economy) vs B (Combat).
 
-### Before doing anything architecture-related
+Avant de modifier un service connu pour être chargé : ouvrir `graphify-out/GRAPH_REPORT.md`.
 
-1. Read `graphify-out/wiki/index.md` — it lists all communities and god nodes
-2. Navigate the relevant community article(s) in `graphify-out/wiki/`
-3. For god nodes and surprising cross-cutting connections, read `graphify-out/GRAPH_REPORT.md`
+## Stack (rappel)
+NX 22 · Node 22 · Yarn · NestJS 11 · React 19 + Vite + R3F · Prisma 5 / Postgres 16 · Redis 7 · SSE · Jest (api) · Vitest (web) · Playwright · ESLint 9 + Biome 2.
 
-Do **not** grep raw source files to understand architecture — the graph already has that structure mapped.
+## Commandes
+`yarn dev` · `yarn test` · `yarn lint` · `yarn format` · `nx affected -t test` · `nx graph`.
+Liste complète : [`README.md`](./README.md).
 
-### After modifying code files
+## Règles non-négociables
 
-Run this to keep the graph current (AST-only, free, no LLM):
+### Architecture
+- Boundaries NX appliquées par ESLint (`@nx/enforce-module-boundaries`).
+- **Logique métier pure → `libs/game-engine`**, jamais dans un service ou un composant.
+- **Types/DTOs partagés front/back → `libs/shared-types`**, jamais dupliqués.
+- **Combat ↔ Economy** : couplage lâche via `GAME_EVENTS` + `EventEmitter2`, jamais d'import direct.
+- DTOs `class-validator` obligatoires sur toute entrée HTTP.
+- God nodes (cf. `GRAPH_REPORT.md`) : aucun ajout sans plan de découpe.
 
-```bash
-python -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"
-```
+### Code
+- TS `strict`, **pas de `any`** (`unknown` + narrowing si besoin), **pas de cycle d'import**.
+- ESLint enforcés : `complexity ≤ 10`, `max-lines-per-function ≤ 50`, `max-depth ≤ 4`, `max-params ≤ 4`, pas de ternaire imbriqué.
+- Pas de `console.log` (utiliser `Logger` côté NestJS, HUD perf côté web).
+- Commentaires : par défaut **aucun**. Seulement pour le « pourquoi » non évident. Renomme avant de commenter.
+- Préférer **éditer** un fichier existant que d'en créer un nouveau.
 
-### God nodes (highest-connectivity abstractions — touch carefully)
+### Tests (TDD)
+- **Obligatoire** : tout fix de bug (test rouge → fix), toute logique dans `libs/game-engine`, tout code sécurité.
+- Cycle **Red → Green → Refactor**, vérifier que le test échoue **pour la bonne raison**.
+- `*.spec.ts(x)` colocalisé.
+- Pyramide : 70 % unit / 20 % integration / 10 % e2e Playwright.
+- Pas de mock de la fonction testée. Pas de test flaky « skipé ».
 
-- `RedisService` — 20 edges
-- `PerfStatsService` — 19 edges
-- `GameSessionService` — 18 edges
-- `SessionService` — 16 edges
-- `GameSessionController` — 16 edges
-- `NestJS Event Emitter Inter-Team Communication` — 16 edges
-- `MatchmakingQueueStore` — 15 edges
+### Git
+- Branches : `<type>/<desc-kebab>` cible `dev` (jamais `main`). Types : `feat|fix|chore|refactor|test|docs|perf`.
+- Commits : Conventional Commits, **enforcés par commitlint** au commit-msg.
+- PR < 400 lignes diff (sinon justifier). Template auto. CODEOWNERS approuve par périmètre. Squash merge.
 
-### Key communities
+## Pour les IA (toutes confondues)
 
-| Community | Nodes | What it is |
-|---|---|---|
-| NestJS App Infrastructure | 46 | App module, all NestJS wiring |
-| Combat Game Design | 38 | Game design docs, rules, archetypes |
-| Game Session Management | 18 | Session lifecycle, VS AI, cleanup |
-| Combat Turn Engine | 10 | Turn logic, spell casting, victory check |
-| Spell Effects Engine | 12 | Damage, heal, buff application |
-| Redis Cache Layer | 21 | All Redis read/write operations |
-| Matchmaking Queue | 16 | Queue store, security, SSE tickets |
-| Performance Monitoring | 23 | PerfStats, tracing, HTTP interceptor |
-| Pathfinding Library | 6 | `findPath`, `canJumpOver`, shared-types |
-| Crafting System | 8 | Recipe resolution, gold spend |
-| Map Generation | 12 | Procedural map, connectivity |
-| CI/CD Pipeline | 10 | GitHub Actions, GHCR, Portainer |
+### À faire
+- Lire les docs ci-dessus avant d'écrire.
+- TDD sur logique métier et fixes.
+- Petits commits atomiques en Conventional Commits.
+- Demander quand on doute, ne pas inventer un pattern.
 
-### Re-running graphify
+### À ne pas faire
+- ❌ Créer des `*.md` de session/notes/résumé spontanés.
+- ❌ Commentaires qui paraphrasent le code.
+- ❌ Abstractions spéculatives (interface à 1 impl jamais mockée, paramètre « au cas où »).
+- ❌ `any`, `as` de complaisance.
+- ❌ Duplication front/back (logique → `game-engine`, types → `shared-types`).
+- ❌ Fix superficiel qui contourne la cause racine.
+- ❌ `--no-verify` sur les hooks.
+- ❌ Ajouter une méthode à un god node.
 
-To update the full graph after major changes (new files, renamed modules):
+### Mantras
+- *Le test guide le code, pas l'inverse.*
+- *3 lignes répétées valent mieux qu'une mauvaise abstraction.*
+- *YAGNI bat OCP.*
 
-```bash
-# Incremental — only changed files
-/graphify . --update
-
-# Full rebuild
-/graphify .
-```
+## Liens
+[`README.md`](./README.md) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) · [`TEAMS_SCOPE.md`](./TEAMS_SCOPE.md) · [`DEPLOY.md`](./DEPLOY.md) · `docs/{PROJECT_LAYOUT,ARCHITECTURE,TESTING,CODE_QUALITY,TECHNICAL_DOCUMENT}.md` · `graphify-out/GRAPH_REPORT.md`

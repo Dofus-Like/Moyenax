@@ -1,4 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
+
 import { SseTicketService } from './sse-ticket.service';
 
 describe('SseTicketService', () => {
