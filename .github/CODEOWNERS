@@ -1,0 +1,56 @@
+# CODEOWNERS — qui review quoi
+#
+# Ce fichier déclenche automatiquement les demandes de review GitHub.
+# Format : <pattern>  <@user>  [<@user>...]
+# Doc : https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Équipe A (World/Economy/Player) : @roketag33 @VictorMusta
+# Équipe B (Combat)               : @Hugodujour @syvtille
+
+# --- Charte d'équipe — modif obligatoirement validée par les deux équipes ---
+/AGENTS.md                  @roketag33 @VictorMusta @Hugodujour @syvtille
+/CLAUDE.md                  @roketag33 @VictorMusta @Hugodujour @syvtille
+/GEMINI.md                  @roketag33 @VictorMusta @Hugodujour @syvtille
+/CONTRIBUTING.md            @roketag33 @VictorMusta @Hugodujour @syvtille
+/docs/ARCHITECTURE.md       @roketag33 @VictorMusta @Hugodujour @syvtille
+/docs/TESTING.md            @roketag33 @VictorMusta @Hugodujour @syvtille
+/docs/CODE_QUALITY.md       @roketag33 @VictorMusta @Hugodujour @syvtille
+/TEAMS_SCOPE.md             @roketag33 @VictorMusta @Hugodujour @syvtille
+/.github/                   @roketag33 @VictorMusta @Hugodujour @syvtille
+/eslint.config.mjs          @roketag33 @VictorMusta @Hugodujour @syvtille
+/biome.json                 @roketag33 @VictorMusta @Hugodujour @syvtille
+/commitlint.config.js       @roketag33 @VictorMusta @Hugodujour @syvtille
+/.husky/                    @roketag33 @VictorMusta @Hugodujour @syvtille
+/nx.json                    @roketag33 @VictorMusta @Hugodujour @syvtille
+/tsconfig.base.json         @roketag33 @VictorMusta @Hugodujour @syvtille
+/package.json               @roketag33 @VictorMusta @Hugodujour @syvtille
+/yarn.lock                  @roketag33 @VictorMusta @Hugodujour @syvtille
+
+# --- Équipe A : World, Economy, Player ---
+/apps/api/src/world/        @roketag33 @VictorMusta
+/apps/api/src/economy/      @roketag33 @VictorMusta
+/apps/api/src/player/       @roketag33 @VictorMusta
+/apps/web/src/pages/ResourceMapPage.tsx   @roketag33 @VictorMusta
+/apps/web/src/pages/ShopPage.tsx          @roketag33 @VictorMusta
+/apps/web/src/pages/InventoryPage.tsx     @roketag33 @VictorMusta
+/apps/web/src/game/UnifiedMap/            @roketag33 @VictorMusta
+
+# --- Équipe B : Combat ---
+/apps/api/src/combat/       @Hugodujour @syvtille
+/apps/api/src/game-session/ @Hugodujour @syvtille
+/apps/web/src/pages/CombatPage.tsx        @Hugodujour @syvtille
+/apps/web/src/pages/LobbyPage.tsx         @Hugodujour @syvtille
+/apps/web/src/game/CombatMap/             @Hugodujour @syvtille
+/apps/web/src/game/HUD/                   @Hugodujour @syvtille
+/apps/web/src/store/combat.store.ts       @Hugodujour @syvtille
+
+# --- Co-propriété : libs partagées ---
+/libs/shared-types/         @roketag33 @VictorMusta @Hugodujour @syvtille
+/libs/game-engine/          @roketag33 @VictorMusta @Hugodujour @syvtille
+/libs/ui-components/        @roketag33 @VictorMusta @Hugodujour @syvtille
+
+# --- Infra / DevOps : co-propriété ---
+/docker-compose*.yml        @roketag33 @VictorMusta @Hugodujour @syvtille
+/Dockerfile*                @roketag33 @VictorMusta @Hugodujour @syvtille
+/scripts/                   @roketag33 @VictorMusta @Hugodujour @syvtille
+/Makefile                   @roketag33 @VictorMusta @Hugodujour @syvtille
