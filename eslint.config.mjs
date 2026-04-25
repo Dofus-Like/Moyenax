@@ -60,7 +60,7 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
       'import/no-cycle': 'error',
@@ -72,7 +72,7 @@ export default [
           alphabetize: { order: 'asc' },
         },
       ],
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'unicorn/no-array-for-each': 'error',
       'unicorn/prefer-node-protocol': 'error',
     },
