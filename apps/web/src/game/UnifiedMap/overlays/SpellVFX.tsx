@@ -1,10 +1,12 @@
-import React, { useRef, useState, useMemo } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
 import { Billboard } from '@react-three/drei';
+import { useFrame, useLoader } from '@react-three/fiber';
+import React, { useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
-import { ParticleTrail } from './ParticleTrail';
-import { FireballParticles } from './FireballVFX';
+
 import { COMBAT_COLORS } from '../../constants/colors';
+
+import { FireballParticles } from './FireballVFX';
+import { ParticleTrail } from './ParticleTrail';
 
 interface SpellVFXProps {
   type: string;
@@ -26,7 +28,8 @@ export function SpellVFX({ type, from, to, onComplete }: SpellVFXProps) {
   const [progress, setProgress] = useState(0);
 
   // Calcul de la rotation pour les projectiles orientés (comme l'arc)
-  const rotation = useMemo(() => {
+  // NOTE: rotation is calculated but not currently used in render logic - reserved for future animation
+  useMemo(() => {
     const angle = Math.atan2(endPos.x - startPos.x, endPos.z - startPos.z);
     // On pivote de PI/2 si l'asset de base regarde vers le haut (souvent le cas)
     // Mais on va tester. D'abord on va mettre 0.

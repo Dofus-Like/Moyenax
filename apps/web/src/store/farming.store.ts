@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { PathNode, SeedId, GameMap, TerrainType, FarmingState as FarmingApiState } from '@game/shared-types';
+
+import type { PathNode, SeedId, GameMap, FarmingState as FarmingApiState } from '@game/shared-types';
+import { TerrainType } from '@game/shared-types';
+
 import { farmingApi } from '../api/farming.api';
 import { inventoryApi } from '../api/inventory.api';
 
@@ -76,11 +79,11 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
       const grid: TerrainType[][] = Array.from({ length: MAP_SIZE }, () =>
         Array(MAP_SIZE).fill(TerrainType.GROUND),
       );
-      state.map.forEach((cell) => {
+      for (const cell of state.map) {
         if (grid[cell.y] && cell.x < MAP_SIZE) {
           grid[cell.y][cell.x] = cell.terrain;
         }
-      });
+      }
       set({
         pips: state.pips,
         round: state.round,
@@ -106,9 +109,9 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
       const newState = await farmingApi.gather(x, y, playerPosition.x, playerPosition.y);
       const inventoryResponse = await inventoryApi.getInventory();
       const grid = currentMap.grid.map((row) => [...row]);
-      newState.map.forEach((cell) => {
+      for (const cell of newState.map) {
         grid[cell.y][cell.x] = cell.terrain;
-      });
+      }
       set({
         pips: newState.pips,
         spendableGold: newState.spendableGold,

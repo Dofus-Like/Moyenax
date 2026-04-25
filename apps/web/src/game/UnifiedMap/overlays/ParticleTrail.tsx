@@ -1,6 +1,6 @@
-import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import React, { useRef, useMemo } from 'react';
+import type * as THREE from 'three';
 
 interface ParticleTrailProps {
   position: THREE.Vector3;

@@ -1,4 +1,5 @@
 import React, { Profiler, type ProfilerOnRenderCallback } from 'react';
+
 import { usePerfHudStore } from './perf-hud.store';
 
 const onRender: ProfilerOnRenderCallback = (id, phase, actualDuration) => {

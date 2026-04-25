@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
-import { PrismaService } from '../../shared/prisma/prisma.service';
 import { GameSessionService } from '../../game-session/game-session.service';
+import { PrismaService } from '../../shared/prisma/prisma.service';
 import { SpendableGoldService } from '../shared/spendable-gold.service';
 
 @Injectable()

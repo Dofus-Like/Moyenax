@@ -1,8 +1,10 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { performance } from 'node:perf_hooks';
+
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
+
 import { PerfLoggerService } from './perf-logger.service';
 import { PerfStatsService } from './perf-stats.service';
 import { RequestContextService } from './request-context.service';

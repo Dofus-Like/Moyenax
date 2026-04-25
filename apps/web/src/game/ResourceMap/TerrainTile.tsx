@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
 
 const TERRAIN_COLORS: Record<TerrainType, { base: string; hover: string }> = {

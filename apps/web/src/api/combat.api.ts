@@ -1,4 +1,5 @@
-import { CombatAction } from '@game/shared-types';
+import type { CombatAction } from '@game/shared-types';
+
 import { apiClient } from './client';
 
 export const combatApi = {

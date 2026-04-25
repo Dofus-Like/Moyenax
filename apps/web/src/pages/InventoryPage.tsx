@@ -1,12 +1,17 @@
-import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useGameSession } from './GameTunnel';
-import { inventoryApi } from '../api/inventory.api';
+import React from 'react';
+
+
+import type { InventoryItem} from '@game/shared-types';
+import { EquipmentSlotType, ItemType } from '@game/shared-types';
+
 import { equipmentApi } from '../api/equipment.api';
+import { inventoryApi } from '../api/inventory.api';
 import { playerApi } from '../api/player.api';
 import { Mannequin } from '../components/Mannequin';
-import { EquipmentSlotType, InventoryItem, ItemType } from '@game/shared-types';
 import { getItemVisualMeta } from '../utils/itemVisual';
+
+import { useGameSession } from './GameTunnel';
 import './InventoryPage.css';
 
 type FilterType = 'ALL' | 'WEAPON' | 'ARMOR' | 'OTHER';
@@ -14,6 +19,7 @@ type FilterType = 'ALL' | 'WEAPON' | 'ARMOR' | 'OTHER';
 export function InventoryPage() {
   const [activeFilter, setActiveFilter] = React.useState<FilterType>('ALL');
   const queryClient = useQueryClient();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { activeSession } = useGameSession();
   const [selectedItem, setSelectedItem] = React.useState<InventoryItem | null>(null);
 

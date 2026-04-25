@@ -1,5 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
 import { TerrainType } from '@game/shared-types';
+import { BadRequestException } from '@nestjs/common';
+
 import { FarmingService } from './farming.service';
 
 describe('FarmingService', () => {

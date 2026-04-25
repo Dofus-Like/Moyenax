@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+
 import { SSE_RESOURCE_TYPE_KEY } from './sse-ticket.decorator';
 import { SseResourceType, SseTicketService } from './sse-ticket.service';
 

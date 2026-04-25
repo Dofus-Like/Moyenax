@@ -1,5 +1,5 @@
-import React, { useMemo, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
+import React, { useMemo } from 'react';
 import * as THREE from 'three';
 
 export interface GrassTileProps {

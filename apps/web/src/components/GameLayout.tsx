@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { useAuthStore } from '../store/auth.store';
+
 import { useGameSession } from '../pages/GameTunnel';
+import { useAuthStore } from '../store/auth.store';
 import { getSessionPo } from '../utils/sessionPo';
+
 import { GlobalBackground } from './GlobalBackground';
 import './GameLayout.css';
 

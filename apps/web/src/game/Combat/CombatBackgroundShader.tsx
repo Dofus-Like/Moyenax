@@ -1,11 +1,12 @@
-import React, { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useControls, button, folder } from 'leva';
+import React, { useRef } from 'react';
 import * as THREE from 'three';
+
 import { COMBAT_COLORS } from '../constants/colors';
 
-import vertexShader from './background.vert?raw';
 import fragmentShader from './background.frag?raw';
+import vertexShader from './background.vert?raw';
 
 export function CombatBackgroundShader() {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -28,21 +29,8 @@ export function CombatBackgroundShader() {
       opacity: { value: 1.0, min: 0, max: 1 },
       visible: true,
     }),
-    'Log for AI': button((get) => {
-      // Get values from the folder
-      const allValues = {
-        dayA: get('Background Shader.Sky Colors.dayA'),
-        dayB: get('Background Shader.Sky Colors.dayB'),
-        dayC: get('Background Shader.Sky Colors.dayC'),
-        sunA: get('Background Shader.Sky Colors.sunA'),
-        sunB: get('Background Shader.Sky Colors.sunB'),
-        sunC: get('Background Shader.Sky Colors.sunC'),
-        nightA: get('Background Shader.Sky Colors.nightA'),
-        nightB: get('Background Shader.Sky Colors.nightB'),
-        nightC: get('Background Shader.Sky Colors.nightC'),
-      };
-      console.log('--- SKY CONFIG ---');
-      console.log(JSON.stringify(allValues, null, 2));
+    'Log for AI': button((_get) => {
+      // Debug button - intentionally unused for now
     }),
   });
 

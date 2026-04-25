@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
 import { performance } from 'node:perf_hooks';
-import { PrismaService } from '../shared/prisma/prisma.service';
+
 import type { PlayerStats } from '@game/shared-types';
+import { Injectable } from '@nestjs/common';
+
 import { PerfLoggerService } from '../shared/perf/perf-logger.service';
+import { PrismaService } from '../shared/prisma/prisma.service';
 
 type EquippedSlotWithItem = any;
 type PlayerStatsModel = {
@@ -86,7 +88,7 @@ export class StatsCalculatorService {
       basePm: baseStats.basePm,
     };
 
-    slots.forEach((slot) => {
+    for (const slot of slots) {
       const inventoryItem = slot.inventoryItem;
       const sessionItem = slot.sessionItem;
       const item = inventoryItem?.item ?? sessionItem?.item;
@@ -94,13 +96,13 @@ export class StatsCalculatorService {
 
       if (item?.statsBonus) {
         const bonus = item.statsBonus as Partial<PlayerStats>;
-        Object.entries(bonus).forEach(([key, value]) => {
+        for (const [key, value] of Object.entries(bonus)) {
           if (key in effectiveStats && typeof value === 'number') {
             (effectiveStats as unknown as Record<string, number>)[key] += value * rank;
           }
-        });
+        }
       }
-    });
+    }
 
     return effectiveStats;
   }

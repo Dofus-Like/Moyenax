@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Param, UseGuards, Request } from '@nestjs/common';
-import { ResourcesService } from './resources.service';
+
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+
+import { ResourcesService } from './resources.service';
 
 @Controller('map/resources')
 export class ResourcesController {

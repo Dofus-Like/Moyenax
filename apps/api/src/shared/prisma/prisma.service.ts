@@ -1,6 +1,8 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
 import { performance } from 'node:perf_hooks';
+
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+
 import { PerfLoggerService } from '../perf/perf-logger.service';
 import { PerfStatsService } from '../perf/perf-stats.service';
 import { RequestContextService } from '../perf/request-context.service';

@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import CameraControls from 'camera-controls';
-import { useCombatStore } from '../../store/combat.store';
+import type CameraControls from 'camera-controls';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+
+import { useCombatStore } from '../../store/combat.store';
 
 interface CameraEffectsProps {
   controlsRef: React.RefObject<CameraControls | null>;

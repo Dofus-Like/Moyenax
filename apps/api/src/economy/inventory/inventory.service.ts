@@ -1,8 +1,9 @@
+import { GAME_EVENTS } from '@game/shared-types';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { PrismaService } from '../../shared/prisma/prisma.service';
-import { GAME_EVENTS } from '@game/shared-types';
+
 import { GameSessionService } from '../../game-session/game-session.service';
+import { PrismaService } from '../../shared/prisma/prisma.service';
 
 @Injectable()
 export class InventoryService {

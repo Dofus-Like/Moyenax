@@ -1,4 +1,5 @@
 import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
+
 import { usePerfHudStore } from './perf-hud.store';
 
 let started = false;

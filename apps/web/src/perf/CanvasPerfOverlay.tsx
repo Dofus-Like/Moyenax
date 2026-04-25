@@ -1,4 +1,5 @@
 import React, { Suspense, lazy } from 'react';
+
 import { usePerfHudStore } from './perf-hud.store';
 
 const SHOW_DEBUG = ['1', 'true', 'on', 'yes'].includes(

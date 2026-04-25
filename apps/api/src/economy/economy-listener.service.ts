@@ -1,6 +1,7 @@
+import { GAME_EVENTS } from '@game/shared-types';
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { GAME_EVENTS } from '@game/shared-types';
+
 import { SessionService } from '../combat/session/session.service';
 import { PerfLoggerService } from '../shared/perf/perf-logger.service';
 

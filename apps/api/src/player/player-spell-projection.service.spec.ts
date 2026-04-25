@@ -1,4 +1,5 @@
 import { SpellEffectKind, SpellFamily, SpellType, SpellVisualType } from '@game/shared-types';
+
 import { PlayerSpellProjectionService } from './player-spell-projection.service';
 
 const defaultSpell = {

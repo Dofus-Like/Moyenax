@@ -1,21 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SessionService } from './session.service';
-import { PrismaService } from '../../shared/prisma/prisma.service';
-import { RedisService } from '../../shared/redis/redis.service';
-import { SseService } from '../../shared/sse/sse.service';
+import { BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { PlayerSpellProjectionService } from '../../player/player-spell-projection.service';
 import { PlayerStatsService } from '../../player/player-stats.service';
-import { MapService } from '../map/map.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
+import { PrismaService } from '../../shared/prisma/prisma.service';
+import { RedisService } from '../../shared/redis/redis.service';
 import { SessionSecurityService } from '../../shared/security/session-security.service';
 import { SseTicketService } from '../../shared/security/sse-ticket.service';
-import { BadRequestException } from '@nestjs/common';
-import * as gameEngine from '@game/game-engine';
+import { SseService } from '../../shared/sse/sse.service';
+import { MapService } from '../map/map.service';
 
-jest.mock('@game/game-engine', () => ({
-  calculateInitiativeJet: jest.fn().mockReturnValue(100),
-}));
+import { SessionService } from './session.service';
 
 describe('SessionService', () => {
   let service: SessionService;
@@ -24,7 +22,6 @@ describe('SessionService', () => {
   let sessionSecurityService: jest.Mocked<SessionSecurityService>;
   let playerStatsService: jest.Mocked<PlayerStatsService>;
   let playerSpellProjection: jest.Mocked<PlayerSpellProjectionService>;
-  let mapService: jest.Mocked<MapService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -112,7 +109,6 @@ describe('SessionService', () => {
     sessionSecurityService = module.get(SessionSecurityService);
     playerStatsService = module.get(PlayerStatsService);
     playerSpellProjection = module.get(PlayerSpellProjectionService);
-    mapService = module.get(MapService);
   });
 
   afterEach(() => {

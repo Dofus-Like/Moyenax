@@ -1,5 +1,6 @@
-import { calculateBoundaryEdges, toPositionKey, toWorldPosition } from './unifiedMap.utils';
 import { COMBAT_COLORS } from '../constants/colors';
+
+import { calculateBoundaryEdges, toPositionKey, toWorldPosition } from './unifiedMap.utils';
 
 describe('calculateBoundaryEdges', () => {
   it('should return 4 edges for a single tile', () => {
@@ -83,10 +84,10 @@ describe('COMBAT_COLORS', () => {
     const requiredKeys = [
       'PM_VIOLET', 'PA_YELLOW', 'HP_RED', 'HEAL_GREEN', 'RANGE_ORANGE'
     ];
-    requiredKeys.forEach(key => {
+    for (const key of requiredKeys) {
       expect(COMBAT_COLORS).toHaveProperty(key);
       expect(COMBAT_COLORS[key as keyof typeof COMBAT_COLORS]).toMatch(/^#[0-9a-fA-F]{6}$/);
-    });
+    }
   });
 
   it('should have consistent dark variations for main types', () => {

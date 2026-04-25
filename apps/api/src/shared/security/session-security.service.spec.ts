@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
-import { MatchmakingQueueStore } from './matchmaking-queue.store';
+
+import type { MatchmakingQueueStore } from './matchmaking-queue.store';
 import { SessionSecurityService } from './session-security.service';
 
 describe('SessionSecurityService', () => {

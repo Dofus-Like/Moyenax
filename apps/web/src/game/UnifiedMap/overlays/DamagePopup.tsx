@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
 import { Text, Billboard } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import React, { useState, useRef } from 'react';
+
 import { COMBAT_COLORS } from '../../constants/colors';
 
 interface DamagePopupProps {

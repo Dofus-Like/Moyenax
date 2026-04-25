@@ -1,5 +1,5 @@
-import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
+import React, { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 
 interface FireballParticlesProps {
@@ -26,22 +26,20 @@ export function FireballParticles({ count = 40 }: FireballParticlesProps) {
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  useFrame((state) => {
+  useFrame((_state) => {
     if (!meshRef.current) return;
 
-    particles.forEach((particle, i) => {
-      let { t, factor, speed, xFactor, yFactor, zFactor } = particle;
-      
+    for (const [i, particle] of particles.entries()) {
       // On fait avancer le temps de la particule
-      t = particle.t += speed / 2;
+      const t = particle.t += particle.speed / 2;
       const a = Math.cos(t) + Math.sin(t * 1) / 10;
       const b = Math.sin(t) + Math.cos(t * 2) / 10;
       const s = Math.cos(t);
 
       // Mouvement en spirale derrière la boule
-      particle.mx += (xFactor * a) * 0.05;
-      particle.my += (yFactor * b) * 0.05;
-      particle.mz += (zFactor * s) * 0.05;
+      particle.mx += (particle.xFactor * a) * 0.05;
+      particle.my += (particle.yFactor * b) * 0.05;
+      particle.mz += (particle.zFactor * s) * 0.05;
 
       dummy.position.set(particle.mx, particle.my, particle.mz);
       dummy.scale.set(s, s, s);
@@ -49,7 +47,7 @@ export function FireballParticles({ count = 40 }: FireballParticlesProps) {
       dummy.updateMatrix();
 
       meshRef.current?.setMatrixAt(i, dummy.matrix);
-    });
+    }
     
     meshRef.current.instanceMatrix.needsUpdate = true;
   });

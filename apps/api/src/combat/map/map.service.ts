@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { CombatPosition, TerrainType, Tile } from '@game/shared-types';
 import { canMoveTo } from '@game/game-engine';
+import { CombatPosition, TerrainType, Tile } from '@game/shared-types';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MapService {

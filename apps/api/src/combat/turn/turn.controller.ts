@@ -1,6 +1,8 @@
+import type { CombatAction } from '@game/shared-types';
 import { Body, Controller, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+
 import { TurnService } from './turn.service';
 import { CombatActionDto } from './dto/combat-action.dto';
 

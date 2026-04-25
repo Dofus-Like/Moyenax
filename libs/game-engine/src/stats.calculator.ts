@@ -1,4 +1,4 @@
-import { PlayerStats, ItemDefinition } from '@game/shared-types';
+import type { PlayerStats, ItemDefinition } from '@game/shared-types';
 
 export function calculateEffectiveStats(
   baseStats: PlayerStats,

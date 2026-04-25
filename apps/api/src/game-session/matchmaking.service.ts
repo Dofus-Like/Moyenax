@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { PerfStatsService } from '../shared/perf/perf-stats.service';
 import { RedisService } from '../shared/redis/redis.service';
-import { MATCHMAKING_QUEUE_LOCK_KEY } from '../shared/security/security.constants';
 import { DistributedLockService } from '../shared/security/distributed-lock.service';
 import { MatchmakingQueueStore } from '../shared/security/matchmaking-queue.store';
+import { MATCHMAKING_QUEUE_LOCK_KEY } from '../shared/security/security.constants';
 import { SessionSecurityService } from '../shared/security/session-security.service';
-import { PerfStatsService } from '../shared/perf/perf-stats.service';
+
 import { GameSessionService } from './game-session.service';
 
 /**

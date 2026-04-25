@@ -1,8 +1,10 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import { Billboard, Text, RoundedBox } from '@react-three/drei';
+import { useFrame, useLoader, useThree } from '@react-three/fiber';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';
-import { PathNode, CombatPlayer } from '@game/shared-types';
+
+import type { PathNode, CombatPlayer } from '@game/shared-types';
+
 import { getSkinById } from '../../game/constants/skins';
 import { useAuthStore } from '../../store/auth.store';
 import { useCombatStore } from '../../store/combat.store';

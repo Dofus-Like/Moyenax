@@ -1,5 +1,6 @@
+import type { FarmingState, SeedId } from '@game/shared-types';
+
 import { apiClient } from './client';
-import { FarmingState, SeedId } from '@game/shared-types';
 
 export const farmingApi = {
   getState: (seed?: SeedId) =>

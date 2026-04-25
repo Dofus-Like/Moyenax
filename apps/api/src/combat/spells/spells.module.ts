@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { SpellsService } from './spells.service';
 
 @Module({

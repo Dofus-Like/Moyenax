@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { authApi } from '../api/auth.api';
 import { useAuthStore } from '../store/auth.store';
 import './LoginPage.css';
@@ -31,7 +32,7 @@ export function LoginPage() {
       setPlayer(me.data);
 
       navigate('/');
-    } catch (err) {
+    } catch {
       setError('Erreur d\'authentification. Vérifiez vos identifiants.');
     }
   };

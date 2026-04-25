@@ -1,10 +1,12 @@
-import { Injectable, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import {
   PerformanceObserver,
   constants as perfConstants,
   monitorEventLoopDelay,
 } from 'node:perf_hooks';
 import v8 from 'node:v8';
+
+import { Injectable, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
+
 import { PerfLoggerService } from './perf-logger.service';
 
 interface GcStats {

@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ShopService } from './shop.service';
-import { ShopController } from './shop.controller';
+
 import { GameSessionModule } from '../../game-session/game-session.module';
 import { SpendableGoldModule } from '../shared/spendable-gold.module';
+
+import { ShopController } from './shop.controller';
+import { ShopService } from './shop.service';
 
 @Module({
   imports: [GameSessionModule, SpendableGoldModule],

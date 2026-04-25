@@ -1,4 +1,6 @@
-import { EquipmentSlotType, InventoryItem } from '@game/shared-types';
+import type { InventoryItem } from '@game/shared-types';
+import { EquipmentSlotType } from '@game/shared-types';
+
 import mannequinBg from '../assets/mannequin-bg.gif';
 import './Mannequin.css';
 

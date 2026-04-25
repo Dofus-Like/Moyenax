@@ -1,3 +1,10 @@
+import {
+  SpellDefinition,
+  SpellEffectKind,
+  SpellFamily,
+  SpellType,
+  SpellVisualType,
+} from '@game/shared-types';
 import { Injectable } from '@nestjs/common';
 import {
   Prisma,
@@ -6,14 +13,9 @@ import {
   SpellType as PrismaSpellType,
   SpellVisualType as PrismaSpellVisualType,
 } from '@prisma/client';
-import {
-  SpellDefinition,
-  SpellEffectKind,
-  SpellFamily,
-  SpellType,
-  SpellVisualType,
-} from '@game/shared-types';
+
 import { PrismaService } from '../shared/prisma/prisma.service';
+
 import { SpellResolverService } from './spell-resolver.service';
 
 type SpellRow = {

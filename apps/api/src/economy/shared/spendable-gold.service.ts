@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+
 import { GameSessionService } from '../../game-session/game-session.service';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 

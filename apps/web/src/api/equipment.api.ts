@@ -1,5 +1,6 @@
+import type { EquipmentSlotType } from '@game/shared-types';
+
 import { apiClient } from './client';
-import { EquipmentSlotType } from '@game/shared-types';
 
 export const equipmentApi = {
   getEquipment: () => apiClient.get('/equipment'),

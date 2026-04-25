@@ -1,12 +1,12 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
 import { performance } from 'node:perf_hooks';
-import { RedisService } from '../../shared/redis/redis.service';
-import { SseService } from '../../shared/sse/sse.service';
-import type { CombatState, CombatAction, CombatPosition } from '@game/shared-types';
-import { CombatActionType } from '@game/shared-types';
+
 import { canMoveTo, canJumpTo, isInRange, hasLineOfSight } from '@game/game-engine';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import type { CombatState, CombatAction } from '@game/shared-types';
+import { CombatActionType } from '@game/shared-types';
 import { GAME_EVENTS } from '@game/shared-types';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 import { PerfStatsService } from '../../shared/perf/perf-stats.service';
 import { RuntimePerfService } from '../../shared/perf/runtime-perf.service';
@@ -14,6 +14,8 @@ import {
   DistributedLockService,
   LockNotAcquiredError,
 } from '../../shared/security/distributed-lock.service';
+import { RedisService } from '../../shared/redis/redis.service';
+import { SseService } from '../../shared/sse/sse.service';
 import { SpellsService } from '../spells/spells.service';
 
 /**
@@ -290,9 +292,9 @@ export class TurnService {
     }
 
     const executionResult = this.spells.executeEffect(state, spell, player, targetPos);
-    executionResult.events.forEach((event) => {
+    for (const event of executionResult.events) {
       this.sse.emit(state.sessionId, event.type, event.payload);
-    });
+    }
 
     player.remainingPa -= spell.paCost;
     if (spell.cooldown > 0) {
@@ -328,9 +330,6 @@ export class TurnService {
         const winnerId = winner?.playerId;
 
         state.winnerId = winnerId; // Marquer l'état comme fini pour le front
-        console.log(
-          `[TurnService] Combat ended! Winner: ${winnerId}, Loser: ${loserId}, Session: ${state.sessionId}`,
-        );
 
         this.sse.emit(state.sessionId, 'COMBAT_ENDED', { winnerId, loserId });
 
@@ -366,7 +365,7 @@ export class TurnService {
     const currentPlayer = state.players[playerId];
 
     // Décrémenter les buffs du joueur qui finit son tour
-    currentPlayer.buffs.forEach((b) => b.remainingTurns--);
+    for (const b of currentPlayer.buffs) b.remainingTurns--;
 
     // Nettoyage à l'expiration: certains buffs mutent stats permanentes (VIT_MAX).
     // On doit inverser ces mutations avant de filtrer les buffs expirés, sinon le

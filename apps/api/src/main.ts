@@ -1,9 +1,11 @@
+import { performance } from 'node:perf_hooks';
+
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { performance } from 'node:perf_hooks';
+
 import { AppModule } from './app/app.module';
 import { PerfLoggerService } from './shared/perf/perf-logger.service';
 import { RuntimePerfService } from './shared/perf/runtime-perf.service';
@@ -87,9 +89,9 @@ async function bootstrap() {
     },
     { force: true },
   );
-  console.log(`API running on http://localhost:${port}`);
+  console.warn(`API running on http://localhost:${port}`);
   if (swaggerEnabled) {
-    console.log(`Swagger docs on http://localhost:${port}/api/docs`);
+    console.warn(`Swagger docs on http://localhost:${port}/api/docs`);
   }
 }
 

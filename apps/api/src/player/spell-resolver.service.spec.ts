@@ -1,13 +1,15 @@
-import { SpellResolverService } from './spell-resolver.service';
-import {
+import type {
   Item,
-  Spell,
+  Spell} from '@prisma/client';
+import {
   SpellFamily,
   ItemType,
   SpellType,
   SpellVisualType,
   SpellEffectKind,
 } from '@prisma/client';
+
+import { SpellResolverService } from './spell-resolver.service';
 
 describe('SpellResolverService', () => {
   let service: SpellResolverService;

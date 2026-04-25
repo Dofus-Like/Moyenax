@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+
 import { getSkinById } from '../../game/constants/skins';
 import './PlayerAvatar.css';
 

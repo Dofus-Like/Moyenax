@@ -1,21 +1,26 @@
 import React, { Suspense, useMemo } from 'react';
-import { 
+
+import type { 
   CombatPlayer, 
   GameMap, 
-  PathNode, 
+  PathNode} from '@game/shared-types';
+import { 
   TerrainType, 
   TERRAIN_PROPERTIES, 
   CombatTerrainType 
 } from '@game/shared-types';
+
+import { PathPreview } from '../ResourceMap/PathPreview';
+import type { PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
+import { PlayerPawn } from '../ResourceMap/PlayerPawn';
 import { TerrainTile } from '../ResourceMap/TerrainTile';
 import { TileHoverEffect } from '../ResourceMap/TileHoverEffect';
-import { PlayerPawn, PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
-import { PathPreview } from '../ResourceMap/PathPreview';
+
 import { CombatHighlightsLayer } from './CombatHighlights';
-import { SpellVFX } from './overlays/SpellVFX';
-import { DamagePopup } from './overlays/DamagePopup';
-import { InstancedTerrain } from './InstancedTerrain';
 import { InstancedFoliage } from './InstancedFoliage';
+import { InstancedTerrain } from './InstancedTerrain';
+import { DamagePopup } from './overlays/DamagePopup';
+import { SpellVFX } from './overlays/SpellVFX';
 
 interface TerrainLayerProps {
   map: GameMap;

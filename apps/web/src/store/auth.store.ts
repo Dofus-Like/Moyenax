@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+
 import { authApi } from '../api/auth.api';
 
 interface PlayerProfile {

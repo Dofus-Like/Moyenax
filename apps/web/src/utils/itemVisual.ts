@@ -1,8 +1,3 @@
-type ShopVisualableItem = {
-  type?: string | null;
-  family?: string | null;
-};
-
 const ITEM_TYPE_ICONS: Record<string, string> = {
   WEAPON: '⚔️',
   ARMOR_HEAD: '⛑️',

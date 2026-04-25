@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import {
   TerrainType,
   GameMap,
@@ -8,6 +7,8 @@ import {
   ALL_SEED_IDS,
   TERRAIN_PROPERTIES,
 } from '@game/shared-types';
+import { Injectable } from '@nestjs/common';
+
 import { RedisService } from '../../shared/redis/redis.service';
 
 interface TerrainBudget {
@@ -95,7 +96,7 @@ export class MapGeneratorService {
    * Verifies that the two spawn corners are reachable from each other.
    * If blocked, carves a walkable corridor.
    */
-  private ensureConnectivity(grid: TerrainType[][], spawnZones: Set<string>): void {
+  private ensureConnectivity(grid: TerrainType[][], _spawnZones: Set<string>): void {
     const start = { x: 0, y: 0 };
     const end = { x: MAP_SIZE - 1, y: MAP_SIZE - 1 };
 
@@ -159,7 +160,6 @@ export class MapGeneratorService {
       grid[sy][sx] = type;
       placed++;
 
-      const toExpand = Math.min(clusterSize - 1, count - placed);
       const neighbors = this.shuffleArray(
         [
           [sx - 1, sy],

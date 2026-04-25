@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
 import { useFBX, useTexture } from '@react-three/drei';
+import React, { useMemo } from 'react';
 import * as THREE from 'three';
 
 export interface BushProps {
@@ -39,7 +39,7 @@ function BushModel({ url, rotationY, texture }: { url: string; rotationY: number
         
         if (mesh.material) {
           const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          mats.forEach(m => {
+          for (const m of mats) {
             if ('map' in m) {
               (m as any).map = texture;
               (m as any).map.colorSpace = THREE.SRGBColorSpace;
@@ -47,7 +47,7 @@ function BushModel({ url, rotationY, texture }: { url: string; rotationY: number
             }
             if ('shininess' in m) (m as any).shininess = 0;
             m.needsUpdate = true;
-          });
+          }
         }
       }
     });

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+
 import { gameSessionApi } from '../api/game-session.api';
 import { useAuthStore } from '../store/auth.store';
 import { useCombatStore } from '../store/combat.store';
@@ -173,7 +174,6 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
         }
 
         setActiveSession((prev) => {
-          console.log(`[GameTunnel] SSE Update for session ${next.id}: status=${next.status}, phase=${next.phase}, combats=${next.combats?.length}`);
           return prev && prev.id === next.id ? { ...prev, ...next } : next;
         });
       } catch (error) {

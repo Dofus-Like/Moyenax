@@ -1,10 +1,12 @@
 import { Controller, Get, Param, Post, Request, Sse, UseGuards } from '@nestjs/common';
-import { Observable } from 'rxjs';
 import { Throttle, seconds } from '@nestjs/throttler';
+import { Observable } from 'rxjs';
+
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { SseTicketGuard } from '../../shared/security/sse-ticket.guard';
 import { SseTicketResource } from '../../shared/security/sse-ticket.decorator';
+import { SseTicketGuard } from '../../shared/security/sse-ticket.guard';
 import { SseService } from '../../shared/sse/sse.service';
+
 import { SessionService } from './session.service';
 
 @Controller('combat')

@@ -1,10 +1,3 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
-import { RedisService } from '../../shared/redis/redis.service';
-import { MapGeneratorService } from '../map/map-generator.service';
-import { InventoryService } from '../../economy/inventory/inventory.service';
-import { SpendableGoldService } from '../../economy/shared/spendable-gold.service';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 import {
   FarmingState,
   SeedId,
@@ -12,7 +5,15 @@ import {
   TerrainType,
   GAME_EVENTS,
 } from '@game/shared-types';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
+
+import { InventoryService } from '../../economy/inventory/inventory.service';
+import { SpendableGoldService } from '../../economy/shared/spendable-gold.service';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
+import { PrismaService } from '../../shared/prisma/prisma.service';
+import { RedisService } from '../../shared/redis/redis.service';
+import { MapGeneratorService } from '../map/map-generator.service';
 
 @Injectable()
 export class FarmingService {
@@ -45,11 +46,11 @@ export class FarmingService {
       const map = await this.mapGenerator.getOrCreateMap(effectiveSeedId, effectiveMapSeed);
 
       const gridCells: { x: number; y: number; terrain: TerrainType }[] = [];
-      map.grid.forEach((row, y) => {
-        row.forEach((terrain, x) => {
+      for (const [y, row] of map.grid.entries()) {
+        for (const [x, terrain] of row.entries()) {
           gridCells.push({ x, y, terrain });
-        });
-      });
+        }
+      }
 
       state = {
         playerId,
@@ -159,9 +160,6 @@ export class FarmingService {
         state.round += 1;
         state.pips = 4;
         await this.redis.setJson(key, state, 86400);
-        console.log(
-          `[Farming] Reset pips and incremented round for player ${playerId} (Round ${state.round})`,
-        );
       }
     }
   }

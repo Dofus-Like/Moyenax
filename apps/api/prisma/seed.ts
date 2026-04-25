@@ -8,6 +8,7 @@ import {
   SpellEffectKind,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+
 import { createDefaultPlayerStats } from '../src/player/default-player-stats';
 
 const prisma = new PrismaClient();
@@ -301,7 +302,7 @@ async function rebuildPlayerSpellsForPlayer(playerId: string) {
 }
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.warn('🌱 Seeding database...');
 
   // Only clear volatile session/combat data — catalog and player data are preserved.
   await prisma.combatTurn.deleteMany();
@@ -1066,10 +1067,10 @@ async function main() {
 
   const itemCount = await prisma.item.count();
   const spellCount = await prisma.spell.count();
-  console.log('✅ Seed completed!');
-  console.log(`   Items: ${itemCount}`);
-  console.log(`   Spells: ${spellCount}`);
-  console.log(`   Players: Warrior, Mage, Ninja, Troll pénien (skipped if already exist)`);
+  console.warn('✅ Seed completed!');
+  console.warn(`   Items: ${itemCount}`);
+  console.warn(`   Spells: ${spellCount}`);
+  console.warn(`   Players: Warrior, Mage, Ninja, Troll pénien (skipped if already exist)`);
 }
 
 main()

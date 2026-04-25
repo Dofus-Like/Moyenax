@@ -1,7 +1,9 @@
 import React from 'react';
-import { PathNode } from '@game/shared-types';
-import { COMBAT_COLORS } from '../constants/colors';
+
+import type { PathNode } from '@game/shared-types';
+
 import { BoundaryOutline } from '../UnifiedMap/CombatHighlights';
+import { COMBAT_COLORS } from '../constants/colors';
 
 interface PathPreviewProps {
   path: PathNode[];

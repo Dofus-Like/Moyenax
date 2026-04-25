@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { calculateDamage, calculateHeal } from '@game/game-engine';
 import { performance } from 'node:perf_hooks';
+
+import { calculateDamage, calculateHeal } from '@game/game-engine';
 import {
   type CombatPosition,
   type CombatState,
@@ -10,6 +10,8 @@ import {
   TerrainType,
   TERRAIN_PROPERTIES,
 } from '@game/shared-types';
+import { BadRequestException, Injectable } from '@nestjs/common';
+
 import { PerfStatsService } from '../../shared/perf/perf-stats.service';
 
 export type SpellRuntimeEvent =

@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { PathNode, TerrainType, TERRAIN_PROPERTIES } from '@game/shared-types';
+
+import type { PathNode, TerrainType} from '@game/shared-types';
+import { TERRAIN_PROPERTIES } from '@game/shared-types';
+
 import { useFarmingStore } from '../../../store/farming.store';
 
 interface UseAutoHarvestProps {
@@ -27,17 +30,13 @@ export function useAutoHarvest({ currentPosition, terrain, onHarvest }: UseAutoH
 
       if (terrainProps.harvestable && terrainProps.resourceName) {
         // Déclencher la récolte automatique
-        console.log(`Auto-harvest: ${terrainProps.resourceName} at (${currentPosition.x}, ${currentPosition.y})`);
-        
         setHarvesting(true);
 
         if (onHarvest) {
           onHarvest(currentPosition.x, currentPosition.y, terrainProps.resourceName)
             .then(() => {
-              console.log(`Harvested: ${terrainProps.resourceName}`);
             })
-            .catch((error) => {
-              console.error('Harvest failed:', error);
+            .catch((_error) => {
             })
             .finally(() => {
               setHarvesting(false);

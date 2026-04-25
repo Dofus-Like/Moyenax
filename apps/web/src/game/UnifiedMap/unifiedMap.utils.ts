@@ -1,4 +1,4 @@
-import { PathNode, Tile } from '@game/shared-types';
+import type { PathNode, Tile } from '@game/shared-types';
 
 export function toPositionKey(x: number, y: number) {
   return `${x},${y}`;
@@ -29,7 +29,7 @@ export function calculateBoundaryEdges(tiles: { x: number; y: number }[]): Bound
   const tileSet = new Set(tiles.map(t => toPositionKey(t.x, t.y)));
   const boundaryEdges: BoundaryEdge[] = [];
 
-  tiles.forEach(tile => {
+  for (const tile of tiles) {
     // Neighbors: Top (dy -1), Bottom (dy +1), Left (dx -1), Right (dx +1)
     const neighbors = [
       { dx: 0, dy: -1, start: [-0.5, -0.5], end: [0.5, -0.5] }, // Top
@@ -38,15 +38,15 @@ export function calculateBoundaryEdges(tiles: { x: number; y: number }[]): Bound
       { dx: 1, dy: 0, start: [0.5, -0.5], end: [0.5, 0.5] },   // Right
     ];
 
-    neighbors.forEach(({ dx, dy, start, end }) => {
+    for (const { dx, dy, start, end } of neighbors) {
       if (!tileSet.has(toPositionKey(tile.x + dx, tile.y + dy))) {
         boundaryEdges.push({ 
           start: [tile.x + start[0], tile.y + start[1]], 
           end: [tile.x + end[0], tile.y + end[1]]
         });
       }
-    });
-  });
+    }
+  }
 
   return boundaryEdges;
 }

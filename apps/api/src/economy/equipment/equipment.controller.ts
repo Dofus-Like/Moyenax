@@ -1,7 +1,9 @@
-import { Controller, Get, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
-import { EquipmentService } from './equipment.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { EquipmentSlotType } from '@game/shared-types';
+import { Controller, Get, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+
+import { EquipmentService } from './equipment.service';
 
 @Controller('equipment')
 @UseGuards(JwtAuthGuard)

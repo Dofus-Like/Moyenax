@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
-import { FarmingService } from './farming.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SeedId } from '@game/shared-types';
+import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
+
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+
 import { GatherResourceDto } from './dto/gather-resource.dto';
+import { FarmingService } from './farming.service';
 
 @Controller('farming')
 @UseGuards(JwtAuthGuard)

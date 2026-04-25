@@ -1,21 +1,24 @@
+import { OrthographicCamera, CameraControls, Text } from '@react-three/drei';
+import { Canvas, useLoader } from '@react-three/fiber';
+import CameraControlsImpl from 'camera-controls';
 import React, { useEffect, useMemo, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Canvas, useLoader } from '@react-three/fiber';
-import { OrthographicCamera, CameraControls, Text } from '@react-three/drei';
-import CameraControlsImpl from 'camera-controls';
 import * as THREE from 'three';
-import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
-import { CombatHUD } from '../game/HUD/CombatHUD';
-import { useCombatStore } from '../store/combat.store';
-import { useAuthStore } from '../store/auth.store';
+
 import { TerrainType } from '@game/shared-types';
-import { useGameSession } from './GameTunnel';
+
 import { gameSessionApi } from '../api/game-session.api';
-import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CameraEffects } from '../game/Combat/CameraEffects';
+import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
+import { CombatHUD } from '../game/HUD/CombatHUD';
+import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import '../game/constants/colors';
 import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
 import { ProfiledRegion } from '../perf/render-profiler';
+import { useAuthStore } from '../store/auth.store';
+import { useCombatStore } from '../store/combat.store';
+
+import { useGameSession } from './GameTunnel';
 import './CombatPage.css';
 
 /**
@@ -120,10 +123,7 @@ export function CombatPage() {
     // au state de se stabiliser et au joueur de voir le résultat.
     const isRecentlyMounted = Date.now() - mountedAtRef.current < 3000;
 
-    console.log(`[CombatPage] Phase monitor [UrlId: ${combatIdFromUrl}, LatestId: ${latestCombatId}]: phase=${phase}, status=${activeSession.status}, isRecentlyMounted=${isRecentlyMounted}`);
-
     if (activeSession.status === 'FINISHED' && !isRecentlyMounted) {
-      console.log('[CombatPage] Session completely finished, redirecting to root');
       navigate('/', { replace: true });
     }
 
@@ -144,11 +144,11 @@ export function CombatPage() {
       .fill(0)
       .map(() => Array(combatState.map.width).fill(TerrainType.GROUND));
     
-    combatState.map.tiles.forEach((t) => {
+    for (const t of combatState.map.tiles) {
       if (grid[t.y] && grid[t.y][t.x] !== undefined) {
         grid[t.y][t.x] = t.type;
       }
-    });
+    }
     
     return { 
       width: combatState.map.width, 

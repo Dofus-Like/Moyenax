@@ -1,7 +1,8 @@
 import React from 'react';
-import { useCombatStore } from '../../store/combat.store';
-import { useAuthStore } from '../../store/auth.store';
+
 import { getSkinById } from '../../game/constants/skins';
+import { useAuthStore } from '../../store/auth.store';
+import { useCombatStore } from '../../store/combat.store';
 import './CombatMannequins.css';
 
 export function CombatMannequins() {

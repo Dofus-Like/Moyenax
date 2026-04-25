@@ -19,14 +19,14 @@ export class SpellResolverService {
     const counts: Record<string, number> = {};
 
     // 1. Spells par défaut
-    defaultSpells.forEach((s) => (counts[s.id] = (counts[s.id] || 0) + 1));
+    for (const s of defaultSpells) (counts[s.id] = (counts[s.id] || 0) + 1);
 
     // 2. Spells accordés par items (via ItemGrantedSpell)
-    itemGrantedSpells.forEach((g) => {
+    for (const g of itemGrantedSpells) {
       if (itemIds.includes(g.itemId)) {
         counts[g.spellId] = (counts[g.spellId] || 0) + 1;
       }
-    });
+    }
 
     // 3. Combos (T4.4.2)
     const comboPairs = [
@@ -58,7 +58,7 @@ export class SpellResolverService {
     for (const set of families) {
       if (set.items.every((name) => itemNames.includes(name))) {
         const familySpells = allSpells.filter((s) => s.family === set.family);
-        familySpells.forEach((s) => (counts[s.id] = (counts[s.id] || 0) + 1));
+        for (const s of familySpells) (counts[s.id] = (counts[s.id] || 0) + 1);
       }
     }
 

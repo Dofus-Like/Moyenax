@@ -1,6 +1,11 @@
-import { CombatActionType, CombatState } from '@game/shared-types';
 import { create } from 'zustand';
+
+import type { CombatState } from '@game/shared-types';
+import { CombatActionType } from '@game/shared-types';
+
+
 import { combatApi } from '../api/combat.api';
+
 import { useAuthStore } from './auth.store';
 
 interface CombatLog {

@@ -1,4 +1,5 @@
-import { TerrainType, TERRAIN_PROPERTIES, GameMap, CombatTerrainType } from './map.types';
+import type { TerrainType, GameMap} from './map.types';
+import { TERRAIN_PROPERTIES, CombatTerrainType } from './map.types';
 
 export interface PathNode {
   x: number;

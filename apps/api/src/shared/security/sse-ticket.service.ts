@@ -1,6 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+
+import { ForbiddenException, Injectable } from '@nestjs/common';
+
 import { RedisService } from '../redis/redis.service';
+
 import { SSE_TICKET_PREFIX, SSE_TICKET_TTL_SECONDS } from './security.constants';
 
 export type SseResourceType = 'game-session' | 'combat';

@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useControls, button, folder } from 'leva';
+import React, { useMemo } from 'react';
 import * as THREE from 'three';
+
 import { COMBAT_COLORS } from '../constants/colors';
 
 interface CastleProps {
@@ -66,17 +67,8 @@ export function Castle({ position, targetSize, rotation = [0, 0, 0] }: CastlePro
       castleEmissiveNight: { value: COMBAT_COLORS.CASTLE_EMISSIVE_NIGHT },
       castleEmissiveIntensity: { value: COMBAT_COLORS.CASTLE_EMISSIVE_INTENSITY, min: 0, max: 2 },
     }),
-    'Log Castle for AI': button((get) => {
-      const castleConfig = {
-        castleDay: get('Background Shader.Castle Colors.castleDay'),
-        castleSun: get('Background Shader.Castle Colors.castleSun'),
-        castleNight: get('Background Shader.Castle Colors.castleNight'),
-        castleEmissiveSun: get('Background Shader.Castle Colors.castleEmissiveSun'),
-        castleEmissiveNight: get('Background Shader.Castle Colors.castleEmissiveNight'),
-        castleEmissiveIntensity: get('Background Shader.Castle Colors.castleEmissiveIntensity'),
-      };
-      console.log('--- CASTLE CONFIG ---');
-      console.log(JSON.stringify(castleConfig, null, 2));
+    'Log Castle for AI': button((_get) => {
+      // Debug button - intentionally unused for now
     }),
   }, { collapsed: true });
 
@@ -108,13 +100,13 @@ export function Castle({ position, targetSize, rotation = [0, 0, 0] }: CastlePro
       intensity = config.castleEmissiveIntensity;
     }
 
-    materials.forEach(m => {
+    for (const m of materials) {
       if (m.isMeshStandardMaterial) {
         m.color.copy(targetColor);
         m.emissive.copy(targetEmissive);
         m.emissiveIntensity = intensity;
       }
-    });
+    }
   });
 
   return (

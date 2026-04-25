@@ -23,9 +23,9 @@ async function main() {
 
   for (const { name, iconPath } of updates) {
     const result = await prisma.item.updateMany({ where: { name }, data: { iconPath } });
-    console.log(`${name}: ${result.count} row(s) updated → ${iconPath}`);
+    console.warn(`${name}: ${result.count} row(s) updated → ${iconPath}`);
   }
-  console.log('\nDone!');
+  console.warn('\nDone!');
 }
 
 main()

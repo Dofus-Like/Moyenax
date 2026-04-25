@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
 import { performance } from 'node:perf_hooks';
+
+import { Injectable } from '@nestjs/common';
 
 interface RollingSample {
   duration: number;

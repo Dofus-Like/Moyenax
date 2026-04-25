@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ResourcesModule } from './resources/resources.module';
-import { WorldMapModule } from './map/map.module';
+
 import { FarmingModule } from './farming/farming.module';
+import { WorldMapModule } from './map/map.module';
+import { ResourcesModule } from './resources/resources.module';
 
 @Module({
   imports: [ResourcesModule, WorldMapModule, FarmingModule],

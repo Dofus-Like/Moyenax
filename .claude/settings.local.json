@@ -37,7 +37,22 @@
       "Bash(git -C /Users/alexandre/Documents/dev/Hackaton/game-monorepo add biome.json eslint.config.mjs apps/api/eslint.config.mjs apps/web/eslint.config.mjs libs/ui-components/eslint.config.mjs apps/api/project.json apps/web/project.json libs/shared-types/project.json libs/ui-components/project.json libs/game-engine/project.json package.json yarn.lock .husky/pre-commit .prettierrc .prettierignore apps/ libs/ scripts/ balance_results.json list_glb_nodes.js)",
       "Bash(git -C /Users/alexandre/Documents/dev/Hackaton/game-monorepo status --short)",
       "Bash(git -C /Users/alexandre/Documents/dev/Hackaton/game-monorepo add .vscode/launch.json)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(gh pr *)",
+      "Bash(dotenv -e .env -- nx run-many --target=lint --all)",
+      "Bash(yarn lint *)",
+      "Bash(npx vitest *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); t=d['total']; print\\(json.dumps\\({'lines':t['lines']['pct'],'statements':t['statements']['pct'],'functions':t['functions']['pct'],'branches':t['branches']['pct']}, indent=2\\)\\)\")",
+      "Bash(npm info *)",
+      "Bash(docker info *)",
+      "Bash(npx jest *)",
+      "Bash(sed -n '1,15p' apps/api/src/combat/turn/turn.controller.ts)",
+      "Bash(sed -n '1,20p' apps/api/src/combat/turn/turn.module.ts)",
+      "Bash(sed -n '10,25p' apps/api/src/combat/turn/turn.service.ts)",
+      "Bash(sed -n '368,390p' apps/api/src/combat/turn/turn.service.ts)",
+      "Bash(sed -n '1,15p' apps/api/src/game-session/matchmaking.service.ts)",
+      "Bash(sed -n '68,82p' apps/api/src/shared/security/matchmaking-queue.store.spec.ts)",
+      "Bash(sed -n '202,215p' libs/game-engine/src/combat.calculator.ts)"
     ]
   }
 }

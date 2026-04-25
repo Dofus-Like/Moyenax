@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { gameSessionApi } from '../api/game-session.api';
 import { SKINS } from '../game/constants/skins';
 import { useAuthStore } from '../store/auth.store';
+
 import { useGameSession } from './GameTunnel';
 import './LobbyPage.css';
 

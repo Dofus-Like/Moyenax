@@ -1,8 +1,12 @@
 import React from 'react';
-import { useCombatStore } from '../../store/combat.store';
-import { useAuthStore } from '../../store/auth.store';
+
+import type { SpellDefinition} from '@game/shared-types';
+import { SpellFamily } from '@game/shared-types';
+
 import { getSkinById } from '../../game/constants/skins';
-import { SpellDefinition, SpellFamily } from '@game/shared-types';
+import { useAuthStore } from '../../store/auth.store';
+import { useCombatStore } from '../../store/combat.store';
+
 import './CombatPlayerPanel.css';
 
 interface CombatPlayerPanelProps {

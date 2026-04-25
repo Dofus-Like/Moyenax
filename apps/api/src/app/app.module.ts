@@ -1,24 +1,25 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule, seconds } from '@nestjs/throttler';
+
+import { AuthModule } from '../auth/auth.module';
+import { CombatModule } from '../combat/combat.module';
+import { EconomyModule } from '../economy/economy.module';
+import { GameSessionModule } from '../game-session/game-session.module';
+import { HealthModule } from '../health/health.module';
+import { PlayerModule } from '../player/player.module';
 import { PerfModule } from '../shared/perf/perf.module';
 import { RequestContextMiddleware } from '../shared/perf/request-context.middleware';
 import { PrismaModule } from '../shared/prisma/prisma.module';
 import { RedisModule } from '../shared/redis/redis.module';
-import { SecurityModule } from '../shared/security/security.module';
 import { AppThrottlerGuard } from '../shared/security/app-throttler.guard';
 import { validateEnv } from '../shared/security/env.validation';
-import { AuthModule } from '../auth/auth.module';
-import { PlayerModule } from '../player/player.module';
-import { WorldModule } from '../world/world.module';
-import { EconomyModule } from '../economy/economy.module';
-import { CombatModule } from '../combat/combat.module';
-import { GameSessionModule } from '../game-session/game-session.module';
-import { HealthModule } from '../health/health.module';
-import { VersionModule } from '../version/version.module';
+import { SecurityModule } from '../shared/security/security.module';
 import { SseModule } from '../shared/sse/sse.module';
+import { VersionModule } from '../version/version.module';
+import { WorldModule } from '../world/world.module';
 
 @Module({
   imports: [

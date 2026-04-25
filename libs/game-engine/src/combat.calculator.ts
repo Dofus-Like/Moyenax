@@ -1,9 +1,10 @@
-import {
+import type {
   SpellDefinition,
   PlayerStats,
   CombatPosition,
   TerrainType,
-  Tile,
+  Tile} from '@game/shared-types';
+import {
   TERRAIN_PROPERTIES,
 } from '@game/shared-types';
 
@@ -201,6 +202,8 @@ export function canJumpTo(
   if (!targetTile || !TERRAIN_PROPERTIES[targetTile.type as TerrainType].traversable) return false;
 
   const isOccupied = occupiedPositions.some((p) => p.x === to.x && p.y === to.y);
-  if (isOccupied) return false;
+  if (isOccupied) {
+    return false;
+  }
   return true;
 }

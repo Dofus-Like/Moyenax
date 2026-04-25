@@ -1,6 +1,8 @@
 import { Controller, Get, UseGuards, Request } from '@nestjs/common';
-import { InventoryService } from './inventory.service';
+
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+
+import { InventoryService } from './inventory.service';
 
 @Controller('inventory')
 @UseGuards(JwtAuthGuard)

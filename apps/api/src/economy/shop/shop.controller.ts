@@ -1,8 +1,10 @@
 import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
-import { ShopService } from './shop.service';
+
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+
 import { BuyItemDto } from './dto/buy-item.dto';
 import { SellItemDto } from './dto/sell-item.dto';
+import { ShopService } from './shop.service';
 
 @Controller('shop')
 @UseGuards(JwtAuthGuard)

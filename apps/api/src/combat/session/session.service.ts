@@ -1,9 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { performance } from 'node:perf_hooks';
+
 import { calculateInitiativeJet } from '@game/game-engine';
 import { GAME_EVENTS } from '@game/shared-types';
 import type { CombatState } from '@game/shared-types';
-import { performance } from 'node:perf_hooks';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+
+
 import { PlayerSpellProjectionService } from '../../player/player-spell-projection.service';
 import { PlayerStatsService } from '../../player/player-stats.service';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
@@ -233,9 +236,6 @@ export class SessionService {
   async handleCombatEndedEvent(payload: { winnerId: string; loserId: string; sessionId: string }) {
     // This handles cases where TurnService ended the combat (surrender/death)
     // We call endCombat to ensure DB is updated and POs are awarded
-    console.log(
-      `[SessionService] Received COMBAT_ENDED event for ${payload.sessionId}. Synchronizing DB.`,
-    );
     await this.endCombat(payload.sessionId, payload.winnerId, payload.loserId);
   }
 

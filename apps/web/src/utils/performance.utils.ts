@@ -14,8 +14,8 @@ export function updateInstanceMatrix(
   x: number,
   y: number,
   z: number,
-  scale: number = 1,
-  rotationY: number = 0
+  scale = 1,
+  rotationY = 0
 ) {
   tempPosition.set(x, y, z);
   tempRotation.set(0, rotationY, 0);

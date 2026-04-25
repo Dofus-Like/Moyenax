@@ -1,4 +1,4 @@
-import { ResourceFamily } from '@game/shared-types';
+import type { ResourceFamily } from '@game/shared-types';
 
 export interface PlayerColors {
   primary: string;
@@ -39,17 +39,17 @@ export const ARCHETYPE_COLORS: Record<ResourceFamily | 'NEUTRAL', PlayerColors> 
  * Pour le moment, retourne NEUTRAL par défaut
  * TODO: Analyser l'inventaire quand le système d'équipement sera implémenté
  */
-export function getPlayerArchetype(inventory?: any): ResourceFamily | 'NEUTRAL' {
+export function getPlayerArchetype(_inventory?: any): ResourceFamily | 'NEUTRAL' {
   // Pour le moment, on retourne NEUTRAL
   // Plus tard, on analysera l'équipement pour déterminer la classe dominante
   // Par exemple:
   // - Compter les items FORGE vs ARCANE vs NATURE équipés
   // - Retourner la famille majoritaire
-  
+
   return 'NEUTRAL';
 }
 
-export function getPlayerColors(inventory?: any): PlayerColors {
-  const archetype = getPlayerArchetype(inventory);
+export function getPlayerColors(_inventory?: any): PlayerColors {
+  const archetype = getPlayerArchetype(_inventory);
   return ARCHETYPE_COLORS[archetype];
 }

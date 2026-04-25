@@ -1,5 +1,6 @@
+import type { GameMap, SeedId } from '@game/shared-types';
+
 import { apiClient } from './client';
-import { GameMap, SeedId } from '@game/shared-types';
 
 export const mapApi = {
   getMap: () => apiClient.get<GameMap>('/map').then((res) => res.data),

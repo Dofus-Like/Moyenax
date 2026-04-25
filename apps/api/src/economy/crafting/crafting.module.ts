@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { CraftingService } from './crafting.service';
-import { CraftingController } from './crafting.controller';
+
 import { GameSessionModule } from '../../game-session/game-session.module';
 import { SpendableGoldModule } from '../shared/spendable-gold.module';
+
+import { CraftingController } from './crafting.controller';
+import { CraftingService } from './crafting.service';
 
 @Module({
   imports: [GameSessionModule, SpendableGoldModule],

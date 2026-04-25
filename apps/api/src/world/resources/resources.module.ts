@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ResourcesService } from './resources.service';
-import { ResourcesController } from './resources.controller';
+
 import { GameSessionModule } from '../../game-session/game-session.module';
+
+import { ResourcesController } from './resources.controller';
+import { ResourcesService } from './resources.service';
 
 @Module({
   imports: [GameSessionModule],

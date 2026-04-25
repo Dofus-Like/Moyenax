@@ -1,5 +1,5 @@
-import { PlayerStats } from './player.types';
-import { TerrainType } from './map.types';
+import type { TerrainType } from './map.types';
+import type { PlayerStats } from './player.types';
 export interface CombatPosition {
   x: number;
   y: number;

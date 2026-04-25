@@ -1,8 +1,11 @@
-import React, { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-import { COMBAT_COLORS } from '../constants/colors';
 import { Line } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import React, { useMemo, useRef } from 'react';
+import * as THREE from 'three';
+
+import { COMBAT_COLORS } from '../constants/colors';
+
+
 import { calculateBoundaryEdges } from './unifiedMap.utils';
 
 interface BoundaryOutlineProps {

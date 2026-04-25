@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { MapGeneratorService } from './map-generator.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SeedId, ALL_SEED_IDS } from '@game/shared-types';
+import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+
+import { MapGeneratorService } from './map-generator.service';
 
 @Controller('map')
 export class MapController {

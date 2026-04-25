@@ -1,11 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+import type { SeedId } from '@game/shared-types';
+import { ALL_SEED_IDS, SEED_CONFIGS } from '@game/shared-types';
+
+import { combatApi } from '../api/combat.api';
+import { mapApi } from '../api/map.api';
 import { useAuthStore } from '../store/auth.store';
 import { useCombatStore } from '../store/combat.store';
 import { useFarmingStore } from '../store/farming.store';
-import { combatApi } from '../api/combat.api';
-import { mapApi } from '../api/map.api';
-import { ALL_SEED_IDS, SEED_CONFIGS, SeedId } from '@game/shared-types';
+
 import './DebugPage.css';
 
 export function DebugPage() {

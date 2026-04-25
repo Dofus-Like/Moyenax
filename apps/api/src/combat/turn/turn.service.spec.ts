@@ -1,15 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TurnService } from './turn.service';
-import { RedisService } from '../../shared/redis/redis.service';
-import { SseService } from '../../shared/sse/sse.service';
-import { SpellsService } from '../spells/spells.service';
+import * as gameEngine from '@game/game-engine';
+import type { CombatState} from '@game/shared-types';
+import { CombatActionType } from '@game/shared-types';
+import { BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 import { PerfStatsService } from '../../shared/perf/perf-stats.service';
 import { RuntimePerfService } from '../../shared/perf/runtime-perf.service';
-import { BadRequestException } from '@nestjs/common';
-import { CombatActionType, CombatState, TerrainType } from '@game/shared-types';
-import * as gameEngine from '@game/game-engine';
+import { RedisService } from '../../shared/redis/redis.service';
+import { SseService } from '../../shared/sse/sse.service';
+import { SpellsService } from '../spells/spells.service';
+import { TurnService } from './turn.service';
+
 
 jest.mock('@game/game-engine', () => ({
   canMoveTo: jest.fn(),
@@ -22,10 +26,6 @@ describe('TurnService', () => {
   let service: TurnService;
   let redisService: jest.Mocked<RedisService>;
   let sseService: jest.Mocked<SseService>;
-  let spellsService: jest.Mocked<SpellsService>;
-  let eventEmitter: jest.Mocked<EventEmitter2>;
-  let perfLogger: jest.Mocked<PerfLoggerService>;
-  let runtimePerf: jest.Mocked<RuntimePerfService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -89,10 +89,6 @@ describe('TurnService', () => {
     service = module.get<TurnService>(TurnService);
     redisService = module.get(RedisService);
     sseService = module.get(SseService);
-    spellsService = module.get(SpellsService);
-    eventEmitter = module.get(EventEmitter2);
-    perfLogger = module.get(PerfLoggerService);
-    runtimePerf = module.get(RuntimePerfService);
   });
 
   afterEach(() => {

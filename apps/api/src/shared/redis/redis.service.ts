@@ -1,7 +1,9 @@
+import { performance } from 'node:perf_hooks';
+
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { performance } from 'node:perf_hooks';
 import Redis from 'ioredis';
+
 import { PerfLoggerService } from '../perf/perf-logger.service';
 import { PerfStatsService } from '../perf/perf-stats.service';
 

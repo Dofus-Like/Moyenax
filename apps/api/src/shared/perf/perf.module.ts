@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+
 import { DebugPerfController } from './debug-perf.controller';
 import { HttpPerfInterceptor } from './http-perf.interceptor';
 import { PerfLoggerService } from './perf-logger.service';

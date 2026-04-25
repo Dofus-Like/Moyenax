@@ -9,13 +9,15 @@ import {
   Sse,
   UseGuards,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
 import { Throttle, seconds } from '@nestjs/throttler';
+import { Observable } from 'rxjs';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SessionService } from '../combat/session/session.service';
-import { SseTicketGuard } from '../shared/security/sse-ticket.guard';
 import { SseTicketResource } from '../shared/security/sse-ticket.decorator';
+import { SseTicketGuard } from '../shared/security/sse-ticket.guard';
 import { SseService } from '../shared/sse/sse.service';
+
 import { GameSessionService } from './game-session.service';
 import { MatchmakingService } from './matchmaking.service';
 

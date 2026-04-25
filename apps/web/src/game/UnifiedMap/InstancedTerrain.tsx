@@ -1,8 +1,11 @@
+import { extend } from '@react-three/fiber';
 import React, { useRef, useLayoutEffect } from 'react';
 import * as THREE from 'three';
-import { GameMap, TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
 import { RoundedBoxGeometry } from 'three-stdlib';
-import { extend } from '@react-three/fiber';
+
+import type { GameMap} from '@game/shared-types';
+import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
+
 
 extend({ RoundedBoxGeometry });
 
@@ -67,7 +70,7 @@ export const InstancedTerrain = React.memo(({
           continue; 
         }
         
-        const [wx, wy, wz] = getPos(x, y);
+        const [wx, , wz] = getPos(x, y);
 
         // Sides (Box)
         matrix.makeTranslation(wx, -0.2, wz);

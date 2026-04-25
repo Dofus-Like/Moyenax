@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { apiClient } from '../api/client';
+
 import { usePerfHudStore, type NetworkSample, type RenderAggregate, type SseEventSample } from './perf-hud.store';
 import { buildJsonReport, buildMarkdownReport } from './share-report';
 import {

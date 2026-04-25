@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCombatStore } from '../../store/combat.store';
-import { useAuthStore } from '../../store/auth.store';
-import { useGameSession } from '../../pages/GameTunnel';
-import { combatApi } from '../../api/combat.api';
+
 import { CombatActionType, SpellFamily } from '@game/shared-types';
-import { getSkinById } from '../../game/constants/skins';
+
+import { combatApi } from '../../api/combat.api';
 import { PlayerAvatar } from '../../components/Player/PlayerAvatar';
+import { useAuthStore } from '../../store/auth.store';
+import { useCombatStore } from '../../store/combat.store';
+
 import { CombatMannequins } from './CombatMannequins';
 import './CombatUIManager.css';
 

@@ -1,10 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCombatStore } from '../../store/combat.store';
-import { useAuthStore } from '../../store/auth.store';
-import { useGameSession } from '../../pages/GameTunnel';
-import { combatApi } from '../../api/combat.api';
+
 import { CombatActionType, SpellFamily } from '@game/shared-types';
+
+import { combatApi } from '../../api/combat.api';
+import { useGameSession } from '../../pages/GameTunnel';
+import { useAuthStore } from '../../store/auth.store';
+import { useCombatStore } from '../../store/combat.store';
+
+
 import { CombatPlayerPanel } from './CombatPlayerPanel';
 import './CombatHUD.css';
 

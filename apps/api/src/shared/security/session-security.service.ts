@@ -5,9 +5,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
-import { OPEN_SESSION_STATUSES } from './security.constants';
+
 import { MatchmakingQueueStore } from './matchmaking-queue.store';
+import { OPEN_SESSION_STATUSES } from './security.constants';
 
 @Injectable()
 export class SessionSecurityService {

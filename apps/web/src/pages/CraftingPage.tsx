@@ -1,12 +1,14 @@
-import React, { useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useCallback, useEffect, useState } from 'react';
+
 import { craftingApi } from '../api/crafting.api';
-import { useGameSession } from './GameTunnel';
 import { inventoryApi } from '../api/inventory.api';
 import { itemsApi } from '../api/items.api';
 import { useAuthStore } from '../store/auth.store';
-import { getSessionPo } from '../utils/sessionPo';
 import { getItemVisualMeta } from '../utils/itemVisual';
+import { getSessionPo } from '../utils/sessionPo';
+
+import { useGameSession } from './GameTunnel';
 import './CraftingPage.css';
 
 interface Item {

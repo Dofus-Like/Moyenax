@@ -1,21 +1,27 @@
+import type { ThreeEvent} from '@react-three/fiber';
+import { useThree } from '@react-three/fiber';
+import { useControls, button, folder } from 'leva';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+
+import { canJumpTo, canMoveTo, hasLineOfSight, isInRange } from '@game/game-engine';
+import type {
+  GameMap,
+  PathNode} from '@game/shared-types';
 import {
   CombatActionType,
-  GameMap,
-  PathNode,
   TERRAIN_PROPERTIES,
   TerrainType,
   findPath,
 } from '@game/shared-types';
-import { Castle } from '../ResourceMap/Castle';
-import { ThreeEvent, useThree } from '@react-three/fiber';
-import { canJumpTo, canMoveTo, hasLineOfSight, isInRange } from '@game/game-engine';
-import { useCombatStore } from '../../store/combat.store';
-import { useAuthStore } from '../../store/auth.store';
-import { useControls, button, folder } from 'leva';
-import { COMBAT_COLORS } from '../constants/colors';
+
 import { combatApi } from '../../api/combat.api';
+import { useAuthStore } from '../../store/auth.store';
+import { useCombatStore } from '../../store/combat.store';
+import { Castle } from '../ResourceMap/Castle';
+import type { PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
+import { COMBAT_COLORS } from '../constants/colors';
+
 import {
   HoverLayer,
   PlayersLayer,
@@ -28,7 +34,6 @@ import {
   buildTileIndex,
   toPositionKey,
 } from './unifiedMap.utils';
-import { PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
 
 interface UnifiedMapSceneProps {
   mode: 'combat' | 'farming';
@@ -36,7 +41,7 @@ interface UnifiedMapSceneProps {
   sessionId?: string;
   playerPosition?: PathNode;
   movePath?: PathNode[] | null;
-  previewPath?: PathNode[];
+  _previewPath?: PathNode[];
   onPathComplete?: () => void;
   onTileClick?: (x: number, y: number, terrain: TerrainType) => void;
   onTileHover?: (info: { x: number; y: number; terrain: TerrainType } | null) => void;
@@ -60,7 +65,7 @@ export const UnifiedMapScene = React.memo(
     sessionId,
     playerPosition,
     movePath,
-    previewPath,
+    _previewPath,
     onPathComplete,
     onTileClick,
     onTileHover,
@@ -112,11 +117,11 @@ export const UnifiedMapScene = React.memo(
         Array(combatState.map.width).fill(TerrainType.GROUND),
       );
 
-      combatState.map.tiles.forEach((tile) => {
+      for (const tile of combatState.map.tiles) {
         if (grid[tile.y]?.[tile.x] !== undefined) {
           grid[tile.y][tile.x] = tile.type;
         }
-      });
+      }
 
       return {
         width: combatState.map.width,
@@ -153,19 +158,16 @@ export const UnifiedMapScene = React.memo(
         rangeColor: { value: COMBAT_COLORS.RANGE_ORANGE },
       }),
       'Log Tiles for AI': button((get) => {
-        const tConfig = {
-          tileDayA: get('Background Shader.Tile Colors.tileDayA'),
-          tileDayB: get('Background Shader.Tile Colors.tileDayB'),
-          tileSideDay: get('Background Shader.Tile Colors.tileSideDay'),
-          tileSunA: get('Background Shader.Tile Colors.tileSunA'),
-          tileSunB: get('Background Shader.Tile Colors.tileSunB'),
-          tileSideSun: get('Background Shader.Tile Colors.tileSideSun'),
-          tileNightA: get('Background Shader.Tile Colors.tileNightA'),
-          tileNightB: get('Background Shader.Tile Colors.tileNightB'),
-          tileSideNight: get('Background Shader.Tile Colors.tileSideNight'),
-        };
-        console.log('--- TILE CONFIG ---');
-        console.log(JSON.stringify(tConfig, null, 2));
+        // Debug panel for shader tile colors - can be used to inspect values
+        get('Background Shader.Tile Colors.tileDayA');
+        get('Background Shader.Tile Colors.tileDayB');
+        get('Background Shader.Tile Colors.tileSideDay');
+        get('Background Shader.Tile Colors.tileSunA');
+        get('Background Shader.Tile Colors.tileSunB');
+        get('Background Shader.Tile Colors.tileSideSun');
+        get('Background Shader.Tile Colors.tileNightA');
+        get('Background Shader.Tile Colors.tileNightB');
+        get('Background Shader.Tile Colors.tileSideNight');
       }),
     });
 
@@ -376,17 +378,17 @@ export const UnifiedMapScene = React.memo(
         let changed = false;
         const next = { ...current };
 
-        Object.keys(next).forEach((playerId) => {
+        for (const playerId of Object.keys(next)) {
           if (!combatState.players[playerId]) {
             delete next[playerId];
             changed = true;
           }
-        });
+        }
 
         return changed ? next : current;
       });
 
-      combatPlayers.forEach((player) => {
+      for (const player of combatPlayers) {
         const visualPosition = visualPositionsRef.current[player.playerId];
         const targetPosition = targetPositionsRef.current[player.playerId];
 
@@ -394,15 +396,15 @@ export const UnifiedMapScene = React.memo(
           visualPositionsRef.current[player.playerId] = player.position;
           targetPositionsRef.current[player.playerId] = player.position;
           hasVisualUpdates = true;
-          return;
+          continue;
         }
 
         if (targetPosition?.x === player.position.x && targetPosition?.y === player.position.y) {
-          return;
+          continue;
         }
 
         if (jumpingPlayers[player.playerId]) {
-          return;
+          continue;
         }
 
         targetPositionsRef.current[player.playerId] = player.position;
@@ -415,24 +417,24 @@ export const UnifiedMapScene = React.memo(
 
         if (path && path.length > 0) {
           newPaths[player.playerId] = path;
-          return;
+          continue;
         }
 
         visualPositionsRef.current[player.playerId] = player.position;
         hasVisualUpdates = true;
-      });
+      }
 
       if (Object.keys(newPaths).length > 0) {
         setPlayerPaths((current) => {
           const next = { ...current };
           let changed = false;
 
-          Object.entries(newPaths).forEach(([playerId, path]) => {
+          for (const [playerId, path] of Object.entries(newPaths)) {
             if (!next[playerId]) {
               next[playerId] = path;
               changed = true;
             }
-          });
+          }
 
           return changed ? next : current;
         });
@@ -541,13 +543,13 @@ export const UnifiedMapScene = React.memo(
       let closestTile: { x: number; y: number } | null = null;
       let minDistance = Infinity;
 
-      reachableTiles.forEach((tile) => {
+      for (const tile of reachableTiles) {
         const distance = Math.abs(tile.x - deferredHoveredTile.x) + Math.abs(tile.y - deferredHoveredTile.y);
         if (distance < minDistance) {
           minDistance = distance;
           closestTile = tile;
         }
-      });
+      }
 
       if (!closestTile) return [];
 

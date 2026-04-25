@@ -1,4 +1,4 @@
-import { SeedId, TerrainType } from './map.types';
+import type { SeedId, TerrainType } from './map.types';
 
 export interface FarmingState {
   playerId: string;

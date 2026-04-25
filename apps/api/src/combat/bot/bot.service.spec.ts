@@ -1,10 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { BotService } from './bot.service';
-import { TurnService } from '../turn/turn.service';
-import { RedisService } from '../../shared/redis/redis.service';
-import { PerfStatsService } from '../../shared/perf/perf-stats.service';
-import { CombatActionType, CombatState, TerrainType } from '@game/shared-types';
 import * as gameEngine from '@game/game-engine';
+import type { CombatState} from '@game/shared-types';
+import { CombatActionType, TerrainType } from '@game/shared-types';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
+import { PerfStatsService } from '../../shared/perf/perf-stats.service';
+import { RedisService } from '../../shared/redis/redis.service';
+import { TurnService } from '../turn/turn.service';
+
+import { BotService } from './bot.service';
+
 
 jest.mock('@game/game-engine', () => ({
   isInRange: jest.fn(),

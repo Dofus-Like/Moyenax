@@ -1,12 +1,17 @@
-import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '../store/auth.store';
-import { useGameSession } from './GameTunnel';
+import React, { useEffect, useState } from 'react';
+
+import type { SeedId } from '@game/shared-types';
+import { SEED_CONFIGS } from '@game/shared-types';
+
 import { shopApi } from '../api/shop.api';
+import { useAuthStore } from '../store/auth.store';
 import { useFarmingStore } from '../store/farming.store';
-import { SEED_CONFIGS, SeedId } from '@game/shared-types';
-import { getSessionPo } from '../utils/sessionPo';
 import { getItemVisualMeta } from '../utils/itemVisual';
+import { getSessionPo } from '../utils/sessionPo';
+
+import { useGameSession } from './GameTunnel';
+
 import './ShopPage.css';
 
 type FilterType = 'ALL' | 'WEAPON' | 'ARMOR' | 'OTHER';

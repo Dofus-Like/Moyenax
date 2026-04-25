@@ -1,14 +1,11 @@
 import { CameraControls, OrthographicCamera } from '@react-three/drei';
-import CameraControlsImpl from 'camera-controls';
 import { Canvas } from '@react-three/fiber';
+import CameraControlsImpl from 'camera-controls';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
-import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
-import { gameSessionApi } from '../api/game-session.api';
-import { useAuthStore } from '../store/auth.store';
-import { useFarmingStore } from '../store/farming.store';
-import { useGameSession } from './GameTunnel';
+
+import type {
+  TerrainType} from '@game/shared-types';
 import {
   type PathNode,
   type SeedId,
@@ -16,9 +13,17 @@ import {
   findPathToAdjacent,
   SEED_CONFIGS,
   TERRAIN_LABELS,
-  TerrainType,
   TERRAIN_PROPERTIES,
 } from '@game/shared-types';
+
+import { gameSessionApi } from '../api/game-session.api';
+import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
+import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
+import { useAuthStore } from '../store/auth.store';
+import { useFarmingStore } from '../store/farming.store';
+
+import { useGameSession } from './GameTunnel';
+
 import './ResourceMapPage.css';
 
 const LEGEND_ITEMS = [
@@ -384,33 +389,29 @@ export function FarmingPage() {
   const handleToggleReady = useCallback(async () => {
     if (!activeSession) return;
     if (isActionInProgressRef.current) {
-      console.log("[FarmingPage] Action already in progress, skipping.");
       return;
     }
 
     try {
       isActionInProgressRef.current = true;
       setIsTransitioning(true);
-      
+
       const isReady =
         activeSession.player1Id === currentPlayerId ? activeSession.player1Ready : activeSession.player2Ready;
-      
-      console.log(`[FarmingPage] Toggling ready to ${!isReady}`);
+
       const { data: updated } = await gameSessionApi.toggleReady(!isReady, activeSession.id);
-      
+
       // We use a small delay here to let the state settle before checking for navigation
       if (updated.phase === 'FIGHTING' && updated.combats?.[0]) {
         const latestCombat = updated.combats[0];
         if (latestCombat.status === 'ACTIVE' || latestCombat.status === 'WAITING') {
-          console.log(`[FarmingPage] Combat detected in response, navigating to /combat/${latestCombat.id}`);
           navigate(`/combat/${latestCombat.id}`);
           return;
         }
       }
-      
+
       await refreshSession({ silent: true });
-    } catch (error) {
-      console.error("[FarmingPage] Error toggling ready:", error);
+    } catch {
       showActionMessage("Erreur lors du changement d'état prêt", 'error');
     } finally {
       setIsTransitioning(false);
@@ -421,16 +422,14 @@ export function FarmingPage() {
   // -- Phase monitoring --
   useEffect(() => {
     if (!activeSession) return;
-    
+
     if (activeSession.phase !== 'FIGHTING') return;
 
     const latestCombat = activeSession.combats?.[0];
     if (!latestCombat) return;
 
-    console.log(`[FarmingPage] Monitor: Phase is FIGHTING. Latest combat: ${latestCombat.id}, status: ${latestCombat.status}`);
-    
     // On redirige seulement si le combat est encore valide et qu'on n'y est pas déjà
-    if ((latestCombat.status === 'ACTIVE' || latestCombat.status === 'WAITING') && 
+    if ((latestCombat.status === 'ACTIVE' || latestCombat.status === 'WAITING') &&
         window.location.pathname !== `/combat/${latestCombat.id}`) {
       navigate(`/combat/${latestCombat.id}`);
     }
@@ -440,7 +439,6 @@ export function FarmingPage() {
   useEffect(() => {
     if (activeSession?.phase === 'FARMING') {
       if (isActionInProgressRef.current) {
-        console.log("[FarmingPage] Phase changed to FARMING. Unlocking UI.");
         isActionInProgressRef.current = false;
         setIsTransitioning(false);
       }
@@ -469,12 +467,12 @@ export function FarmingPage() {
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
     
-    sortedCombats.forEach((combat, idx) => {
+    for (const [idx, combat] of sortedCombats.entries()) {
       if (idx < 5 && combat.status === 'FINISHED') {
         if (combat.winnerId === currentPlayerId) statuses[idx] = 'won';
         else statuses[idx] = 'lost';
       }
-    });
+    }
     
     return statuses;
   }, [activeSession, currentPlayerId]);
