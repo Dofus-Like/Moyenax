@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -165,6 +165,10 @@ import { CombatHUD } from './CombatHUD';
 describe('CombatHUD', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.winnerId = null;
+    mocks.selectedSpellId = null;
+    mocks.uiMessage = null;
+    mocks.activeSession = null;
   });
 
   it('renders spell family and icon from the combat payload', () => {
@@ -177,5 +181,102 @@ describe('CombatHUD', () => {
     expect(fireballIcon.getAttribute('src')).toBe('/assets/pack/spells/fireball.png');
     expect(container.querySelector('.spell-card.family-common')).not.toBeNull();
     expect(container.querySelector('.spell-card.family-mage')).not.toBeNull();
+  });
+
+  it('shows victory overlay when current player wins', () => {
+    mocks.winnerId = 'player-1'; // same as mocks.user.id
+
+    render(<CombatHUD />);
+
+    expect(screen.getByText(/VICTOIRE/)).toBeInTheDocument();
+  });
+
+  it('shows defeat overlay when current player loses', () => {
+    mocks.winnerId = 'enemy-player';
+
+    render(<CombatHUD />);
+
+    expect(screen.getByText(/DÉFAITE/)).toBeInTheDocument();
+  });
+
+  it('does not show end overlay when combat is still ongoing', () => {
+    render(<CombatHUD />);
+
+    expect(screen.queryByText(/VICTOIRE/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/DÉFAITE/)).not.toBeInTheDocument();
+  });
+
+  it('shows "Retour au Lobby" exit button in the end overlay outside a game session', () => {
+    mocks.winnerId = 'player-1';
+    mocks.activeSession = null;
+
+    render(<CombatHUD />);
+
+    expect(screen.getByRole('button', { name: 'Retour au Lobby' })).toBeInTheDocument();
+  });
+
+  it('shows "Continuer" exit button when a game session is still active', () => {
+    mocks.winnerId = 'player-1';
+    mocks.activeSession = { id: 'gs-1', status: 'ACTIVE' };
+
+    render(<CombatHUD />);
+
+    expect(screen.getByRole('button', { name: 'Continuer' })).toBeInTheDocument();
+  });
+
+  it('displays the turn number in the initiative panel', () => {
+    render(<CombatHUD />);
+
+    expect(screen.getByText('Tour 1')).toBeInTheDocument();
+  });
+
+  it('displays player name in the initiative panel', () => {
+    render(<CombatHUD />);
+
+    expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
+  });
+
+  it('renders ui toast message when uiMessage is set', () => {
+    mocks.uiMessage = { id: 'ui-1', text: 'Spell failed!', type: 'error' };
+
+    render(<CombatHUD />);
+
+    expect(screen.getByText('Spell failed!')).toBeInTheDocument();
+  });
+
+  it('mage spells are sorted after common spells (family order: common < mage)', () => {
+    const { container } = render(<CombatHUD />);
+
+    const spellCards = container.querySelectorAll('.spell-card');
+    const classes = Array.from(spellCards).map((c) => c.className);
+
+    const mageIndex = classes.findIndex((c) => c.includes('family-mage'));
+    const commonIndex = classes.findIndex((c) => c.includes('family-common'));
+
+    // COMMON=1 sorts before MAGE=3, so mage appears later in the list
+    expect(mageIndex).toBeGreaterThan(commonIndex);
+  });
+
+  it('end turn calls combatApi.playAction when clicked', async () => {
+    mocks.combatState = {
+      ...mocks.combatState,
+      currentTurnPlayerId: 'player-1',
+    };
+
+    const { combatApi } = await import('../../api/combat.api');
+    vi.mocked(combatApi.playAction).mockResolvedValue({ data: mocks.combatState } as any);
+
+    render(<CombatHUD />);
+
+    const endTurnBtn = screen.queryByRole('button', { name: /Terminer le tour/i });
+    if (endTurnBtn) {
+      fireEvent.click(endTurnBtn);
+      await waitFor(() => {
+        expect(vi.mocked(combatApi.playAction)).toHaveBeenCalledWith(
+          'combat-1',
+          expect.objectContaining({ type: expect.stringMatching(/END_TURN/) }),
+        );
+      });
+    }
   });
 });

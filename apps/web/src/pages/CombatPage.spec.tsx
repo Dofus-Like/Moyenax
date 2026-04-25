@@ -162,4 +162,37 @@ describe('CombatPage', () => {
 
     expect(mocks.navigate).not.toHaveBeenCalled();
   });
+
+  it('disconnects from the session when the component unmounts', async () => {
+    const { unmount } = render(<CombatPage />);
+
+    await waitFor(() => {
+      expect(mocks.connectToSession).toHaveBeenCalled();
+    });
+
+    unmount();
+
+    expect(mocks.disconnect).toHaveBeenCalled();
+  });
+
+  it('renders the combat canvas and HUD when state is available', async () => {
+    const { getByTestId } = render(<CombatPage />);
+
+    await waitFor(() => {
+      expect(mocks.connectToSession).toHaveBeenCalled();
+    });
+
+    expect(getByTestId('canvas')).toBeTruthy();
+    expect(getByTestId('combat-hud')).toBeTruthy();
+  });
+
+  it('renders the combat map when state is available', async () => {
+    const { getByTestId } = render(<CombatPage />);
+
+    await waitFor(() => {
+      expect(mocks.connectToSession).toHaveBeenCalled();
+    });
+
+    expect(getByTestId('combat-map')).toBeTruthy();
+  });
 });
