@@ -10,13 +10,13 @@ module.exports = {
   // sont lancés via `yarn nx test:integration api`.
   testMatch: ['<rootDir>/src/**/*.spec.ts', '<rootDir>/src/**/*.test.ts'],
   coverageDirectory: '../../coverage/apps/api',
-  coverageReporters: ['text', 'html', 'lcov', 'json-summary'],
-  coveragePathIgnorePatterns: [
-    '/node_modules/',
-    '<rootDir>/src/test/',
-    '<rootDir>/src/main.ts',
-    '\\.module\\.ts$',
-    '\\.dto\\.ts$',
-    '\\.d\\.ts$',
+  coverageProvider: 'v8',
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.spec.ts',
+    '!src/**/*.module.ts',
+    '!src/main.ts',
+    '!src/**/*.d.ts',
   ],
+  coverageReporters: ['text', 'html', 'lcov', 'json-summary'],
 };

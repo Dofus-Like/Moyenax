@@ -91,6 +91,12 @@ jobs:
       - name: Enforce coverage thresholds
         run: bash scripts/ci/check-coverage-thresholds.sh
 
+      - name: Test with coverage
+        run: yarn test:coverage
+
+      - name: Coverage regression check
+        run: node scripts/ci/coverage-compare.mjs
+
   prod-like-smoke:
     name: Prod-like Docker Smoke
     runs-on: ubuntu-latest

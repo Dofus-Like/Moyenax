@@ -1,0 +1,16 @@
+{
+  "api": {
+    "lines": 0,
+    "statements": 0,
+    "functions": 0,
+    "branches": 0
+  },
+  "web": {
+    "lines": 12.73,
+    "statements": 13,
+    "functions": 14.12,
+    "branches": 8.23
+  },
+  "updatedAt": "2026-04-25",
+  "_note": "API baseline at 0 until first CI run with DB. Run 'yarn test:coverage:update' to refresh."
+}
