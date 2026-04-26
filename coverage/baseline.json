@@ -1,15 +1,15 @@
 {
   "api": {
-    "lines": { "pct": 0 },
-    "statements": { "pct": 0 },
-    "functions": { "pct": 0 },
-    "branches": { "pct": 0 }
+    "lines": 0,
+    "statements": 0,
+    "functions": 0,
+    "branches": 0
   },
   "web": {
-    "lines": { "pct": 12.73 },
-    "statements": { "pct": 13 },
-    "functions": { "pct": 14.12 },
-    "branches": { "pct": 8.23 }
+    "lines": 12.73,
+    "statements": 13,
+    "functions": 14.12,
+    "branches": 8.23
   },
   "updatedAt": "2026-04-25",
   "_note": "API baseline at 0 until first CI run with DB. Run 'yarn test:coverage:update' to refresh."
