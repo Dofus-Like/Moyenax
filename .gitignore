@@ -48,4 +48,6 @@ Thumbs.db
 vite.config.*.timestamp*
 .cursor
 .claude
-graphify-out/
+graphify-out/cache/
+graphify-out/manifest.json
+graphify-out/cost.json     
