@@ -25,6 +25,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write # requis par _quality-gates.yml (sticky PR comment)
 
 # Prevent parallel deploys to the same environment.
 # Prod deploys are NEVER cancelled — test deploys can be superseded by a newer commit.
