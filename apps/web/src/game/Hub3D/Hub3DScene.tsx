@@ -25,12 +25,16 @@ import { useHubInputController } from './useHubInputController';
 interface Hub3DSceneProps {
   onPoiActivate: (id: PoiId) => void;
   activePoiId: PoiId | null;
+  poiStateLabels?: Partial<Record<PoiId, string>>;
+  activePoiIds?: PoiId[];
 }
 
 interface Hub3DWorldProps {
   onPoiActivate: (id: PoiId) => void;
   activePoiId: PoiId | null;
   wasDraggingRef: MutableRefObject<boolean>;
+  poiStateLabels?: Partial<Record<PoiId, string>>;
+  activePoiIds?: PoiId[];
 }
 
 interface BoundaryProps {
@@ -109,11 +113,25 @@ function computePoiStopPoint(playerPos: Vector3, poiPos: Vector3, stopDistance: 
   return new Vector3(playerPos.x + dx * factor, 0, playerPos.z + dz * factor);
 }
 
-function PoiList({ modalOpen, pulsingId }: { modalOpen: boolean; pulsingId: PoiId | null }): ReactElement {
+interface PoiListProps {
+  modalOpen: boolean;
+  pulsingId: PoiId | null;
+  stateLabels?: Partial<Record<PoiId, string>>;
+  activeIds?: PoiId[];
+}
+
+function PoiList({ modalOpen, pulsingId, stateLabels, activeIds }: PoiListProps): ReactElement {
   return (
     <>
       {Object.values(HUB_POIS).map((poi) => (
-        <HubPOI key={poi.id} poi={poi} modalOpen={modalOpen} pulsing={pulsingId === poi.id} />
+        <HubPOI
+          key={poi.id}
+          poi={poi}
+          modalOpen={modalOpen}
+          pulsing={pulsingId === poi.id}
+          statusLabel={stateLabels?.[poi.id]}
+          stateActive={activeIds?.includes(poi.id) ?? false}
+        />
       ))}
     </>
   );
@@ -179,7 +197,7 @@ function useDelayedActivation(onPoiActivate: (id: PoiId) => void): {
   return { pendingPoiId, setPendingPoiId, handleArrive, cancelPending };
 }
 
-function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef }: Hub3DWorldProps): ReactElement {
+function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef, poiStateLabels, activePoiIds }: Hub3DWorldProps): ReactElement {
   const modalOpen = activePoiId !== null;
   const playerRef = useRef<Group>(null);
   const { snapY, ready, hubMeshRef } = useHubGround();
@@ -221,7 +239,7 @@ function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef }: Hub3DWorldProp
       <HubMapBoundary fallback={<NavigationFallbackFloor />}>
         <Suspense fallback={null}><HubMap /></Suspense>
       </HubMapBoundary>
-      <PoiList modalOpen={modalOpen} pulsingId={pendingPoiId} />
+      <PoiList modalOpen={modalOpen} pulsingId={pendingPoiId} stateLabels={poiStateLabels} activeIds={activePoiIds} />
       <NavigationPlane />
       <HubPlayer ref={playerRef} position={SPAWN_POSITION} />
       <HubAmbientParticles />
@@ -230,7 +248,7 @@ function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef }: Hub3DWorldProp
   );
 }
 
-export function Hub3DScene({ onPoiActivate, activePoiId }: Hub3DSceneProps): ReactElement {
+export function Hub3DScene({ onPoiActivate, activePoiId, poiStateLabels, activePoiIds }: Hub3DSceneProps): ReactElement {
   const wasDraggingRef = useRef(false);
   return (
     <Canvas
@@ -242,7 +260,13 @@ export function Hub3DScene({ onPoiActivate, activePoiId }: Hub3DSceneProps): Rea
     >
       <HubGroundProvider>
         <HubCamera wasDraggingRef={wasDraggingRef} />
-        <HubWorld onPoiActivate={onPoiActivate} activePoiId={activePoiId} wasDraggingRef={wasDraggingRef} />
+        <HubWorld
+          onPoiActivate={onPoiActivate}
+          activePoiId={activePoiId}
+          wasDraggingRef={wasDraggingRef}
+          poiStateLabels={poiStateLabels}
+          activePoiIds={activePoiIds}
+        />
       </HubGroundProvider>
     </Canvas>
   );

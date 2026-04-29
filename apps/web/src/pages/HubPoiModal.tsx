@@ -149,14 +149,20 @@ export interface RoomEntry {
   p1: { username: string };
 }
 
-interface CombatActions {
+interface ActionFeedback {
+  busy: boolean;
+  error: string | null;
+  onClearError: () => void;
+}
+
+interface CombatActions extends ActionFeedback {
   isInQueue: boolean;
   hasOpenSession: boolean;
   onJoinQueue: () => void;
   onLeaveQueue: () => void;
 }
 
-interface VsAiActions {
+interface VsAiActions extends ActionFeedback {
   hasOpenSession: boolean;
   isInQueue: boolean;
   onStart: () => void;
@@ -164,14 +170,14 @@ interface VsAiActions {
   onReset: () => void;
 }
 
-interface AppearanceActions {
+interface AppearanceActions extends ActionFeedback {
   currentSkin: string | undefined;
   username: string | undefined;
   gold: number | undefined;
   onSetSkin: (id: string) => void;
 }
 
-interface RoomsActions {
+interface RoomsActions extends ActionFeedback {
   rooms: RoomEntry[];
   loading: boolean;
   isWaiting: boolean;
@@ -432,42 +438,121 @@ function ModalHeader({ poiId, color, label, onClose }: { poiId: PoiId; color: st
   );
 }
 
-function CombatPanel({ isInQueue, hasOpenSession, onJoinQueue, onLeaveQueue }: CombatActions): ReactElement {
+function Spinner({ color }: { color: string }): ReactElement {
+  ensureSpinnerStyles();
+  const style: CSSProperties = {
+    display: 'inline-block',
+    width: 14,
+    height: 14,
+    borderRadius: '50%',
+    border: `2px solid ${color}55`,
+    borderTopColor: color,
+    animation: 'hub-modal-spin 720ms linear infinite',
+  };
+  return <span aria-hidden style={style} />;
+}
+
+function ErrorBanner({ message, color, onDismiss }: { message: string; color: string; onDismiss: () => void }): ReactElement {
+  return (
+    <div
+      role="alert"
+      style={{
+        marginBottom: '12px',
+        padding: '10px 12px',
+        borderRadius: '10px',
+        background: `${color}1a`,
+        border: `1px solid ${color}55`,
+        color: 'rgba(255,255,255,0.92)',
+        fontSize: '0.84rem',
+        lineHeight: 1.45,
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'flex-start',
+      }}
+    >
+      <span style={{ color, flexShrink: 0, fontWeight: 800 }}>!</span>
+      <span style={{ flex: 1 }}>{message}</span>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Fermer l'erreur"
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: 'rgba(255,255,255,0.5)',
+          cursor: 'pointer',
+          fontSize: '1rem',
+          lineHeight: 1,
+          padding: 0,
+          marginLeft: '4px',
+        }}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
+function ensureSpinnerStyles(): void {
+  if (typeof document === 'undefined') return;
+  const id = 'hub-poi-modal-spin';
+  if (document.getElementById(id)) return;
+  const tag = document.createElement('style');
+  tag.id = id;
+  tag.textContent = '@keyframes hub-modal-spin { to { transform: rotate(360deg); } }';
+  document.head.appendChild(tag);
+}
+
+function CombatPanel({ isInQueue, hasOpenSession, busy, error, onJoinQueue, onLeaveQueue, onClearError }: CombatActions): ReactElement {
+  const color = '#ef4444';
   if (isInQueue) {
     return (
       <div>
+        {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
         <p style={DESC}>Recherche d'un adversaire en cours...</p>
-        <p style={{ color: '#ef4444', fontWeight: 700, marginBottom: '16px', fontSize: '0.9rem' }}>⏳ En file d'attente</p>
-        <button type="button" className="hub-modal-secondary" onClick={onLeaveQueue}>Annuler la recherche</button>
+        <p style={{ color, fontWeight: 700, marginBottom: '16px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Spinner color={color} /> En file d'attente
+        </p>
+        <button type="button" className="hub-modal-secondary" onClick={onLeaveQueue} disabled={busy}>
+          {busy ? 'Annulation…' : 'Annuler la recherche'}
+        </button>
       </div>
     );
   }
   return (
     <div>
+      {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
       <p style={DESC}>Affrontez un adversaire aléatoire en PvP. La partie commence dès qu'un match est trouvé.</p>
-      <button type="button" className="hub-modal-cta" style={ctaVars('#ef4444')} disabled={hasOpenSession} onClick={onJoinQueue}>
-        ⚔ Lancer la recherche
+      <button type="button" className="hub-modal-cta" style={ctaVars(color)} disabled={hasOpenSession || busy} onClick={onJoinQueue}>
+        {busy ? <><Spinner color="#fff" /> Recherche…</> : <>⚔ Lancer la recherche</>}
       </button>
       {hasOpenSession && <p style={FAINT}>Terminez d'abord votre session en cours.</p>}
     </div>
   );
 }
 
-function VsAiPanel({ hasOpenSession, isInQueue, onStart, onResume, onReset }: VsAiActions): ReactElement {
+function VsAiPanel({ hasOpenSession, isInQueue, busy, error, onStart, onResume, onReset, onClearError }: VsAiActions): ReactElement {
+  const color = '#facc15';
   if (hasOpenSession) {
     return (
       <div>
+        {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
         <p style={DESC}>Une session est déjà en cours.</p>
-        <button type="button" className="hub-modal-cta" style={ctaVars('#10b981')} onClick={onResume}>▶ Reprendre la partie</button>
-        <button type="button" className="hub-modal-secondary" onClick={onReset}>↻ Réinitialiser la session</button>
+        <button type="button" className="hub-modal-cta" style={ctaVars('#10b981')} onClick={onResume} disabled={busy}>
+          ▶ Reprendre la partie
+        </button>
+        <button type="button" className="hub-modal-secondary" onClick={onReset} disabled={busy}>
+          {busy ? 'Réinitialisation…' : '↻ Réinitialiser la session'}
+        </button>
       </div>
     );
   }
   return (
     <div>
+      {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
       <p style={DESC}>Lancez un combat solo contre l'intelligence artificielle.</p>
-      <button type="button" className="hub-modal-cta" style={ctaVars('#facc15')} disabled={isInQueue} onClick={onStart}>
-        ◈ Lancer VS AI
+      <button type="button" className="hub-modal-cta" style={ctaVars(color)} disabled={isInQueue || busy} onClick={onStart}>
+        {busy ? <><Spinner color="#fff" /> Lancement…</> : <>◈ Lancer VS AI</>}
       </button>
       {isInQueue && <p style={FAINT}>Quittez la file d'attente d'abord.</p>}
     </div>
@@ -670,7 +755,7 @@ function FrameSwatch({ preset, isActive, onSelect }: { preset: FramePreset; isAc
   );
 }
 
-function AppearancePanel({ currentSkin, username, gold, onSetSkin }: AppearanceActions): ReactElement {
+function AppearancePanel({ currentSkin, username, gold, busy, error, onSetSkin, onClearError }: AppearanceActions): ReactElement {
   const [bannerId, setBannerId] = useState<string>(BANNER_PRESETS[0].id);
   const [frameId, setFrameId] = useState<string>(FRAME_PRESETS[0].id);
   const skin = SKINS.find((s) => s.id === currentSkin);
@@ -679,23 +764,39 @@ function AppearancePanel({ currentSkin, username, gold, onSetSkin }: AppearanceA
 
   return (
     <div>
+      {error && <ErrorBanner message={error} color="#c084fc" onDismiss={onClearError} />}
       <ProfileHeader username={username} gold={gold} skin={skin} banner={banner} frame={frame} />
+      {busy && (
+        <p style={{ ...FAINT, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+          <Spinner color="#c084fc" /> Mise à jour de l'apparence…
+        </p>
+      )}
 
       <div style={SECTION_HEADER}><span>Apparence</span><span style={{ opacity: 0.5 }}>{SKINS.length}</span></div>
-      <div className="hub-modal-scroll hub-modal-skins-list" style={{ maxHeight: '180px', overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div
+        className="hub-modal-scroll hub-modal-skins-list"
+        style={{ maxHeight: '180px', overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '6px', opacity: busy ? 0.6 : 1, pointerEvents: busy ? 'none' : 'auto' }}
+      >
         {SKINS.map((s) => (
           <SkinCard key={s.id} skin={s} isActive={s.id === currentSkin} onSelect={() => onSetSkin(s.id)} />
         ))}
       </div>
 
-      <div style={SECTION_HEADER}><span>Bannière</span></div>
+      {/* TODO backend: bannière/cadre stockés localement (pas de persistance API) */}
+      <div style={SECTION_HEADER}>
+        <span>Bannière</span>
+        <span style={{ opacity: 0.4, textTransform: 'none', fontSize: '0.65rem', letterSpacing: '0.04em' }}>local</span>
+      </div>
       <div style={{ display: 'flex', gap: '6px' }}>
         {BANNER_PRESETS.map((p) => (
           <BannerSwatch key={p.id} preset={p} isActive={p.id === bannerId} onSelect={() => setBannerId(p.id)} />
         ))}
       </div>
 
-      <div style={SECTION_HEADER}><span>Cadre</span></div>
+      <div style={SECTION_HEADER}>
+        <span>Cadre</span>
+        <span style={{ opacity: 0.4, textTransform: 'none', fontSize: '0.65rem', letterSpacing: '0.04em' }}>local</span>
+      </div>
       <div style={{ display: 'flex', gap: '6px' }}>
         {FRAME_PRESETS.map((p) => (
           <FrameSwatch key={p.id} preset={p} isActive={p.id === frameId} onSelect={() => setFrameId(p.id)} />
@@ -759,27 +860,54 @@ function RoomsContent({ loading, rooms, playerId, hasOpenSession, isInQueue, onJ
   );
 }
 
-function RoomsPanel({ rooms, loading, isWaiting, hasOpenSession, isInQueue, playerId, onCreateRoom, onJoinRoom, onCancelRoom }: RoomsActions): ReactElement {
-  const createDisabled = isInQueue || (hasOpenSession && !isWaiting);
+function buildRoomsCta(isWaiting: boolean, busy: boolean): { color: string; content: ReactElement } {
+  const color = isWaiting ? '#ef4444' : '#22c55e';
+  if (busy) {
+    const label = isWaiting ? 'Annulation…' : 'Création…';
+    return { color, content: <><Spinner color="#fff" /> {label}</> };
+  }
+  const label = isWaiting ? 'Annuler ma room' : 'Créer une room';
+  return { color, content: <>⌂ {label}</> };
+}
+
+function RoomsHints({ isWaiting, isInQueue, hasOpenSession, busy, color }: { isWaiting: boolean; isInQueue: boolean; hasOpenSession: boolean; busy: boolean; color: string }): ReactElement | null {
+  if (isWaiting && !busy) {
+    return (
+      <p style={{ ...FAINT, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Spinner color={color} /> En attente d'un joueur…
+      </p>
+    );
+  }
+  if (isWaiting) return null;
+  if (isInQueue) return <p style={FAINT}>Quittez la file d'attente d'abord.</p>;
+  if (hasOpenSession) return <p style={FAINT}>Terminez d'abord votre session en cours.</p>;
+  return null;
+}
+
+function RoomsPanel({ rooms, loading, isWaiting, hasOpenSession, isInQueue, playerId, busy, error, onCreateRoom, onJoinRoom, onCancelRoom, onClearError }: RoomsActions): ReactElement {
+  const createDisabled = isInQueue || (hasOpenSession && !isWaiting) || busy;
+  const cta = buildRoomsCta(isWaiting, busy);
   return (
     <div>
+      {error && <ErrorBanner message={error} color={cta.color} onDismiss={onClearError} />}
       <p style={DESC}>Créez ou rejoignez une room personnalisée.</p>
       <button
         type="button"
         className="hub-modal-cta"
-        style={ctaVars(isWaiting ? '#ef4444' : '#22c55e')}
+        style={ctaVars(cta.color)}
         disabled={createDisabled}
         onClick={isWaiting ? onCancelRoom : onCreateRoom}
       >
-        ⌂ {isWaiting ? 'Annuler ma room' : 'Créer une room'}
+        {cta.content}
       </button>
+      <RoomsHints isWaiting={isWaiting} isInQueue={isInQueue} hasOpenSession={hasOpenSession} busy={busy} color={cta.color} />
       <div style={{ marginTop: '16px' }}>
         <RoomsContent
           loading={loading}
           rooms={rooms}
           playerId={playerId}
           hasOpenSession={hasOpenSession}
-          isInQueue={isInQueue}
+          isInQueue={isInQueue || busy}
           onJoinRoom={onJoinRoom}
         />
       </div>
