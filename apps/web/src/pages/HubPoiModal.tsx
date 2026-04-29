@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 
+import { PoiBadge } from '../game/Hub3D/PoiBadges';
 import { HUB_POIS, type PoiId } from '../game/Hub3D/constants';
 import { SKINS, type SkinConfig } from '../game/constants/skins';
 
@@ -19,10 +20,117 @@ const ANIM_STYLES = `
   from { opacity: 1; transform: translateY(0) scale(1); }
   to { opacity: 0; transform: translateY(8px) scale(0.96); }
 }
+@keyframes hub-modal-cta-pulse {
+  0%, 100% { box-shadow: var(--cta-glow); }
+  50% { box-shadow: var(--cta-glow-strong); }
+}
 .hub-modal-backdrop-in { animation: hub-modal-backdrop-in ${ANIM_OPEN_MS}ms ease-out forwards; }
 .hub-modal-backdrop-out { animation: hub-modal-backdrop-out ${ANIM_CLOSE_MS}ms ease-in forwards; }
 .hub-modal-card-in { animation: hub-modal-card-in ${ANIM_OPEN_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 .hub-modal-card-out { animation: hub-modal-card-out ${ANIM_CLOSE_MS}ms ease-in forwards; }
+.hub-modal-cta {
+  position: relative;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  padding: 13px 22px;
+  border-radius: 14px;
+  width: 100%;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease;
+  background: linear-gradient(180deg, var(--cta-c1), var(--cta-c2));
+  box-shadow: var(--cta-glow);
+  isolation: isolate;
+  overflow: hidden;
+}
+.hub-modal-cta::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 50%);
+  pointer-events: none;
+}
+.hub-modal-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: var(--cta-glow-strong);
+}
+.hub-modal-cta:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+.hub-modal-cta:focus-visible {
+  outline: 2px solid var(--cta-focus);
+  outline-offset: 2px;
+}
+.hub-modal-cta:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.5) brightness(0.8);
+  opacity: 0.55;
+  box-shadow: none;
+}
+.hub-modal-secondary {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.78);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.84rem;
+  padding: 11px 22px;
+  border-radius: 14px;
+  width: 100%;
+  margin-top: 10px;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.hub-modal-secondary:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.28); color: white; }
+.hub-modal-close-medallion {
+  position: relative;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: transform 200ms ease, filter 200ms ease;
+}
+.hub-modal-close-medallion:hover { transform: rotate(90deg) scale(1.05); filter: brightness(1.15); }
+.hub-modal-close-medallion:focus-visible { outline: 2px solid rgba(255,255,255,0.4); outline-offset: 2px; }
+.hub-modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(180,140,255,0.35) transparent;
+}
+.hub-modal-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.hub-modal-scroll::-webkit-scrollbar-track { background: transparent; }
+.hub-modal-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(160,120,240,0.35), rgba(110,80,200,0.35));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.hub-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(180,140,255,0.55), rgba(130,100,220,0.55));
+  background-clip: padding-box;
+}
+.hub-modal-scroll::-webkit-scrollbar-corner { background: transparent; }
+@media (max-height: 720px) {
+  .hub-modal-scroll[role="dialog"] { padding: 22px 24px 24px !important; }
+}
+@media (max-width: 480px) {
+  .hub-modal-scroll[role="dialog"] { padding: 22px 22px 24px !important; }
+}
 `;
 
 function ensureAnimStyles(): void {
@@ -91,7 +199,7 @@ const OVERLAY: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   zIndex: 100,
-  background: 'rgba(0, 0, 0, 0.6)',
+  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.42) 60%, rgba(0,0,0,0.5) 100%)',
 };
 
 const DESC: CSSProperties = {
@@ -109,59 +217,63 @@ const FAINT: CSSProperties = {
 
 const IDLE_SPRITE_FRAMES = 6;
 
+function darken(color: string, factor: number): string {
+  const hex = color.replace('#', '');
+  if (hex.length !== 6) return color;
+  const r = Math.max(0, Math.round(parseInt(hex.slice(0, 2), 16) * factor));
+  const g = Math.max(0, Math.round(parseInt(hex.slice(2, 4), 16) * factor));
+  const b = Math.max(0, Math.round(parseInt(hex.slice(4, 6), 16) * factor));
+  return `rgb(${r},${g},${b})`;
+}
+
+function buildModalWrapStyle(): CSSProperties {
+  return {
+    position: 'relative',
+    width: '90%',
+    minWidth: '340px',
+    maxWidth: '520px',
+  };
+}
+
+function buildHaloStyle(color: string): CSSProperties {
+  return {
+    position: 'absolute',
+    inset: '-60px',
+    background: `radial-gradient(ellipse at center, ${color}38 0%, ${color}12 35%, transparent 70%)`,
+    filter: 'blur(8px)',
+    pointerEvents: 'none',
+    zIndex: 0,
+  };
+}
+
 function buildModalStyle(color: string): CSSProperties {
   return {
-    background: 'rgba(10, 14, 24, 0.94)',
+    position: 'relative',
+    background: `linear-gradient(180deg, rgba(14,18,30,0.96) 0%, rgba(8,12,22,0.96) 100%)`,
     backdropFilter: 'blur(24px)',
     WebkitBackdropFilter: 'blur(24px)',
     border: `1px solid ${color}55`,
-    boxShadow: `0 0 40px ${color}25, inset 0 0 20px ${color}08`,
+    boxShadow: `0 0 50px ${color}30, 0 24px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 30px ${color}08`,
     borderRadius: '20px',
-    padding: '32px',
-    minWidth: '340px',
-    maxWidth: '520px',
-    width: '90%',
+    padding: '28px 32px 30px',
     color: 'white',
     fontFamily: 'system-ui, sans-serif',
-    position: 'relative',
     maxHeight: '80vh',
     overflowY: 'auto',
+    zIndex: 1,
   };
 }
 
-function btnPrimary(color: string, disabled = false): CSSProperties {
+function ctaVars(color: string): CSSProperties {
+  const c1 = color;
+  const c2 = darken(color, 0.7);
   return {
-    background: disabled ? 'rgba(255,255,255,0.08)' : color,
-    color: 'white',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    fontWeight: 700,
-    fontSize: '0.9rem',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-    width: '100%',
-    marginTop: '8px',
-    display: 'block',
-    textAlign: 'center',
-  };
-}
-
-function btnSecondary(): CSSProperties {
-  return {
-    background: 'transparent',
-    border: '1px solid rgba(255,255,255,0.18)',
-    color: 'rgba(255,255,255,0.65)',
-    padding: '10px 24px',
-    borderRadius: '12px',
-    fontWeight: 600,
-    fontSize: '0.85rem',
-    cursor: 'pointer',
-    width: '100%',
-    marginTop: '8px',
-    display: 'block',
-    textAlign: 'center',
-  };
+    ['--cta-c1' as never]: c1,
+    ['--cta-c2' as never]: c2,
+    ['--cta-glow' as never]: `0 6px 18px ${color}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
+    ['--cta-glow-strong' as never]: `0 10px 30px ${color}88, 0 0 24px ${color}66, inset 0 1px 0 rgba(255,255,255,0.25)`,
+    ['--cta-focus' as never]: `${color}cc`,
+  } as CSSProperties;
 }
 
 function renderPanel(id: PoiId, props: HubPoiModalProps): ReactElement {
@@ -217,46 +329,105 @@ export function HubPoiModal(props: HubPoiModalProps): ReactElement | null {
   return (
     <div style={OVERLAY} className={backdropClass} onClick={onClose}>
       <div
-        style={buildModalStyle(color)}
+        style={buildModalWrapStyle()}
         className={cardClass}
         onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
       >
-        <ModalHeader color={color} icon={poiConfig?.icon ?? ''} label={poiConfig?.label ?? ''} onClose={onClose} />
-        {renderPanel(renderedId, props)}
+        <div aria-hidden style={buildHaloStyle(color)} />
+        <div className="hub-modal-scroll" style={buildModalStyle(color)} role="dialog" aria-modal="true">
+          <CornerOrnament color={color} corner="tl" />
+          <CornerOrnament color={color} corner="tr" />
+          <ModalHeader poiId={renderedId} color={color} label={poiConfig?.label ?? ''} onClose={onClose} />
+          {renderPanel(renderedId, props)}
+        </div>
       </div>
     </div>
   );
 }
 
-function ModalHeader({ color, icon, label, onClose }: { color: string; icon: string; label: string; onClose: () => void }): ReactElement {
+type Corner = 'tl' | 'tr' | 'bl' | 'br';
+
+const CORNER_POSITIONS: Record<Corner, CSSProperties> = {
+  tl: { top: 8, left: 8 },
+  tr: { top: 8, right: 8, transform: 'scaleX(-1)' },
+  bl: { bottom: 8, left: 8, transform: 'scaleY(-1)' },
+  br: { bottom: 8, right: 8, transform: 'scale(-1, -1)' },
+};
+
+function CornerOrnament({ color, corner }: { color: string; corner: Corner }): ReactElement {
+  const pos = CORNER_POSITIONS[corner];
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
-      <div>
-        <span style={{ fontSize: '28px', display: 'block', marginBottom: '6px' }}>{icon}</span>
-        <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, color, letterSpacing: '-0.01em' }}>{label}</h2>
+    <svg
+      aria-hidden
+      width="44"
+      height="44"
+      viewBox="0 0 160 160"
+      fill="none"
+      style={{ position: 'absolute', ...pos, opacity: 0.55, pointerEvents: 'none' }}
+    >
+      <path d="M18 142V50C18 32.327 32.327 18 50 18H142" stroke={color} strokeOpacity="0.85" strokeWidth="6" strokeLinecap="round" />
+      <path d="M36 126V54C36 44.059 44.059 36 54 36H126" stroke={color} strokeOpacity="0.45" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="50" cy="18" r="5" fill="#ffffff" fillOpacity="0.85" />
+      <circle cx="18" cy="50" r="5" fill="#ffffff" fillOpacity="0.85" />
+    </svg>
+  );
+}
+
+function CloseMedallion({ color, onClose }: { color: string; onClose: () => void }): ReactElement {
+  const gradId = `close-rim-${color.replace('#', '')}`;
+  return (
+    <button
+      type="button"
+      onClick={onClose}
+      className="hub-modal-close-medallion"
+      aria-label="Fermer"
+    >
+      <svg width="38" height="38" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id={`${gradId}-bg`} cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(36 24) rotate(90) scale(44)">
+            <stop stopColor="#1a2236" />
+            <stop offset="1" stopColor="#0a0e18" />
+          </radialGradient>
+          <linearGradient id={`${gradId}-rim`} x1="0" y1="0" x2="72" y2="72">
+            <stop stopColor={color} />
+            <stop offset="1" stopColor="#ffffff" />
+          </linearGradient>
+        </defs>
+        <circle cx="36" cy="36" r="28" fill={`url(#${gradId}-bg)`} />
+        <circle cx="36" cy="36" r="28" stroke={`url(#${gradId}-rim)`} strokeWidth="2.5" />
+        <circle cx="36" cy="36" r="21" stroke="#ffffff" strokeOpacity="0.14" strokeWidth="1" />
+        <path d="M28 28L44 44M44 28L28 44" stroke="#F7FBFF" strokeWidth="3.2" strokeLinecap="round" />
+      </svg>
+    </button>
+  );
+}
+
+function ModalHeader({ poiId, color, label, onClose }: { poiId: PoiId; color: string; label: string; onClose: () => void }): ReactElement {
+  return (
+    <div style={{ marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
+          <PoiBadge poiId={poiId} color={color} size={48} />
+          <h2 style={{
+            margin: 0,
+            fontSize: '1.25rem',
+            fontWeight: 800,
+            color: '#ffffff',
+            letterSpacing: '-0.01em',
+            textShadow: `0 0 12px ${color}55`,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}>
+            {label}
+          </h2>
+        </div>
+        <CloseMedallion color={color} onClose={onClose} />
       </div>
-      <button
-        type="button"
-        onClick={onClose}
-        style={{
-          background: 'transparent',
-          border: `1px solid ${color}44`,
-          color: 'rgba(255,255,255,0.5)',
-          borderRadius: '50%',
-          width: '32px',
-          height: '32px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        ✕
-      </button>
+      <div style={{
+        marginTop: '16px',
+        height: '1px',
+        background: `linear-gradient(90deg, transparent 0%, ${color}66 20%, ${color}99 50%, ${color}66 80%, transparent 100%)`,
+      }} />
     </div>
   );
 }
@@ -267,15 +438,15 @@ function CombatPanel({ isInQueue, hasOpenSession, onJoinQueue, onLeaveQueue }: C
       <div>
         <p style={DESC}>Recherche d'un adversaire en cours...</p>
         <p style={{ color: '#ef4444', fontWeight: 700, marginBottom: '16px', fontSize: '0.9rem' }}>⏳ En file d'attente</p>
-        <button type="button" style={btnSecondary()} onClick={onLeaveQueue}>Annuler la recherche</button>
+        <button type="button" className="hub-modal-secondary" onClick={onLeaveQueue}>Annuler la recherche</button>
       </div>
     );
   }
   return (
     <div>
       <p style={DESC}>Affrontez un adversaire aléatoire en PvP. La partie commence dès qu'un match est trouvé.</p>
-      <button type="button" style={btnPrimary('#ef4444', hasOpenSession)} disabled={hasOpenSession} onClick={onJoinQueue}>
-        ⚔️ Lancer la recherche
+      <button type="button" className="hub-modal-cta" style={ctaVars('#ef4444')} disabled={hasOpenSession} onClick={onJoinQueue}>
+        ⚔ Lancer la recherche
       </button>
       {hasOpenSession && <p style={FAINT}>Terminez d'abord votre session en cours.</p>}
     </div>
@@ -287,16 +458,16 @@ function VsAiPanel({ hasOpenSession, isInQueue, onStart, onResume, onReset }: Vs
     return (
       <div>
         <p style={DESC}>Une session est déjà en cours.</p>
-        <button type="button" style={btnPrimary('#10b981')} onClick={onResume}>▶ Reprendre la partie</button>
-        <button type="button" style={btnSecondary()} onClick={onReset}>🔄 Réinitialiser la session</button>
+        <button type="button" className="hub-modal-cta" style={ctaVars('#10b981')} onClick={onResume}>▶ Reprendre la partie</button>
+        <button type="button" className="hub-modal-secondary" onClick={onReset}>↻ Réinitialiser la session</button>
       </div>
     );
   }
   return (
     <div>
       <p style={DESC}>Lancez un combat solo contre l'intelligence artificielle.</p>
-      <button type="button" style={btnPrimary('#f59e0b', isInQueue)} disabled={isInQueue} onClick={onStart}>
-        🤖 Lancer VS AI
+      <button type="button" className="hub-modal-cta" style={ctaVars('#facc15')} disabled={isInQueue} onClick={onStart}>
+        ◈ Lancer VS AI
       </button>
       {isInQueue && <p style={FAINT}>Quittez la file d'attente d'abord.</p>}
     </div>
@@ -324,12 +495,12 @@ const SECTION_HEADER: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  margin: '18px 0 10px',
-  fontSize: '0.78rem',
+  margin: '14px 0 8px',
+  fontSize: '0.7rem',
   fontWeight: 700,
-  letterSpacing: '0.08em',
+  letterSpacing: '0.1em',
   textTransform: 'uppercase',
-  color: 'rgba(255,255,255,0.55)',
+  color: 'rgba(255,255,255,0.45)',
 };
 
 function getActiveBanner(id: string): BannerPreset {
@@ -341,23 +512,42 @@ function getActiveFrame(id: string): FramePreset {
 }
 
 function SkinAvatar({ skin, size, frame }: { skin: SkinConfig | undefined; size: number; frame?: FramePreset }): ReactElement {
-  if (!skin) return <div style={{ width: size, height: size }} />;
+  const radius = size * 0.18;
+  const baseStyle: CSSProperties = {
+    width: size,
+    height: size,
+    borderRadius: radius,
+    flexShrink: 0,
+    backgroundColor: 'rgba(8,12,22,0.55)',
+    boxShadow: frame?.glow ?? 'inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.05)',
+    border: frame?.border,
+    overflow: 'hidden',
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+  if (!skin) {
+    return (
+      <div style={baseStyle} aria-hidden>
+        <span style={{ fontSize: size * 0.42, opacity: 0.35 }}>♟</span>
+      </div>
+    );
+  }
+  const spriteStyle: CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    backgroundImage: `url(/assets/sprites/${skin.type}/idle.png)`,
+    backgroundSize: `${IDLE_SPRITE_FRAMES * 100}% 100%`,
+    backgroundPosition: '0% 0%',
+    backgroundRepeat: 'no-repeat',
+    imageRendering: 'pixelated',
+    filter: `hue-rotate(${skin.hue}deg) saturate(${skin.saturation})`,
+  };
   return (
-    <div style={{
-      width: size,
-      height: size,
-      borderRadius: size * 0.18,
-      backgroundImage: `url(/assets/sprites/${skin.type}/idle.png)`,
-      backgroundSize: `${IDLE_SPRITE_FRAMES * 100}% 100%`,
-      backgroundPosition: '0% 0%',
-      backgroundRepeat: 'no-repeat',
-      filter: `hue-rotate(${skin.hue}deg) saturate(${skin.saturation})`,
-      flexShrink: 0,
-      border: frame?.border,
-      boxShadow: frame?.glow,
-      background: 'rgba(255,255,255,0.04)',
-      backgroundBlendMode: 'normal',
-    }} />
+    <div style={baseStyle}>
+      <div style={spriteStyle} />
+    </div>
   );
 }
 
@@ -371,22 +561,21 @@ function ProfileHeader({ username, gold, skin, banner, frame }: {
   return (
     <div style={{
       position: 'relative',
-      borderRadius: '14px',
-      padding: '16px 18px',
+      borderRadius: '12px',
+      padding: '12px 14px',
       background: banner.gradient,
-      marginBottom: '4px',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 18px rgba(0,0,0,0.35)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 12px rgba(0,0,0,0.3)',
       display: 'flex',
-      gap: '14px',
+      gap: '12px',
       alignItems: 'center',
       overflow: 'hidden',
     }}>
-      <SkinAvatar skin={skin} size={64} frame={frame} />
+      <SkinAvatar skin={skin} size={52} frame={frame} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+        <div style={{ fontSize: '0.98rem', fontWeight: 800, letterSpacing: '-0.01em', textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}>
           {username ?? 'Aventurier'}
         </div>
-        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.85)', marginTop: '4px', display: 'flex', gap: '12px' }}>
+        <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.85)', marginTop: '3px', display: 'flex', gap: '10px' }}>
           <span>🪙 {gold ?? 0}</span>
           <span style={{ opacity: 0.7 }}>{skin?.name ?? '—'}</span>
         </div>
@@ -397,53 +586,55 @@ function ProfileHeader({ username, gold, skin, banner, frame }: {
 
 function SkinCard({ skin, isActive, onSelect }: { skin: SkinConfig; isActive: boolean; onSelect: () => void }): ReactElement {
   return (
-    <div
+    <button
+      type="button"
       onClick={onSelect}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') onSelect(); }}
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        padding: '10px 14px',
-        borderRadius: '12px',
+        gap: '10px',
+        padding: '7px 10px 7px 7px',
+        borderRadius: '10px',
         cursor: 'pointer',
-        background: isActive ? 'rgba(192,132,252,0.18)' : 'rgba(255,255,255,0.04)',
-        border: `1px solid ${isActive ? '#c084fc' : 'rgba(255,255,255,0.08)'}`,
-        marginBottom: '8px',
-        transition: 'background 160ms ease, border-color 160ms ease',
+        textAlign: 'left',
+        width: '100%',
+        background: isActive ? 'rgba(192,132,252,0.16)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${isActive ? '#c084fc' : 'rgba(255,255,255,0.06)'}`,
+        boxShadow: isActive ? '0 0 0 1px rgba(192,132,252,0.25), 0 4px 14px rgba(192,132,252,0.18)' : 'none',
+        transition: 'background 160ms ease, border-color 160ms ease, box-shadow 200ms ease',
+        color: 'inherit',
+        fontFamily: 'inherit',
       }}
     >
-      <SkinAvatar skin={skin} size={36} />
+      <SkinAvatar skin={skin} size={34} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{skin.name}</div>
-        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontWeight: 700, fontSize: '0.84rem', color: 'rgba(255,255,255,0.95)' }}>{skin.name}</div>
+        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.42)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '1px' }}>
           {skin.description}
         </div>
       </div>
-      {isActive && <span style={{ fontSize: '0.7rem', color: '#c084fc', fontWeight: 800, flexShrink: 0 }}>ACTIF</span>}
-    </div>
+      {isActive && <span style={{ fontSize: '0.6rem', color: '#c084fc', fontWeight: 800, flexShrink: 0, letterSpacing: '0.08em' }}>● ACTIF</span>}
+    </button>
   );
 }
 
 function BannerSwatch({ preset, isActive, onSelect }: { preset: BannerPreset; isActive: boolean; onSelect: () => void }): ReactElement {
   return (
-    <div
+    <button
+      type="button"
       onClick={onSelect}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') onSelect(); }}
       title={preset.name}
+      aria-label={preset.name}
       style={{
         flex: 1,
-        height: '46px',
-        borderRadius: '10px',
+        height: '34px',
+        borderRadius: '8px',
         cursor: 'pointer',
         background: preset.gradient,
-        border: `2px solid ${isActive ? '#ffffff' : 'rgba(255,255,255,0.12)'}`,
-        boxShadow: isActive ? '0 0 14px rgba(255,255,255,0.35)' : 'inset 0 1px 0 rgba(255,255,255,0.1)',
+        border: `2px solid ${isActive ? '#ffffff' : 'rgba(255,255,255,0.1)'}`,
+        boxShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 0 rgba(255,255,255,0.08)',
         transition: 'border-color 160ms ease, box-shadow 160ms ease',
+        padding: 0,
       }}
     />
   );
@@ -451,31 +642,31 @@ function BannerSwatch({ preset, isActive, onSelect }: { preset: BannerPreset; is
 
 function FrameSwatch({ preset, isActive, onSelect }: { preset: FramePreset; isActive: boolean; onSelect: () => void }): ReactElement {
   return (
-    <div
+    <button
+      type="button"
       onClick={onSelect}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') onSelect(); }}
       title={preset.name}
       style={{
         flex: 1,
-        height: '46px',
-        borderRadius: '10px',
+        height: '34px',
+        borderRadius: '8px',
         cursor: 'pointer',
         background: 'rgba(10,14,24,0.6)',
         border: preset.border,
-        boxShadow: isActive ? `${preset.glow}, 0 0 0 2px rgba(255,255,255,0.4)` : preset.glow,
+        boxShadow: isActive ? `${preset.glow}, 0 0 0 2px rgba(255,255,255,0.35)` : preset.glow,
         transition: 'box-shadow 160ms ease',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '0.65rem',
-        color: 'rgba(255,255,255,0.7)',
+        fontSize: '0.62rem',
+        color: 'rgba(255,255,255,0.72)',
         letterSpacing: '0.05em',
+        fontFamily: 'inherit',
+        padding: 0,
       }}
     >
       {preset.name}
-    </div>
+    </button>
   );
 }
 
@@ -491,21 +682,21 @@ function AppearancePanel({ currentSkin, username, gold, onSetSkin }: AppearanceA
       <ProfileHeader username={username} gold={gold} skin={skin} banner={banner} frame={frame} />
 
       <div style={SECTION_HEADER}><span>Apparence</span><span style={{ opacity: 0.5 }}>{SKINS.length}</span></div>
-      <div style={{ maxHeight: '210px', overflowY: 'auto', paddingRight: '4px' }}>
+      <div className="hub-modal-scroll hub-modal-skins-list" style={{ maxHeight: '180px', overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {SKINS.map((s) => (
           <SkinCard key={s.id} skin={s} isActive={s.id === currentSkin} onSelect={() => onSetSkin(s.id)} />
         ))}
       </div>
 
       <div style={SECTION_HEADER}><span>Bannière</span></div>
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', gap: '6px' }}>
         {BANNER_PRESETS.map((p) => (
           <BannerSwatch key={p.id} preset={p} isActive={p.id === bannerId} onSelect={() => setBannerId(p.id)} />
         ))}
       </div>
 
       <div style={SECTION_HEADER}><span>Cadre</span></div>
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', gap: '6px' }}>
         {FRAME_PRESETS.map((p) => (
           <FrameSwatch key={p.id} preset={p} isActive={p.id === frameId} onSelect={() => setFrameId(p.id)} />
         ))}
@@ -534,7 +725,8 @@ function RoomCard({ room, isOwn, disabled, onJoin }: { room: RoomEntry; isOwn: b
         type="button"
         onClick={onJoin}
         disabled={isOwn || disabled}
-        style={{ ...btnPrimary('#22c55e', isOwn || disabled), width: 'auto', padding: '8px 16px', fontSize: '0.8rem', marginTop: 0 }}
+        className="hub-modal-cta"
+        style={{ ...ctaVars('#22c55e'), width: 'auto', padding: '8px 16px', fontSize: '0.8rem', marginTop: 0 }}
       >
         {isOwn ? 'Votre room' : 'Rejoindre'}
       </button>
@@ -574,11 +766,12 @@ function RoomsPanel({ rooms, loading, isWaiting, hasOpenSession, isInQueue, play
       <p style={DESC}>Créez ou rejoignez une room personnalisée.</p>
       <button
         type="button"
-        style={btnPrimary('#22c55e', createDisabled)}
+        className="hub-modal-cta"
+        style={ctaVars(isWaiting ? '#ef4444' : '#22c55e')}
         disabled={createDisabled}
         onClick={isWaiting ? onCancelRoom : onCreateRoom}
       >
-        🏰 {isWaiting ? 'Annuler ma room' : 'Créer une room'}
+        ⌂ {isWaiting ? 'Annuler ma room' : 'Créer une room'}
       </button>
       <div style={{ marginTop: '16px' }}>
         <RoomsContent

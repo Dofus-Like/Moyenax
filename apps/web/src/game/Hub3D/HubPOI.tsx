@@ -4,55 +4,91 @@ import { useCallback, useMemo, useState, type CSSProperties, type ReactElement }
 
 import { useHubGround } from './HubGround';
 import { HubPOIAsset } from './HubPOIAsset';
+import { PoiBadge } from './PoiBadges';
 import type { PoiConfig } from './constants';
 
 interface HubPOIProps {
   poi: PoiConfig;
   modalOpen: boolean;
+  pulsing?: boolean;
 }
 
 const COLLIDER_HEIGHT = 4.0;
 const COLLIDER_RADIUS = 2.5;
-const LABEL_Y = 1.85;
+const LABEL_Y = 1.95;
 
-function buildLabelStyle(color: string, hovered: boolean, dimmed: boolean): CSSProperties {
+const LABEL_ANIM_TAG_ID = 'hub-poi-label-anims';
+const LABEL_ANIMS = `
+@keyframes hub-poi-label-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.hub-poi-label-pulsing { animation: hub-poi-label-pulse 520ms ease-in-out 2; }
+`;
+
+function ensureLabelAnims(): void {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(LABEL_ANIM_TAG_ID)) return;
+  const tag = document.createElement('style');
+  tag.id = LABEL_ANIM_TAG_ID;
+  tag.textContent = LABEL_ANIMS;
+  document.head.appendChild(tag);
+}
+
+function buildChipStyle(color: string, hovered: boolean, dimmed: boolean): CSSProperties {
   return {
     pointerEvents: 'none',
-    background: 'rgba(10, 14, 24, 0.55)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
+    background: 'linear-gradient(135deg, rgba(8,12,22,0.78) 0%, rgba(14,20,36,0.72) 100%)',
+    backdropFilter: 'blur(10px) saturate(1.2)',
+    WebkitBackdropFilter: 'blur(10px) saturate(1.2)',
     color: 'white',
-    padding: '6px 12px',
+    padding: '5px 12px 5px 5px',
     borderRadius: '999px',
-    fontSize: '12px',
-    fontWeight: 600,
+    fontSize: '12.5px',
+    fontWeight: 700,
     whiteSpace: 'nowrap',
     fontFamily: 'system-ui, sans-serif',
-    border: `1px solid ${color}`,
-    boxShadow: `0 0 12px ${color}55, inset 0 0 8px ${color}22`,
-    transform: hovered && !dimmed ? 'scale(1.08) translateY(-2px)' : 'scale(1)',
-    transition: 'transform 160ms ease, box-shadow 160ms ease, opacity 220ms ease',
+    border: `1px solid ${color}66`,
+    boxShadow: `0 0 14px ${color}40, 0 4px 14px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)`,
+    transform: hovered && !dimmed ? 'translateY(-2px) scale(1.06)' : 'translateY(0) scale(1)',
+    transition: 'transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 180ms ease, opacity 220ms ease, border-color 180ms ease',
     userSelect: 'none',
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '6px',
+    gap: '8px',
     letterSpacing: '0.02em',
     opacity: dimmed ? 0.18 : 1,
+    textShadow: '0 1px 6px rgba(0,0,0,0.55)',
   };
 }
 
-function PoiLabel({ poi, hovered, dimmed }: { poi: PoiConfig; hovered: boolean; dimmed: boolean }): ReactElement {
+function buildLabelTextStyle(color: string, hovered: boolean): CSSProperties {
+  return {
+    display: 'inline-flex',
+    alignItems: 'center',
+    color: hovered ? '#ffffff' : 'rgba(255,255,255,0.94)',
+    transition: 'color 160ms ease',
+    paddingRight: '4px',
+    textShadow: `0 0 6px ${color}33`,
+  };
+}
+
+function PoiLabel({ poi, hovered, dimmed, pulsing }: { poi: PoiConfig; hovered: boolean; dimmed: boolean; pulsing: boolean }): ReactElement {
+  ensureLabelAnims();
   return (
     <Html position={[0, LABEL_Y, 0]} center sprite style={{ pointerEvents: 'none' }}>
-      <div style={buildLabelStyle(poi.color, hovered, dimmed)}>
-        <span style={{ fontSize: '14px' }}>{poi.icon}</span>
-        <span>{poi.label}</span>
+      <div
+        className={pulsing ? 'hub-poi-label-pulsing' : undefined}
+        style={buildChipStyle(poi.color, hovered, dimmed)}
+      >
+        <PoiBadge poiId={poi.id} color={poi.color} size={30} />
+        <span style={buildLabelTextStyle(poi.color, hovered)}>{poi.label}</span>
       </div>
     </Html>
   );
 }
 
-export function HubPOI({ poi, modalOpen }: HubPOIProps): ReactElement {
+export function HubPOI({ poi, modalOpen, pulsing = false }: HubPOIProps): ReactElement {
   const [hovered, setHovered] = useState(false);
   const { snapY, ready } = useHubGround();
   const groundY = useMemo(
@@ -73,7 +109,7 @@ export function HubPOI({ poi, modalOpen }: HubPOIProps): ReactElement {
     setHovered(false);
   }, []);
 
-  const effectiveHover = hovered && !modalOpen;
+  const effectiveHover = (hovered || pulsing) && !modalOpen;
 
   return (
     <group position={[poi.position[0], groundY, poi.position[2]]}>
@@ -89,7 +125,7 @@ export function HubPOI({ poi, modalOpen }: HubPOIProps): ReactElement {
           <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
         </mesh>
       )}
-      <PoiLabel poi={poi} hovered={effectiveHover} dimmed={modalOpen} />
+      <PoiLabel poi={poi} hovered={effectiveHover} dimmed={modalOpen} pulsing={pulsing} />
     </group>
   );
 }

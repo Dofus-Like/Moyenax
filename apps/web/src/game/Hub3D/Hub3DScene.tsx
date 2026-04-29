@@ -1,10 +1,11 @@
 import { Canvas } from '@react-three/fiber';
 import type { MutableRefObject, ReactElement, ReactNode } from 'react';
-import { Component, Suspense, useCallback, useEffect, useRef } from 'react';
+import { Component, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Vector3, type Group } from 'three';
 
 import { HubAmbientParticles } from './HubAmbientParticles';
 import { HubCamera } from './HubCamera';
+import { HubClickRipple } from './HubClickRipple';
 import { HubGroundProvider, useHubGround } from './HubGround';
 import { HubMap } from './HubMap';
 import { HubPOI } from './HubPOI';
@@ -108,11 +109,11 @@ function computePoiStopPoint(playerPos: Vector3, poiPos: Vector3, stopDistance: 
   return new Vector3(playerPos.x + dx * factor, 0, playerPos.z + dz * factor);
 }
 
-function PoiList({ modalOpen }: { modalOpen: boolean }): ReactElement {
+function PoiList({ modalOpen, pulsingId }: { modalOpen: boolean; pulsingId: PoiId | null }): ReactElement {
   return (
     <>
       {Object.values(HUB_POIS).map((poi) => (
-        <HubPOI key={poi.id} poi={poi} modalOpen={modalOpen} />
+        <HubPOI key={poi.id} poi={poi} modalOpen={modalOpen} pulsing={pulsingId === poi.id} />
       ))}
     </>
   );
@@ -127,23 +128,67 @@ function useInitialPlayerSnap(playerRef: React.RefObject<Group | null>, snapY: (
   }, [playerRef, ready, snapY]);
 }
 
+const ARRIVAL_OPEN_DELAY_MS = 180;
+
+interface RippleState {
+  point: Vector3 | null;
+  stamp: number;
+  triggerAt: (point: Vector3) => void;
+}
+
+function useRippleTrigger(): RippleState {
+  const [point, setPoint] = useState<Vector3 | null>(null);
+  const [stamp, setStamp] = useState(0);
+  const triggerAt = useCallback((p: Vector3): void => {
+    setPoint(p.clone());
+    setStamp((s) => s + 1);
+  }, []);
+  return { point, stamp, triggerAt };
+}
+
+function useDelayedActivation(onPoiActivate: (id: PoiId) => void): {
+  pendingPoiId: PoiId | null;
+  setPendingPoiId: (id: PoiId | null) => void;
+  handleArrive: (metadata: PoiId | null) => void;
+  cancelPending: () => void;
+} {
+  const [pendingPoiId, setPendingPoiId] = useState<PoiId | null>(null);
+  const timerRef = useRef<number | null>(null);
+
+  const cancelPending = useCallback((): void => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => (): void => {
+    cancelPending();
+  }, [cancelPending]);
+
+  const handleArrive = useCallback((metadata: PoiId | null): void => {
+    if (!metadata) { setPendingPoiId(null); return; }
+    cancelPending();
+    timerRef.current = window.setTimeout(() => {
+      onPoiActivate(metadata);
+      setPendingPoiId(null);
+      timerRef.current = null;
+    }, ARRIVAL_OPEN_DELAY_MS);
+  }, [onPoiActivate, cancelPending]);
+
+  return { pendingPoiId, setPendingPoiId, handleArrive, cancelPending };
+}
+
 function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef }: Hub3DWorldProps): ReactElement {
   const modalOpen = activePoiId !== null;
   const playerRef = useRef<Group>(null);
   const { snapY, ready, hubMeshRef } = useHubGround();
+  const ripple = useRippleTrigger();
+  const { pendingPoiId, setPendingPoiId, handleArrive, cancelPending } = useDelayedActivation(onPoiActivate);
 
   useInitialPlayerSnap(playerRef, snapY, ready);
 
-  const handleArrive = useCallback((metadata: PoiId | null): void => {
-    if (!metadata) return;
-    onPoiActivate(metadata);
-  }, [onPoiActivate]);
-
-  const { setTarget } = useClickToMove<PoiId>({
-    playerRef,
-    snapY,
-    onArrive: handleArrive,
-  });
+  const { setTarget } = useClickToMove<PoiId>({ playerRef, snapY, onArrive: handleArrive });
 
   const handlePoiActivate = useCallback((id: PoiId): void => {
     const poi = Object.values(HUB_POIS).find((entry) => entry.id === id);
@@ -151,12 +196,16 @@ function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef }: Hub3DWorldProp
     if (!poi || !player) return;
     const playerPos = new Vector3(player.position.x, 0, player.position.z);
     const poiPos = new Vector3(poi.position[0], 0, poi.position[2]);
+    setPendingPoiId(id);
     setTarget(computePoiStopPoint(playerPos, poiPos, POI_STOP_DISTANCE), id);
-  }, [setTarget]);
+  }, [setTarget, setPendingPoiId]);
 
   const handleGroundClick = useCallback((point: Vector3): void => {
+    cancelPending();
+    setPendingPoiId(null);
     setTarget(point, null);
-  }, [setTarget]);
+    ripple.triggerAt(point);
+  }, [setTarget, setPendingPoiId, ripple, cancelPending]);
 
   useHubInputController({
     enabled: !modalOpen,
@@ -172,10 +221,11 @@ function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef }: Hub3DWorldProp
       <HubMapBoundary fallback={<NavigationFallbackFloor />}>
         <Suspense fallback={null}><HubMap /></Suspense>
       </HubMapBoundary>
-      <PoiList modalOpen={modalOpen} />
+      <PoiList modalOpen={modalOpen} pulsingId={pendingPoiId} />
       <NavigationPlane />
       <HubPlayer ref={playerRef} position={SPAWN_POSITION} />
       <HubAmbientParticles />
+      <HubClickRipple point={ripple.point} stamp={ripple.stamp} />
     </>
   );
 }
