@@ -23,6 +23,15 @@ const DEFAULT_ASSET_SCALE = 1;
 const DEFAULT_ASSET_ROT_Y = 0;
 const POI_FACE_DEBUG = false;
 
+const CRYSTAL_SPIN_RATE = 0.6;
+const CRYSTAL_BASE_Y = 0.55;
+const CRYSTAL_BOB_FREQ = 1.6;
+const CRYSTAL_BOB_AMP = 0.08;
+const GLOW_RING_RADIUS = 0.95;
+const GLOW_RING_TUBE = 0.12;
+const RING_RADIUS = 0.7;
+const RING_TUBE = 0.05;
+
 const AURA_COLOR_DISC = '#7dd3fc';
 const AURA_COLOR_OUTER = '#3b82f6';
 const AURA_COLOR_INNER = '#bae6fd';
