@@ -68,6 +68,14 @@ export interface PoiConfig {
 
 export const POI_STOP_DISTANCE = 1.6;
 
+export const PLAYER_IDLE_BOB_AMP = 0.03;
+export const PLAYER_IDLE_BOB_FREQ = 0.8;
+export const PLAYER_WALK_BOB_AMP = 0.055;
+export const PLAYER_WALK_BOB_FREQ = 2.2;
+export const PLAYER_BOB_LERP = 5;
+export const PLAYER_IDLE_SCALE_AMP = 0.015;
+export const PLAYER_ORIENTATION_THRESHOLD = 1e-4;
+
 export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiConfig> = {
   combat: {
     id: 'combat',
