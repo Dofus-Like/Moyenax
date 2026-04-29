@@ -76,6 +76,8 @@ export const PLAYER_BOB_LERP = 5;
 export const PLAYER_IDLE_SCALE_AMP = 0.015;
 export const PLAYER_ORIENTATION_THRESHOLD = 1e-4;
 
+export const HUB_ONBOARDING_KEY = 'moyenax.hub3d.onboarding.v1.dismissed';
+
 export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiConfig> = {
   combat: {
     id: 'combat',

@@ -5,7 +5,8 @@ import { gameSessionApi } from '../api/game-session.api';
 import { Hub3DLoader, type Hub3DLoaderState } from '../game/Hub3D/Hub3DLoader';
 import { Hub3DScene } from '../game/Hub3D/Hub3DScene';
 import { HubBackdrop } from '../game/Hub3D/HubBackdrop';
-import type { PoiId } from '../game/Hub3D/constants';
+import { HubOnboardingHint } from '../game/Hub3D/HubOnboardingHint';
+import { HUB_ONBOARDING_KEY, type PoiId } from '../game/Hub3D/constants';
 import { SKINS } from '../game/constants/skins';
 import { useAuthStore } from '../store/auth.store';
 
@@ -28,6 +29,11 @@ interface Room {
 const LOBBY_POLL_MS = 5000;
 const QUEUE_POLL_MS = 2000;
 
+function readOnboardingDismissed(): boolean {
+  try { return localStorage.getItem(HUB_ONBOARDING_KEY) === 'true'; }
+  catch { return false; }
+}
+
 export function LobbyPage() {
   const { player, initialize, setSkin } = useAuthStore();
   const { activeSession, refreshSession } = useGameSession();
@@ -37,7 +43,18 @@ export function LobbyPage() {
   const [isInQueue, setIsInQueue] = React.useState(false);
   const [activePoiId, setActivePoiId] = React.useState<PoiId | null>(null);
   const [loaderState, setLoaderState] = React.useState<Hub3DLoaderState>('loading');
+  const [onboardingDismissed, setOnboardingDismissed] = React.useState(readOnboardingDismissed);
   const action = useHubActionState();
+
+  const handleDismissOnboarding = React.useCallback((): void => {
+    try { localStorage.setItem(HUB_ONBOARDING_KEY, 'true'); } catch { /* localStorage indisponible */ }
+    setOnboardingDismissed(true);
+  }, []);
+
+  const handleGoVsAi = React.useCallback((): void => {
+    setActivePoiId('vs-ai');
+    handleDismissOnboarding();
+  }, [handleDismissOnboarding]);
 
   const handleHubReady = React.useCallback((): void => {
     window.setTimeout(() => setLoaderState('done'), 350);
@@ -254,10 +271,16 @@ export function LobbyPage() {
           activePoiId={activePoiId}
           poiStateLabels={poiStateLabels}
           activePoiIds={activePoi}
+          onboardingHighlightId={!onboardingDismissed ? 'vs-ai' : null}
           onReady={handleHubReady}
           onError={handleHubError}
         />
         <Hub3DLoader state={loaderState} />
+        <HubOnboardingHint
+          visible={!onboardingDismissed && activePoiId === null}
+          onDismiss={handleDismissOnboarding}
+          onGoVsAi={handleGoVsAi}
+        />
         <HubPoiModal
           activePoiId={activePoiId}
           onClose={() => setActivePoiId(null)}
