@@ -1,6 +1,15 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  class ResizeObserverPolyfill {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+  vi.stubGlobal('ResizeObserver', ResizeObserverPolyfill);
+}
+
 // localStorage polyfill pour environnements où jsdom ne l'expose pas
 if (typeof globalThis.localStorage === 'undefined') {
   const store = new Map<string, string>();

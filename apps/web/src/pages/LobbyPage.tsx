@@ -225,7 +225,7 @@ export function LobbyPage() {
       <section
         className="lobby-hub3d"
         style={{
-          position: 'fixed',
+          position: 'absolute',
           inset: 0,
           zIndex: 50,
           overflow: 'hidden',
