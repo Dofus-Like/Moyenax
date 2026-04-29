@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactElement } from 'react';
 
+import { OnboardingBadgeGuideIcon } from '../../assets/icons/hub3d/HubIcons';
+
 interface HubOnboardingHintProps {
   visible: boolean;
   onDismiss: () => void;
@@ -16,27 +18,27 @@ const HINT_STYLES = `
   animation: hub-onboarding-enter 280ms ease-out both;
 }
 .hub-onboarding-btn-primary {
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; padding: 11px 20px; margin-top: 14px;
   border: none; border-radius: 10px; cursor: pointer;
   font-family: inherit; font-size: 0.875rem; font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 55%, #6366f1 100%);
-  box-shadow: 0 4px 16px rgba(6,182,212,0.28);
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 55%, #a855f7 100%);
+  box-shadow: 0 4px 16px rgba(124,58,237,0.32);
   transition: filter 140ms ease, transform 120ms ease, box-shadow 140ms ease;
   outline: none;
 }
 .hub-onboarding-btn-primary:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 6px 22px rgba(6,182,212,0.42);
+  box-shadow: 0 6px 22px rgba(124,58,237,0.48);
 }
 .hub-onboarding-btn-primary:active {
   filter: brightness(0.94);
   transform: translateY(0);
 }
 .hub-onboarding-btn-primary:focus-visible {
-  outline: 2px solid rgba(99,102,241,0.75);
+  outline: 2px solid rgba(124,58,237,0.75);
   outline-offset: 3px;
 }
 .hub-onboarding-btn-secondary {
@@ -95,7 +97,9 @@ const CARD: CSSProperties = {
 };
 
 const GUIDE_LABEL: CSSProperties = {
-  display: 'inline-block',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
   marginBottom: '8px',
   padding: '2px 8px',
   borderRadius: '999px',
@@ -130,7 +134,10 @@ export function HubOnboardingHint({ visible, onDismiss, onGoVsAi }: HubOnboardin
   return (
     <div style={OUTER}>
       <div className="hub-onboarding-card" style={CARD} role="region" aria-label="Guide de démarrage">
-        <div style={GUIDE_LABEL}>Guide</div>
+        <div style={GUIDE_LABEL}>
+          <OnboardingBadgeGuideIcon size={10} style={{ color: 'rgba(103,210,255,0.82)' }} />
+          Guide
+        </div>
         <h3 style={TITLE}>Première aventure</h3>
         <p style={BODY}>Lance un combat contre l&apos;IA pour découvrir les bases.</p>
         {onGoVsAi && (

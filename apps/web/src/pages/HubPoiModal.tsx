@@ -1,5 +1,19 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 
+import {
+  AlertTriangleIcon,
+  AvatarPlaceholderIcon,
+  CancelSearchIcon,
+  ChipRuneIcon,
+  CloseSmallIcon,
+  CoinIcon,
+  DoorRoomIcon,
+  PlayArrowIcon,
+  RefreshIcon,
+  SpinnerRuneIcon,
+  StatusChipActiveIcon,
+  SwordCrossedIcon,
+} from '../assets/icons/hub3d/HubIcons';
 import { PoiBadge } from '../game/Hub3D/PoiBadges';
 import { HUB_POIS, type PoiId } from '../game/Hub3D/constants';
 import { SKINS, type SkinConfig } from '../game/constants/skins';
@@ -439,17 +453,7 @@ function ModalHeader({ poiId, color, label, onClose }: { poiId: PoiId; color: st
 }
 
 function Spinner({ color }: { color: string }): ReactElement {
-  ensureSpinnerStyles();
-  const style: CSSProperties = {
-    display: 'inline-block',
-    width: 14,
-    height: 14,
-    borderRadius: '50%',
-    border: `2px solid ${color}55`,
-    borderTopColor: color,
-    animation: 'hub-modal-spin 720ms linear infinite',
-  };
-  return <span aria-hidden style={style} />;
+  return <SpinnerRuneIcon size={14} style={{ color }} />;
 }
 
 function ErrorBanner({ message, color, onDismiss }: { message: string; color: string; onDismiss: () => void }): ReactElement {
@@ -470,7 +474,7 @@ function ErrorBanner({ message, color, onDismiss }: { message: string; color: st
         alignItems: 'flex-start',
       }}
     >
-      <span style={{ color, flexShrink: 0, fontWeight: 800 }}>!</span>
+      <AlertTriangleIcon size={15} style={{ color, flexShrink: 0 }} />
       <span style={{ flex: 1 }}>{message}</span>
       <button
         type="button"
@@ -481,27 +485,18 @@ function ErrorBanner({ message, color, onDismiss }: { message: string; color: st
           border: 'none',
           color: 'rgba(255,255,255,0.5)',
           cursor: 'pointer',
-          fontSize: '1rem',
-          lineHeight: 1,
           padding: 0,
           marginLeft: '4px',
+          display: 'flex',
+          alignItems: 'center',
         }}
       >
-        ×
+        <CloseSmallIcon size={12} />
       </button>
     </div>
   );
 }
 
-function ensureSpinnerStyles(): void {
-  if (typeof document === 'undefined') return;
-  const id = 'hub-poi-modal-spin';
-  if (document.getElementById(id)) return;
-  const tag = document.createElement('style');
-  tag.id = id;
-  tag.textContent = '@keyframes hub-modal-spin { to { transform: rotate(360deg); } }';
-  document.head.appendChild(tag);
-}
 
 function CombatPanel({ isInQueue, hasOpenSession, busy, error, onJoinQueue, onLeaveQueue, onClearError }: CombatActions): ReactElement {
   const color = '#ef4444';
@@ -524,7 +519,7 @@ function CombatPanel({ isInQueue, hasOpenSession, busy, error, onJoinQueue, onLe
       {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
       <p style={DESC}>Affrontez un adversaire aléatoire en PvP. La partie commence dès qu'un match est trouvé.</p>
       <button type="button" className="hub-modal-cta" style={ctaVars(color)} disabled={hasOpenSession || busy} onClick={onJoinQueue}>
-        {busy ? <><Spinner color="#fff" /> Recherche…</> : <>⚔ Lancer la recherche</>}
+        {busy ? <><Spinner color="#fff" /> Recherche…</> : <><SwordCrossedIcon size={16} /> Lancer la recherche</>}
       </button>
       {hasOpenSession && <p style={FAINT}>Terminez d'abord votre session en cours.</p>}
     </div>
@@ -539,10 +534,10 @@ function VsAiPanel({ hasOpenSession, isInQueue, busy, error, onStart, onResume, 
         {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
         <p style={DESC}>Une session est déjà en cours.</p>
         <button type="button" className="hub-modal-cta" style={ctaVars('#10b981')} onClick={onResume} disabled={busy}>
-          ▶ Reprendre la partie
+          <PlayArrowIcon size={15} /> Reprendre la partie
         </button>
         <button type="button" className="hub-modal-secondary" onClick={onReset} disabled={busy}>
-          {busy ? 'Réinitialisation…' : '↻ Réinitialiser la session'}
+          {busy ? 'Réinitialisation…' : <><RefreshIcon size={15} /> Réinitialiser la session</>}
         </button>
       </div>
     );
@@ -552,7 +547,7 @@ function VsAiPanel({ hasOpenSession, isInQueue, busy, error, onStart, onResume, 
       {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
       <p style={DESC}>Lancez un combat solo contre l'intelligence artificielle.</p>
       <button type="button" className="hub-modal-cta" style={ctaVars(color)} disabled={isInQueue || busy} onClick={onStart}>
-        {busy ? <><Spinner color="#fff" /> Lancement…</> : <>◈ Lancer VS AI</>}
+        {busy ? <><Spinner color="#fff" /> Lancement…</> : <><ChipRuneIcon size={16} /> Lancer VS AI</>}
       </button>
       {isInQueue && <p style={FAINT}>Quittez la file d'attente d'abord.</p>}
     </div>
@@ -615,7 +610,7 @@ function SkinAvatar({ skin, size, frame }: { skin: SkinConfig | undefined; size:
   if (!skin) {
     return (
       <div style={baseStyle} aria-hidden>
-        <span style={{ fontSize: size * 0.42, opacity: 0.35 }}>♟</span>
+        <AvatarPlaceholderIcon size={size * 0.65} style={{ color: 'rgba(255,255,255,0.35)' }} />
       </div>
     );
   }
@@ -660,8 +655,10 @@ function ProfileHeader({ username, gold, skin, banner, frame }: {
         <div style={{ fontSize: '0.98rem', fontWeight: 800, letterSpacing: '-0.01em', textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}>
           {username ?? 'Aventurier'}
         </div>
-        <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.85)', marginTop: '3px', display: 'flex', gap: '10px' }}>
-          <span>🪙 {gold ?? 0}</span>
+        <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.85)', marginTop: '3px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <CoinIcon size={13} /> {gold ?? 0}
+          </span>
           <span style={{ opacity: 0.7 }}>{skin?.name ?? '—'}</span>
         </div>
       </div>
@@ -698,7 +695,7 @@ function SkinCard({ skin, isActive, onSelect }: { skin: SkinConfig; isActive: bo
           {skin.description}
         </div>
       </div>
-      {isActive && <span style={{ fontSize: '0.6rem', color: '#c084fc', fontWeight: 800, flexShrink: 0, letterSpacing: '0.08em' }}>● ACTIF</span>}
+      {isActive && <StatusChipActiveIcon size={14} style={{ color: '#c084fc', flexShrink: 0 }} />}
     </button>
   );
 }
@@ -866,8 +863,8 @@ function buildRoomsCta(isWaiting: boolean, busy: boolean): { color: string; cont
     const label = isWaiting ? 'Annulation…' : 'Création…';
     return { color, content: <><Spinner color="#fff" /> {label}</> };
   }
-  const label = isWaiting ? 'Annuler ma room' : 'Créer une room';
-  return { color, content: <>⌂ {label}</> };
+  if (isWaiting) return { color, content: <><CancelSearchIcon size={16} /> Annuler ma room</> };
+  return { color, content: <><DoorRoomIcon size={16} /> Créer une room</> };
 }
 
 function RoomsHints({ isWaiting, isInQueue, hasOpenSession, busy, color }: { isWaiting: boolean; isInQueue: boolean; hasOpenSession: boolean; busy: boolean; color: string }): ReactElement | null {

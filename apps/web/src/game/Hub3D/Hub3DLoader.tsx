@@ -1,18 +1,8 @@
 import type { CSSProperties, ReactElement } from 'react';
 
+import { SpinnerRuneIcon } from '../../assets/icons/hub3d/HubIcons';
+
 export type Hub3DLoaderState = 'loading' | 'slow' | 'error' | 'done';
-
-const ANIM_ID = 'hub3d-loader-anim';
-const ANIM_CSS =
-  '@keyframes _hub3d_spin{to{transform:rotate(360deg)}}.hub3d-loader-ring{animation:_hub3d_spin 900ms linear infinite}';
-
-function ensureLoaderAnim(): void {
-  if (typeof document === 'undefined' || document.getElementById(ANIM_ID)) return;
-  const el = document.createElement('style');
-  el.id = ANIM_ID;
-  el.textContent = ANIM_CSS;
-  document.head.appendChild(el);
-}
 
 function getMessage(state: Hub3DLoaderState): string {
   if (state === 'slow') return 'Chargement plus long que prévu…';
@@ -41,13 +31,6 @@ const WRAPPER: CSSProperties = {
   transition: 'opacity 400ms ease',
 };
 
-const RING: CSSProperties = {
-  width: 40,
-  height: 40,
-  borderRadius: '50%',
-  border: '2px solid rgba(255,255,255,0.07)',
-  borderTopColor: 'rgba(96,140,220,0.9)',
-};
 
 const TEXT: CSSProperties = {
   color: 'rgba(255,255,255,0.78)',
@@ -89,14 +72,13 @@ interface Hub3DLoaderProps {
 }
 
 export function Hub3DLoader({ state }: Hub3DLoaderProps): ReactElement {
-  ensureLoaderAnim();
   const visible = state !== 'done';
   return (
     <div
       aria-hidden={!visible}
       style={{ ...WRAPPER, opacity: visible ? 1 : 0, pointerEvents: visible ? 'auto' : 'none' }}
     >
-      {state !== 'error' && <div className="hub3d-loader-ring" style={RING} />}
+      {state !== 'error' && <SpinnerRuneIcon size={40} style={{ color: 'rgba(96,140,220,0.9)' }} />}
       <span style={getTextStyle(state)}>{getMessage(state)}</span>
       {(state === 'slow' || state === 'error') && (
         <button type="button" style={RETRY_BTN} onClick={() => window.location.reload()}>

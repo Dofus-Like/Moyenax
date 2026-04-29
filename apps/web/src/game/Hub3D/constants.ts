@@ -55,7 +55,6 @@ export interface PoiCustomEffect {
 export interface PoiConfig {
   id: PoiId;
   label: string;
-  icon: string;
   position: readonly [number, number, number];
   color: string;
   modelPath?: string;
@@ -82,7 +81,6 @@ export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiCon
   combat: {
     id: 'combat',
     label: 'Combat aléatoire',
-    icon: '⚔️',
     position: [8, PLAYER_GROUND_Y, 0],
     color: '#ef4444',
     modelPath: '/models/poi/combat.glb',
@@ -93,7 +91,6 @@ export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiCon
   vsAi: {
     id: 'vs-ai',
     label: 'VS AI',
-    icon: '🤖',
     position: [0, PLAYER_GROUND_Y, -8],
     color: '#facc15',
     modelPath: '/models/poi/vs-ai.glb',
@@ -109,7 +106,6 @@ export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiCon
   appearance: {
     id: 'appearance',
     label: 'Apparence',
-    icon: '🎭',
     position: [-7.5, PLAYER_GROUND_Y, -1.5],
     color: '#c084fc',
     modelPath: '/models/poi/appearance.optimized.glb',
@@ -125,7 +121,6 @@ export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiCon
   rooms: {
     id: 'rooms',
     label: 'Rooms personnalisées',
-    icon: '🏰',
     position: [0, PLAYER_GROUND_Y, 8],
     color: '#22c55e',
     modelPath: '/models/poi/rooms.optimized.glb',
