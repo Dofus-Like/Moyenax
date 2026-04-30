@@ -7,6 +7,7 @@ import { HubAmbientParticles } from './HubAmbientParticles';
 import { HubCamera } from './HubCamera';
 import { HubClickRipple } from './HubClickRipple';
 import { HubGroundProvider, useHubGround } from './HubGround';
+import { HubGroundCollider } from './HubGroundCollider';
 import { HubMap } from './HubMap';
 import { HubPOI } from './HubPOI';
 import { HubPlayer } from './HubPlayer';
@@ -252,6 +253,7 @@ function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef, poiStateLabels, 
       </HubMapBoundary>
       <PoiList modalOpen={modalOpen} pulsingId={pendingPoiId} stateLabels={poiStateLabels} activeIds={activePoiIds} onboardingHighlightId={onboardingHighlightId} />
       <NavigationPlane />
+      <HubGroundCollider />
       <HubPlayer ref={playerRef} position={SPAWN_POSITION} />
       <HubAmbientParticles />
       <HubClickRipple point={ripple.point} stamp={ripple.stamp} />
