@@ -44,8 +44,9 @@ vi.mock('./auth.store', () => ({
   }),
 }));
 
-import { useCombatStore } from './combat.store';
 import type { CombatState } from '@game/shared-types';
+
+import { useCombatStore } from './combat.store';
 
 const fakeCombatState: CombatState = {
   sessionId: 's',

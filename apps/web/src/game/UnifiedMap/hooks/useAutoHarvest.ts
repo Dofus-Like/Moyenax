@@ -34,10 +34,6 @@ export function useAutoHarvest({ currentPosition, terrain, onHarvest }: UseAutoH
 
         if (onHarvest) {
           onHarvest(currentPosition.x, currentPosition.y, terrainProps.resourceName)
-            .then(() => {
-            })
-            .catch((_error) => {
-            })
             .finally(() => {
               setHarvesting(false);
             });

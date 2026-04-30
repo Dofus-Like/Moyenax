@@ -250,7 +250,7 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
       }
       cleanupSource();
     };
-  }, [activeSession?.id]);
+  }, [activeSession]);
 
   return (
     <GameSessionContext.Provider value={{ activeSession, refreshSession, loading }}>

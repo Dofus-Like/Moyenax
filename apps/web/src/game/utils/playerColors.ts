@@ -39,7 +39,7 @@ export const ARCHETYPE_COLORS: Record<ResourceFamily | 'NEUTRAL', PlayerColors> 
  * Pour le moment, retourne NEUTRAL par défaut
  * TODO: Analyser l'inventaire quand le système d'équipement sera implémenté
  */
-export function getPlayerArchetype(_inventory?: any): ResourceFamily | 'NEUTRAL' {
+export function getPlayerArchetype(_inventory?: unknown): ResourceFamily | 'NEUTRAL' {
   // Pour le moment, on retourne NEUTRAL
   // Plus tard, on analysera l'équipement pour déterminer la classe dominante
   // Par exemple:
@@ -49,7 +49,7 @@ export function getPlayerArchetype(_inventory?: any): ResourceFamily | 'NEUTRAL'
   return 'NEUTRAL';
 }
 
-export function getPlayerColors(_inventory?: any): PlayerColors {
+export function getPlayerColors(_inventory?: unknown): PlayerColors {
   const archetype = getPlayerArchetype(_inventory);
   return ARCHETYPE_COLORS[archetype];
 }

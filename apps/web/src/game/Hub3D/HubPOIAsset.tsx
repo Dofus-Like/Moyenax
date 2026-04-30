@@ -49,7 +49,7 @@ for (const poi of Object.values(HUB_POIS)) {
 function usePoiRotationY(poi: PoiConfig): number {
   const { pivotRef, ready } = useHubGround();
   return useMemo(() => {
-    if (!poi.faceCenter) return poi.assetRotationY ?? DEFAULT_ASSET_ROT_Y;
+    if (!poi.faceCenter || !ready) return poi.assetRotationY ?? DEFAULT_ASSET_ROT_Y;
     const pivot = pivotRef.current;
     const dx = pivot.x - poi.position[0];
     const dz = pivot.z - poi.position[2];

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { startFpsMonitor, stopFpsMonitor } from './fps-monitor';
 import { usePerfHudStore } from './perf-hud.store';
 

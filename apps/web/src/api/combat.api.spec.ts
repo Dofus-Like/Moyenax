@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { CombatActionType } from '@game/shared-types';
 
 vi.mock('./client', () => ({
@@ -8,8 +9,8 @@ vi.mock('./client', () => ({
   },
 }));
 
-import { combatApi } from './combat.api';
 import { apiClient } from './client';
+import { combatApi } from './combat.api';
 
 describe('combatApi', () => {
   beforeEach(() => {

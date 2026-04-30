@@ -357,7 +357,7 @@ export function LobbyPage() {
             <h3>🎮 Match aléatoire</h3>
             <p>Affrontez un adversaire dans le tunnel de jeu.</p>
           </div>
-          {isInQueue ? (
+          {isInQueue && (
             <div className="queue-status">
               <div className="loader-dots">
                 <span>.</span>
@@ -369,14 +369,16 @@ export function LobbyPage() {
                 Annuler
               </button>
             </div>
-          ) : isWaitingPrivateSession ? (
+          )}
+          {!isInQueue && isWaitingPrivateSession && (
             <div className="queue-status">
               <span>Votre room privée est en attente d&apos;un adversaire.</span>
               <button type="button" className="leave-queue-btn" onClick={handleCancelOpenSession}>
                 Annuler la room
               </button>
             </div>
-          ) : (
+          )}
+          {!isInQueue && !isWaitingPrivateSession && (
             <button
               type="button"
               className="join-queue-btn"
@@ -405,11 +407,11 @@ export function LobbyPage() {
         </div>
 
         <div className="rooms-grid">
-          {loadingRooms ? (
-            <div className="no-rooms">Chargement des rooms...</div>
-          ) : visibleRooms.length === 0 ? (
+          {loadingRooms && <div className="no-rooms">Chargement des rooms...</div>}
+          {!loadingRooms && visibleRooms.length === 0 && (
             <div className="no-rooms">Aucune room ouverte. Créez-en une !</div>
-          ) : (
+          )}
+          {!loadingRooms && visibleRooms.length > 0 && (
             visibleRooms.map((room) => (
               <div key={room.id} className="room-card">
                 <div className="room-info">

@@ -79,7 +79,10 @@ export function buildMarkdownReport(input: ReportInput): string {
   lines.push('| Metric | Value | Reference |');
   lines.push('|---|---|---|');
   for (const [key, value, ref] of vitalsRows) {
-    const formatted = value === undefined ? '–' : key === 'CLS' ? value.toFixed(3) : `${value.toFixed(0)}ms`;
+    let formatted = '–';
+    if (value !== undefined) {
+      formatted = key === 'CLS' ? value.toFixed(3) : `${value.toFixed(0)}ms`;
+    }
     lines.push(`| ${key} | ${formatted} | ${ref} |`);
   }
   lines.push('');

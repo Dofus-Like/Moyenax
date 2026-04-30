@@ -51,13 +51,13 @@ export function HubGroundProvider({ children }: HubGroundProviderProps): ReactEl
 
   const snapY = useCallback((x: number, z: number): number => {
     const hub = hubRef.current;
-    if (!hub) return FALLBACK_GROUND_Y;
+    if (!hub || !ready) return FALLBACK_GROUND_Y;
     originRef.current.set(x, RAYCAST_FROM_Y, z);
     raycaster.set(originRef.current, RAYCAST_DIRECTION);
     const hits = raycaster.intersectObject(hub, true);
     if (hits.length === 0) return FALLBACK_GROUND_Y;
     return hits[0].point.y;
-  }, [raycaster]);
+  }, [raycaster, ready]);
 
   const registerHub = useCallback((object: Object3D | null): void => {
     hubRef.current = object;

@@ -49,8 +49,10 @@ function WallObstacle({
   const isMetal = terrain === TerrainType.IRON || terrain === TerrainType.GOLD;
   const isCrystal = terrain === TerrainType.CRYSTAL;
 
-  const metalness = isMetal ? 0.8 : (isCrystal ? 0.3 : 0.1);
-  const roughness = isMetal ? 0.4 : (isCrystal ? 0.2 : 0.7);
+  let metalness = 0.1;
+  let roughness = 0.7;
+  if (isMetal) { metalness = 0.8; roughness = 0.4; }
+  else if (isCrystal) { metalness = 0.3; roughness = 0.2; }
 
   const [x, , z] = position;
 

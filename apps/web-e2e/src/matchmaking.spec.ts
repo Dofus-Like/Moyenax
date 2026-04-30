@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { loginAs } from './helpers/auth';
 
 test.describe('Matchmaking & lobby', () => {

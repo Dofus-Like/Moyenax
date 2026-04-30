@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { usePerfHudStore, nextRequestId } from './perf-hud.store';
 
 describe('usePerfHudStore', () => {

@@ -182,7 +182,7 @@ export function InventoryPage() {
               return false;
             }).map((inv: InventoryItem) => {
               const isCurrentlyEquipped = Object.values(equipment?.data || {}).some(
-                (equipped: any) => equipped?.id === inv.id
+                (equipped: { id?: string } | null | undefined) => equipped?.id === inv.id
               );
 
               return (

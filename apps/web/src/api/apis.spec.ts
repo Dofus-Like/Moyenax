@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { EquipmentSlotType } from '@game/shared-types';
 
 vi.mock('./client', () => ({
@@ -11,16 +12,16 @@ vi.mock('./client', () => ({
 }));
 
 import { apiClient } from './client';
-import { inventoryApi } from './inventory.api';
-import { equipmentApi } from './equipment.api';
-import { shopApi } from './shop.api';
 import { craftingApi } from './crafting.api';
+import { equipmentApi } from './equipment.api';
 import { farmingApi } from './farming.api';
 import { gameSessionApi } from './game-session.api';
+import { inventoryApi } from './inventory.api';
 import { itemsApi } from './items.api';
 import { mapApi } from './map.api';
 import { playerApi } from './player.api';
 import { resourcesApi } from './resources.api';
+import { shopApi } from './shop.api';
 
 beforeEach(() => {
   vi.clearAllMocks();

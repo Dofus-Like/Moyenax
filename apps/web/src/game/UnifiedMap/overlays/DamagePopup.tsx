@@ -12,7 +12,7 @@ interface DamagePopupProps {
 
 export function DamagePopup({ position, value, onComplete }: DamagePopupProps) {
   const [progress, setProgress] = useState(0);
-  const textRef = useRef<any>(null);
+  const textRef = useRef<{ position: { y: number }; material: { opacity: number } } | null>(null);
 
   useFrame((_, delta) => {
     if (progress >= 1) {

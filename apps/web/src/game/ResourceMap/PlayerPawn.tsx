@@ -107,7 +107,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
       tAttack.needsUpdate = true;
       
       return { textureIdle: tIdle, textureWalk: tWalk, textureAttack: tAttack };
-    }, [texIdle, texWalk, texAttack]);
+    }, [texIdle, texWalk, texAttack, skipSprites]);
 
     // Uniforms pour le shader de couleur
     const uniforms = useMemo(() => ({
@@ -124,7 +124,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
             precision: 'highp',
         });
         
-        mat.onBeforeCompile = (shader: any) => {
+        mat.onBeforeCompile = (shader: THREE.WebGLProgramParametersWithUniforms) => {
             shader.uniforms.uHue = uniforms.uHue;
             shader.uniforms.uSat = uniforms.uSat;
 
@@ -202,7 +202,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
             setPathIndex(0);
         }
       }
-    }, [path]);
+    }, [path, gridPosition.x, gridPosition.y, gridSize]);
 
     useFrame((state, delta) => {
       // 1. Animation stable

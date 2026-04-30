@@ -21,8 +21,9 @@ vi.mock('../api/auth.api', () => ({
   },
 }));
 
-import { useAuthStore } from './auth.store';
 import { authApi } from '../api/auth.api';
+
+import { useAuthStore } from './auth.store';
 
 describe('useAuthStore', () => {
   beforeEach(() => {

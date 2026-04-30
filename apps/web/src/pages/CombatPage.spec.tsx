@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
-  activeSession: null as any,
+  activeSession: null as { id: string; status: string; phase: string; combats: unknown[] } | null,
   refreshSession: vi.fn().mockResolvedValue(undefined),
   combatState: {
     sessionId: 'combat-1',
@@ -45,13 +45,14 @@ vi.mock('@react-three/fiber', () => ({
 }));
 
 vi.mock('leva', () => ({
-  useControls: (name: string, controls: any) => {
-    const values: any = {};
+  useControls: (_name: string, controls: Record<string, unknown>) => {
+    const values: Record<string, unknown> = {};
     for (const key in controls) {
-      if (controls[key] && typeof controls[key] === 'object' && 'value' in controls[key]) {
-        values[key] = controls[key].value;
+      const entry = controls[key];
+      if (entry && typeof entry === 'object' && 'value' in entry) {
+        values[key] = (entry as { value: unknown }).value;
       } else {
-        values[key] = controls[key];
+        values[key] = entry;
       }
     }
     return values;
@@ -87,7 +88,7 @@ vi.mock('../game/HUD/CombatHUD', () => ({
 }));
 
 vi.mock('../store/combat.store', () => ({
-  useCombatStore: (selector?: (state: any) => unknown) => {
+  useCombatStore: (selector?: (state: unknown) => unknown) => {
     const state = {
       combatState: mocks.combatState,
       winnerId: mocks.winnerId,
@@ -101,7 +102,7 @@ vi.mock('../store/combat.store', () => ({
 }));
 
 vi.mock('../store/auth.store', () => ({
-  useAuthStore: (selector?: (state: any) => unknown) => {
+  useAuthStore: (selector?: (state: unknown) => unknown) => {
     const state = {
       initialize: mocks.initialize,
     };

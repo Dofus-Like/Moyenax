@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Hoisted localStorage pour éviter erreur d'init du store
 const { _lsStore } = vi.hoisted(() => {
@@ -26,16 +26,17 @@ vi.mock('../api/auth.api', () => ({
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-import { LoginPage } from './LoginPage';
 import { authApi } from '../api/auth.api';
 import { useAuthStore } from '../store/auth.store';
+
+import { LoginPage } from './LoginPage';
 
 function renderLoginPage() {
   return render(

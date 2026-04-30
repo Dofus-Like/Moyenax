@@ -202,7 +202,7 @@ export const UnifiedMapScene = React.memo(
       () => (mode === 'combat' && combatState ? Object.values(combatState.players) : []),
       [mode, combatState],
     );
-    const combatTiles = combatState?.map?.tiles ?? [];
+    const combatTiles = useMemo(() => combatState?.map?.tiles ?? [], [combatState?.map?.tiles]);
     const tileIndex = useMemo(() => buildTileIndex(combatTiles), [combatTiles]);
     const occupiedPositions = useMemo(() => combatPlayers.map((player) => player.position), [combatPlayers]);
     const occupiedPositionSet = useMemo(
@@ -443,7 +443,7 @@ export const UnifiedMapScene = React.memo(
       if (hasVisualUpdates) {
         setVisualPositions({ ...visualPositionsRef.current });
       }
-    }, [combatPlayers, combatState, gameMap, jumpingPlayers, mode]);
+    }, [combatPlayers, combatState, gameMap, jumpingPlayers, mode, occupiedPositionSet]);
 
     const reachableTiles = useMemo(() => {
       if (mode !== 'combat' || !isMyTurn || !currentPlayer || !gameMap) return [];
@@ -558,7 +558,7 @@ export const UnifiedMapScene = React.memo(
       if (currentUserId) obstacles.delete(toPositionKey(currentPlayer.position.x, currentPlayer.position.y));
 
       return findPath(gameMap, currentPlayer.position, closestTile, obstacles) ?? [];
-    }, [currentPlayer, gameMap, deferredHoveredTile, isMyTurn, mode, reachableTiles, selectedSpellId]);
+    }, [currentPlayer, gameMap, deferredHoveredTile, isMyTurn, mode, reachableTiles, selectedSpellId, currentUserId, occupiedPositionSet]);
 
     const spellRangeTiles = useMemo(() => {
       if (mode !== 'combat' || !currentPlayer || !selectedSpellId || !combatState?.map?.tiles) {

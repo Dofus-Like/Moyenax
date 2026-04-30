@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { uniqueEmail } from './helpers/auth';
 
 test.describe('Authentication flow', () => {
