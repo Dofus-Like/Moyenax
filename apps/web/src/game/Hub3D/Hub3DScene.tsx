@@ -1,6 +1,6 @@
 import { Canvas } from '@react-three/fiber';
 import type { MutableRefObject, ReactElement, ReactNode } from 'react';
-import { Component, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Vector3, type Group } from 'three';
 
 import { HubAmbientParticles } from './HubAmbientParticles';
@@ -148,14 +148,6 @@ function useHubReadySignal(ready: boolean, onReady?: () => void): void {
   }, [ready, onReady]);
 }
 
-function useInitialPlayerSnap(playerRef: React.RefObject<Group | null>, snapY: (x: number, z: number) => number, ready: boolean): void {
-  useEffect(() => {
-    if (!ready) return;
-    const player = playerRef.current;
-    if (!player) return;
-    player.position.y = snapY(player.position.x, player.position.z);
-  }, [playerRef, ready, snapY]);
-}
 
 const ARRIVAL_OPEN_DELAY_MS = 180;
 
@@ -211,12 +203,16 @@ function useDelayedActivation(onPoiActivate: (id: PoiId) => void): {
 function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef, poiStateLabels, activePoiIds, onboardingHighlightId, onReady, onError }: Hub3DWorldProps): ReactElement {
   const modalOpen = activePoiId !== null;
   const playerRef = useRef<Group>(null);
-  const { snapY, ready, hubMeshRef } = useHubGround();
+  const { snapY, visualSnapY, ready, hubMeshRef } = useHubGround();
   const ripple = useRippleTrigger();
   useHubReadySignal(ready, onReady);
   const { pendingPoiId, setPendingPoiId, handleArrive, cancelPending } = useDelayedActivation(onPoiActivate);
 
-  useInitialPlayerSnap(playerRef, snapY, ready);
+  const spawnY = useMemo(() => visualSnapY(SPAWN_POSITION[0], SPAWN_POSITION[2]), [visualSnapY]);
+  const playerSpawnPos = useMemo<[number, number, number]>(
+    () => [SPAWN_POSITION[0], spawnY, SPAWN_POSITION[2]],
+    [spawnY],
+  );
 
   const { setTarget } = useClickToMove<PoiId>({ playerRef, snapY, onArrive: handleArrive });
 
@@ -254,7 +250,7 @@ function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef, poiStateLabels, 
       <PoiList modalOpen={modalOpen} pulsingId={pendingPoiId} stateLabels={poiStateLabels} activeIds={activePoiIds} onboardingHighlightId={onboardingHighlightId} />
       <NavigationPlane />
       <HubGroundCollider />
-      <HubPlayer ref={playerRef} position={SPAWN_POSITION} />
+      <HubPlayer ref={playerRef} position={playerSpawnPos} />
       <HubAmbientParticles />
       <HubClickRipple point={ripple.point} stamp={ripple.stamp} />
     </>

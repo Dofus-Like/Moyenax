@@ -16,6 +16,13 @@ import { PLAYER_GROUND_Y } from './constants';
 const RAYCAST_FROM_Y = 200;
 const RAYCAST_DIRECTION = new Vector3(0, -1, 0);
 
+function groundRaycast(object: Object3D, raycaster: Raycaster, origin: Vector3, x: number, z: number): number | null {
+  origin.set(x, RAYCAST_FROM_Y, z);
+  raycaster.set(origin, RAYCAST_DIRECTION);
+  const hits = raycaster.intersectObject(object, true);
+  return hits.length > 0 ? hits[0].point.y : null;
+}
+
 // Dev-only perf tracker — logs snapY timing every 10 s of activity.
 const DEV = import.meta.env.DEV;
 interface SnapPerfWindow { calls: number; totalMs: number; maxMs: number; startMs: number }
@@ -42,6 +49,7 @@ function recordSnapPerf(t0: number): void {
 
 export interface HubGroundContextValue {
   snapY: (x: number, z: number) => number;
+  visualSnapY: (x: number, z: number) => number;
   pivotRef: MutableRefObject<Vector3>;
   hubMeshRef: MutableRefObject<Object3D | null>;
   registerHub: (object: Object3D | null) => void;
@@ -73,45 +81,48 @@ export function HubGroundProvider({ children }: HubGroundProviderProps): ReactEl
   const raycaster = useMemo(() => new Raycaster(), []);
   const pivotRef = useRef<Vector3>(new Vector3().copy(FALLBACK_PIVOT));
   const originRef = useRef<Vector3>(new Vector3());
+  const groundSurfaceYRef = useRef(FALLBACK_GROUND_Y);
   const [ready, setReady] = useState(false);
 
   const snapY = useCallback((x: number, z: number): number => {
-    // Prefer the dedicated ground collider (few triangles); fall back to the
-    // visual mesh only if no collider has been registered yet.
+    // Flat collider preferred (few triangles); falls back to visual mesh if collider not yet registered.
     const target = colliderRef.current ?? hubRef.current;
     if (!target || !ready) return FALLBACK_GROUND_Y;
     const t0 = DEV ? performance.now() : 0;
-    originRef.current.set(x, RAYCAST_FROM_Y, z);
-    raycaster.set(originRef.current, RAYCAST_DIRECTION);
-    const hits = raycaster.intersectObject(target, true);
+    const y = groundRaycast(target, raycaster, originRef.current, x, z);
     if (DEV) recordSnapPerf(t0);
-    if (hits.length === 0) return FALLBACK_GROUND_Y;
-    return hits[0].point.y;
+    return y ?? FALLBACK_GROUND_Y;
+  }, [raycaster, ready]);
+
+  const visualSnapY = useCallback((x: number, z: number): number => {
+    const hub = hubRef.current;
+    if (!hub || !ready) return groundSurfaceYRef.current;
+    return groundRaycast(hub, raycaster, originRef.current, x, z) ?? groundSurfaceYRef.current;
   }, [raycaster, ready]);
 
   const registerHub = useCallback((object: Object3D | null): void => {
     hubRef.current = object;
     if (object) {
       computePivot(pivotRef.current, object);
-      setReady(true);
+      groundSurfaceYRef.current = groundRaycast(object, raycaster, originRef.current, 0, 0) ?? FALLBACK_GROUND_Y;
     } else {
       pivotRef.current.copy(FALLBACK_PIVOT);
-      setReady(false);
+      groundSurfaceYRef.current = FALLBACK_GROUND_Y;
     }
-  }, []);
+    setReady(!!object);
+  }, [raycaster]);
 
-  const registerCollider = useCallback((object: Object3D | null): void => {
-    colliderRef.current = object;
-  }, []);
+  const registerCollider = useCallback((o: Object3D | null): void => { colliderRef.current = o; }, []);
 
   const value = useMemo<HubGroundContextValue>(() => ({
     snapY,
+    visualSnapY,
     pivotRef,
     hubMeshRef: hubRef,
     registerHub,
     registerCollider,
     ready,
-  }), [snapY, registerHub, registerCollider, ready]);
+  }), [snapY, visualSnapY, registerHub, registerCollider, ready]);
 
   return <HubGroundContext.Provider value={value}>{children}</HubGroundContext.Provider>;
 }

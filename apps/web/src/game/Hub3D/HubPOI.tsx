@@ -216,11 +216,11 @@ function usePoiHoverHandlers(modalOpen: boolean): {
 }
 
 export function HubPOI({ poi, modalOpen, pulsing = false, highlighted = false, statusLabel, stateActive = false }: HubPOIProps): ReactElement {
-  const { snapY } = useHubGround();
+  const { visualSnapY } = useHubGround();
   const viewportMode = useViewportMode();
   const groundY = useMemo(
-    () => snapY(poi.position[0], poi.position[2]),
-    [snapY, poi.position],
+    () => visualSnapY(poi.position[0], poi.position[2]),
+    [visualSnapY, poi.position],
   );
   const { hovered, handlePointerOver, handlePointerOut } = usePoiHoverHandlers(modalOpen);
 
