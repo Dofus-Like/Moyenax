@@ -123,7 +123,7 @@ const TITLE: CSSProperties = {
 const BODY: CSSProperties = {
   margin: 0,
   fontSize: '0.8rem',
-  color: 'rgba(255,255,255,0.50)',
+  color: 'rgba(255,255,255,0.62)',
   lineHeight: 1.55,
 };
 

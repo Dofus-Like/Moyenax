@@ -14,12 +14,12 @@ export const PLAYER_SPEED = 4.5;
 export const PLAYER_HEIGHT = 1.6;
 export const PLAYER_RADIUS = 0.35;
 
-export const PLAYER_SCALE = 3.8;
+export const PLAYER_SCALE = 4.2;
 
-export const PLAYER_VERTICAL_OFFSET = 0.55;
+export const PLAYER_VERTICAL_OFFSET = 0.60;
 
-export const SHADOW_SCALE = 0.55;
-export const SHADOW_OPACITY = 0.22;
+export const SHADOW_SCALE = 0.62;
+export const SHADOW_OPACITY = 0.28;
 
 export const CAMERA_POSITION: readonly [number, number, number] = [20, 22, 20];
 export const CAMERA_ZOOM = 44;
@@ -67,10 +67,10 @@ export interface PoiConfig {
 
 export const POI_STOP_DISTANCE = 1.6;
 
-export const PLAYER_IDLE_BOB_AMP = 0.03;
-export const PLAYER_IDLE_BOB_FREQ = 0.8;
-export const PLAYER_WALK_BOB_AMP = 0.055;
-export const PLAYER_WALK_BOB_FREQ = 2.2;
+export const PLAYER_IDLE_BOB_AMP = 0.04;
+export const PLAYER_IDLE_BOB_FREQ = 0.9;
+export const PLAYER_WALK_BOB_AMP = 0.07;
+export const PLAYER_WALK_BOB_FREQ = 2.4;
 export const PLAYER_BOB_LERP = 5;
 export const PLAYER_IDLE_SCALE_AMP = 0.015;
 export const PLAYER_ORIENTATION_THRESHOLD = 1e-4;

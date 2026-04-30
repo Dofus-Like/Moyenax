@@ -39,6 +39,9 @@ const ANIM_FPS = 10;
 const SHADOW_LIFT = 0.005;
 const SPRITE_CENTER_Y = PLAYER_VERTICAL_OFFSET;
 const SHADOW_RADIUS = PLAYER_RADIUS * SHADOW_SCALE;
+const HALO_INNER = SHADOW_RADIUS * 0.2;
+const HALO_OUTER = SHADOW_RADIUS * 1.55;
+const HALO_LIFT = SHADOW_LIFT + 0.002;
 const MOVE_EPSILON_SQ = 1e-6;
 
 interface HubPlayerProps {
@@ -53,6 +56,7 @@ export function HubPlayer({ ref, position }: HubPlayerProps): ReactElement {
   return (
     <group ref={ref} position={position as [number, number, number] | undefined}>
       <ShadowDisc />
+      <HaloDisc />
       {skin ? (
         <Suspense fallback={<PlaceholderCapsule />}>
           <AnimatedSpritePawn skin={skin} />
@@ -69,6 +73,15 @@ function ShadowDisc(): ReactElement {
     <mesh position={[0, SHADOW_LIFT, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <circleGeometry args={[SHADOW_RADIUS, 32]} />
       <meshBasicMaterial color="black" transparent opacity={SHADOW_OPACITY} depthWrite={false} />
+    </mesh>
+  );
+}
+
+function HaloDisc(): ReactElement {
+  return (
+    <mesh position={[0, HALO_LIFT, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[HALO_INNER, HALO_OUTER, 48]} />
+      <meshBasicMaterial color="#d4a96a" transparent opacity={0.10} depthWrite={false} />
     </mesh>
   );
 }

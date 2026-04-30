@@ -223,14 +223,14 @@ const OVERLAY: CSSProperties = {
 };
 
 const DESC: CSSProperties = {
-  color: 'rgba(255,255,255,0.65)',
+  color: 'rgba(255,255,255,0.72)',
   fontSize: '0.9rem',
   lineHeight: 1.6,
   margin: '0 0 20px',
 };
 
 const FAINT: CSSProperties = {
-  color: 'rgba(255,255,255,0.4)',
+  color: 'rgba(255,255,255,0.52)',
   fontSize: '0.82rem',
   margin: '10px 0 0',
 };
@@ -813,11 +813,15 @@ function RoomCard({ room, isOwn, disabled, onJoin }: { room: RoomEntry; isOwn: b
       borderRadius: '10px',
       marginBottom: '8px',
       background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      border: '1px solid rgba(255,255,255,0.09)',
+      borderLeft: '3px solid rgba(34,197,94,0.45)',
     }}>
       <div>
         <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{room.p1.username}</div>
-        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{new Date(room.createdAt).toLocaleTimeString()}</div>
+        <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+          <span>{new Date(room.createdAt).toLocaleTimeString()}</span>
+          <span style={{ background: 'rgba(34,197,94,0.14)', border: '1px solid rgba(34,197,94,0.28)', borderRadius: '999px', padding: '1px 7px', fontWeight: 600, color: 'rgba(34,197,94,0.88)', fontSize: '0.67rem', letterSpacing: '0.02em' }}>1 / 2</span>
+        </div>
       </div>
       <button
         type="button"
