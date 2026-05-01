@@ -136,13 +136,13 @@ export const UnifiedMapScene = React.memo(
     // Debug controls for the tiles per phase
     const tileConfig = useControls('Background Shader', {
       'Tile Colors': folder({
-        tileDayA: { value: COMBAT_COLORS.TILE_DAY_A }, 
+        tileDayA: { value: COMBAT_COLORS.TILE_DAY_A },
         tileDayB: { value: COMBAT_COLORS.TILE_DAY_B },
         tileSideDay: { value: COMBAT_COLORS.TILE_SIDE_DAY },
-        tileSunA: { value: COMBAT_COLORS.TILE_SUNSET_A }, 
+        tileSunA: { value: COMBAT_COLORS.TILE_SUNSET_A },
         tileSunB: { value: COMBAT_COLORS.TILE_SUNSET_B },
         tileSideSun: { value: COMBAT_COLORS.TILE_SIDE_SUNSET },
-        tileNightA: { value: COMBAT_COLORS.TILE_NIGHT_A }, 
+        tileNightA: { value: COMBAT_COLORS.TILE_NIGHT_A },
         tileNightB: { value: COMBAT_COLORS.TILE_NIGHT_B },
         tileSideNight: { value: COMBAT_COLORS.TILE_SIDE_NIGHT },
       }),
@@ -222,7 +222,7 @@ export const UnifiedMapScene = React.memo(
       if (!activeMap) return;
 
       raycaster.setFromCamera(mouse, camera);
-      
+
       // 1. Raycast against players (still need this for tooltips/selection)
       const target = mapGroupRef.current || scene;
       const intersects = raycaster.intersectObjects([target], true);
@@ -262,7 +262,7 @@ export const UnifiedMapScene = React.memo(
       }
 
       const terrain = activeMap.grid[gz][gx] as TerrainType;
-      
+
       setHoveredTile((previous) => (previous?.x === gx && previous?.y === gz ? previous : { x: gx, y: gz, terrain }));
 
       if (mode === 'farming') {
@@ -406,11 +406,11 @@ export const UnifiedMapScene = React.memo(
         }
 
         targetPositionsRef.current[player.playerId] = player.position;
-        
+
         // On exclut la position cible du joueur lui-même pour que le pathfinder accepte d'y aller
         const filteredOccupied = new Set(occupiedPositionSet);
         filteredOccupied.delete(toPositionKey(player.position.x, player.position.y));
-        
+
         const path = findPath(gameMap, visualPosition, player.position, filteredOccupied);
 
         if (path && path.length > 0) {
@@ -603,6 +603,27 @@ export const UnifiedMapScene = React.memo(
           let response;
 
           if (selectedSpellId) {
+            const spell = currentPlayer.spells.find((s) => s.id === selectedSpellId);
+            if (!spell) return;
+
+            const target = { x, y };
+            const inRange = isInRange(currentPlayer.position, target, spell.minRange, spell.maxRange);
+            const hasLos = !spell.requiresLineOfSight || hasLineOfSight(currentPlayer.position, target, combatState.map.tiles);
+            const isLinear = !spell.requiresLinearTargeting || (currentPlayer.position.x === x || currentPlayer.position.y === y);
+
+            if (!inRange) {
+              setUiMessage('La cible est hors de portée.', 'error');
+              return;
+            }
+            if (!hasLos) {
+              setUiMessage('La ligne de vue est bouchée.', 'error');
+              return;
+            }
+            if (!isLinear) {
+              setUiMessage('Ce sort doit être lancé en ligne.', 'error');
+              return;
+            }
+
             response = await combatApi.playAction(sessionId, {
               type: CombatActionType.CAST_SPELL,
               spellId: selectedSpellId,
@@ -640,9 +661,9 @@ export const UnifiedMapScene = React.memo(
           console.error('CombatAction Error:', error);
           const message =
             typeof error === 'object' &&
-            error !== null &&
-            'response' in error &&
-            typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+              error !== null &&
+              'response' in error &&
+              typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
               ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
               : "L'action a échoué.";
 
@@ -678,17 +699,21 @@ export const UnifiedMapScene = React.memo(
     );
 
     const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
-      // If we just finished a camera drag, ignore this click for map actions
-      if (wasDraggingRef.current) return;
-
+      e.stopPropagation();
       // Manage right click for spell cancel
       if (e.button === 2) {
         rightClickStartTimeRef.current = Date.now();
         return;
       }
+    }, []);
+
+    const handleMapClick = useCallback((e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      // If we just finished a camera drag, ignore this click for map actions
+      if (wasDraggingRef.current) return;
 
       if (e.button !== 0 || !e.uv || !activeMap) return;
-      
+
       const gx = Math.min(activeMap.width - 1, Math.floor(e.uv.x * activeMap.width));
       const gz = Math.min(activeMap.height - 1, Math.floor((1 - e.uv.y) * activeMap.height));
 
@@ -726,7 +751,7 @@ export const UnifiedMapScene = React.memo(
 
         const delta = event.clientX - previousX;
         dragDistanceRef.current += Math.abs(delta);
-        
+
         // If moved more than 5 pixels, consider it a drag
         if (dragDistanceRef.current > 5) {
           wasDraggingRef.current = true;
@@ -798,10 +823,24 @@ export const UnifiedMapScene = React.memo(
 
     return (
       <group
+        onPointerDown={(e) => {
+          if (e.button === 2) rightClickStartTimeRef.current = Date.now();
+        }}
         onPointerUp={handlePointerUp}
         onContextMenu={(event) => event.nativeEvent.preventDefault()}
       >
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, -0.1, 0]}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            if (e.button === 2) rightClickStartTimeRef.current = Date.now();
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.button === 0) setSelectedSpell(null);
+          }}
+        >
           <planeGeometry args={[1000, 1000]} />
           <meshBasicMaterial transparent opacity={0} />
         </mesh>
@@ -809,30 +848,31 @@ export const UnifiedMapScene = React.memo(
         <group ref={mapGroupRef} rotation={[0, mapRotation, 0]}>
           {mode === 'combat' && (
             <Suspense fallback={null}>
-              <Castle 
-                position={[-1.07, 5.34, -0.94]} 
-                targetSize={14.0} 
-                rotation={[0, 0, 0]} 
+              <Castle
+                position={[-1.07, 5.34, -0.94]}
+                targetSize={14.0}
+                rotation={[0, 0, 0]}
               />
             </Suspense>
           )}
-          <TerrainLayer 
-            map={activeMap} 
-            onTileClick={handleTileClickDispatcher} 
+          <TerrainLayer
+            map={activeMap}
+            onTileClick={handleTileClickDispatcher}
             checkerColorA={mode === 'combat' ? currentTileColors.checkerColorA : undefined}
             checkerColorB={mode === 'combat' ? currentTileColors.checkerColorB : undefined}
             sideColor={mode === 'combat' ? currentTileColors.sideColor : undefined}
             tileSize={mode === 'combat' ? tileConfig.tileSize : undefined}
             tileRadius={mode === 'combat' ? tileConfig.tileRadius : undefined}
           />
-          
+
           {/* Interaction Plane - Must be visible=true for raycasting but transparent for user */}
           <mesh
             name="map-hit-plane"
             rotation={[-Math.PI / 2, 0, 0]}
             position={[0, 0, 0]}
             onPointerMove={handlePointerMove}
-            onClick={handlePointerDown}
+            onPointerDown={handlePointerDown}
+            onClick={handleMapClick}
             onPointerLeave={() => setHoveredTile(null)}
             visible={true}
           >

@@ -13,11 +13,10 @@
   align-items: center;
   gap: 15px;
   padding: 10px 20px;
-  background: rgb(var(--glass-bg-strong-rgb) / 0.7);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 2px solid var(--glass-border);
   z-index: 1000;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
 }
 
 .combat-toolbar-back {
@@ -121,81 +120,6 @@
   background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
 }
 
-/* SIDEBAR LOGS (DROITE) — DA3 Glassmorphism Journal */
-.combat-logs-side {
-  width: 300px;
-  background: rgb(var(--glass-bg-strong-rgb) / 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  box-shadow:
-    -10px 0 30px rgba(0, 0, 0, 0.5),
-    inset 1px 0 0 rgba(255, 255, 255, 0.06);
-  z-index: 100;
-  transition: width 0.3s ease;
-}
-
-.logs-sidebar-header {
-  padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.02);
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.18em;
-  color: var(--glass-accent);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.logs-sidebar-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--glass-accent-rgb) / 0.3) transparent;
-}
-
-.logs-sidebar-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.logs-sidebar-content::-webkit-scrollbar-thumb {
-  background: rgb(var(--glass-accent-rgb) / 0.25);
-  border-radius: 10px;
-}
-
-.log-entry {
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 0.78rem;
-  line-height: 1.45;
-  border-left: 3px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.72);
-  animation: logFadeIn 0.3s ease-out;
-}
-
-@keyframes logFadeIn {
-  from { opacity: 0; transform: translateX(10px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.log-entry.type-info    { border-left-color: var(--log-info);    color: var(--log-info-text); }
-.log-entry.type-damage  { border-left-color: var(--log-damage);  color: var(--log-damage-text);  background: rgb(var(--log-damage-rgb)  / 0.06); }
-.log-entry.type-victory { border-left-color: var(--log-victory); color: var(--log-victory-text); background: rgb(var(--log-victory-rgb) / 0.06); }
-
-.logs-empty {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.2);
-  margin-top: 50px;
-  font-style: italic;
-  font-size: 0.9rem;
-}
-
 /* LOADING OVERLAYS */
 .combat-overlay {
   position: fixed;
@@ -220,11 +144,4 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-/* MEDIA QUERIES MOBILE / TABLETTE : On cache la sidebar */
-@media (max-width: 1024px) {
-  .combat-logs-side {
-    display: none;
-  }
 }

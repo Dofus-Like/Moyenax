@@ -179,8 +179,32 @@ describe('CombatHUD', () => {
 
     expect(claqueIcon.getAttribute('src')).toBe('/assets/pack/spells/epee.png');
     expect(fireballIcon.getAttribute('src')).toBe('/assets/pack/spells/fireball.png');
-    expect(container.querySelector('.spell-card.family-common')).not.toBeNull();
-    expect(container.querySelector('.spell-card.family-mage')).not.toBeNull();
+    expect(container.querySelector('.spell-slot.family-common')).not.toBeNull();
+    expect(container.querySelector('.spell-slot.family-mage')).not.toBeNull();
+  });
+
+  it('renders tooltips for spells', () => {
+    const { container } = render(<CombatHUD />);
+    const tooltips = container.querySelectorAll('.spell-tooltip');
+    expect(tooltips.length).toBeGreaterThan(0);
+    expect(tooltips[0].textContent).toContain('Claque');
+  });
+
+  it('always renders exactly 6 spell slots', () => {
+    const { container } = render(<CombatHUD />);
+    const slots = container.querySelectorAll('.spell-slot');
+    expect(slots.length).toBe(6);
+  });
+
+  it('renders PA and PM gauges with 12 segments each', () => {
+    const { container } = render(<CombatHUD />);
+    const paGauge = container.querySelector('.gauge-row.pa');
+    const pmGauge = container.querySelector('.gauge-row.pm');
+
+    expect(paGauge).toBeTruthy();
+    expect(pmGauge).toBeTruthy();
+    expect(paGauge?.querySelectorAll('.gauge-diamond').length).toBe(12);
+    expect(pmGauge?.querySelectorAll('.gauge-diamond').length).toBe(12);
   });
 
   it('shows victory overlay when current player wins', () => {
@@ -188,7 +212,7 @@ describe('CombatHUD', () => {
 
     render(<CombatHUD />);
 
-    expect(screen.getByText(/VICTOIRE/)).toBeInTheDocument();
+    expect(screen.getByText(/VICTOIRE/)).toBeTruthy();
   });
 
   it('shows defeat overlay when current player loses', () => {
@@ -196,14 +220,14 @@ describe('CombatHUD', () => {
 
     render(<CombatHUD />);
 
-    expect(screen.getByText(/DÉFAITE/)).toBeInTheDocument();
+    expect(screen.getByText(/DÉFAITE/)).toBeTruthy();
   });
 
   it('does not show end overlay when combat is still ongoing', () => {
     render(<CombatHUD />);
 
-    expect(screen.queryByText(/VICTOIRE/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/DÉFAITE/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/VICTOIRE/)).toBeNull();
+    expect(screen.queryByText(/DÉFAITE/)).toBeNull();
   });
 
   it('shows "Retour au Lobby" exit button in the end overlay outside a game session', () => {
@@ -212,7 +236,7 @@ describe('CombatHUD', () => {
 
     render(<CombatHUD />);
 
-    expect(screen.getByRole('button', { name: 'Retour au Lobby' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retour au Lobby' })).toBeTruthy();
   });
 
   it('shows "Continuer" exit button when a game session is still active', () => {
@@ -221,13 +245,13 @@ describe('CombatHUD', () => {
 
     render(<CombatHUD />);
 
-    expect(screen.getByRole('button', { name: 'Continuer' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continuer' })).toBeTruthy();
   });
 
   it('displays the turn number in the initiative panel', () => {
     render(<CombatHUD />);
 
-    expect(screen.getByText('Tour 1')).toBeInTheDocument();
+    expect(screen.getByText('Tour 1')).toBeTruthy();
   });
 
   it('displays player name in the initiative panel', () => {
@@ -241,14 +265,14 @@ describe('CombatHUD', () => {
 
     render(<CombatHUD />);
 
-    expect(screen.getByText('Spell failed!')).toBeInTheDocument();
+    expect(screen.getByText('Spell failed!')).toBeTruthy();
   });
 
   it('mage spells are sorted after common spells (family order: common < mage)', () => {
     const { container } = render(<CombatHUD />);
 
-    const spellCards = container.querySelectorAll('.spell-card');
-    const classes = Array.from(spellCards).map((c) => c.className);
+    const spellSlots = container.querySelectorAll('.spell-slot');
+    const classes = Array.from(spellSlots).map((c) => c.className);
 
     const mageIndex = classes.findIndex((c) => c.includes('family-mage'));
     const commonIndex = classes.findIndex((c) => c.includes('family-common'));

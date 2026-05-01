@@ -1,4 +1,6 @@
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -21,14 +23,25 @@
   --radius: 12px;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 
-  /* GLASS — DA3 tokens */
-  --glass-bg: rgba(255, 255, 255, 0.06);
-  --glass-bg-strong: rgba(15, 23, 42, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-radius: 14px;
-  --glass-blur: blur(20px);
+  /* GLASS — DA3 tokens (Parent Panels vs Small Elements) */
+  --glass-blur: blur(15px);
+  --glass-border-width: 1.5px;
   --glass-accent: #60a5fa;
   --glass-accent-rgb: 96, 165, 250;
+
+  /* Parent Panels (Containers) */
+  --glass-panel-bg: rgba(0, 0, 0, 0.5);
+  --glass-panel-border: rgba(255, 255, 255, 0.25);
+  --glass-panel-radius: 20px;
+  --glass-panel-shadow: 0 10px 50px rgba(0, 0, 0, 0.6);
+  --glass-panel-inner-shadow: inset 0 0 30px rgba(0, 0, 0, 0.43);
+
+  /* Small Elements (Items) */
+  --glass-elem-bg: rgba(0, 0, 0, 0.7);
+  --glass-elem-border: rgba(255, 255, 255, 0.12);
+  --glass-elem-radius: 12px;
+  --glass-elem-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-elem-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   /* TRANSITIONS */
   --trans-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -61,7 +74,8 @@ button {
   font-family: var(--font-main);
 }
 
-input, select {
+input,
+select {
   font-family: var(--font-main);
 }
 
@@ -95,7 +109,9 @@ input, select {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 body {
@@ -124,7 +140,8 @@ button {
   font-family: var(--font-main);
 }
 
-input, select {
+input,
+select {
   font-family: var(--font-main);
 }
 
@@ -158,61 +175,71 @@ input, select {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fallDown {
-  0% { transform: translateY(-50px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes pulseSubtle {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ==========================================================================
-   Item Filters (Shop, Inventory, Crafting) - Segmented Control Style
+   GLASSMORPhISM UTILITIES (DA3 Premium)
    ========================================================================== */
 
-.item-filters {
-  display: flex;
-  gap: 2px;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto 20px auto;
-  background: rgba(20, 20, 25, 0.6);
-  border-radius: 8px;
-  padding: 4px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  width: max-content;
+.glass {
+  background: var(--glass-elem-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border-width) solid var(--glass-elem-border);
+  box-shadow: var(--glass-elem-shadow), var(--glass-elem-inner-shadow);
+  border-radius: var(--glass-elem-radius);
 }
 
-.filter-btn {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
+.glass-panel {
+  background: var(--glass-panel-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border-width) solid var(--glass-panel-border);
+  border-radius: var(--glass-panel-radius);
+  box-shadow: var(--glass-panel-shadow), var(--glass-panel-inner-shadow);
+}
+
+.glass-interactive {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
-.filter-btn:hover {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.05);
+.glass-interactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  border-color: var(--glass-border-strong);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
-.filter-btn.active {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+.glass-interactive:active {
+  transform: translateY(0) scale(0.98);
 }

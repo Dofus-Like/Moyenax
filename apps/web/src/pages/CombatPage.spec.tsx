@@ -36,9 +36,9 @@ vi.mock('@react-three/fiber', () => ({
   useLoader: vi.fn(),
   useThree: () => ({
     viewport: { width: 100, height: 100 },
-    camera: { 
-      position: new THREE.Vector3(), 
-      getWorldDirection: vi.fn().mockReturnValue(new THREE.Vector3()) 
+    camera: {
+      position: new THREE.Vector3(),
+      getWorldDirection: vi.fn().mockReturnValue(new THREE.Vector3())
     },
   }),
   useFrame: vi.fn(),
@@ -60,6 +60,10 @@ vi.mock('leva', () => ({
 
 vi.mock('../game/Combat/CombatBackgroundShader', () => ({
   CombatBackgroundShader: () => <div data-testid="combat-background-shader" />,
+}));
+
+vi.mock('../game/Combat/CombatDebugMenu', () => ({
+  CombatDebugMenu: () => <div data-testid="combat-debug-menu" />,
 }));
 
 vi.mock('@react-three/drei', () => ({
@@ -194,5 +198,10 @@ describe('CombatPage', () => {
     });
 
     expect(getByTestId('combat-map')).toBeTruthy();
+  });
+
+  it('renders the combat debug menu', async () => {
+    const { getByTestId } = render(<CombatPage />);
+    expect(getByTestId('combat-debug-menu')).toBeTruthy();
   });
 });

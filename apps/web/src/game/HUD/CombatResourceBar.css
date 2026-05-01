@@ -1,0 +1,53 @@
+.resource-diamonds-bar {
+  display: flex;
+  flex-direction: row; /* Horizontal layout */
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding-left: 4px;
+}
+
+.resource-counter {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #fbbf24;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  min-width: 35px;
+  letter-spacing: 0.05em;
+  font-family: 'Outfit', sans-serif;
+}
+
+.gauge-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gauge-diamond {
+  width: 10px;
+  height: 10px;
+  position: relative;
+  opacity: 0.3;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: rotate(45deg);
+}
+
+.gauge-diamond.filled {
+  opacity: 1;
+}
+
+.gauge-diamond.unavailable {
+  opacity: 0.1; /* Even more transparent for slots beyond current max */
+}
+
+.gauge-diamond .diamond-inner {
+  position: absolute;
+  inset: 0;
+  background: #333;
+  border-radius: 1px;
+}
+
+.gauge-row.pa .gauge-diamond.filled .diamond-inner {
+  background: #fbbf24;
+  box-shadow: 0 0 5px rgba(251, 191, 36, 0.5);
+}

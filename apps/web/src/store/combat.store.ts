@@ -57,7 +57,7 @@ interface CombatStore {
   lastHealEvent: HealEvent | null;
   lastJumpEvent: JumpEvent | null;
   winnerId: string | null;
-   showEnemyHp: boolean;
+  showEnemyHp: boolean;
   showMannequins: boolean;
   uiMessage: UiMessage | null;
   _currentConnectionId: string | null;
@@ -69,6 +69,7 @@ interface CombatStore {
   connectToSession: (sessionId: string) => Promise<void>;
   disconnect: () => void;
   addLog: (message: string, type: CombatLog['type']) => void;
+  clearLogs: () => void;
   setUiMessage: (text: string | null, type?: UiMessage['type']) => void;
   surrender: () => Promise<void>;
 }
@@ -124,6 +125,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   setSelectedSpell: (spellId: string | null) => {
     set({ selectedSpellId: spellId, isSelectingTarget: !!spellId });
   },
+
+  clearLogs: () => set({ logs: [] }),
 
   addLog: (message: string, type: CombatLog['type']) => {
     const newLog = { id: createId('combat-log'), message, type };
@@ -219,19 +222,19 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
         const withConnectionGuard =
           <T,>(handler: (data: T) => void) =>
-          (event: MessageEvent) => {
-            if (get()._currentConnectionId !== connectionId) {
-              eventSource.close();
-              return;
-            }
+            (event: MessageEvent) => {
+              if (get()._currentConnectionId !== connectionId) {
+                eventSource.close();
+                return;
+              }
 
-            try {
-              const data = JSON.parse(event.data) as T;
-              handler(data);
-            } catch (error) {
-              console.error('SSE parse error', error);
-            }
-          };
+              try {
+                const data = JSON.parse(event.data) as T;
+                handler(data);
+              } catch (error) {
+                console.error('SSE parse error', error);
+              }
+            };
 
         eventSource.addEventListener(
           'STATE_UPDATED',

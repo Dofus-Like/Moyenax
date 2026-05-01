@@ -12,6 +12,7 @@ import { TerrainType } from '@game/shared-types';
 import { useGameSession } from './GameTunnel';
 import { gameSessionApi } from '../api/game-session.api';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
+import { CombatDebugMenu } from '../game/Combat/CombatDebugMenu';
 import { CameraEffects } from '../game/Combat/CameraEffects';
 import '../game/constants/colors';
 import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
@@ -40,7 +41,7 @@ function CombatPreloader() {
 export function CombatPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  
+
   const combatState = useCombatStore((s) => s.combatState);
   const winnerId = useCombatStore((s) => s.winnerId);
   const connectToSession = useCombatStore((s) => s.connectToSession);
@@ -112,9 +113,9 @@ export function CombatPage() {
       return;
     }
     const phase = activeSession.phase;
-    const combatIdFromUrl = sessionId; 
+    const combatIdFromUrl = sessionId;
     const latestCombatId = activeSession.combats?.[0]?.id;
-    
+
     // Si la phase globale repasse en FARMING mais que notre combat est toujours le dernier 
     // et qu'on vient d'arriver (moins de 3s), on reste sur la page pour laisser le temps
     // au state de se stabiliser et au joueur de voir le résultat.
@@ -139,20 +140,20 @@ export function CombatPage() {
   // Construire une GameMap fictive à partir de combatState pour UnifiedMapScene
   const gameMap = useMemo(() => {
     if (!combatState?.map?.tiles) return null;
-    
+
     const grid = Array(combatState.map.height)
       .fill(0)
       .map(() => Array(combatState.map.width).fill(TerrainType.GROUND));
-    
+
     combatState.map.tiles.forEach((t) => {
       if (grid[t.y] && grid[t.y][t.x] !== undefined) {
         grid[t.y][t.x] = t.type;
       }
     });
-    
-    return { 
-      width: combatState.map.width, 
-      height: combatState.map.height, 
+
+    return {
+      width: combatState.map.width,
+      height: combatState.map.height,
       grid,
       seedId: 'FORGE' as const,
     };
@@ -162,118 +163,86 @@ export function CombatPage() {
 
   return (
     <ProfiledRegion id="CombatPage">
-    <div className="combat-page-container">
-      <header className="combat-toolbar">
-        <button className="combat-toolbar-back" onClick={() => navigate('/farming')}>
-           Retour
-        </button>
-        <h2 className="combat-toolbar-title">Combat</h2>
-        <div className="toolbar-actions">
-          {combatState && (
-            <span className="combat-toolbar-turn">Tour {combatState.turnNumber}</span>
-          )}
-          {combatState && !winnerId && (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="toolbar-btn surrender" onClick={surrender} title="Abandonner uniquement ce combat (défaite instantanée)">
-                🏳️ Abandonner combat
-              </button>
-              <button className="toolbar-btn surrender" onClick={handleEndSession} title="Quitter la partie pour tout le monde" style={{ opacity: 0.7 }}>
-                🔴 Abandonner session
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-      {!combatState && (
-        <div className="combat-overlay">
-          <div className="loading-spinner"></div>
-          <p>Chargement du combat...</p>
-        </div>
-      )}
+      <div className="combat-page-container">
+        <CombatDebugMenu />
+        {!combatState && (
+          <div className="combat-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement du combat...</p>
+          </div>
+        )}
 
-      <div className="combat-layout">
-        {/* LEFT WINDOW: GAME & HUD */}
-        <div className="combat-game-zone">
-          <Canvas
-            shadows
-            gl={{ antialias: true, alpha: true }}
-            dpr={[1, 2]}
-            camera={{ fov: 30 }}
-            onPointerMissed={() => setSelectedSpell(null)}
-          >
-            <CanvasPerfOverlay />
-            <CombatBackgroundShader />
-            <OrthographicCamera
-              makeDefault
-              position={[20, 20, 20]}
-              zoom={50}
-              near={0.1}
-              far={1000}
-            />
-            <CameraControls 
-              ref={controlsRef} 
-              onRest={onRest} 
-              onStart={onStart}
-              minPolarAngle={0}
-              maxPolarAngle={Math.PI / 2.1}
-              mouseButtons={{
-                left: CameraControlsImpl.ACTION.NONE,
-                right: CameraControlsImpl.ACTION.TRUCK,
-                middle: CameraControlsImpl.ACTION.NONE,
-                wheel: CameraControlsImpl.ACTION.DOLLY
-              }}
-              dollyToCursor={true}
-            />
-            
-            <CameraEffects controlsRef={controlsRef} />
-            
-            <ambientLight intensity={1.5} />
-            <directionalLight
-              position={[5, 10, 5]}
-              intensity={2}
-              castShadow
-              shadow-mapSize={[1024, 1024]}
-              shadow-camera-far={50}
-              shadow-camera-left={-10}
-              shadow-camera-right={10}
-              shadow-camera-top={10}
-              shadow-camera-bottom={-10}
-            />
-            
-            {/* Préchargement des assets critiques pour éviter les sauts lors des premiers sorts/mouvements */}
-            <Suspense fallback={null}>
-               <CombatPreloader />
-            </Suspense>
+        <div className="combat-layout">
+          {/* LEFT WINDOW: GAME & HUD */}
+          <div className="combat-game-zone">
+            <Canvas
+              shadows
+              gl={{ antialias: true, alpha: true }}
+              dpr={[1, 2]}
+              camera={{ fov: 30 }}
+              onPointerMissed={() => setSelectedSpell(null)}
+            >
+              <CanvasPerfOverlay />
+              <CombatBackgroundShader />
+              <OrthographicCamera
+                makeDefault
+                position={[20, 20, 20]}
+                zoom={50}
+                near={0.1}
+                far={1000}
+              />
+              <CameraControls
+                ref={controlsRef}
+                onRest={onRest}
+                onStart={onStart}
+                minPolarAngle={0}
+                maxPolarAngle={Math.PI / 2.1}
+                mouseButtons={{
+                  left: CameraControlsImpl.ACTION.NONE,
+                  right: CameraControlsImpl.ACTION.TRUCK,
+                  middle: CameraControlsImpl.ACTION.NONE,
+                  wheel: CameraControlsImpl.ACTION.DOLLY
+                }}
+                dollyToCursor={true}
+              />
 
-            {gameMap && (
+              <CameraEffects controlsRef={controlsRef} />
+
+              <ambientLight intensity={1.5} />
+              <directionalLight
+                position={[5, 10, 5]}
+                intensity={2}
+                castShadow
+                shadow-mapSize={[1024, 1024]}
+                shadow-camera-far={50}
+                shadow-camera-left={-10}
+                shadow-camera-right={10}
+                shadow-camera-top={10}
+                shadow-camera-bottom={-10}
+              />
+
+              {/* Préchargement des assets critiques pour éviter les sauts lors des premiers sorts/mouvements */}
               <Suspense fallback={null}>
-                <UnifiedMapScene 
-                  mode="combat" 
-                  map={gameMap} 
-                  sessionId={sessionId} 
-                  isCameraMoving={isCameraMoving} 
-                />
+                <CombatPreloader />
               </Suspense>
-            )}
-          </Canvas>
 
-          <CombatHUD />
-        </div>
+              {gameMap && (
+                <Suspense fallback={null}>
+                  <UnifiedMapScene
+                    mode="combat"
+                    map={gameMap}
+                    sessionId={sessionId}
+                    isCameraMoving={isCameraMoving}
+                  />
+                </Suspense>
+              )}
+            </Canvas>
 
-        {/* RIGHT WINDOW: LOGS (Desktop only via CSS) */}
-        <div className="combat-logs-side">
-            <div className="logs-sidebar-header">Journal de Combat</div>
-            <div className="logs-sidebar-content">
-               {logs.map((log) => (
-                 <div key={log.id} className={`log-entry type-${log.type}`}>
-                   <span className="log-msg">{log.message}</span>
-                 </div>
-               ))}
-               {logs.length === 0 && <div className="logs-empty">Aucune action...</div>}
-            </div>
+            <CombatHUD />
+          </div>
+
         </div>
       </div>
-    </div>
     </ProfiledRegion>
   );
 }

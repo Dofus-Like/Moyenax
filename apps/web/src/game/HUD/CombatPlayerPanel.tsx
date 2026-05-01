@@ -8,30 +8,10 @@ import './CombatPlayerPanel.css';
 interface CombatPlayerPanelProps {
   playerId: string;
   side: 'left' | 'right';
+  position?: 'top' | 'bottom';
 }
 
-const FAMILY_LABEL: Record<SpellFamily, string> = {
-  [SpellFamily.COMMON]: 'INITIÉ',
-  [SpellFamily.WARRIOR]: 'GUERRIER',
-  [SpellFamily.MAGE]: 'ARCANE',
-  [SpellFamily.NINJA]: 'OMBRE',
-};
-
-function getDominantFamily(spells: SpellDefinition[]): SpellFamily {
-  const counts: Partial<Record<SpellFamily, number>> = {};
-  for (const s of spells) {
-    if (s.family === SpellFamily.COMMON) continue;
-    counts[s.family] = (counts[s.family] || 0) + 1;
-  }
-  let best: SpellFamily = SpellFamily.COMMON;
-  let max = 0;
-  for (const [family, count] of Object.entries(counts)) {
-    if ((count as number) > max) { max = count as number; best = family as SpellFamily; }
-  }
-  return best;
-}
-
-export function CombatPlayerPanel({ playerId, side }: CombatPlayerPanelProps) {
+export function CombatPlayerPanel({ playerId, side, position = 'bottom' }: CombatPlayerPanelProps) {
   const combatState = useCombatStore((s) => s.combatState);
   const user = useAuthStore((s) => s.player);
   const isMe = user?.id === playerId;
@@ -42,50 +22,36 @@ export function CombatPlayerPanel({ playerId, side }: CombatPlayerPanelProps) {
   const isMyTurn = combatState?.currentTurnPlayerId === playerId;
   const maxHp = player.stats?.vit || 1;
   const hpPercent = Math.max(0, Math.min(100, (player.currentVit / maxHp) * 100));
-  const skinConfig = getSkinById(player.skin || 'soldier-classic');
-  const avatarClass = skinConfig.type;
-
-  const family = getDominantFamily(player.spells || []);
-  const familyLabel = FAMILY_LABEL[family];
+  const skin = getSkinById(player.skin || 'soldier-classic');
 
   return (
-    <div className={`combat-player-panel glass side-${side} ${isMyTurn ? 'is-turn' : ''} ${isMe ? 'is-me' : 'is-enemy'}`}>
-      {/* Name header */}
-      <div className="cpp-header">
-        <div className="cpp-name">{player.username}</div>
-        <span className={`cpp-archetype family-${family.toLowerCase()}`}>{familyLabel}</span>
-      </div>
-
-      {/* Portrait */}
-      <div className="cpp-portrait-wrap">
-        <div className={`cpp-portrait ${isMyTurn ? 'pulse' : ''}`}>
-          <div
-            className={`portrait-image avatar-${avatarClass}`}
-            style={{ filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` }}
-          />
+    <div className={`cpp-root side-${side} position-${position} ${isMyTurn ? 'is-turn' : ''}`}>
+      <div className="cpp-main-frame">
+        {/* Avatar Section */}
+        <div className="cpp-avatar-section">
+          <img src="/goblin_avatar.png" alt="Avatar" className="cpp-avatar-img" />
         </div>
-      </div>
 
-      {/* Stats grid */}
-      <div className="cpp-stats">
-        <div className="cpp-stat stat-atk"><span className="cpp-stat-label">ATK</span><strong>{player.stats.atk}</strong></div>
-        <div className="cpp-stat stat-def"><span className="cpp-stat-label">DEF</span><strong>{player.stats.def}</strong></div>
-        <div className="cpp-stat stat-mag"><span className="cpp-stat-label">MAG</span><strong>{player.stats.mag}</strong></div>
-        <div className="cpp-stat stat-res"><span className="cpp-stat-label">RES</span><strong>{player.stats.res}</strong></div>
-      </div>
+        {/* Name Section */}
+        <div className="cpp-name-section">
+          {player.username}
+        </div>
 
-      {/* HP bar */}
-      <div className="cpp-hp-row">
-        <div className="cpp-hp-bar">
+        {/* HP Section */}
+        <div className="cpp-hp-section">
           <div className="cpp-hp-fill" style={{ width: `${hpPercent}%` }} />
+          <div className="cpp-hp-text">{player.currentVit} / {maxHp}</div>
         </div>
       </div>
 
-      {/* PA / PM / HP footer */}
-      <div className="cpp-footer">
-        <span className="cpp-res res-pa">◆PA {player.remainingPa}/{player.stats.pa}</span>
-        <span className="cpp-res res-pm">◆PM {player.remainingPm}/{player.stats.pm}</span>
-        <span className="cpp-res res-hp">HP {player.currentVit}/{maxHp}</span>
+      {/* Side Resources (Old Design) */}
+      <div className="cpp-side-resources">
+        <div className="res-badge mini pa">
+          {player.remainingPa}
+        </div>
+        <div className="res-badge mini pm">
+          {player.remainingPm}
+        </div>
       </div>
     </div>
   );

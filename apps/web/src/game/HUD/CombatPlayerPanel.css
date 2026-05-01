@@ -1,312 +1,161 @@
 /* ═══════════════════════════════════════════════════════════════
-   COMBAT PLAYER PANEL — DA3 Full Glassmorphism
-   Vertical card anchored to the bottom corners.
-   Couleurs centralisées dans /game/constants/colors.ts
+   COMBAT PLAYER PANEL — Professional Dofus/Waven Style
+   Vertical frame with Avatar, Name, and HP bar.
 ═══════════════════════════════════════════════════════════════ */
 
-.combat-player-panel.glass {
+.cpp-root {
   position: absolute;
-  bottom: 20px;
-  z-index: 90;
-  width: 210px;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+/* Corner Positions - Anchored to edges like spell bar */
+.cpp-root.side-left.position-bottom {
+  left: 0;
+  bottom: 0;
+  flex-direction: row;
+  align-items: flex-end;
+}
+
+.cpp-root.side-right.position-top {
+  right: 0;
+  top: 0;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+}
+
+/* Main Frame - Square Design */
+.cpp-main-frame {
+  width: 130px;
+  height: 130px;
   display: flex;
   flex-direction: column;
-  pointer-events: auto;
-
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(16px);
+  border: none;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
   overflow: hidden;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  color: #ffffff;
+  border-radius: 0;
 }
 
-.combat-player-panel.glass.side-left {
-  left: 20px;
+/* Avatar Section */
+.cpp-avatar-section {
+  flex: 1; /* Takes remaining space to keep it square */
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
 }
 
-.combat-player-panel.glass.side-right {
-  right: 20px;
-  border-color: rgb(var(--enemy-red-rgb) / 0.25);
+.cpp-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.combat-player-panel.glass.is-turn {
-  border-color: rgb(var(--glass-accent-rgb) / 0.55);
-  box-shadow:
-    0 0 0 1px rgb(var(--glass-accent-rgb) / 0.35),
-    0 8px 32px rgb(var(--glass-accent-rgb) / 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.combat-player-panel.glass.is-enemy.is-turn {
-  border-color: rgb(var(--enemy-red-rgb) / 0.55);
-  box-shadow:
-    0 0 0 1px rgb(var(--enemy-red-rgb) / 0.35),
-    0 8px 32px rgb(var(--enemy-red-rgb) / 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-/* --- HEADER : name + archetype badge --- */
-.cpp-header {
-  padding: 10px 10px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+/* Name Section */
+.cpp-name-section {
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-align: center;
-}
-
-.cpp-name {
-  font-size: 0.92rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  padding: 6px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   text-transform: uppercase;
-  color: #ffffff;
-  line-height: 1.1;
-  margin-bottom: 4px;
+  letter-spacing: 0.05em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.cpp-archetype {
-  display: inline-block;
-  font-size: 0.55rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid rgb(var(--glass-accent-rgb) / 0.45);
-  background: rgb(var(--glass-accent-rgb) / 0.15);
-  color: var(--glass-accent-light);
-}
-
-.combat-player-panel.glass.is-enemy .cpp-archetype {
-  border-color: rgb(var(--enemy-red-rgb) / 0.45);
-  background: rgb(var(--enemy-red-rgb) / 0.15);
-  color: var(--enemy-red-light);
-}
-
-.cpp-archetype.family-warrior {
-  border-color: rgb(var(--victory-gold-rgb) / 0.45);
-  background: rgb(var(--victory-gold-rgb) / 0.15);
-  color: #fcd34d;
-}
-
-.cpp-archetype.family-ninja {
-  border-color: rgb(var(--stat-res-rgb) / 0.45);
-  background: rgb(var(--stat-res-rgb) / 0.15);
-  color: #86efac;
-}
-
-/* --- PORTRAIT --- */
-.cpp-portrait-wrap {
-  padding: 10px;
-  display: flex;
-  justify-content: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.cpp-portrait {
-  width: 92px;
-  height: 92px;
-  border-radius: 12px;
-  background: linear-gradient(135deg,
-    rgb(var(--glass-accent-rgb) / 0.3),
-    rgb(var(--glass-accent-rgb) / 0.08));
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
-  overflow: hidden;
+/* HP Section */
+.cpp-hp-section {
+  position: relative;
+  height: 24px;
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.combat-player-panel.glass.is-enemy .cpp-portrait {
-  background: linear-gradient(135deg,
-    rgb(var(--enemy-red-rgb) / 0.3),
-    rgb(var(--enemy-red-rgb) / 0.08));
-}
-
-.cpp-portrait.pulse {
-  animation: cpp-portrait-pulse 2s ease-in-out infinite;
-}
-
-.combat-player-panel.glass.is-me .cpp-portrait.pulse {
-  border-color: rgb(var(--glass-accent-rgb) / 0.7);
-}
-
-.combat-player-panel.glass.is-enemy .cpp-portrait.pulse {
-  border-color: rgb(var(--enemy-red-rgb) / 0.7);
-}
-
-@keyframes cpp-portrait-pulse {
-  0%, 100% { box-shadow: 0 0 0 rgb(var(--glass-accent-rgb) / 0); }
-  50%      { box-shadow: 0 0 16px rgb(var(--glass-accent-rgb) / 0.35); }
-}
-
-.cpp-portrait .portrait-image {
-  width: 100%;
-  height: 100%;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  background-size: 1800px auto;
-  background-position: -110px -100px;
-  animation: cpp-portrait-idle 0.8s steps(6) infinite;
-}
-
-.cpp-portrait .portrait-image.avatar-orc {
-  background-image: url('/assets/sprites/orc/idle.png');
-}
-
-.cpp-portrait .portrait-image.avatar-soldier {
-  background-image: url('/assets/sprites/soldier/idle.png');
-}
-
-@keyframes cpp-portrait-idle {
-  from { background-position-x: -110px; }
-  to   { background-position-x: -1910px; }
-}
-
-/* --- STATS GRID --- */
-.cpp-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.cpp-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 4px 2px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.cpp-stat-label {
-  font-size: 0.5rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.55);
-  text-transform: uppercase;
-  line-height: 1;
-  margin-bottom: 2px;
-}
-
-.cpp-stat strong {
-  font-size: 0.9rem;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.cpp-stat.stat-atk {
-  background: rgb(var(--stat-atk-rgb) / 0.08);
-  border-color: rgb(var(--stat-atk-rgb) / 0.25);
-}
-.cpp-stat.stat-atk strong { color: var(--stat-atk); }
-
-.cpp-stat.stat-def {
-  background: rgb(var(--stat-def-rgb) / 0.08);
-  border-color: rgb(var(--stat-def-rgb) / 0.25);
-}
-.cpp-stat.stat-def strong { color: var(--stat-def); }
-
-.cpp-stat.stat-mag {
-  background: rgb(var(--stat-mag-rgb) / 0.08);
-  border-color: rgb(var(--stat-mag-rgb) / 0.25);
-}
-.cpp-stat.stat-mag strong { color: var(--stat-mag); }
-
-.cpp-stat.stat-res {
-  background: rgb(var(--stat-res-rgb) / 0.08);
-  border-color: rgb(var(--stat-res-rgb) / 0.25);
-}
-.cpp-stat.stat-res strong { color: var(--stat-res); }
-
-/* --- HP BAR --- */
-.cpp-hp-row {
-  padding: 8px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.cpp-hp-bar {
-  height: 6px;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .cpp-hp-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
-  background: linear-gradient(90deg, var(--enemy-red), var(--hp-red));
-  border-radius: 999px;
-  box-shadow: 0 0 8px rgb(var(--enemy-red-rgb) / 0.45);
+  background: #38bdf8; /* Solid cyan fill */
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* --- FOOTER resources --- */
-.cpp-footer {
+.cpp-hp-text {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.5);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Side Resources (Diamonds) */
+.cpp-side-resources {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Increased gap between badges */
+  margin-bottom: 6px;
+  padding: 8px 0;
+}
+
+.res-badge.mini {
+  width: 30px;
+  height: 30px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #fff;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  padding: 8px 10px;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.cpp-res {
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+.res-badge.mini::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  z-index: -1;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 
-.cpp-res.res-pa { color: var(--glass-accent); }
-.cpp-res.res-pm { color: var(--stat-mag); }
-.cpp-res.res-hp { color: var(--enemy-red); }
-
-/* --- RESPONSIVE --- */
-@media (max-width: 1024px) {
-  .combat-player-panel.glass {
-    width: 180px;
-  }
-
-  .cpp-portrait {
-    width: 72px;
-    height: 72px;
-  }
+.res-badge.mini.pa::before {
+  background: linear-gradient(135deg, #fbbf24, #d97706); /* Yellow PA */
 }
 
-@media (max-width: 768px) {
-  .combat-player-panel.glass {
-    width: 150px;
-    bottom: 10px;
-  }
+.res-badge.mini.pm::before {
+  background: linear-gradient(135deg, #a855f7, #7e22ce); /* Violet PM */
+}
 
-  .combat-player-panel.glass.side-left {
-    left: 8px;
-  }
+/* Turn Indicator */
+.cpp-root.is-turn .cpp-main-frame {
+  border-color: #facc15; /* Yellow/Gold for turn */
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.3);
+}
 
-  .combat-player-panel.glass.side-right {
-    right: 8px;
-  }
+.cpp-root.is-turn .cpp-avatar-section,
+.cpp-root.is-turn .cpp-name-section {
+  border-color: #facc15;
+}
 
-  .cpp-portrait {
-    width: 56px;
-    height: 56px;
-  }
-
-  .cpp-name {
-    font-size: 0.75rem;
-  }
-
-  .cpp-res {
-    font-size: 0.55rem;
-  }
+.cpp-root.is-turn .cpp-hp-fill {
+  background: #facc15;
 }

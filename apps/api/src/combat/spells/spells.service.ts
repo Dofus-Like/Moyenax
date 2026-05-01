@@ -14,29 +14,29 @@ import { PerfStatsService } from '../../shared/perf/perf-stats.service';
 
 export type SpellRuntimeEvent =
   | {
-      type: 'DAMAGE_DEALT';
-      payload: {
-        targetId: string;
-        damage: number;
-        remainingVit: number;
-      };
-    }
-  | {
-      type: 'HEAL_DEALT';
-      payload: {
-        targetId: string;
-        heal: number;
-        remainingVit: number;
-      };
-    }
-  | {
-      type: 'PLAYER_JUMPED';
-      payload: {
-        playerId: string;
-        from: CombatPosition;
-        to: CombatPosition;
-      };
+    type: 'DAMAGE_DEALT';
+    payload: {
+      targetId: string;
+      damage: number;
+      remainingVit: number;
     };
+  }
+  | {
+    type: 'HEAL_DEALT';
+    payload: {
+      targetId: string;
+      heal: number;
+      remainingVit: number;
+    };
+  }
+  | {
+    type: 'PLAYER_JUMPED';
+    payload: {
+      playerId: string;
+      from: CombatPosition;
+      to: CombatPosition;
+    };
+  };
 
 export interface SpellExecutionResult {
   events: SpellRuntimeEvent[];
@@ -46,7 +46,7 @@ export interface SpellExecutionResult {
 export class SpellsService {
   private nextSummonSeq = 0;
 
-  constructor(private readonly perfStats: PerfStatsService) {}
+  constructor(private readonly perfStats: PerfStatsService) { }
 
   executeEffect(
     state: CombatState,

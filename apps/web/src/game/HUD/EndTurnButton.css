@@ -1,0 +1,10 @@
+.end-turn-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  padding-left: 24px;
+  border-left: 1.5px solid rgba(255, 255, 255, 0.1);
+}

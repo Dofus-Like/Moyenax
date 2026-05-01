@@ -14,7 +14,7 @@ export function FarmingHUD() {
   };
 
   return (
-    <div className="farming-hud">
+    <div className="farming-hud glass-panel">
       <div className="hud-top">
         <span className="round-badge">Manche {round} / 5</span>
       </div>
@@ -27,8 +27,8 @@ export function FarmingHUD() {
         <div className="pips-label">{pips} / 4 récoltes restantes</div>
       </div>
       <div className="hud-bottom">
-        <button className="end-phase-btn" onClick={handleEndPhase}>
-          Aller au Shop / Crafting
+        <button className="end-phase-btn glass-interactive" onClick={handleEndPhase}>
+          Passer au Marché
         </button>
       </div>
     </div>

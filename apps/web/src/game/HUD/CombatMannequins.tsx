@@ -24,7 +24,7 @@ export function CombatMannequins() {
     const skinConfig = getSkinById(player.skin || 'soldier-classic');
     
     return (
-      <div className={`combat-mannequin-panel ${side}`}>
+      <div className={`combat-mannequin-panel ${side} glass-panel`}>
         <div className="mannequin-header">
            <div className={`portrait-mini avatar-${skinConfig.type}`} style={{ filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` }} />
            <span>{player.username}</span>

@@ -8,66 +8,48 @@
   z-index: 500;
 }
 
-<<<<<<< HEAD
-=======
 .toggle-mannequins-btn {
   position: absolute;
   top: 15px;
   left: 50%;
   transform: translateX(-50%);
   pointer-events: auto;
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  color: #fbbf24;
+  color: var(--glass-accent);
   padding: 8px 20px;
   border-radius: 30px;
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  z-index: 1001;
 }
 
-.toggle-mannequins-btn:hover {
-  background: rgba(30, 41, 59, 1);
-  border-color: #fbbf24;
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
-  transform: translateX(-50%) translateY(-2px);
-}
-
->>>>>>> b7acecf (test(api): fix GameSessionService tests and update HUD UI)
 .combat-mannequin-panel {
   position: absolute;
   width: 220px;
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  padding: 14px;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  backdrop-filter: blur(12px);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  z-index: 1000; /* On top of other UI elements when open */
+  z-index: 1000;
+}
+
+.combat-mannequin-panel.glass-panel {
+  padding: 14px;
+  border-radius: 16px;
 }
 
 .combat-mannequin-panel.left {
-  top: 240px; /* Below the player portrait block */
+  top: 240px;
   left: 30px;
 }
 
 .combat-mannequin-panel.right {
-  top: 40px; /* Top right is usually free */
+  top: 40px;
   right: 30px;
 }
 
-<<<<<<< HEAD
-=======
 .combat-mannequin-panel.minimized.left {
   transform: translateX(-120%) scale(0.9);
   opacity: 0;
@@ -80,7 +62,6 @@
   pointer-events: none;
 }
 
->>>>>>> b7acecf (test(api): fix GameSessionService tests and update HUD UI)
 .mannequin-header {
   display: flex;
   align-items: center;
@@ -123,15 +104,20 @@
 }
 
 .mannequin-item {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 8px;
   color: #e2e8f0;
   font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: background 0.2s;
+}
+
+.mannequin-item:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .mannequin-item.empty {
@@ -140,7 +126,7 @@
   text-align: center;
 }
 
-/* Ranks colors (sync with inventory) */
+/* Ranks colors */
 .mannequin-item.rank-1 { border-left: 3px solid #94a3b8; }
 .mannequin-item.rank-2 { border-left: 3px solid #22c55e; }
 .mannequin-item.rank-3 { border-left: 3px solid #3b82f6; }
@@ -156,7 +142,7 @@
   color: #94a3b8;
   background: rgba(0, 0, 0, 0.2);
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .mannequin-stats span {

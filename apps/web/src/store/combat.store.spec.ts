@@ -136,4 +136,13 @@ describe('useCombatStore', () => {
     expect(useCombatStore.getState().winnerId).toBe('player-1');
     expect(useCombatStore.getState().combatState?.sessionId).toBe('combat-9');
   });
+  it('clears logs when clearLogs is called', () => {
+    useCombatStore.setState({
+      logs: [{ id: '1', message: 'test log', type: 'info' }],
+    });
+
+    useCombatStore.getState().clearLogs();
+
+    expect(useCombatStore.getState().logs).toEqual([]);
+  });
 });
