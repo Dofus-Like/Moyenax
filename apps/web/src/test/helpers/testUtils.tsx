@@ -1,7 +1,8 @@
-import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { RenderOptions } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import type { ReactElement, ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { ReactElement, ReactNode } from 'react';
 
 export function makeQueryClient() {
   return new QueryClient({
@@ -73,7 +74,7 @@ export class MockEventSource implements Partial<EventSource> {
 
   dispatchEvent(event: Event): boolean {
     const type = event.type;
-    (this.listeners[type] ?? []).forEach((l) => l(event));
+    for (const l of (this.listeners[type] ?? [])) l(event);
     if (type === 'message' && this.onmessage) this.onmessage(event as MessageEvent);
     return true;
   }

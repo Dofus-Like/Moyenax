@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Leva } from 'leva';
 import React, { Profiler, Suspense, lazy, useEffect, useState, type ProfilerOnRenderCallback } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -182,6 +183,7 @@ root.render(
           <PerfHud />
         </Suspense>
       )}
+      <Leva hidden />
     </QueryClientProvider>
   </React.StrictMode>,
 );

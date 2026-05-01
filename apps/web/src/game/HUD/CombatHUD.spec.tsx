@@ -96,13 +96,13 @@ const mocks = vi.hoisted(() => ({
   toggleShowEnemyHp: vi.fn(),
   surrender: vi.fn(),
   disconnect: vi.fn(),
-  uiMessage: null as any,
+  uiMessage: null as { kind: string; text: string } | null,
   setUiMessage: vi.fn(),
   user: {
     id: 'player-1',
     username: 'Alice',
   },
-  activeSession: null as any,
+  activeSession: null as { id: string; status: string; phase: string } | null,
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -110,7 +110,7 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('../../store/combat.store', () => ({
-  useCombatStore: (selector?: (state: any) => unknown) => {
+  useCombatStore: (selector?: (state: unknown) => unknown) => {
     const state = {
       combatState: mocks.combatState,
       sessionId: mocks.sessionId,
@@ -131,7 +131,7 @@ vi.mock('../../store/combat.store', () => ({
 }));
 
 vi.mock('../../store/auth.store', () => ({
-  useAuthStore: (selector?: (state: any) => unknown) => {
+  useAuthStore: (selector?: (state: unknown) => unknown) => {
     const state = {
       player: mocks.user,
     };
@@ -264,7 +264,7 @@ describe('CombatHUD', () => {
     };
 
     const { combatApi } = await import('../../api/combat.api');
-    vi.mocked(combatApi.playAction).mockResolvedValue({ data: mocks.combatState } as any);
+    vi.mocked(combatApi.playAction).mockResolvedValue({ data: mocks.combatState } as Awaited<ReturnType<typeof combatApi.playAction>>);
 
     render(<CombatHUD />);
 

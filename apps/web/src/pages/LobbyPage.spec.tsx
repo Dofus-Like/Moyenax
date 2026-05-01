@@ -2,8 +2,25 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+type ActiveSessionFixture = {
+  id: string;
+  status: string;
+  phase: string;
+  currentRound: number;
+  player1Wins: number;
+  player2Wins: number;
+  player1Ready: boolean;
+  player2Ready: boolean;
+  player1Id: string;
+  player2Id: string | null;
+  gold: number;
+  player1Po: number;
+  player2Po: number;
+  combats: unknown[];
+} | null;
+
 const mocks = vi.hoisted(() => ({
-  activeSession: null as any,
+  activeSession: null as ActiveSessionFixture,
   gameSessionApi: {
     createPrivateSession: vi.fn(),
     endSession: vi.fn(),
@@ -23,7 +40,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mocks.navigate,
@@ -252,5 +269,64 @@ describe('LobbyPage', () => {
     await waitFor(() => {
       expect(mocks.gameSessionApi.startVsAi).toHaveBeenCalled();
     });
+  });
+
+  it('navigates immediately when joinQueue returns matched', async () => {
+    mocks.gameSessionApi.joinQueue.mockResolvedValue({ data: { status: 'matched' } });
+
+    render(
+      <MemoryRouter>
+        <LobbyPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Lancer une recherche' }));
+    await waitFor(() => {
+      expect(mocks.navigate).toHaveBeenCalledWith('/farming');
+    });
+  });
+
+  it('rejects ownership-protected join attempts on a private room', async () => {
+    mocks.gameSessionApi.getWaitingSessions.mockResolvedValue({
+      data: [
+        {
+          id: 'room-1',
+          player1Id: 'player-1',
+          player2Id: null,
+          status: 'WAITING',
+          createdAt: new Date().toISOString(),
+          p1: { username: 'roketag' },
+        },
+      ],
+    });
+
+    render(
+      <MemoryRouter>
+        <LobbyPage />
+      </MemoryRouter>,
+    );
+
+    const joinBtn = await screen.findByRole('button', { name: 'Votre room' });
+    expect(joinBtn).toBeDisabled();
+  });
+
+  it('does not poll the queue while the player is not queued', async () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <MemoryRouter>
+          <LobbyPage />
+        </MemoryRouter>,
+      );
+
+      await vi.runOnlyPendingTimersAsync();
+      mocks.gameSessionApi.getActiveSession.mockClear();
+      mocks.gameSessionApi.getQueueStatus.mockClear();
+
+      await vi.advanceTimersByTimeAsync(2100);
+      expect(mocks.gameSessionApi.getActiveSession).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

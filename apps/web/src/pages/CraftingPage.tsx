@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { craftingApi } from '../api/crafting.api';
 import { inventoryApi } from '../api/inventory.api';
@@ -37,6 +37,19 @@ interface InventoryItem {
 }
 
 type FilterType = 'ALL' | 'WEAPON' | 'ARMOR' | 'OTHER';
+
+function computeFusionError(
+  slot1: InventoryItem | null,
+  slot2: InventoryItem | null,
+  fusionValid: boolean,
+): string | null {
+  if (!slot1 || !slot2 || fusionValid) return null;
+  if (slot1.id === slot2.id) return 'Vous devez utiliser deux exemplaires différents du même objet.';
+  if (slot1.rank !== slot2.rank) return 'Les deux objets doivent être du même rang.';
+  if (slot1.itemId !== slot2.itemId) return 'Les deux objets doivent être identiques.';
+  if (slot1.rank >= 3) return 'Un objet de rang 3 est déjà au rang maximum.';
+  return null;
+}
 
 // ── Fusion Drop Slot ────────────────────────────────────────────────────────
 function FusionSlot({
@@ -130,9 +143,9 @@ export function CraftingPage() {
     queryFn: () => itemsApi.getAll(),
   });
 
-  const recipes = (recipesRes?.data as Recipe[]) || [];
-  const inventory = (inventoryRes?.data as InventoryItem[]) || [];
-  const allItems = (itemsRes?.data as Item[]) || [];
+  const recipes = useMemo(() => (recipesRes?.data as Recipe[]) || [], [recipesRes?.data]);
+  const inventory = useMemo(() => (inventoryRes?.data as InventoryItem[]) || [], [inventoryRes?.data]);
+  const allItems = useMemo(() => (itemsRes?.data as Item[]) || [], [itemsRes?.data]);
 
   const loading = loadingRecipes || loadingInventory || loadingItems;
 
@@ -142,7 +155,7 @@ export function CraftingPage() {
     } else {
       void refreshPlayer();
     }
-  }, [activeSession?.id]);
+  }, [activeSession, refreshPlayer, refreshSession]);
 
   const spendableGold = activeSession ? (getSessionPo(activeSession, player?.id) ?? 0) : (player?.gold ?? 0);
 
@@ -196,17 +209,7 @@ export function CraftingPage() {
     && fusionSlot1.rank < 3
     && fusionSlot1.id !== fusionSlot2.id;
 
-  const fusionError = fusionSlot1 && fusionSlot2 && !fusionValid
-    ? fusionSlot1.id === fusionSlot2.id
-      ? 'Vous devez utiliser deux exemplaires différents du même objet.'
-      : fusionSlot1.rank !== fusionSlot2.rank
-        ? 'Les deux objets doivent être du même rang.'
-        : fusionSlot1.itemId !== fusionSlot2.itemId
-          ? 'Les deux objets doivent être identiques.'
-          : fusionSlot1.rank >= 3
-            ? 'Un objet de rang 3 est déjà au rang maximum.'
-            : null
-    : null;
+  const fusionError = computeFusionError(fusionSlot1, fusionSlot2, fusionValid);
 
   const resultItem = fusionValid ? fusionSlot1 : null;
   const resultRank = resultItem ? resultItem.rank + 1 : null;
@@ -286,9 +289,8 @@ export function CraftingPage() {
       </div>
 
       <div className="crafting-content">
-        {loading ? (
-          <div className="loading">Chargement...</div>
-        ) : activeTab === 'craft' ? (
+        {loading && <div className="loading">Chargement...</div>}
+        {!loading && activeTab === 'craft' && (
           /* ───────────────────── FORGE TAB ─────────────────────── */
           <div className="recipes-container">
             {filteredCategories.map(type => {
@@ -357,7 +359,8 @@ export function CraftingPage() {
               );
             })}
           </div>
-        ) : (
+        )}
+        {!loading && activeTab !== 'craft' && (
           /* ───────────────────── FUSION TAB ─────────────────────── */
           <div className="fusion-workshop">
 
@@ -486,12 +489,9 @@ export function CraftingPage() {
                     }
                   }}
                 >
-                  {isMerging
-                    ? '⏳ Fusion en cours...'
-                    : fusionValid
-                      ? '✨ Fusionner'
-                      : 'Sélectionner 2 objets identiques'
-                  }
+                  {isMerging && '⏳ Fusion en cours...'}
+                  {!isMerging && fusionValid && '✨ Fusionner'}
+                  {!isMerging && !fusionValid && 'Sélectionner 2 objets identiques'}
                 </button>
 
               </div>

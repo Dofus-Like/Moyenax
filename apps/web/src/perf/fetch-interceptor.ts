@@ -14,6 +14,12 @@ function shouldIgnore(url: string): boolean {
   return url.includes('/debug/perf') || url.startsWith('ws:') || url.startsWith('wss:');
 }
 
+function resolveUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+}
+
 export function installFetchInterceptor(): void {
   if (installed || typeof window === 'undefined') return;
   installed = true;
@@ -22,7 +28,7 @@ export function installFetchInterceptor(): void {
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const url = resolveUrl(input);
 
     if (shouldIgnore(url)) {
       return originalFetch(input, init);

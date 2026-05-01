@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { CombatState } from '@game/shared-types';
+
 const mockEventSourceInstances: MockEventSource[] = [];
 
 class MockEventSource {
@@ -80,7 +82,7 @@ describe('useCombatStore', () => {
 
   it('clears all transient combat data on disconnect', () => {
     useCombatStore.setState({
-      combatState: { sessionId: 'combat-1' } as any,
+      combatState: { sessionId: 'combat-1' } as unknown as CombatState,
       sessionId: 'combat-1',
       selectedSpellId: 'spell-1',
       isSelectingTarget: true,
@@ -131,7 +133,7 @@ describe('useCombatStore', () => {
       turnNumber: 8,
       players: {},
       map: { width: 10, height: 10, tiles: [] },
-    } as any);
+    } as unknown as CombatState);
 
     expect(useCombatStore.getState().winnerId).toBe('player-1');
     expect(useCombatStore.getState().combatState?.sessionId).toBe('combat-9');

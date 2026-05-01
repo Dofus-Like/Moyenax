@@ -1,8 +1,20 @@
 .lobby-container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 40px 24px;
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 80px);
+  height: calc(100dvh - 80px);
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   animation: fadeIn 0.6s ease-out;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.lobby-hub3d canvas,
+.hub-canvas-root canvas {
+  touch-action: none;
 }
 
 @keyframes fadeIn {
@@ -493,5 +505,11 @@
   .vs-ai-btn,
   .lobby-btn.action {
     justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .lobby-hub3d {
+    --hub-edge-pad: 12px;
   }
 }

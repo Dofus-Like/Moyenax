@@ -16,6 +16,16 @@ import './ShopPage.css';
 
 type FilterType = 'ALL' | 'WEAPON' | 'ARMOR' | 'OTHER';
 
+interface ShopItem {
+  id: string;
+  name: string;
+  type: string;
+  family: string | null;
+  shopPrice?: number;
+  stats?: Record<string, number>;
+  iconPath?: string;
+}
+
 export function ShopPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
   const queryClient = useQueryClient();
@@ -47,13 +57,13 @@ export function ShopPage() {
 
   const isSeedItem = (family: string | null) => {
     if (!seedConfig || !family) return true;
-    return seedConfig.families.includes(family as any);
+    return (seedConfig.families as readonly string[]).includes(family);
   };
 
   const sessionPo = getSessionPo(activeSession, player?.id);
   const spendableGold = activeSession ? (sessionPo ?? 0) : (player?.gold ?? 0);
 
-  const renderStats = (stats?: any) => {
+  const renderStats = (stats?: Record<string, number>) => {
     if (!stats) return null;
     return Object.entries(stats)
       .map(([key, value]) => `+${value} ${key.toUpperCase()}`)
@@ -74,13 +84,13 @@ export function ShopPage() {
 
       <div className="shop-grid compact">
         {isLoading && <p className="shop-loading">Chargement...</p>}
-        {items?.data?.filter((item: any) => {
+        {(items?.data as ShopItem[] | undefined)?.filter((item) => {
           if (activeFilter === 'ALL') return true;
           if (activeFilter === 'WEAPON' && item.type === 'WEAPON') return true;
           if (activeFilter === 'ARMOR' && ['ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(item.type)) return true;
           if (activeFilter === 'OTHER' && !['WEAPON', 'ARMOR_HEAD', 'ARMOR_CHEST', 'ARMOR_LEGS'].includes(item.type)) return true;
           return false;
-        }).map((item: any) => {
+        }).map((item) => {
           const inSeed = isSeedItem(item.family);
           const price = item.shopPrice ?? 0;
           const visual = getItemVisualMeta(item);
@@ -110,7 +120,9 @@ export function ShopPage() {
                     onClick={() => buyMutation.mutate({ itemId: item.id, quantity: 1 })}
                     disabled={buyMutation.isPending || spendableGold < price}
                   >
-                    {buyMutation.isPending ? 'Achat...' : spendableGold < price ? 'Or insuffisant' : 'Acheter'}
+                    {buyMutation.isPending && 'Achat...'}
+                    {!buyMutation.isPending && spendableGold < price && 'Or insuffisant'}
+                    {!buyMutation.isPending && spendableGold >= price && 'Acheter'}
                   </button>
                 </div>
               </div>

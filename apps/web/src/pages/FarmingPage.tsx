@@ -37,6 +37,22 @@ const LEGEND_ITEMS = [
   { key: 'gold', label: 'Or', className: 'legend-gold' },
 ] as const;
 
+function pickReadinessCopy(amIReady: boolean, isOpponentReady: boolean): string {
+  if (amIReady) return 'Prêt pour le combat.';
+  if (isOpponentReady) return 'Adversaire prêt !';
+  return 'En attente des deux joueurs...';
+}
+
+function pickReadyButtonLabel(
+  isTransitioning: boolean,
+  phase: string,
+  amIReady: boolean,
+): string {
+  if (isTransitioning) return 'Lancement...';
+  if (phase === 'FIGHTING') return '⚔️ Rejoindre le combat';
+  return amIReady ? 'Prêt !' : 'Se déclarer prêt';
+}
+
 function findSpawnPosition(grid: TerrainType[][]): PathNode {
   for (let y = 0; y < grid.length; y += 1) {
     for (let x = 0; x < grid[0].length; x += 1) {
@@ -77,7 +93,7 @@ export function FarmingPage() {
     // Délai pour laisser le temps au GPU de nettoyer les anciens contextes (ex: CombatPage)
     const timer = setTimeout(() => setIsReadyToRender(true), 800);
     return () => clearTimeout(timer);
-  }, []);
+  }, [refreshSession]);
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'info' | 'error' } | null>(
     null,
   );
@@ -190,15 +206,6 @@ export function FarmingPage() {
     }
   }, [map, movePlayer, playerPosition]);
 
-  const syncSpendableGold = useCallback(async () => {
-    if (activeSession) {
-      await refreshSession({ silent: true });
-      return;
-    }
-
-    await refreshPlayer();
-  }, [activeSession, refreshPlayer, refreshSession]);
-
   const performGather = useCallback(
     async (x: number, y: number) => {
       if (isGathering) return;
@@ -222,7 +229,7 @@ export function FarmingPage() {
         setIsGathering(false);
       }
     },
-    [gatherNode, isDebugMode, isTransitioningToCrafting, navigate, syncSpendableGold, isGathering, activeSession, refreshSession, refreshPlayer],
+    [gatherNode, isDebugMode, isTransitioningToCrafting, navigate, isGathering, activeSession, refreshSession, refreshPlayer],
   );
 
   const previewPath = useMemo(() => {
@@ -384,7 +391,7 @@ export function FarmingPage() {
       setIsTransitioning(false);
       isActionInProgressRef.current = false;
     }
-  }, [activeSession, navigate, refreshSession]);
+  }, [activeSession, navigate, refreshSession, showActionMessage]);
 
   const handleToggleReady = useCallback(async () => {
     if (!activeSession) return;
@@ -417,9 +424,10 @@ export function FarmingPage() {
       setIsTransitioning(false);
       isActionInProgressRef.current = false;
     }
-  }, [activeSession, currentPlayerId, refreshSession, navigate]);
+  }, [activeSession, currentPlayerId, refreshSession, navigate, showActionMessage]);
 
   // -- Phase monitoring --
+  const latestCombatId = activeSession?.combats?.[0]?.id;
   useEffect(() => {
     if (!activeSession) return;
 
@@ -433,7 +441,7 @@ export function FarmingPage() {
         window.location.pathname !== `/combat/${latestCombat.id}`) {
       navigate(`/combat/${latestCombat.id}`);
     }
-  }, [activeSession?.phase, activeSession?.combats?.[0]?.id, navigate]);
+  }, [activeSession, latestCombatId, navigate]);
 
   // -- Transition Safety: Always unlock if we are in FARMING phase --
   useEffect(() => {
@@ -609,11 +617,7 @@ export function FarmingPage() {
           {activeSession && activeSession.player2Id && (
             <section className="resource-sidebar-card status-card">
               <p className="resource-sidebar-card__copy">
-                {amIReady
-                  ? 'Prêt pour le combat.'
-                  : isOpponentReady
-                    ? 'Adversaire prêt !'
-                    : 'En attente des deux joueurs...'}
+                {pickReadinessCopy(amIReady, isOpponentReady)}
               </p>
             </section>
           )}
@@ -637,11 +641,7 @@ export function FarmingPage() {
             onClick={handleToggleReady}
             disabled={isTransitioning}
           >
-            {isTransitioning 
-              ? 'Lancement...' 
-              : activeSession.phase === 'FIGHTING' 
-                ? '⚔️ Rejoindre le combat' 
-                : amIReady ? 'Prêt !' : 'Se déclarer prêt'}
+            {pickReadyButtonLabel(isTransitioning, activeSession.phase, amIReady)}
           </button>
         )}
       </div>

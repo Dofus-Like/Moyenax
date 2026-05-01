@@ -20,7 +20,7 @@
     "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy --schema=apps/api/prisma/schema.prisma",
     "db:generate": "prisma generate --schema=apps/api/prisma/schema.prisma",
     "db:seed": "ts-node apps/api/prisma/seed.ts",
-    "db:kill-combats": "dotenv -e .env -- ts-node scripts/dev/kill-active-combats.ts",
+    "db:kill-combats": "dotenv -e .env -- ts-node --project scripts/tsconfig.json scripts/dev/kill-active-combats.ts",
     "db:studio": "prisma studio --schema=apps/api/prisma/schema.prisma",
     "docker:dev": "node scripts/dev/container-stack.mjs up",
     "docker:dev:down": "node scripts/dev/container-stack.mjs down",

@@ -2,10 +2,19 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { gameSessionApi } from '../api/game-session.api';
+import { Hub3DLoader, type Hub3DLoaderState } from '../game/Hub3D/Hub3DLoader';
+import { Hub3DScene } from '../game/Hub3D/Hub3DScene';
+import { HubBackdrop } from '../game/Hub3D/HubBackdrop';
+import { HubOnboardingHint } from '../game/Hub3D/HubOnboardingHint';
+import { type PoiId } from '../game/Hub3D/constants';
+import { readOnboardingDismissed, writeOnboardingDismissed } from '../game/Hub3D/onboarding';
+import { deriveActivePoiList, derivePoiStateLabels } from '../game/Hub3D/poiState';
 import { SKINS } from '../game/constants/skins';
 import { useAuthStore } from '../store/auth.store';
 
 import { useGameSession } from './GameTunnel';
+import { HubPoiModal } from './HubPoiModal';
+import { getApiErrorMessage, useHubActionState } from './useHubActionState';
 import './LobbyPage.css';
 
 interface Room {
@@ -19,18 +28,8 @@ interface Room {
   };
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'response' in error &&
-    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string'
-  ) {
-    return (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback;
-  }
-
-  return fallback;
-}
+const LOBBY_POLL_MS = 5000;
+const QUEUE_POLL_MS = 2000;
 
 export function LobbyPage() {
   const { player, initialize, setSkin } = useAuthStore();
@@ -39,6 +38,35 @@ export function LobbyPage() {
   const [rooms, setRooms] = React.useState<Room[]>([]);
   const [loadingRooms, setLoadingRooms] = React.useState(true);
   const [isInQueue, setIsInQueue] = React.useState(false);
+  const [activePoiId, setActivePoiId] = React.useState<PoiId | null>(null);
+  const [loaderState, setLoaderState] = React.useState<Hub3DLoaderState>('loading');
+  const [onboardingDismissed, setOnboardingDismissed] = React.useState(readOnboardingDismissed);
+  const action = useHubActionState();
+
+  const handleDismissOnboarding = React.useCallback((): void => {
+    writeOnboardingDismissed();
+    setOnboardingDismissed(true);
+  }, []);
+
+  const handleGoVsAi = React.useCallback((): void => {
+    setActivePoiId('vs-ai');
+    handleDismissOnboarding();
+  }, [handleDismissOnboarding]);
+
+  const handleHubReady = React.useCallback((): void => {
+    window.setTimeout(() => setLoaderState('done'), 350);
+  }, []);
+
+  const handleHubError = React.useCallback((): void => {
+    setLoaderState('error');
+  }, []);
+
+  React.useEffect(() => {
+    const t = window.setTimeout(() => {
+      setLoaderState((prev) => (prev === 'loading' ? 'slow' : prev));
+    }, 6000);
+    return () => window.clearTimeout(t);
+  }, []);
 
   const fetchLobbyState = React.useCallback(async () => {
     try {
@@ -61,7 +89,7 @@ export function LobbyPage() {
     void fetchLobbyState();
     const interval = window.setInterval(() => {
       void fetchLobbyState();
-    }, 5000);
+    }, LOBBY_POLL_MS);
 
     return () => window.clearInterval(interval);
   }, [fetchLobbyState, initialize]);
@@ -83,76 +111,61 @@ export function LobbyPage() {
   }, [activeSession, navigate]);
 
   const handleCreateRoom = async () => {
-    try {
+    await action.runAction('rooms', async () => {
       await gameSessionApi.createPrivateSession();
       await refreshSession({ silent: true });
       await fetchLobbyState();
-    } catch (error) {
-      console.error('Failed to create room', error);
-      window.alert(getErrorMessage(error, 'Impossible de creer la room.'));
-    }
+    }, 'Impossible de créer la room.');
   };
 
   const handleCancelOpenSession = async () => {
     if (!activeSession) return;
-
-    try {
+    await action.runAction('rooms', async () => {
       await gameSessionApi.endSession(activeSession.id);
       await refreshSession({ silent: true });
       await fetchLobbyState();
-    } catch (error) {
-      console.error('Failed to cancel room', error);
-      window.alert(getErrorMessage(error, 'Impossible d annuler la room.'));
-    }
+    }, "Impossible d'annuler la room.");
   };
 
   const handleJoinRoom = async (sessionId: string) => {
-    try {
-      await gameSessionApi.joinPrivateSession(sessionId);
-      await refreshSession({ silent: true });
-      navigate('/farming');
-    } catch (error) {
-      console.error('Failed to join room', error);
-      const msg = getErrorMessage(error, 'Impossible de rejoindre la room.');
-      if (msg.includes('deja une room ouverte')) {
-        if (window.confirm('Vous avez déjà une session active. Voulez-vous la rejoindre ?')) {
+    await action.runAction('rooms', async () => {
+      try {
+        await gameSessionApi.joinPrivateSession(sessionId);
+        await refreshSession({ silent: true });
+        navigate('/farming');
+      } catch (error) {
+        const msg = getApiErrorMessage(error, 'Impossible de rejoindre la room.');
+        if (msg.includes('deja une room ouverte')) {
+          await refreshSession({ silent: true });
           navigate('/farming');
+          return;
         }
-      } else {
-        window.alert(msg);
+        throw error;
       }
-    }
+    }, 'Impossible de rejoindre la room.');
   };
 
   const handleResetSession = async () => {
     if (!window.confirm('Êtes-vous sûr de vouloir réinitialiser votre session ? Toute progression non sauvegardée sera perdue.')) {
       return;
     }
-
-    try {
+    await action.runAction('vsAi', async () => {
       await gameSessionApi.resetSession();
       await refreshSession({ silent: true });
       await fetchLobbyState();
-      window.alert('Session réinitialisée avec succès.');
-    } catch (error) {
-      console.error('Failed to reset session', error);
-      window.alert(getErrorMessage(error, 'Impossible de réinitialiser la session.'));
-    }
+    }, 'Impossible de réinitialiser la session.');
   };
 
   const handleStartVsAiCombat = async () => {
-    try {
+    await action.runAction('vsAi', async () => {
       await gameSessionApi.startVsAi();
       await refreshSession({ silent: true });
       navigate('/farming');
-    } catch (error) {
-      console.error('Failed to start VS AI combat', error);
-      window.alert(getErrorMessage(error, 'Impossible de lancer le combat VS AI.'));
-    }
+    }, 'Impossible de lancer le combat VS AI.');
   };
 
   const handleJoinQueue = async () => {
-    try {
+    await action.runAction('combat', async () => {
       const response = await gameSessionApi.joinQueue();
       if (response.data?.status === 'matched') {
         await refreshSession({ silent: true });
@@ -160,24 +173,31 @@ export function LobbyPage() {
         navigate('/farming');
         return;
       }
-
       setIsInQueue(true);
-    } catch (error) {
-      console.error('Failed to join queue', error);
-      setIsInQueue(false);
-      window.alert(getErrorMessage(error, 'Impossible de rejoindre la file.'));
-    }
+    }, 'Impossible de rejoindre la file.');
   };
 
   const handleLeaveQueue = async () => {
-    try {
+    await action.runAction('combat', async () => {
       await gameSessionApi.leaveQueue();
       setIsInQueue(false);
-    } catch (error) {
-      console.error('Failed to leave queue', error);
-      window.alert(getErrorMessage(error, 'Impossible de quitter la file.'));
-    }
+    }, 'Impossible de quitter la file.');
   };
+
+  const handleSetSkin = async (id: string) => {
+    await action.runAction('appearance', async () => {
+      await setSkin(id);
+    }, 'Impossible de changer le skin.');
+  };
+
+  const { clearError } = action;
+  React.useEffect(() => {
+    if (activePoiId !== null) return;
+    clearError('combat');
+    clearError('vsAi');
+    clearError('rooms');
+    clearError('appearance');
+  }, [activePoiId, clearError]);
 
   React.useEffect(() => {
     if (!isInQueue) return;
@@ -200,7 +220,7 @@ export function LobbyPage() {
       } catch (error) {
         console.error('Error polling queue/session:', error);
       }
-    }, 2000);
+    }, QUEUE_POLL_MS);
 
     return () => window.clearInterval(interval);
   }, [isInQueue, navigate, refreshSession]);
@@ -215,8 +235,92 @@ export function LobbyPage() {
     [rooms],
   );
 
+  const poiStateLabels = React.useMemo<Partial<Record<PoiId, string>>>(
+    () => derivePoiStateLabels({ isInQueue, isWaitingPrivateSession, hasOpenSession }),
+    [isInQueue, isWaitingPrivateSession, hasOpenSession],
+  );
+
+  const activePoi = React.useMemo<PoiId[]>(
+    () => deriveActivePoiList({ isInQueue, isWaitingPrivateSession }),
+    [isInQueue, isWaitingPrivateSession],
+  );
+
   return (
     <div className="lobby-container">
+      <section
+        className="lobby-hub3d"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 50,
+          overflow: 'hidden',
+          background: '#07101f',
+        }}
+      >
+        <HubBackdrop />
+        <Hub3DScene
+          onPoiActivate={setActivePoiId}
+          activePoiId={activePoiId}
+          poiStateLabels={poiStateLabels}
+          activePoiIds={activePoi}
+          onboardingHighlightId={!onboardingDismissed ? 'vs-ai' : null}
+          onReady={handleHubReady}
+          onError={handleHubError}
+        />
+        <Hub3DLoader state={loaderState} />
+        <HubOnboardingHint
+          visible={!onboardingDismissed && activePoiId === null}
+          onDismiss={handleDismissOnboarding}
+          onGoVsAi={handleGoVsAi}
+        />
+        <HubPoiModal
+          activePoiId={activePoiId}
+          onClose={() => setActivePoiId(null)}
+          combat={{
+            isInQueue,
+            hasOpenSession,
+            busy: action.busy.combat,
+            error: action.errors.combat,
+            onJoinQueue: () => void handleJoinQueue(),
+            onLeaveQueue: () => void handleLeaveQueue(),
+            onClearError: () => action.clearError('combat'),
+          }}
+          vsAi={{
+            hasOpenSession,
+            isInQueue,
+            busy: action.busy.vsAi,
+            error: action.errors.vsAi,
+            onStart: () => void handleStartVsAiCombat(),
+            onResume: () => navigate('/farming'),
+            onReset: () => void handleResetSession(),
+            onClearError: () => action.clearError('vsAi'),
+          }}
+          appearance={{
+            currentSkin: player?.skin,
+            username: player?.username,
+            gold: player?.gold,
+            busy: action.busy.appearance,
+            error: action.errors.appearance,
+            onSetSkin: (id) => void handleSetSkin(id),
+            onClearError: () => action.clearError('appearance'),
+          }}
+          rooms={{
+            rooms: visibleRooms,
+            loading: loadingRooms,
+            isWaiting: isWaitingPrivateSession,
+            hasOpenSession,
+            isInQueue,
+            playerId: player?.id,
+            busy: action.busy.rooms,
+            error: action.errors.rooms,
+            onCreateRoom: () => void handleCreateRoom(),
+            onJoinRoom: (id) => void handleJoinRoom(id),
+            onCancelRoom: () => void handleCancelOpenSession(),
+            onClearError: () => action.clearError('rooms'),
+          }}
+        />
+      </section>
+
       <section className="lobby-skins">
         <div className="lobby-section-header">
           <h2>🎭 Choisissez votre apparence</h2>
@@ -226,7 +330,7 @@ export function LobbyPage() {
             <div
               key={skin.id}
               className={`skin-card ${player?.skin === skin.id ? 'active' : ''}`}
-              onClick={() => void setSkin(skin.id)}
+              onClick={() => void handleSetSkin(skin.id)}
             >
               <div className="skin-preview-container">
                 <div
@@ -253,7 +357,7 @@ export function LobbyPage() {
             <h3>🎮 Match aléatoire</h3>
             <p>Affrontez un adversaire dans le tunnel de jeu.</p>
           </div>
-          {isInQueue ? (
+          {isInQueue && (
             <div className="queue-status">
               <div className="loader-dots">
                 <span>.</span>
@@ -265,14 +369,16 @@ export function LobbyPage() {
                 Annuler
               </button>
             </div>
-          ) : isWaitingPrivateSession ? (
+          )}
+          {!isInQueue && isWaitingPrivateSession && (
             <div className="queue-status">
               <span>Votre room privée est en attente d&apos;un adversaire.</span>
               <button type="button" className="leave-queue-btn" onClick={handleCancelOpenSession}>
                 Annuler la room
               </button>
             </div>
-          ) : (
+          )}
+          {!isInQueue && !isWaitingPrivateSession && (
             <button
               type="button"
               className="join-queue-btn"
@@ -301,11 +407,11 @@ export function LobbyPage() {
         </div>
 
         <div className="rooms-grid">
-          {loadingRooms ? (
-            <div className="no-rooms">Chargement des rooms...</div>
-          ) : visibleRooms.length === 0 ? (
+          {loadingRooms && <div className="no-rooms">Chargement des rooms...</div>}
+          {!loadingRooms && visibleRooms.length === 0 && (
             <div className="no-rooms">Aucune room ouverte. Créez-en une !</div>
-          ) : (
+          )}
+          {!loadingRooms && visibleRooms.length > 0 && (
             visibleRooms.map((room) => (
               <div key={room.id} className="room-card">
                 <div className="room-info">
@@ -340,7 +446,7 @@ export function LobbyPage() {
           >
             {hasOpenSession ? 'Reprendre la partie' : 'Lancer VS AI'}
           </button>
-          
+
           {hasOpenSession && (
             <button
               type="button"

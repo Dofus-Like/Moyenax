@@ -13,6 +13,7 @@ const { _lsStore } = vi.hoisted(() => {
   return { _lsStore };
 });
 
+import { usePerfHudStore } from './perf-hud.store';
 import {
   listSnapshots,
   saveCurrentSnapshot,
@@ -21,7 +22,6 @@ import {
   buildDiff,
   type SavedSnapshot,
 } from './snapshots';
-import { usePerfHudStore } from './perf-hud.store';
 
 function makeSnapshot(overrides: Partial<SavedSnapshot> = {}): SavedSnapshot {
   return {

@@ -16,6 +16,17 @@ import {
 type Tab = 'overview' | 'network' | 'renders' | 'sse' | 'tasks' | 'backend' | 'prisma' | 'game' | 'redis' | 'snap';
 type ShareStatus = 'idle' | 'copied' | 'error';
 
+function pickFpsColor(fps: number): string {
+  if (fps >= 55) return '#4ade80';
+  if (fps >= 30) return '#facc15';
+  return '#f87171';
+}
+
+function pickPlanNodeMarker(childrenCount: number, open: boolean): string {
+  if (childrenCount === 0) return '•';
+  return open ? '▼' : '▶';
+}
+
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'overview', label: 'Overview' },
   { key: 'network', label: 'Network' },
@@ -107,7 +118,9 @@ export function PerfHud() {
             onClick={handleCopyMarkdown}
             title="Copier rapport Markdown pour IA"
           >
-            {shareStatus === 'copied' ? '✓ Copié' : shareStatus === 'error' ? '✕ Erreur' : '📋 IA'}
+            {shareStatus === 'copied' && '✓ Copié'}
+            {shareStatus === 'error' && '✕ Erreur'}
+            {shareStatus !== 'copied' && shareStatus !== 'error' && '📋 IA'}
           </button>
           <button style={btnStyle} onClick={handleDownloadJson} title="JSON brut">
             💾
@@ -162,7 +175,7 @@ function OverviewTab() {
   const sseEvents = usePerfHudStore((s) => s.sseEvents);
   const memory = usePerfHudStore((s) => s.memory);
   const memoryHistory = usePerfHudStore((s) => s.memoryHistory);
-  const color = fps.fps >= 55 ? '#4ade80' : fps.fps >= 30 ? '#facc15' : '#f87171';
+  const color = pickFpsColor(fps.fps);
 
   return (
     <div>
@@ -907,7 +920,7 @@ function PlanNode({ node, depth }: { node: Record<string, unknown>; depth: numbe
     <div style={{ marginLeft: depth * 10, borderLeft: depth > 0 ? '1px solid #374151' : undefined, paddingLeft: depth > 0 ? 6 : 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10 }}>
         <button style={{ ...btnStyle, padding: '0 4px' }} onClick={() => setOpen(!open)}>
-          {children.length > 0 ? (open ? '▼' : '▶') : '•'}
+          {pickPlanNodeMarker(children.length, open)}
         </button>
         <span style={{ color: nodeColor(nodeType), fontWeight: 600 }}>{nodeType}</span>
         {typeof actualTime === 'number' && (
@@ -973,7 +986,13 @@ function SnapshotsTab() {
     refresh();
   };
 
-  const current = useMemo(() => saveCurrentVirtualSnapshot(), [items, selected]);
+  // items + selected drive the refresh signal so we recompute the virtual snapshot
+  // when the saved-snapshots list changes or the selection changes.
+  const current = useMemo(
+    () => saveCurrentVirtualSnapshot(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, selected],
+  );
   const selectedSnap = items.find((s) => s.id === selected);
   const diff = selectedSnap ? buildDiff(selectedSnap, current) : null;
 
@@ -1030,7 +1049,8 @@ function SnapshotsTab() {
             </thead>
             <tbody>
               {diff.map((row) => {
-                const deltaSign = row.delta === undefined ? '' : row.delta > 0 ? '+' : '';
+                let deltaSign = '';
+                if (row.delta !== undefined && row.delta > 0) deltaSign = '+';
                 const deltaColor = deltaColorFor(row);
                 return (
                   <tr key={row.label}>

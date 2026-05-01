@@ -32,11 +32,11 @@ const mocks = vi.hoisted(() => ({
     pips: 4,
     spendableGold: 2,
   },
-  activeSession: null as any,
+  activeSession: null as { id: string; status: string; phase: string } | null,
 }));
 
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mocks.navigate,
@@ -62,7 +62,7 @@ vi.mock('camera-controls', () => ({
 }));
 
 vi.mock('../game/UnifiedMap/UnifiedMapScene', () => ({
-  UnifiedMapScene: ({ onTileClick }: { onTileClick?: (x: number, y: number, terrain: any) => void }) => (
+  UnifiedMapScene: ({ onTileClick }: { onTileClick?: (x: number, y: number, terrain: string) => void }) => (
     <div data-testid="map-scene">
       <button type="button" onClick={() => onTileClick?.(0, 1, 'HERB')}>
         Harvest tile
@@ -83,7 +83,7 @@ vi.mock('../api/game-session.api', () => ({
 }));
 
 vi.mock('../store/auth.store', () => ({
-  useAuthStore: (selector?: (state: any) => unknown) => {
+  useAuthStore: (selector?: (state: unknown) => unknown) => {
     const state = {
       player: { id: 'player-1' },
       refreshPlayer: mocks.refreshPlayer,
@@ -100,7 +100,7 @@ vi.mock('./GameTunnel', () => ({
 }));
 
 vi.mock('../store/farming.store', () => {
-  const hook = (selector?: (state: any) => unknown) => (selector ? selector(mocks.farmingState) : mocks.farmingState);
+  const hook = (selector?: (state: unknown) => unknown) => (selector ? selector(mocks.farmingState) : mocks.farmingState);
   return {
     useFarmingStore: Object.assign(hook, {
       getState: () => mocks.farmingState,

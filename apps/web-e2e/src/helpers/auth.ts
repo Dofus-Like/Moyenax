@@ -1,4 +1,5 @@
-import { Page, expect, APIRequestContext } from '@playwright/test';
+import type { Page, APIRequestContext } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 /**
  * Login rapide via l'API + injection du token dans localStorage.
@@ -39,7 +40,7 @@ export async function registerAndLogin(
   page: Page,
   request: APIRequestContext,
   overrides: Partial<{ username: string; email: string; password: string }> = {},
-) {
+): Promise<{ accessToken: string; playerId: string }> {
   const email = overrides.email ?? (await uniqueEmail());
   const password = overrides.password ?? 'password123';
   const username = overrides.username ?? `e2e-${Date.now()}`;

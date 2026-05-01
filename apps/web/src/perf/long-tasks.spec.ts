@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { startLongTaskObserver, stopLongTaskObserver } from './long-tasks';
 import { usePerfHudStore } from './perf-hud.store';
 
 describe('long-tasks', () => {
-  let capturedCallback: ((list: { getEntries: () => any[] }) => void) | null = null;
+  let capturedCallback: ((list: { getEntries: () => PerformanceEntry[] }) => void) | null = null;
 
   beforeEach(() => {
     usePerfHudStore.setState({ longTasks: [] });
@@ -11,7 +12,7 @@ describe('long-tasks', () => {
 
     class MockPerformanceObserver {
       static supportedEntryTypes = ['longtask'];
-      constructor(callback: (list: { getEntries: () => any[] }) => void) {
+      constructor(callback: (list: { getEntries: () => PerformanceEntry[] }) => void) {
         capturedCallback = callback;
       }
       observe = vi.fn();

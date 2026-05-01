@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import * as THREE from 'three';
+import { describe, it, expect, vi } from 'vitest';
+
 import { updateInstanceMatrix, worldToGrid, gridToWorld } from './performance.utils';
 
 describe('performance.utils', () => {
