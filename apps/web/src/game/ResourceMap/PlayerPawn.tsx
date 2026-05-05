@@ -330,10 +330,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
             <boxGeometry args={[1, 1.5, 1]} />
         </mesh>
 
-        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[0.45, 16]} />
-          <meshBasicMaterial color="black" transparent opacity={0.5} />
-        </mesh>
+
 
         {isSummon && spriteType === 'menhir' ? (
           <mesh position={[0, 0.4, 0]}>

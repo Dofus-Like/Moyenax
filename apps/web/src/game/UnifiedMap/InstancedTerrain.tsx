@@ -105,13 +105,13 @@ export const InstancedTerrain = React.memo(({
   return (
     <group>
       {/* Sides of tiles */}
-      <instancedMesh ref={meshRefA} args={[null as any, null as any, count]} raycast={() => null}>
+      <instancedMesh ref={meshRefA} args={[null as any, null as any, count]} raycast={() => null} receiveShadow>
         <roundedBoxGeometry args={[tileSize, 0.4, tileSize]} radius={tileRadius} smoothness={4} />
         <meshStandardMaterial />
       </instancedMesh>
       
       {/* Top surface of tiles */}
-      <instancedMesh ref={meshRefB} args={[null as any, null as any, count]} raycast={() => null}>
+      <instancedMesh ref={meshRefB} args={[null as any, null as any, count]} raycast={() => null} receiveShadow>
         <planeGeometry args={[tileSize - 0.02, tileSize - 0.02]} />
         <meshStandardMaterial />
       </instancedMesh>

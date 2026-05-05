@@ -176,7 +176,6 @@ export function CombatPage() {
           {/* LEFT WINDOW: GAME & HUD */}
           <div className="combat-game-zone">
             <Canvas
-              shadows
               gl={{ antialias: true, alpha: true }}
               dpr={[1, 2]}
               camera={{ fov: 30 }}
@@ -212,13 +211,6 @@ export function CombatPage() {
               <directionalLight
                 position={[5, 10, 5]}
                 intensity={2}
-                castShadow
-                shadow-mapSize={[1024, 1024]}
-                shadow-camera-far={50}
-                shadow-camera-left={-10}
-                shadow-camera-right={10}
-                shadow-camera-top={10}
-                shadow-camera-bottom={-10}
               />
 
               {/* Préchargement des assets critiques pour éviter les sauts lors des premiers sorts/mouvements */}

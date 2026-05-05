@@ -48,10 +48,13 @@ export function CombatDebugMenu() {
             elemShadowBlur: { value: 32, min: 0, max: 100, step: 1 },
             elemInnerShadowOpacity: { value: 0.05, min: 0, max: 1, step: 0.01, label: 'Inner Shadow Opacity' },
         }),
-        'Action Bar & Spells': folder({
-            spellSize: { value: 60, min: 40, max: 150, step: 5, label: 'Spell Slot Size' },
-            spellGap: { value: 12, min: 0, max: 40, step: 2, label: 'Spell Gap' },
-            barPadding: { value: 16, min: 0, max: 40, step: 2, label: 'Bar Padding' },
+        'Spell Bar Premium': folder({
+            barBgColor: { value: '#141414', label: 'BG Color' },
+            barBgOpacity: { value: 0.6, min: 0, max: 1, step: 0.01 },
+            barBlur: { value: 16, min: 0, max: 40, step: 1 },
+            barRadius: { value: 24, min: 0, max: 60, step: 1 },
+            barInnerShadowOpacity: { value: 0.9, min: 0, max: 1, step: 0.01, label: 'Inner Shadow Opacity' },
+            barInnerShadowBlur: { value: 29, min: 0, max: 100, step: 1, label: 'Inner Shadow Blur' },
         }),
         'Resources Gauges': folder({
             gaugeSize: { value: 10, min: 6, max: 20, step: 1, label: 'Diamond Size' },
@@ -107,10 +110,11 @@ export function CombatDebugMenu() {
         }
         root.style.setProperty('--glass-elem-inner-shadow', `inset 0 1px 0 rgba(255, 255, 255, ${design.elemInnerShadowOpacity})`);
 
-        // Spells
-        root.style.setProperty('--spell-size', `${design.spellSize}px`);
-        root.style.setProperty('--spell-gap', `${design.spellGap}px`);
-        root.style.setProperty('--bar-padding', `${design.barPadding}px`);
+        // Spell Bar Premium
+        setRgbaVar('spell-bar-bg', design.barBgColor, design.barBgOpacity);
+        root.style.setProperty('--spell-bar-blur', `blur(${design.barBlur}px)`);
+        root.style.setProperty('--spell-bar-radius', `${design.barRadius}px`);
+        root.style.setProperty('--spell-bar-shadow', `inset 0 0 ${design.barInnerShadowBlur}px rgba(0,0,0,${design.barInnerShadowOpacity})`);
 
         // Gauges
         root.style.setProperty('--gauge-size', `${design.gaugeSize}px`);

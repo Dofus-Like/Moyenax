@@ -45,14 +45,16 @@ export function CombatPlayerPanel({ playerId, side, position = 'bottom' }: Comba
       </div>
 
       {/* Side Resources (Old Design) */}
-      <div className="cpp-side-resources">
-        <div className="res-badge mini pa">
-          {player.remainingPa}
+      {isMe && (
+        <div className="cpp-side-resources">
+          <div className="res-badge mini pa">
+            {player.remainingPa}
+          </div>
+          <div className="res-badge mini pm">
+            {player.remainingPm}
+          </div>
         </div>
-        <div className="res-badge mini pm">
-          {player.remainingPm}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

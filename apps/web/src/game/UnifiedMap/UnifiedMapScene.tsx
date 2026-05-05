@@ -10,6 +10,7 @@ import {
 } from '@game/shared-types';
 import { Castle } from '../ResourceMap/Castle';
 import { ThreeEvent, useThree } from '@react-three/fiber';
+import { ContactShadows } from '@react-three/drei';
 import { canJumpTo, canMoveTo, hasLineOfSight, isInRange } from '@game/game-engine';
 import { useCombatStore } from '../../store/combat.store';
 import { useAuthStore } from '../../store/auth.store';

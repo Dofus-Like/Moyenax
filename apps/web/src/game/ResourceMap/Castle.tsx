@@ -30,12 +30,12 @@ export function Castle({ position, targetSize, rotation = [0, 0, 0] }: CastlePro
     box.getCenter(center);
     const topY = box.max.y;
 
-    clone.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
+    // clone.traverse((child) => {
+    //   if ((child as THREE.Mesh).isMesh) {
+    //     child.castShadow = true;
+    //     child.receiveShadow = true;
+    //   }
+    // });
 
     return { 
       clonedScene: clone, 

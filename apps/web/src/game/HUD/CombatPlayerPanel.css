@@ -20,11 +20,21 @@
   align-items: flex-end;
 }
 
+.cpp-root.side-left .cpp-main-frame {
+  border: var(--glass-border-width) solid var(--glass-panel-border);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
 .cpp-root.side-right.position-top {
   right: 0;
   top: 0;
   flex-direction: row-reverse;
   align-items: flex-start;
+}
+
+.cpp-root.side-right .cpp-main-frame {
+  border: var(--glass-border-width) solid var(--glass-panel-border);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 
 /* Main Frame - Square Design */
@@ -64,7 +74,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   text-align: center;
-  padding: 6px 2px;
+  padding: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -76,11 +86,12 @@
 /* HP Section */
 .cpp-hp-section {
   position: relative;
-  height: 24px;
+  height: 16px;
   background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
 }
 
 .cpp-hp-fill {
@@ -96,9 +107,13 @@
   position: relative;
   z-index: 1;
   color: #fff;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 900;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 
+    -1px -1px 0 #000,  
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000;
   font-family: 'Outfit', sans-serif;
   letter-spacing: -0.02em;
 }
