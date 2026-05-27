@@ -466,6 +466,10 @@
   gap: 8px;
 }
 
+.spell-keyword-tooltip .tooltip-title {
+  color: #fca800;
+}
+
 .spell-keyword-tooltip {
   width: 200px;
   height: fit-content;
@@ -535,13 +539,33 @@
     2px 0px 0 #000;
 }
 
+.family-warrior .spell-tooltip .tooltip-title {
+  color: #ef4444;
+}
+
+.family-mage .spell-tooltip .tooltip-title {
+  color: #3b82f6;
+}
+
+.family-ninja .spell-tooltip .tooltip-title {
+  color: #10b981;
+}
+
 .tooltip-cost {
-  font-size: 0.75rem;
+  font-family: var(--font-hud);
+  font-size: 0.9rem;
   font-weight: 800;
   color: #fca800;
-  background: rgba(252, 168, 0, 0.1);
-  padding: 2px 8px;
-  border-radius: 4px;
+  letter-spacing: 0.05em;
+  text-shadow:
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    2px 2px 0 #000,
+    0px -2px 0 #000,
+    0px 2px 0 #000,
+    -2px 0px 0 #000,
+    2px 0px 0 #000;
 }
 
 .tooltip-description {
@@ -602,6 +626,16 @@
   align-items: center;
   gap: 4px;
   color: #9531ff;
+}
+
+.pmcolor {
+  color: #9531ff;
+  font-weight: bold;
+}
+
+.pacolor {
+  color: #fca800;
+  font-weight: bold;
 }
 
 .tooltip-cooldown {

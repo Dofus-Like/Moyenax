@@ -47,6 +47,7 @@ export interface SpellBarItem {
   cooldown?: number;
   damage?: { min: number; max: number };
   effectKind?: SpellEffectKind;
+  effectConfig?: Record<string, unknown> | null;
   minRange?: number;
   maxRange?: number;
 }
@@ -109,6 +110,11 @@ const SpellTooltip = ({
   }
 
   const lowerDesc = spell.description?.toLowerCase() || "";
+  if (spell.effectKind === SpellEffectKind.BUFF_PM && spell.effectConfig?.buffValue) {
+    const duration = spell.effectConfig.buffDuration ?? 1;
+    lines.push(<div key="buff-pm">Donne <span className="pmcolor">+{String(spell.effectConfig.buffValue)} PM</span> pendant <span className="pacolor">{String(duration)}</span> tour{(duration > 1 ? 's' : '')}</div>);
+  }
+
   if (isPush || lowerDesc.includes("repouss") || lowerDesc.includes("pousse")) {
     lines.push(<div key="push"><span style={{ color: '#fca800', fontWeight: 'bold' }}>REPOUSSE</span> la cible.</div>);
     keywords.push({ name: "REPOUSSE", desc: "Déplace la cible dans la direction de l'impact." });
@@ -125,11 +131,11 @@ const SpellTooltip = ({
   }
 
   return (
-    <div className="spell-tooltip-container">
+    <div className={`spell-tooltip-container ${toFamilyClassName(spell.family)}`}>
       <div className="spell-tooltip">
         <div className="tooltip-header">
           <div className="tooltip-title">{spell.name}</div>
-          <div className="tooltip-cost">{spell.paCost} PA</div>
+          <div className="tooltip-cost">◆{spell.paCost} PA</div>
         </div>
 
         <div className="tooltip-description" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

@@ -64,6 +64,7 @@ function buildSpellItems(player: CombatPlayer): SpellBarItem[] {
     cooldown: player.spellCooldowns[s.id],
     damage: s.damage,
     effectKind: s.effectKind,
+    effectConfig: s.effectConfig,
     minRange: s.minRange,
     maxRange: s.maxRange,
   }));
