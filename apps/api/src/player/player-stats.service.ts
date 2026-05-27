@@ -91,6 +91,7 @@ export class PlayerStatsService {
           id: item.id,
           name: item.name,
           description: item.description,
+          iconPath: item.iconPath,
           type: item.type as ItemType,
           family: item.family,
           statsBonus: item.statsBonus as Partial<PlayerStats> | null,
