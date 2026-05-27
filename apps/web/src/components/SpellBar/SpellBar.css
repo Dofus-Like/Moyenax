@@ -89,15 +89,6 @@
   color: #fca800;
   font-weight: 800;
   margin-right: 4px;
-  text-shadow:
-    -1.5px -1.5px 0 #000,
-    1.5px -1.5px 0 #000,
-    -1.5px 1.5px 0 #000,
-    1.5px 1.5px 0 #000,
-    0px -1.5px 0 #000,
-    0px 1.5px 0 #000,
-    -1.5px 0px 0 #000,
-    1.5px 0px 0 #000;
   letter-spacing: 0.05em;
 }
 
@@ -153,15 +144,6 @@
   color: #9531ff;
   font-weight: 800;
   margin-left: 4px;
-  text-shadow:
-    -1.5px -1.5px 0 #000,
-    1.5px -1.5px 0 #000,
-    -1.5px 1.5px 0 #000,
-    1.5px 1.5px 0 #000,
-    0px -1.5px 0 #000,
-    0px 1.5px 0 #000,
-    -1.5px 0px 0 #000,
-    1.5px 0px 0 #000;
   letter-spacing: 0.05em;
 }
 

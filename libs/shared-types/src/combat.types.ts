@@ -83,6 +83,7 @@ export interface CombatPlayer {
   buffs: Buff[];
   skin?: string;
   items?: any[];
+  casterId?: string;
 }
 
 export enum CombatActionType {

@@ -46,12 +46,19 @@ function AvatarCircle({ fighter, isActive, isSelf, index }: AvatarCircleProps) {
   return (
     <div className="tt-slot-wrapper">
       <div className={classes} title={fighter.username}>
-        <div
-          className={`tt-avatar-sprite avatar-${skinConfig.type}`}
-          style={{ filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` }}
-        />
+        {fighter.type === 'SUMMON' ? (
+          <>
+            <span className="tt-avatar-emoji">🗿</span>
+            <span className="tt-passive-badge" title="Ne joue pas de tour">♾️</span>
+          </>
+        ) : (
+          <div
+            className={`tt-avatar-sprite avatar-${skinConfig.type}`}
+            style={{ filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` }}
+          />
+        )}
       </div>
-      <div className="tt-slot-number">{index + 1}</div>
+      {fighter.type !== 'SUMMON' && <div className="tt-slot-number">{index + 1}</div>}
     </div>
   );
 }
@@ -73,7 +80,7 @@ export function TurnTracker({ fighters, currentTurnPlayerId, turnNumber, selfId 
             key={`${slot.fighter.playerId}-${slot.index}`}
             fighter={slot.fighter}
             isActive={slot.isActive}
-            isSelf={slot.fighter.playerId === selfId}
+            isSelf={slot.fighter.playerId === selfId || slot.fighter.casterId === selfId}
             index={i}
           />
         ))}
