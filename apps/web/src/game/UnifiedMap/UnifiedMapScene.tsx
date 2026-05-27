@@ -84,6 +84,7 @@ export const UnifiedMapScene = React.memo(
     const lastHealEvent = useCombatStore((state) => state.lastHealEvent);
     const lastJumpEvent = useCombatStore((state) => state.lastJumpEvent);
     const setUiMessage = useCombatStore((state) => state.setUiMessage);
+    const tacticsMode = useCombatStore((state) => state.tacticsMode);
 
     const user = useAuthStore((state) => state.player);
 
@@ -953,6 +954,7 @@ export const UnifiedMapScene = React.memo(
             sideColor={mode === 'combat' ? currentTileColors.sideColor : undefined}
             tileSize={mode === 'combat' ? tileConfig.tileSize : undefined}
             tileRadius={mode === 'combat' ? tileConfig.tileRadius : undefined}
+            tacticsMode={tacticsMode}
           />
           
           {/* Interaction Plane - Must be visible=true for raycasting but transparent for user */}

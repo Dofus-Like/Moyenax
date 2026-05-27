@@ -30,9 +30,10 @@ interface TerrainLayerProps {
   sideColor?: string;
   tileSize?: number;
   tileRadius?: number;
+  tacticsMode?: boolean;
 }
 
-export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius }: TerrainLayerProps) => {
+export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius, tacticsMode }: TerrainLayerProps) => {
   const decorations = useMemo(() => {
     const result: React.ReactElement[] = [];
 
@@ -41,27 +42,36 @@ export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sid
         const terrain = map.grid[y][x] as TerrainType;
         const props = TERRAIN_PROPERTIES[terrain];
 
-        // Check if this decoration is now handled by InstancedFoliage
-        const isInstancedFoliage = (props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD) || 
-                                   (props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain === TerrainType.HERB);
+        if (tacticsMode) {
+          const isWall = props.combatType === CombatTerrainType.WALL;
+          if (isWall || props.combatType === CombatTerrainType.HOLE) {
+            result.push(
+              <TerrainTile 
+                key={x + '-' + y} 
+                x={x} y={y} terrain={terrain} gridSize={map.width}
+                tacticsMode
+              />
+            );
+          }
+        } else {
+          // Normal mode: skip instanced foliage, only render non-ground decorations
+          const isInstancedFoliage = (props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD) || 
+                                     (props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain === TerrainType.HERB);
 
-        // Only render TerrainTile if it has non-ground decorations that are NOT instanced foliage
-        if (!isInstancedFoliage && (props.combatType !== CombatTerrainType.FLAT || props.harvestable)) {
-          result.push(
-            <TerrainTile 
-              key={x + '-' + y} 
-              x={x} 
-              y={y} 
-              terrain={terrain} 
-              gridSize={map.width} 
-            />
-          );
+          if (!isInstancedFoliage && (props.combatType !== CombatTerrainType.FLAT || props.harvestable)) {
+            result.push(
+              <TerrainTile 
+                key={x + '-' + y} 
+                x={x} y={y} terrain={terrain} gridSize={map.width} 
+              />
+            );
+          }
         }
       }
     }
 
     return result;
-  }, [map]);
+  }, [map, tacticsMode]);
 
   return (
     <group>
@@ -73,9 +83,11 @@ export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sid
         tileSize={tileSize}
         tileRadius={tileRadius}
       />
-      <Suspense fallback={null}>
-        <InstancedFoliage map={map} />
-      </Suspense>
+      {!tacticsMode && (
+        <Suspense fallback={null}>
+          <InstancedFoliage map={map} />
+        </Suspense>
+      )}
       {decorations}
     </group>
   );

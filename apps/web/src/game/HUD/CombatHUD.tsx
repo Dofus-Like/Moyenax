@@ -85,6 +85,8 @@ export function CombatHUD() {
   const setUiMessage = useCombatStore((s) => s.setUiMessage);
   const logs = useCombatStore((s) => s.logs);
   const surrender = useCombatStore((s) => s.surrender);
+  const toggleTacticsMode = useCombatStore((s) => s.toggleTacticsMode);
+  const tacticsMode = useCombatStore((s) => s.tacticsMode);
   const [logsOpen, setLogsOpen] = React.useState(false);
   const [statsOpen, setStatsOpen] = React.useState(false);
   const [unseenCount, setUnseenCount] = React.useState(0);
@@ -223,6 +225,15 @@ export function CombatHUD() {
                 }}
               >
                 <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
+              </button>
+              <button
+                type="button"
+                className={`hud-log-btn ${tacticsMode ? "active" : ""}`}
+                onClick={toggleTacticsMode}
+                aria-label="Mode tactique"
+                title={tacticsMode ? "Mode normal" : "Mode tactique"}
+              >
+                <img src="/assets/icons/eye.png" alt="Tactique" style={{ width: '18px', height: '18px' }} />
               </button>
             </div>
             <SpellBar
