@@ -976,6 +976,7 @@ export const UnifiedMapScene = React.memo(
             isMyTurn={isMyTurn}
             selectedSpellId={selectedSpellId}
             reachableTiles={filteredReachableTiles}
+            hasMovableTiles={reachableTiles.length > 0}
             spellRangeTiles={spellRangeTiles}
             combatPreviewPath={combatPreviewPath}
             map={activeMap}

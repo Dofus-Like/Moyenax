@@ -104,6 +104,7 @@ interface OverlayLayerProps {
   isMyTurn: boolean;
   selectedSpellId: string | null;
   reachableTiles: { x: number; y: number }[];
+  hasMovableTiles: boolean;
   spellRangeTiles: { x: number; y: number }[];
   combatPreviewPath: PathNode[];
   map: GameMap;
@@ -121,6 +122,7 @@ export const UnifiedMapOverlayLayer = React.memo(
     isMyTurn,
     selectedSpellId,
     reachableTiles,
+    hasMovableTiles,
     spellRangeTiles,
     combatPreviewPath,
     map,
@@ -136,6 +138,7 @@ export const UnifiedMapOverlayLayer = React.memo(
         {mode === 'combat' && isMyTurn && (
           <CombatHighlightsLayer
             reachableTiles={selectedSpellId ? [] : reachableTiles}
+            hasMovableTiles={hasMovableTiles}
             spellRangeTiles={spellRangeTiles}
             pathTarget={combatPreviewPath.length > 0 ? combatPreviewPath[combatPreviewPath.length - 1] : null}
             gridSize={map.width}
@@ -143,6 +146,7 @@ export const UnifiedMapOverlayLayer = React.memo(
             pmColor={pmColor}
             rangeColor={rangeColor}
             hoveredTile={hoveredTile}
+            selectedSpellId={selectedSpellId}
           />
         )}
 

@@ -32,6 +32,7 @@ export function CombatUIManager() {
   const uiMessage = useCombatStore((s) => s.uiMessage);
   
   const [showMannequins, setShowMannequins] = useState(false);
+  const [isToastExiting, setIsToastExiting] = useState(false);
   const user = useAuthStore((s) => s.player);
   const navigate = useNavigate();
 
@@ -49,6 +50,16 @@ export function CombatUIManager() {
     }
     turnRef.current = isMyTurn;
   }, [isMyTurn]);
+
+  useEffect(() => {
+    if (!uiMessage) return;
+    setIsToastExiting(false);
+    const timer = setTimeout(() => {
+      setIsToastExiting(true);
+      setTimeout(() => setUiMessage(null), 200);
+    }, 2400);
+    return () => clearTimeout(timer);
+  }, [setUiMessage, uiMessage]);
 
   if (!combatState || !user || !currentPlayer) return null;
 
@@ -78,7 +89,7 @@ export function CombatUIManager() {
     <div className="combat-ui-manager">
       {/* Notifications */}
       {uiMessage && (
-        <div className={`combat-toast ${uiMessage.type}`}>{uiMessage.text}</div>
+        <div key={uiMessage.id} className={`combat-toast${isToastExiting ? ' exiting' : ''}`}>{uiMessage.text}</div>
       )}
 
       {/* Victoire/Défaite */}

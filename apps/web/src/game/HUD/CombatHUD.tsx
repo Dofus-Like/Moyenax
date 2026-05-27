@@ -88,6 +88,7 @@ export function CombatHUD() {
   const [logsOpen, setLogsOpen] = React.useState(false);
   const [statsOpen, setStatsOpen] = React.useState(false);
   const [unseenCount, setUnseenCount] = React.useState(0);
+  const [isToastExiting, setIsToastExiting] = React.useState(false);
   const prevLogsLength = React.useRef(logs.length);
 
   React.useEffect(() => {
@@ -117,7 +118,11 @@ export function CombatHUD() {
 
   React.useEffect(() => {
     if (!uiMessage) return;
-    const timer = setTimeout(() => setUiMessage(null), 2600);
+    setIsToastExiting(false);
+    const timer = setTimeout(() => {
+      setIsToastExiting(true);
+      setTimeout(() => setUiMessage(null), 200);
+    }, 2400);
     return () => clearTimeout(timer);
   }, [setUiMessage, uiMessage]);
 
@@ -157,7 +162,7 @@ export function CombatHUD() {
   return (
     <div className="combat-hud">
       {uiMessage && (
-        <div className={`combat-toast ${uiMessage.type}`}>{uiMessage.text}</div>
+        <div key={uiMessage.id} className={`combat-toast${isToastExiting ? ' exiting' : ''}`}>{uiMessage.text}</div>
       )}
 
       {showCombatEnd && (
