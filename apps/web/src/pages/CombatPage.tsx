@@ -50,7 +50,6 @@ export function CombatPage() {
   const authInitialize = useAuthStore((s) => s.initialize);
   const connectToSession = useCombatStore((s) => s.connectToSession);
   const disconnect = useCombatStore((s) => s.disconnect);
-  const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
 
   const [isCameraMoving, setIsCameraMoving] = React.useState(false);
   const controlsRef = React.useRef<CameraControlsImpl>(null);
@@ -166,7 +165,6 @@ export function CombatPage() {
             gl={{ antialias: true, alpha: true }}
             dpr={[1, 2]}
             camera={{ fov: 30 }}
-            onPointerMissed={() => setSelectedSpell(null)}
           >
             <CanvasPerfOverlay />
             <CombatBackgroundShader />

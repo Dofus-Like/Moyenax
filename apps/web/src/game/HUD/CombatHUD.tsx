@@ -87,6 +87,20 @@ export function CombatHUD() {
   const surrender = useCombatStore((s) => s.surrender);
   const [logsOpen, setLogsOpen] = React.useState(false);
   const [statsOpen, setStatsOpen] = React.useState(false);
+  const [unseenCount, setUnseenCount] = React.useState(0);
+  const prevLogsLength = React.useRef(logs.length);
+
+  React.useEffect(() => {
+    if (logs.length > prevLogsLength.current && !logsOpen) {
+      setUnseenCount((c) => c + (logs.length - prevLogsLength.current));
+    }
+    prevLogsLength.current = logs.length;
+  }, [logs.length, logsOpen]);
+
+  const handleToggleLogs = React.useCallback(() => {
+    setLogsOpen((v) => !v);
+    setUnseenCount(0);
+  }, []);
 
   const user = useAuthStore((s) => s.player);
   const navigate = useNavigate();
@@ -236,22 +250,22 @@ export function CombatHUD() {
             <div className="hud-bottom-actions">
               <button
                 type="button"
+                className={`hud-log-btn ${logsOpen ? "active" : ""}`}
+                onClick={handleToggleLogs}
+                aria-label="Journal de combat"
+              >
+                <img src="/assets/pack/icons/chatting.png" alt="Journal de combat" style={{ width: '18px', height: '18px' }} />
+                {unseenCount > 0 && (
+                  <span className="hud-log-badge">{unseenCount}</span>
+                )}
+              </button>
+              <button
+                type="button"
                 className={`hud-log-btn ${statsOpen ? "active" : ""}`}
                 onClick={() => setStatsOpen((v) => !v)}
                 aria-label="Statistiques"
               >
                 <img src="/assets/pack/icons/graph.png" alt="Statistiques" style={{ width: '18px', height: '18px' }} />
-              </button>
-              <button
-                type="button"
-                className={`hud-log-btn ${logsOpen ? "active" : ""}`}
-                onClick={() => setLogsOpen((v) => !v)}
-                aria-label="Journal de combat"
-              >
-                <img src="/assets/pack/icons/chatting.png" alt="Journal de combat" style={{ width: '18px', height: '18px' }} />
-                {logs.length > 0 && (
-                  <span className="hud-log-badge">{logs.length}</span>
-                )}
               </button>
             </div>
           </div>
