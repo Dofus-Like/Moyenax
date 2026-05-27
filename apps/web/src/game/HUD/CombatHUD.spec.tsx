@@ -96,7 +96,7 @@ const mocks = vi.hoisted(() => ({
   toggleShowEnemyHp: vi.fn(),
   surrender: vi.fn(),
   disconnect: vi.fn(),
-  uiMessage: null as { kind: string; text: string } | null,
+  uiMessage: null as { id: string; text: string; type: string } | null,
   setUiMessage: vi.fn(),
   user: {
     id: 'player-1',
@@ -115,6 +115,7 @@ vi.mock('../../store/combat.store', () => ({
       combatState: mocks.combatState,
       sessionId: mocks.sessionId,
       selectedSpellId: mocks.selectedSpellId,
+      logs: [],
       setSelectedSpell: mocks.setSelectedSpell,
       setCombatState: mocks.setCombatState,
       winnerId: mocks.winnerId,
@@ -227,7 +228,7 @@ describe('CombatHUD', () => {
   it('displays the turn number in the initiative panel', () => {
     render(<CombatHUD />);
 
-    expect(screen.getByText('Tour 1')).toBeInTheDocument();
+    expect(screen.getByText('TOUR 1')).toBeInTheDocument();
   });
 
   it('displays player name in the initiative panel', () => {

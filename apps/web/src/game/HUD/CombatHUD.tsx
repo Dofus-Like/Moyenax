@@ -69,41 +69,7 @@ function buildSpellItems(player: CombatPlayer): SpellBarItem[] {
   }));
 }
 
-interface LogEntry {
-  id: string;
-  message: string;
-  type: "damage" | "info" | "victory";
-}
-
-function CombatLogPanel({ logs, open }: { logs: LogEntry[]; open: boolean }) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = 0;
-  }, [logs.length]);
-
-  return (
-    <div className={`log-panel glass ${open ? "log-panel--open" : ""}`}>
-      <div className="log-panel-list" ref={listRef}>
-        {logs.length === 0 && (
-          <>
-            <div className="log-entry type-info">Combat initié…</div>
-            <div className="log-entry type-damage">Adversaire subit 14 dégâts</div>
-            <div className="log-entry type-info">Vous lancez Bouclier</div>
-            <div className="log-entry type-info">Combat initié…</div>
-            <div className="log-entry type-damage">Adversaire subit 14 dégâts</div>
-            <div className="log-entry type-info">Vous lancez Bouclier</div>
-          </>
-        )}
-        {logs.map((log) => (
-          <div key={log.id} className={`log-entry type-${log.type}`}>
-            {log.message}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { CombatChatPanel, type LogEntry } from "./CombatChatPanel";
 
 export function CombatHUD() {
   const { t } = useTranslation();
@@ -117,6 +83,7 @@ export function CombatHUD() {
   const uiMessage = useCombatStore((s) => s.uiMessage);
   const setUiMessage = useCombatStore((s) => s.setUiMessage);
   const logs = useCombatStore((s) => s.logs);
+  const surrender = useCombatStore((s) => s.surrender);
   const [logsOpen, setLogsOpen] = React.useState(false);
   const [statsOpen, setStatsOpen] = React.useState(false);
 
@@ -230,6 +197,7 @@ export function CombatHUD() {
                 title="Abandonner"
                 onClick={() => {
                   if (window.confirm(t("confirmAbandon") || "Voulez-vous vraiment abandonner le combat ?")) {
+                    surrender();
                     handleCombatExit();
                   }
                 }}
@@ -262,7 +230,7 @@ export function CombatHUD() {
 
           <div className="hud-right-group">
             <div className="hud-chat-area">
-              <CombatLogPanel logs={logs} open={logsOpen} />
+              <CombatChatPanel logs={logs} open={logsOpen} />
             </div>
             <div className="hud-bottom-actions">
               <button

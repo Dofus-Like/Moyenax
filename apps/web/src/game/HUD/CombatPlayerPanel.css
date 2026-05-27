@@ -159,6 +159,22 @@
     inset 0 0 40px rgba(0, 0, 0, 0.65);
 }
 
+@-webkit-keyframes avatar_gradient {
+    0%{background-position: center, 50% 0%}
+    50%{background-position: center, 51% 100%}
+    100%{background-position: center, 50% 0%}
+}
+@-moz-keyframes avatar_gradient {
+    0%{background-position: center, 50% 0%}
+    50%{background-position: center, 51% 100%}
+    100%{background-position: center, 50% 0%}
+}
+@keyframes avatar_gradient {
+    0%{background-position: center, 50% 0%}
+    50%{background-position: center, 51% 100%}
+    100%{background-position: center, 50% 0%}
+}
+
 .bap-portrait {
   position: relative;
   width: 100%;
@@ -167,6 +183,7 @@
   background-position: center;
   background-repeat: no-repeat;
   background-color: rgba(0, 0, 0, 0.75);
+  background-image: var(--avatar-img);
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.7),
     inset 0 0 14px rgba(0, 0, 0, 0.5);
@@ -197,12 +214,14 @@
 }
 
 .blocky-avatar-panel.is-turn .bap-portrait {
-  background-color: rgba(255, 255, 255, 0.35);
-  /* Glows from behind the transparent image */
+  background-image: var(--avatar-img), linear-gradient(359deg, #ffd800, #af00ff);
+  background-size: cover, 400% 400%;
+  -webkit-animation: avatar_gradient 24s ease infinite;
+  -moz-animation: avatar_gradient 24s ease infinite;
+  animation: avatar_gradient 24s ease infinite;
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.7),
     inset 0 0 14px rgba(0, 0, 0, 0.5);
-  /* Keep the dark inner borders to frame it nicely */
 }
 
 /* HP Bar */
@@ -339,12 +358,12 @@
   gap: 8px;
   padding: 12px;
 
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.95);
   border: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: 6px;
   outline: 1.5px solid rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.6),
     inset 0 0 0 1px rgba(0, 0, 0, 0.75),
@@ -411,38 +430,24 @@
   text-transform: uppercase;
 }
 
-.cpp-item-rank-indicator {
-  position: absolute;
-  bottom: -3px;
-  right: -3px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  border: 1px solid black;
+.cpp-item-slot.rank-1 {
+  border-color: #d1d5db;
 }
 
-.cpp-item-rank-indicator.rank-1 {
-  background: #d1d5db;
+.cpp-item-slot.rank-2 {
+  border-color: #4ade80;
 }
 
-/* Commun */
-.cpp-item-rank-indicator.rank-2 {
-  background: #4ade80;
+.cpp-item-slot.rank-3 {
+  border-color: #3b82f6;
 }
 
-/* Inhabituel */
-.cpp-item-rank-indicator.rank-3 {
-  background: #3b82f6;
+.cpp-item-slot.rank-4 {
+  border-color: #a855f7;
 }
 
-/* Rare */
-.cpp-item-rank-indicator.rank-4 {
-  background: #a855f7;
-}
-
-/* Epique */
-.cpp-item-rank-indicator.rank-5 {
-  background: #fca800;
+.cpp-item-slot.rank-5 {
+  border-color: #fca800;
 }
 
 /* Légendaire */
@@ -477,8 +482,32 @@
   gap: 8px;
   margin-top: 4px;
   padding-top: 8px;
+  max-height: 140px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.25);
+  padding-right: 4px;
   animation: hud-fade-in 0.2s ease;
 }
+
+.cpp-eq-expanded::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cpp-eq-expanded::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+}
+
+.cpp-eq-expanded::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.cpp-eq-expanded::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
 
 .cpp-eq-cat {
   display: flex;
@@ -615,42 +644,100 @@
   color: white;
 }
 
-.cpp-stat.stat-atk {
-  border-color: rgba(239, 68, 68, 0.5);
+.bap-status-icon-wrapper {
+  position: relative;
+  display: inline-flex;
 }
 
-.cpp-stat.stat-atk strong {
-  color: #f87171;
+/* ─── BUFF TOOLTIP (Premium Glass consistent with Spell Tooltip) ─── */
+.buff-tooltip-container {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 210px;
+  z-index: 1000;
+  pointer-events: none;
 }
 
-.cpp-stat.stat-def {
-  border-color: rgba(59, 130, 246, 0.5);
+.side-left .buff-tooltip-container {
+  left: calc(100% + 10px);
 }
 
-.cpp-stat.stat-def strong {
-  color: #60a5fa;
+.side-right .buff-tooltip-container {
+  right: calc(100% + 10px);
 }
 
-.cpp-stat.stat-mag {
-  border-color: rgba(168, 85, 247, 0.5);
+.buff-tooltip {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.85),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.75),
+    inset 0 0 20px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: buffTooltipFade 0.2s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-.cpp-stat.stat-mag strong {
-  color: #c084fc;
+@keyframes buffTooltipFade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.cpp-stat.stat-res {
-  border-color: rgba(34, 197, 94, 0.5);
+.buff-tooltip .tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 6px;
 }
 
-.cpp-stat.stat-res strong {
-  color: #4ade80;
+.buff-tooltip .tooltip-title {
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow:
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    2px 2px 0 #000,
+    0px -2px 0 #000,
+    0px 2px 0 #000,
+    -2px 0px 0 #000,
+    2px 0px 0 #000;
 }
 
-.cpp-stat.stat-ini {
-  border-color: rgba(234, 179, 8, 0.5);
+.buff-tooltip .tooltip-description {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #ffffff;
+  font-style: italic;
 }
 
-.cpp-stat.stat-ini strong {
-  color: #facc15;
+.buff-tooltip .tooltip-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
 }
+
+.buff-tooltip .tooltip-cooldown {
+  color: #9531ff;
+}

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 
 import { TerrainType } from '@game/shared-types';
 
-import { gameSessionApi } from '../api/game-session.api';
+
 import { CameraEffects } from '../game/Combat/CameraEffects';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CombatHUD } from '../game/HUD/CombatHUD';
@@ -47,13 +47,11 @@ export function CombatPage() {
   
   const combatState = useCombatStore((s) => s.combatState);
   const winnerId = useCombatStore((s) => s.winnerId);
+  const authInitialize = useAuthStore((s) => s.initialize);
   const connectToSession = useCombatStore((s) => s.connectToSession);
   const disconnect = useCombatStore((s) => s.disconnect);
   const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
-  const logs = useCombatStore((s) => s.logs);
 
-  const authInitialize = useAuthStore((s) => s.initialize);
-  const surrender = useCombatStore((s) => s.surrender);
   const [isCameraMoving, setIsCameraMoving] = React.useState(false);
   const controlsRef = React.useRef<CameraControlsImpl>(null);
   const wasLinkedSessionRef = React.useRef(false);
@@ -62,19 +60,7 @@ export function CombatPage() {
   const onRest = React.useCallback(() => setIsCameraMoving(false), []);
   const onStart = React.useCallback(() => setIsCameraMoving(true), []);
 
-  const handleEndSession = React.useCallback(async () => {
-    if (!activeSession) return;
-    const ok = window.confirm(t('abandonGameConfirm'));
-    if (!ok) return;
 
-    try {
-      await gameSessionApi.endSession(activeSession.id);
-      await refreshSession({ silent: true });
-      navigate('/');
-    } catch (error) {
-      console.error('Erreur fin session:', error);
-    }
-  }, [activeSession, refreshSession, navigate, t]);
 
   useEffect(() => {
     authInitialize();
@@ -164,27 +150,7 @@ export function CombatPage() {
   return (
     <ProfiledRegion id="CombatPage">
     <div className="combat-page-container">
-      <header className="combat-toolbar">
-        <button className="combat-toolbar-back" onClick={() => navigate('/farming')}>
-           {t('back')}
-        </button>
-        <h2 className="combat-toolbar-title">{t('combat')}</h2>
-        <div className="toolbar-actions">
-          {combatState && (
-            <span className="combat-toolbar-turn">{t('turn', { turn: combatState.turnNumber })}</span>
-          )}
-          {combatState && !winnerId && (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="toolbar-btn surrender" onClick={surrender} title={t('abandonCombat')}>
-                🏳️ {t('abandonCombat')}
-              </button>
-              <button className="toolbar-btn surrender" onClick={handleEndSession} title={t('abandonSession')} style={{ opacity: 0.7 }}>
-                🔴 {t('abandonSession')}
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
+
       {!combatState && (
         <div className="combat-overlay">
           <div className="loading-spinner"></div>
@@ -261,18 +227,7 @@ export function CombatPage() {
           <CombatHUD />
         </div>
 
-        {/* RIGHT WINDOW: LOGS (Desktop only via CSS) */}
-        <div className="combat-logs-side">
-            <div className="logs-sidebar-header">Journal de Combat</div>
-            <div className="logs-sidebar-content">
-               {logs.map((log) => (
-                 <div key={log.id} className={`log-entry type-${log.type}`}>
-                   <span className="log-msg">{log.message}</span>
-                 </div>
-               ))}
-               {logs.length === 0 && <div className="logs-empty">Aucune action...</div>}
-            </div>
-        </div>
+
       </div>
     </div>
     </ProfiledRegion>

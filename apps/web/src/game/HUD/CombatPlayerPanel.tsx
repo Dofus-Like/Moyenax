@@ -4,21 +4,136 @@ import { useCombatStore } from "../../store/combat.store";
 
 import "./CombatPlayerPanel.css";
 
+const getBuffDetails = (type: string, value: number) => {
+  const isPositive = value >= 0;
+  const valueStr = isPositive ? `+${value}` : `${value}`;
+
+  switch (type.toUpperCase()) {
+    case "PA":
+      return {
+        title: "Points d'Action",
+        desc: (
+          <div>
+            Octroie <span style={{ color: "#fca800", fontWeight: "bold" }}>{valueStr}</span> PA par tour.
+          </div>
+        ),
+        color: "#fca800",
+      };
+    case "PM":
+      return {
+        title: "Points de Mouvement",
+        desc: (
+          <div>
+            Octroie <span style={{ color: "#9531ff", fontWeight: "bold" }}>{valueStr}</span> PM par tour.
+          </div>
+        ),
+        color: "#9531ff",
+      };
+    case "DEF":
+      return {
+        title: "Défense Physique",
+        desc: (
+          <div>
+            Modifie la DEF de <span style={{ color: "#60a5fa", fontWeight: "bold" }}>{valueStr}</span>.
+          </div>
+        ),
+        color: "#60a5fa",
+      };
+    case "RES":
+      return {
+        title: "Résistance Magique",
+        desc: (
+          <div>
+            Modifie la RES de <span style={{ color: "#4ade80", fontWeight: "bold" }}>{valueStr}</span>.
+          </div>
+        ),
+        color: "#4ade80",
+      };
+    case "VIT_MAX":
+      return {
+        title: "Vitalité Maximale",
+        desc: (
+          <div>
+            Modifie la vitalité maximale de <span style={{ color: "#ef4444", fontWeight: "bold" }}>{valueStr}</span>.
+          </div>
+        ),
+        color: "#ef4444",
+      };
+    case "BURN":
+      return {
+        title: "Brûlure",
+        desc: (
+          <div>
+            Inflige <span style={{ color: "#a855f7", fontWeight: "bold" }}>15-20</span> dégâts magiques par tour restant.
+          </div>
+        ),
+        color: "#a855f7",
+      };
+    case "POISON":
+      return {
+        title: "Poison",
+        desc: (
+          <div>
+            Inflige <span style={{ color: "#a855f7", fontWeight: "bold" }}>10-15</span> dégâts magiques par tour restant.
+          </div>
+        ),
+        color: "#a855f7",
+      };
+    case "FREEZE":
+      return {
+        title: "Gel",
+        desc: (
+          <div>
+            Réduit les PM de <span style={{ color: "#9531ff", fontWeight: "bold" }}>-2</span> et paralyse les actions.
+          </div>
+        ),
+        color: "#9531ff",
+      };
+    default:
+      return {
+        title: type,
+        desc: <div>Effet actif ({valueStr}).</div>,
+        color: "#ffffff",
+      };
+  }
+};
+
+function BuffTooltip({ buff, side }: { buff: any; side: "left" | "right" }) {
+  const details = getBuffDetails(buff.type, buff.value ?? 0);
+  return (
+    <div className="buff-tooltip-container">
+      <div className="buff-tooltip">
+        <div className="tooltip-header">
+          <div className="tooltip-title">
+            {details.title}
+          </div>
+        </div>
+        <div className="tooltip-description">{details.desc}</div>
+        <div className="tooltip-footer">
+          <div className="tooltip-cooldown" style={{ color: "#9531ff" }}>
+            {buff.remainingTurns} tour
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface StatsSectionProps {
   atk: number;
   def: number;
   mag: number;
   res: number;
   ini: number;
-  items?: Array<{ id: string; name: string; rank: number; iconPath?: string; category?: string }>;
+  items?: Array<{ id: string; name: string; rank: number; iconPath?: string; type?: string }>;
 }
 
 function StatsSection({ atk, def, mag, res, ini, items = [] }: StatsSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const weapons = items.filter((i) => i.category === "weapon");
-  const armors = items.filter((i) => i.category === "armor");
-  const accessories = items.filter((i) => i.category === "accessory");
+  const weapons = items.filter((i) => i.type === "WEAPON");
+  const armors = items.filter((i) => ["ARMOR_HEAD", "ARMOR_CHEST", "ARMOR_LEGS"].includes(i.type));
+  const accessories = items.filter((i) => i.type === "ACCESSORY");
 
   const renderDetailedItem = (item: any) => (
     <div key={item.id} className="cpp-detailed-item">
@@ -97,13 +212,12 @@ function StatsSection({ atk, def, mag, res, ini, items = [] }: StatsSectionProps
               const item = items[i];
               if (item) {
                 return (
-                  <div key={item.id} className="cpp-item-slot" title={`${item.name} (★${item.rank})`}>
+                  <div key={item.id} className={`cpp-item-slot rank-${item.rank}`} title={`${item.name} (★${item.rank})`}>
                     {item.iconPath ? (
                       <img src={item.iconPath} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     ) : (
                       <span className="cpp-item-initial">{item.name.charAt(0)}</span>
                     )}
-                    <div className={`cpp-item-rank-indicator rank-${item.rank}`} />
                   </div>
                 );
               }
@@ -125,6 +239,7 @@ interface CombatPlayerPanelProps {
 export function CombatPlayerPanel({ playerId, side, showStats }: CombatPlayerPanelProps) {
   const combatState = useCombatStore((s) => s.combatState);
   const user = useAuthStore((s) => s.player);
+  const [hoveredBuffIndex, setHoveredBuffIndex] = useState<number | null>(null);
 
   const player = combatState?.players[playerId];
   if (!player) return null;
@@ -146,7 +261,7 @@ export function CombatPlayerPanel({ playerId, side, showStats }: CombatPlayerPan
           <div className="bap-frame">
             <div 
               className="bap-portrait" 
-              style={{ backgroundImage: 'url("/avatar_gobelin.png")' }} 
+              style={{ '--avatar-img': 'url("/avatar_gobelin.png")' } as React.CSSProperties} 
             >
               <div className="bap-pseudo">{player.username}</div>
               <div className="bap-resources">
@@ -167,11 +282,22 @@ export function CombatPlayerPanel({ playerId, side, showStats }: CombatPlayerPan
           
           {player.buffs && player.buffs.length > 0 && (
             <div className="bap-status-list">
-              {player.buffs.map((buff, i) => (
-                <div key={i} className={`bap-status-icon type-${buff.type.toLowerCase()}`} title={`${buff.type} (${buff.remainingTurns} tr)`}>
-                  {buff.type.charAt(0)}
-                </div>
-              ))}
+              {player.buffs.map((buff, i) => {
+                const isHovered = hoveredBuffIndex === i;
+                return (
+                  <div
+                    key={i}
+                    className="bap-status-icon-wrapper"
+                    onMouseEnter={() => setHoveredBuffIndex(i)}
+                    onMouseLeave={() => setHoveredBuffIndex(null)}
+                  >
+                    <div className={`bap-status-icon type-${buff.type.toLowerCase()}`}>
+                      {buff.type.charAt(0)}
+                    </div>
+                    {isHovered && <BuffTooltip buff={buff} side={side} />}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

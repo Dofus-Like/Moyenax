@@ -677,6 +677,11 @@ export const UnifiedMapScene = React.memo(
           let response;
 
           if (selectedSpellId) {
+            const inRange = spellRangeTiles.some((t) => t.x === x && t.y === y);
+            if (!inRange) {
+              setSelectedSpell(null);
+              return;
+            }
             response = await combatApi.playAction(sessionId, {
               type: CombatActionType.CAST_SPELL,
               spellId: selectedSpellId,
@@ -736,6 +741,7 @@ export const UnifiedMapScene = React.memo(
         setCombatState,
         setSelectedSpell,
         setUiMessage,
+        spellRangeTiles,
       ],
     );
 
@@ -833,18 +839,27 @@ export const UnifiedMapScene = React.memo(
         isDragging = false;
       };
 
+      const onContextMenu = (event: MouseEvent) => {
+        if (mode === 'combat') {
+          event.preventDefault();
+          setSelectedSpell(null);
+        }
+      };
+
       window.addEventListener('pointerdown', onPointerDown);
       window.addEventListener('pointermove', onPointerMoveWindow);
       window.addEventListener('pointerup', onPointerUpWindow);
       window.addEventListener('pointercancel', onPointerCancelWindow);
+      window.addEventListener('contextmenu', onContextMenu);
 
       return () => {
         window.removeEventListener('pointerdown', onPointerDown);
         window.removeEventListener('pointermove', onPointerMoveWindow);
         window.removeEventListener('pointerup', onPointerUpWindow);
         window.removeEventListener('pointercancel', onPointerCancelWindow);
+        window.removeEventListener('contextmenu', onContextMenu);
       };
-    }, [isCameraMoving, mode, updateFarmingHoveredTile]);
+    }, [isCameraMoving, mode, setSelectedSpell, updateFarmingHoveredTile]);
 
     const setPawnRef = useCallback((playerId: string, handle: PlayerPawnHandle | null) => {
       if (handle) {
@@ -894,7 +909,11 @@ export const UnifiedMapScene = React.memo(
         onPointerUp={handlePointerUp}
         onContextMenu={(event) => event.nativeEvent.preventDefault()}
       >
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, -0.1, 0]}
+          onClick={() => { if (mode === 'combat' && selectedSpellId) setSelectedSpell(null); }}
+        >
           <planeGeometry args={[1000, 1000]} />
           <meshBasicMaterial transparent opacity={0} />
         </mesh>

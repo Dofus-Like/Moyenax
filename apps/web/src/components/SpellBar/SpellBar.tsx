@@ -158,7 +158,7 @@ const SpellTooltip = ({
               className="spell-keyword-tooltip"
               style={{ animationDelay: `${0.2 + idx * 0.15}s` }}
             >
-              <div className="tooltip-title" style={{ color: '#fca800' }}>{kw.name}</div>
+              <div className="tooltip-title">{kw.name}</div>
               <div className="tooltip-description">{kw.desc}</div>
             </div>
           ))}
