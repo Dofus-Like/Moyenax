@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useAuthStore } from "../../store/auth.store";
 import { useCombatStore } from "../../store/combat.store";
+import { combatApi } from "../../api/combat.api";
+import { CombatActionType } from "@game/shared-types";
 
 import "./CombatPlayerPanel.css";
 
@@ -240,21 +242,60 @@ export function CombatPlayerPanel({ playerId, side, showStats }: CombatPlayerPan
   const combatState = useCombatStore((s) => s.combatState);
   const user = useAuthStore((s) => s.player);
   const [hoveredBuffIndex, setHoveredBuffIndex] = useState<number | null>(null);
+  const sessionId = useCombatStore((s) => s.sessionId);
+  const selectedSpellId = useCombatStore((s) => s.selectedSpellId);
+  const setCombatState = useCombatStore((s) => s.setCombatState);
+  const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
+  const setUiMessage = useCombatStore((s) => s.setUiMessage);
 
   const player = combatState?.players[playerId];
   if (!player) return null;
 
   const isMe = user?.id === playerId;
   const isMyTurn = combatState?.currentTurnPlayerId === playerId;
+  const isMyTurnActive = combatState && user ? combatState.currentTurnPlayerId === user.id : false;
   const maxHp = player.stats?.vit || 1;
   const hpPercent = Math.max(
     0,
     Math.min(100, (player.currentVit / maxHp) * 100),
   );
+  const isTargetable = !!selectedSpellId && isMyTurnActive;
+
+  const handlePanelClick = useCallback(() => {
+    if (!isTargetable || !sessionId || !combatState || !user) return;
+
+    const caster = combatState.players[user.id];
+    if (!caster) return;
+
+    const targetPos = player.position;
+
+    void (async () => {
+      try {
+        const res = await combatApi.playAction(sessionId, {
+          type: CombatActionType.CAST_SPELL,
+          spellId: selectedSpellId,
+          targetX: targetPos.x,
+          targetY: targetPos.y,
+        });
+        if (res?.data) setCombatState(res.data);
+        setSelectedSpell(null);
+      } catch (err) {
+        const message =
+          typeof err === "object" &&
+          err !== null &&
+          "response" in err &&
+          typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
+            ? (err as { response?: { data?: { message?: string } } }).response!.data!.message
+            : "Action impossible sur cette cible.";
+        setUiMessage(message, "error");
+      }
+    })();
+  }, [isTargetable, sessionId, combatState, user, player.position, selectedSpellId, setCombatState, setSelectedSpell, setUiMessage]);
 
   return (
     <div
-      className={`blocky-avatar-panel side-${side} ${isMyTurn ? "is-turn" : ""} ${isMe ? "is-me" : "is-enemy"}`}
+      className={`blocky-avatar-panel side-${side} ${isMyTurn ? "is-turn" : ""} ${isMe ? "is-me" : "is-enemy"} ${isTargetable ? "is-targetable" : ""}`}
+      onClick={handlePanelClick}
     >
       <div className="bap-content-row">
         <div className="bap-frame-wrapper">
