@@ -1,17 +1,23 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-import { CombatActionType, SpellFamily } from '@game/shared-types';
+import type { CombatPlayer } from "@game/shared-types";
+import { CombatActionType, SpellFamily } from "@game/shared-types";
 
-import { combatApi } from '../../api/combat.api';
-import { SpellBar, type SpellBarItem } from '../../components/SpellBar/SpellBar';
-import { useGameSession } from '../../pages/GameTunnel';
-import { useAuthStore } from '../../store/auth.store';
-import { useCombatStore } from '../../store/combat.store';
-import { useTranslation } from '../../store/language.store';
-import { CombatPlayerPanel } from './CombatPlayerPanel';
+import { combatApi } from "../../api/combat.api";
+import {
+  SpellBar,
+  type SpellBarItem,
+} from "../../components/SpellBar/SpellBar";
+import { useGameSession } from "../../pages/GameTunnel";
+import { useAuthStore } from "../../store/auth.store";
+import { useCombatStore } from "../../store/combat.store";
+import { useTranslation } from "../../store/language.store";
+import { CombatPlayerPanel } from "./CombatPlayerPanel";
+import { EndTurnButton } from "./EndTurnButton";
+import { TurnTracker } from "./TurnTracker";
 
-import './CombatHUD.css';
+import "./CombatHUD.css";
 
 const SPELL_FAMILY_ORDER: Record<SpellFamily, number> = {
   [SpellFamily.COMMON]: 1,
@@ -20,22 +26,51 @@ const SPELL_FAMILY_ORDER: Record<SpellFamily, number> = {
   [SpellFamily.NINJA]: 4,
 };
 
-function getCombatErrorMessage(error: unknown, fallback: string) {
+function getCombatErrorMessage(error: unknown, fallback: string): string {
   if (
-    typeof error === 'object' &&
+    typeof error === "object" &&
     error !== null &&
-    'response' in error &&
-    typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+    "response" in error &&
+    typeof (error as { response?: { data?: { message?: string } } }).response
+      ?.data?.message === "string"
   ) {
-    return (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback;
+    return (
+      (error as { response?: { data?: { message?: string } } }).response?.data
+        ?.message ?? fallback
+    );
   }
-
   if (error instanceof Error && error.message) {
     return error.message;
   }
-
   return fallback;
 }
+
+function buildSpellItems(player: CombatPlayer): SpellBarItem[] {
+  const sorted = [...player.spells].sort((a, b) => {
+    const familyDiff =
+      SPELL_FAMILY_ORDER[a.family] - SPELL_FAMILY_ORDER[b.family];
+    if (familyDiff !== 0) return familyDiff;
+    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+    return a.name.localeCompare(b.name);
+  });
+  return sorted.map((s) => ({
+    id: s.id,
+    name: s.name,
+    description: s.description,
+    iconPath: s.iconPath,
+    paCost: s.paCost,
+    family: s.family,
+    sortOrder: s.sortOrder,
+    cooldown: player.spellCooldowns[s.id],
+    damage: s.damage,
+    effectKind: s.effectKind,
+    effectConfig: s.effectConfig,
+    minRange: s.minRange,
+    maxRange: s.maxRange,
+  }));
+}
+
+import { CombatChatPanel, type LogEntry } from "./CombatChatPanel";
 
 export function CombatHUD() {
   const { t } = useTranslation();
@@ -45,23 +80,51 @@ export function CombatHUD() {
   const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
   const setCombatState = useCombatStore((s) => s.setCombatState);
   const winnerId = useCombatStore((s) => s.winnerId);
-  const showMannequins = useCombatStore((s) => s.showMannequins);
-  const toggleShowMannequins = useCombatStore((s) => s.toggleShowMannequins);
   const disconnect = useCombatStore((s) => s.disconnect);
   const uiMessage = useCombatStore((s) => s.uiMessage);
   const setUiMessage = useCombatStore((s) => s.setUiMessage);
-  
+  const logs = useCombatStore((s) => s.logs);
+  const surrender = useCombatStore((s) => s.surrender);
+  const toggleTacticsMode = useCombatStore((s) => s.toggleTacticsMode);
+  const tacticsMode = useCombatStore((s) => s.tacticsMode);
+  const [logsOpen, setLogsOpen] = React.useState(false);
+  const [statsOpen, setStatsOpen] = React.useState(false);
+  const [unseenCount, setUnseenCount] = React.useState(0);
+  const [isToastExiting, setIsToastExiting] = React.useState(false);
+  const prevLogsLength = React.useRef(logs.length);
+
+  React.useEffect(() => {
+    if (logs.length > prevLogsLength.current && !logsOpen) {
+      setUnseenCount((c) => c + (logs.length - prevLogsLength.current));
+    }
+    prevLogsLength.current = logs.length;
+  }, [logs.length, logsOpen]);
+
+  const handleToggleLogs = React.useCallback(() => {
+    setLogsOpen((v) => !v);
+    setUnseenCount(0);
+  }, []);
+
   const user = useAuthStore((s) => s.player);
   const navigate = useNavigate();
   const { activeSession } = useGameSession();
 
-  const currentPlayer = (combatState && user) ? combatState.players[user.id] : null;
-  const enemyId = combatState && user ? Object.keys(combatState.players).find(id => id !== user.id) : null;
-  const isMyTurn = (combatState && user) ? combatState.currentTurnPlayerId === user.id : false;
+  const currentPlayer =
+    combatState && user ? combatState.players[user.id] : null;
+  const enemyId =
+    combatState && user
+      ? Object.keys(combatState.players).find((id) => id !== user.id)
+      : null;
+  const isMyTurn =
+    combatState && user ? combatState.currentTurnPlayerId === user.id : false;
 
   React.useEffect(() => {
     if (!uiMessage) return;
-    const timer = setTimeout(() => setUiMessage(null), 2600);
+    setIsToastExiting(false);
+    const timer = setTimeout(() => {
+      setIsToastExiting(true);
+      setTimeout(() => setUiMessage(null), 200);
+    }, 2400);
     return () => clearTimeout(timer);
   }, [setUiMessage, uiMessage]);
 
@@ -69,124 +132,160 @@ export function CombatHUD() {
 
   const handleCombatExit = () => {
     disconnect();
-    if (activeSession?.status === 'ACTIVE') {
-      navigate('/farming', { replace: true });
+    if (activeSession?.status === "ACTIVE") {
+      navigate("/farming", { replace: true });
     } else {
-      navigate('/');
+      navigate("/");
+    }
+  };
+
+  const handleEndTurn = async () => {
+    if (!sessionId || !isMyTurn) return;
+    try {
+      const res = await combatApi.playAction(sessionId, {
+        type: CombatActionType.END_TURN,
+      });
+      if (res?.data) setCombatState(res.data);
+      setSelectedSpell(null);
+    } catch (err) {
+      setUiMessage(getCombatErrorMessage(err, t("endTurn")), "error");
     }
   };
 
   const isWinner = winnerId === user.id;
   const showCombatEnd = !!winnerId;
-
-  const sortedSpells = [...currentPlayer.spells].sort((a, b) => {
-    const familyOrder = SPELL_FAMILY_ORDER[a.family] - SPELL_FAMILY_ORDER[b.family];
-    if (familyOrder !== 0) return familyOrder;
-    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-    return a.name.localeCompare(b.name);
-  });
-
-  const mappedSpellItems: SpellBarItem[] = sortedSpells.map(s => ({
-    id: s.id,
-    name: s.name,
-    description: s.description,
-    iconPath: s.iconPath,
-    paCost: s.paCost,
-    family: s.family,
-    sortOrder: s.sortOrder,
-    cooldown: currentPlayer.spellCooldowns[s.id],
-    damage: s.damage,
-    effectKind: s.effectKind,
-    minRange: s.minRange,
-    maxRange: s.maxRange,
-  }));
-
-  const handleEndTurn = async () => {
-    if (!sessionId || !isMyTurn) return;
-    try {
-      const res = await combatApi.playAction(sessionId, { type: CombatActionType.END_TURN });
-      if (res?.data) setCombatState(res.data);
-      setSelectedSpell(null);
-    } catch (err) {
-      console.error('CombatHUD: End turn failed', err);
-      setUiMessage(getCombatErrorMessage(err, t('endTurn')), 'error');
-    }
-  };
-
-  // Initiative order (highest INI first)
-  const orderedFighters = Object.values(combatState.players)
-    .slice()
-    .sort((a, b) => (b.stats?.ini ?? 0) - (a.stats?.ini ?? 0));
+  const fighters = Object.values(combatState.players);
+  const mappedSpellItems = buildSpellItems(currentPlayer);
+  const canCastSpell = mappedSpellItems.some(
+    (s) => s.paCost <= currentPlayer.remainingPa && (s.cooldown ?? 0) <= 0
+  );
+  const hasPm = currentPlayer.remainingPm > 0;
 
   return (
     <div className="combat-hud">
       {uiMessage && (
-        <div className={`combat-toast ${uiMessage.type}`}>
-          {uiMessage.text}
-        </div>
+        <div key={uiMessage.id} className={`combat-toast${isToastExiting ? ' exiting' : ''}`}>{uiMessage.text}</div>
       )}
 
-      {/* HUD de fin de combat */}
       {showCombatEnd && (
-        <div className={`combat-end-overlay ${isWinner ? 'victory' : 'defeat'}`}>
+        <div
+          className={`combat-end-overlay ${isWinner ? "victory" : "defeat"}`}
+        >
           <div className="end-modal">
-            <h1>{isWinner ? `🏆 ${t('victory')}` : `💀 ${t('defeat')}`}</h1>
-            <p>{isWinner ? t('victoryText') : t('defeatText')}</p>
+            <h1>{isWinner ? `🏆 ${t("victory")}` : `💀 ${t("defeat")}`}</h1>
+            <p>{isWinner ? t("victoryText") : t("defeatText")}</p>
             <div className="end-modal-actions">
               <button className="exit-button" onClick={handleCombatExit}>
-                {activeSession?.status === 'ACTIVE' ? t('continue') : t('backToLobby')}
+                {activeSession?.status === "ACTIVE"
+                  ? t("continue")
+                  : t("backToLobby")}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* TOP LEFT: Initiative panel */}
-      <div className="hud-initiative glass">
-        <div className="hud-initiative-title">{t('turn', { turn: combatState.turnNumber })}</div>
-        {orderedFighters.map((f) => {
-          const active = combatState.currentTurnPlayerId === f.playerId;
-          const self = f.playerId === user.id;
-          return (
-            <div
-              key={f.playerId}
-              className={`hud-initiative-row ${active ? 'active' : ''} ${self ? 'self' : 'foe'}`}
-            >
-              <div className="hud-initiative-token" />
-              <div className="hud-initiative-info">
-                <div className="hud-initiative-name">{f.username}</div>
-                <div className="hud-initiative-ini">INI {f.stats?.ini ?? '—'}</div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* TOP CENTER: Turn tracker */}
+      <TurnTracker
+        fighters={fighters}
+        currentTurnPlayerId={combatState.currentTurnPlayerId}
+        turnNumber={combatState.turnNumber}
+        selfId={user.id}
+      />
 
       {/* BOTTOM PLAYER PANELS */}
-      <CombatPlayerPanel playerId={user.id} side="left" />
-      {enemyId && <CombatPlayerPanel playerId={enemyId} side="right" />}
+      <CombatPlayerPanel playerId={user.id} side="left" showStats={statsOpen} />
+      {enemyId && <CombatPlayerPanel playerId={enemyId} side="right" showStats={statsOpen} />}
 
-      {/* BOTTOM CENTER: SPELLS */}
+      {/* BOTTOM ROW: SpellBar + Chat + Actions */}
       <div className="hud-bottom-anchor">
-        <SpellBar 
-          spells={mappedSpellItems}
-          selectedSpellId={selectedSpellId}
-          onSpellClick={(id) => setSelectedSpell(id)}
-          remainingPa={currentPlayer.remainingPa}
-          isMyTurn={isMyTurn}
-          showMannequins={showMannequins}
-          onToggleMannequins={toggleShowMannequins}
-          onPassTurn={handleEndTurn}
-          attackerStats={currentPlayer.stats}
-          targetStats={enemyId ? combatState.players[enemyId]?.stats : undefined}
-        />
+        <div className="hud-bottom-row">
+          <div className="hud-left-spacer" />
 
-        {/* Targeting prompt when a spell is selected */}
-        {selectedSpellId && (
-          <div className="spell-targeting-prompt glass">
-            🎯 {t('targetPrompt', { spell: sortedSpells.find(s => s.id === selectedSpellId)?.name ?? '' })}
+          <div className="hud-center-group">
+            <div className="hud-left-actions">
+              <button
+                type="button"
+                className="hud-log-btn"
+                aria-label="Émotes"
+                title="Émotes"
+              >
+                <img src="/assets/pack/icons/emojis.png" alt="Émotes" style={{ width: '18px', height: '18px' }} />
+              </button>
+              <button
+                type="button"
+                className="hud-log-btn"
+                aria-label="Abandonner"
+                title="Abandonner"
+                onClick={() => {
+                  if (window.confirm(t("confirmAbandon") || "Voulez-vous vraiment abandonner le combat ?")) {
+                    surrender();
+                    handleCombatExit();
+                  }
+                }}
+              >
+                <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
+              </button>
+              <button
+                type="button"
+                className={`hud-log-btn ${tacticsMode ? "active" : ""}`}
+                onClick={toggleTacticsMode}
+                aria-label="Mode tactique"
+                title={tacticsMode ? "Mode normal" : "Mode tactique"}
+              >
+                <img src="/assets/icons/eye.png" alt="Tactique" style={{ width: '18px', height: '18px' }} />
+              </button>
+            </div>
+            <SpellBar
+              spells={mappedSpellItems}
+              selectedSpellId={selectedSpellId}
+              onSpellClick={(id) => setSelectedSpell(id)}
+              remainingPa={currentPlayer.remainingPa}
+              maxPa={currentPlayer.stats.pa}
+              remainingPm={currentPlayer.remainingPm}
+              maxPm={currentPlayer.stats.pm}
+              isMyTurn={isMyTurn}
+              attackerStats={currentPlayer.stats}
+              targetStats={
+                enemyId ? combatState.players[enemyId]?.stats : undefined
+              }
+            >
+              <EndTurnButton 
+                isMyTurn={isMyTurn} 
+                onEndTurn={handleEndTurn} 
+                canCastSpell={canCastSpell}
+                hasPm={hasPm}
+              />
+            </SpellBar>
           </div>
-        )}
+
+          <div className="hud-right-group">
+            <div className="hud-chat-area">
+              <CombatChatPanel logs={logs} open={logsOpen} />
+            </div>
+            <div className="hud-bottom-actions">
+              <button
+                type="button"
+                className={`hud-log-btn ${logsOpen ? "active" : ""}`}
+                onClick={handleToggleLogs}
+                aria-label="Journal de combat"
+              >
+                <img src="/assets/pack/icons/chatting.png" alt="Journal de combat" style={{ width: '18px', height: '18px' }} />
+                {unseenCount > 0 && (
+                  <span className="hud-log-badge">{unseenCount}</span>
+                )}
+              </button>
+              <button
+                type="button"
+                className={`hud-log-btn ${statsOpen ? "active" : ""}`}
+                onClick={() => setStatsOpen((v) => !v)}
+                aria-label="Statistiques"
+              >
+                <img src="/assets/pack/icons/graph.png" alt="Statistiques" style={{ width: '18px', height: '18px' }} />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

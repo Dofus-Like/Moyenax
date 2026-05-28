@@ -1,95 +1,358 @@
-import React from 'react';
+import React, { useCallback, useState } from "react";
+import { useAuthStore } from "../../store/auth.store";
+import { useCombatStore } from "../../store/combat.store";
+import { combatApi } from "../../api/combat.api";
+import { CombatActionType } from "@game/shared-types";
 
-import type { SpellDefinition} from '@game/shared-types';
-import { SpellFamily } from '@game/shared-types';
+import "./CombatPlayerPanel.css";
 
-import { getSkinById } from '../../game/constants/skins';
-import { useAuthStore } from '../../store/auth.store';
-import { useCombatStore } from '../../store/combat.store';
+const getBuffDetails = (type: string, value: number) => {
+  const isPositive = value >= 0;
+  const valueStr = isPositive ? `+${value}` : `${value}`;
 
-import './CombatPlayerPanel.css';
+  switch (type.toUpperCase()) {
+    case "PA":
+      return {
+        title: "Points d'Action",
+        desc: (
+          <div>
+            Octroie <span style={{ color: "#fca800", fontWeight: "bold" }}>{valueStr}</span> PA par tour.
+          </div>
+        ),
+        color: "#fca800",
+      };
+    case "PM":
+      return {
+        title: "Points de Mouvement",
+        desc: (
+          <div>
+            Octroie <span style={{ color: "#9531ff", fontWeight: "bold" }}>{valueStr}</span> PM par tour.
+          </div>
+        ),
+        color: "#9531ff",
+      };
+    case "DEF":
+      return {
+        title: "Défense Physique",
+        desc: (
+          <div>
+            Modifie la DEF de <span style={{ color: "#60a5fa", fontWeight: "bold" }}>{valueStr}</span>.
+          </div>
+        ),
+        color: "#60a5fa",
+      };
+    case "RES":
+      return {
+        title: "Résistance Magique",
+        desc: (
+          <div>
+            Modifie la RES de <span style={{ color: "#4ade80", fontWeight: "bold" }}>{valueStr}</span>.
+          </div>
+        ),
+        color: "#4ade80",
+      };
+    case "VIT_MAX":
+      return {
+        title: "Vitalité Maximale",
+        desc: (
+          <div>
+            Modifie la vitalité maximale de <span style={{ color: "#ef4444", fontWeight: "bold" }}>{valueStr}</span>.
+          </div>
+        ),
+        color: "#ef4444",
+      };
+    case "BURN":
+      return {
+        title: "Brûlure",
+        desc: (
+          <div>
+            Inflige <span style={{ color: "#a855f7", fontWeight: "bold" }}>15-20</span> dégâts magiques par tour restant.
+          </div>
+        ),
+        color: "#a855f7",
+      };
+    case "POISON":
+      return {
+        title: "Poison",
+        desc: (
+          <div>
+            Inflige <span style={{ color: "#a855f7", fontWeight: "bold" }}>10-15</span> dégâts magiques par tour restant.
+          </div>
+        ),
+        color: "#a855f7",
+      };
+    case "FREEZE":
+      return {
+        title: "Gel",
+        desc: (
+          <div>
+            Réduit les PM de <span style={{ color: "#9531ff", fontWeight: "bold" }}>-2</span> et paralyse les actions.
+          </div>
+        ),
+        color: "#9531ff",
+      };
+    default:
+      return {
+        title: type,
+        desc: <div>Effet actif ({valueStr}).</div>,
+        color: "#ffffff",
+      };
+  }
+};
+
+function BuffTooltip({ buff, side }: { buff: any; side: "left" | "right" }) {
+  const details = getBuffDetails(buff.type, buff.value ?? 0);
+  return (
+    <div className="buff-tooltip-container">
+      <div className="buff-tooltip">
+        <div className="tooltip-header">
+          <div className="tooltip-title">
+            {details.title}
+          </div>
+        </div>
+        <div className="tooltip-description">{details.desc}</div>
+        <div className="tooltip-footer">
+          <div className="tooltip-cooldown" style={{ color: "#9531ff" }}>
+            {buff.remainingTurns} tour
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface StatsSectionProps {
+  atk: number;
+  def: number;
+  mag: number;
+  res: number;
+  ini: number;
+  items?: Array<{ id: string; name: string; rank: number; iconPath?: string; type?: string }>;
+}
+
+function StatsSection({ atk, def, mag, res, ini, items = [] }: StatsSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const weapons = items.filter((i) => i.type === "WEAPON");
+  const armors = items.filter((i) => ["ARMOR_HEAD", "ARMOR_CHEST", "ARMOR_LEGS"].includes(i.type));
+  const accessories = items.filter((i) => i.type === "ACCESSORY");
+
+  const renderDetailedItem = (item: any) => (
+    <div key={item.id} className="cpp-detailed-item">
+      <div className={`cpp-di-icon rank-${item.rank}`}>
+        {item.iconPath ? (
+          <img src={item.iconPath} alt={item.name} />
+        ) : (
+          <span>{item.name.charAt(0)}</span>
+        )}
+      </div>
+      <div className="cpp-di-info">
+        <div className="cpp-di-name">{item.name}</div>
+        <div className="cpp-di-rank">Rang {item.rank}</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="cpp-stats-container">
+      <div className="cpp-stats-grid">
+      <div className="cpp-stat stat-atk">
+        <span className="cpp-stat-label">ATK</span>
+        <strong>{atk}</strong>
+      </div>
+      <div className="cpp-stat stat-def">
+        <span className="cpp-stat-label">DEF</span>
+        <strong>{def}</strong>
+      </div>
+      <div className="cpp-stat stat-mag">
+        <span className="cpp-stat-label">MAG</span>
+        <strong>{mag}</strong>
+      </div>
+      <div className="cpp-stat stat-res">
+        <span className="cpp-stat-label">RES</span>
+        <strong>{res}</strong>
+      </div>
+      <div className="cpp-stat stat-ini">
+        <span className="cpp-stat-label">INI</span>
+        <strong>{ini}</strong>
+      </div>
+      </div>
+
+      <div className="cpp-equipment-section">
+        <button 
+          className="cpp-eq-toggle-btn" 
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? "▲ Masquer équipement" : "▼ Détails équipement"}
+        </button>
+
+        {isExpanded ? (
+          <div className="cpp-eq-expanded">
+            {weapons.length > 0 && (
+              <div className="cpp-eq-cat">
+                <div className="cpp-eq-cat-title">Armes</div>
+                <div className="cpp-eq-cat-list">{weapons.map(renderDetailedItem)}</div>
+              </div>
+            )}
+            {armors.length > 0 && (
+              <div className="cpp-eq-cat">
+                <div className="cpp-eq-cat-title">Armure</div>
+                <div className="cpp-eq-cat-list">{armors.map(renderDetailedItem)}</div>
+              </div>
+            )}
+            {accessories.length > 0 && (
+              <div className="cpp-eq-cat">
+                <div className="cpp-eq-cat-title">Accessoires</div>
+                <div className="cpp-eq-cat-list">{accessories.map(renderDetailedItem)}</div>
+              </div>
+            )}
+            {items.length === 0 && <div className="cpp-eq-empty">Aucun équipement</div>}
+          </div>
+        ) : (
+          <div className="cpp-items-slots">
+            {Array.from({ length: 6 }).map((_, i) => {
+              const item = items[i];
+              if (item) {
+                return (
+                  <div key={item.id} className={`cpp-item-slot rank-${item.rank}`} title={`${item.name} (★${item.rank})`}>
+                    {item.iconPath ? (
+                      <img src={item.iconPath} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    ) : (
+                      <span className="cpp-item-initial">{item.name.charAt(0)}</span>
+                    )}
+                  </div>
+                );
+              }
+              return <div key={`empty-${i}`} className="cpp-item-slot empty" />;
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface CombatPlayerPanelProps {
   playerId: string;
-  side: 'left' | 'right';
+  side: "left" | "right";
+  showStats?: boolean;
 }
 
-const FAMILY_LABEL: Record<SpellFamily, string> = {
-  [SpellFamily.COMMON]: 'INITIÉ',
-  [SpellFamily.WARRIOR]: 'GUERRIER',
-  [SpellFamily.MAGE]: 'ARCANE',
-  [SpellFamily.NINJA]: 'OMBRE',
-};
-
-function getDominantFamily(spells: SpellDefinition[]): SpellFamily {
-  const counts: Partial<Record<SpellFamily, number>> = {};
-  for (const s of spells) {
-    if (s.family === SpellFamily.COMMON) continue;
-    counts[s.family] = (counts[s.family] || 0) + 1;
-  }
-  let best: SpellFamily = SpellFamily.COMMON;
-  let max = 0;
-  for (const [family, count] of Object.entries(counts)) {
-    if ((count as number) > max) { max = count as number; best = family as SpellFamily; }
-  }
-  return best;
-}
-
-export function CombatPlayerPanel({ playerId, side }: CombatPlayerPanelProps) {
+export function CombatPlayerPanel({ playerId, side, showStats }: CombatPlayerPanelProps) {
   const combatState = useCombatStore((s) => s.combatState);
   const user = useAuthStore((s) => s.player);
-  const isMe = user?.id === playerId;
+  const [hoveredBuffIndex, setHoveredBuffIndex] = useState<number | null>(null);
+  const sessionId = useCombatStore((s) => s.sessionId);
+  const selectedSpellId = useCombatStore((s) => s.selectedSpellId);
+  const setCombatState = useCombatStore((s) => s.setCombatState);
+  const setSelectedSpell = useCombatStore((s) => s.setSelectedSpell);
+  const setUiMessage = useCombatStore((s) => s.setUiMessage);
 
   const player = combatState?.players[playerId];
   if (!player) return null;
 
+  const isMe = user?.id === playerId;
   const isMyTurn = combatState?.currentTurnPlayerId === playerId;
+  const isMyTurnActive = combatState && user ? combatState.currentTurnPlayerId === user.id : false;
   const maxHp = player.stats?.vit || 1;
-  const hpPercent = Math.max(0, Math.min(100, (player.currentVit / maxHp) * 100));
-  const skinConfig = getSkinById(player.skin || 'soldier-classic');
-  const avatarClass = skinConfig.type;
+  const hpPercent = Math.max(
+    0,
+    Math.min(100, (player.currentVit / maxHp) * 100),
+  );
+  const isTargetable = !!selectedSpellId && isMyTurnActive;
 
-  const family = getDominantFamily(player.spells || []);
-  const familyLabel = FAMILY_LABEL[family];
+  const handlePanelClick = useCallback(() => {
+    if (!isTargetable || !sessionId || !combatState || !user) return;
+
+    const caster = combatState.players[user.id];
+    if (!caster) return;
+
+    const targetPos = player.position;
+
+    void (async () => {
+      try {
+        const res = await combatApi.playAction(sessionId, {
+          type: CombatActionType.CAST_SPELL,
+          spellId: selectedSpellId,
+          targetX: targetPos.x,
+          targetY: targetPos.y,
+        });
+        if (res?.data) setCombatState(res.data);
+        setSelectedSpell(null);
+      } catch (err) {
+        const message =
+          typeof err === "object" &&
+          err !== null &&
+          "response" in err &&
+          typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
+            ? (err as { response?: { data?: { message?: string } } }).response!.data!.message
+            : "Action impossible sur cette cible.";
+        setUiMessage(message, "error");
+      }
+    })();
+  }, [isTargetable, sessionId, combatState, user, player.position, selectedSpellId, setCombatState, setSelectedSpell, setUiMessage]);
 
   return (
-    <div className={`combat-player-panel glass side-${side} ${isMyTurn ? 'is-turn' : ''} ${isMe ? 'is-me' : 'is-enemy'}`}>
-      {/* Name header */}
-      <div className="cpp-header">
-        <div className="cpp-name">{player.username}</div>
-        <span className={`cpp-archetype family-${family.toLowerCase()}`}>{familyLabel}</span>
-      </div>
+    <div
+      className={`blocky-avatar-panel side-${side} ${isMyTurn ? "is-turn" : ""} ${isMe ? "is-me" : "is-enemy"} ${isTargetable ? "is-targetable" : ""}`}
+      onClick={handlePanelClick}
+    >
+      <div className="bap-content-row">
+        <div className="bap-frame-wrapper">
+          <div className="bap-frame">
+            <div 
+              className="bap-portrait" 
+              style={{ '--avatar-img': 'url("/avatar_gobelin.png")' } as React.CSSProperties} 
+            >
+              <div className="bap-pseudo">{player.username}</div>
+              <div className="bap-resources">
+                <span className="bap-res-pa">◆{player.remainingPa} PA</span>
+                <span className="bap-res-pm">◆{player.remainingPm} PM</span>
+              </div>
+            </div>
+            <div className="bap-hp-bar">
+              <div
+                className="bap-hp-fill"
+                style={{ width: `${hpPercent}%` }}
+              />
+              <div className="bap-hp-text">
+                {player.currentVit}/{maxHp}
+              </div>
+            </div>
+          </div>
+          
+          {player.buffs && player.buffs.length > 0 && (
+            <div className="bap-status-list">
+              {player.buffs.map((buff, i) => {
+                const isHovered = hoveredBuffIndex === i;
+                return (
+                  <div
+                    key={i}
+                    className="bap-status-icon-wrapper"
+                    onMouseEnter={() => setHoveredBuffIndex(i)}
+                    onMouseLeave={() => setHoveredBuffIndex(null)}
+                  >
+                    <div className={`bap-status-icon type-${buff.type.toLowerCase()}`}>
+                      {buff.type.charAt(0)}
+                    </div>
+                    {isHovered && <BuffTooltip buff={buff} side={side} />}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-      {/* Portrait */}
-      <div className="cpp-portrait-wrap">
-        <div className={`cpp-portrait ${isMyTurn ? 'pulse' : ''}`}>
-          <div
-            className={`portrait-image avatar-${avatarClass}`}
-            style={{ filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` }}
+        {showStats && (
+          <StatsSection
+            atk={player.stats.atk}
+            def={player.stats.def}
+            mag={player.stats.mag}
+            res={player.stats.res}
+            ini={player.stats.ini}
+            items={player.items}
           />
-        </div>
-      </div>
-
-      {/* Stats grid */}
-      <div className="cpp-stats">
-        <div className="cpp-stat stat-atk"><span className="cpp-stat-label">ATK</span><strong>{player.stats.atk}</strong></div>
-        <div className="cpp-stat stat-def"><span className="cpp-stat-label">DEF</span><strong>{player.stats.def}</strong></div>
-        <div className="cpp-stat stat-mag"><span className="cpp-stat-label">MAG</span><strong>{player.stats.mag}</strong></div>
-        <div className="cpp-stat stat-res"><span className="cpp-stat-label">RES</span><strong>{player.stats.res}</strong></div>
-      </div>
-
-      {/* HP bar */}
-      <div className="cpp-hp-row">
-        <div className="cpp-hp-bar">
-          <div className="cpp-hp-fill" style={{ width: `${hpPercent}%` }} />
-        </div>
-      </div>
-
-      {/* PA / PM / HP footer */}
-      <div className="cpp-footer">
-        <span className="cpp-res res-pa">◆PA {player.remainingPa}/{player.stats.pa}</span>
-        <span className="cpp-res res-pm">◆PM {player.remainingPm}/{player.stats.pm}</span>
-        <span className="cpp-res res-hp">HP {player.currentVit}/{maxHp}</span>
+        )}
       </div>
     </div>
   );

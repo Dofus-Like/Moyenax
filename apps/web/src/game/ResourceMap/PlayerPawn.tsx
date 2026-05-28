@@ -312,7 +312,8 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
     const isEnemy = useMemo(() => {
       if (!currentUser || !playerData) return true;
       const uid = currentUser.id || (currentUser as { _id?: string })._id;
-      return playerData.playerId !== uid;
+      const ownerId = playerData.casterId || playerData.playerId;
+      return ownerId !== uid;
     }, [currentUser, playerData]);
 
     // Calcul de la vie pour la barre
@@ -335,9 +336,14 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
             <boxGeometry args={[1, 1.5, 1]} />
         </mesh>
 
-        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[0.45, 16]} />
           <meshBasicMaterial color="black" transparent opacity={0.5} />
+        </mesh>
+
+        <mesh position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.38, 0.44, 24]} />
+          <meshBasicMaterial color={isEnemy ? '#ef4444' : '#3b82f6'} transparent opacity={0.85} />
         </mesh>
 
         {isSummon && spriteType === 'menhir' ? (

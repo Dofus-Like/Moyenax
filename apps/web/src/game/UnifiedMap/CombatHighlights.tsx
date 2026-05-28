@@ -118,9 +118,11 @@ interface CombatHighlightsLayerProps {
   pmColor?: string;
   rangeColor?: string;
   hoveredTile?: { x: number; y: number } | null;
+  selectedSpellId?: string | null;
+  hasMovableTiles: boolean;
 }
 
-export const CombatHighlightsLayer = React.memo(({ reachableTiles, spellRangeTiles, pathTarget, gridSize, tileSize = 1, pmColor, rangeColor, hoveredTile }: CombatHighlightsLayerProps) => {
+export const CombatHighlightsLayer = React.memo(({ reachableTiles, spellRangeTiles, pathTarget, gridSize, tileSize = 1, pmColor, rangeColor, hoveredTile, selectedSpellId, hasMovableTiles }: CombatHighlightsLayerProps) => {
   return (
     <group>
       {/* Perimeter Outlines */}
@@ -155,7 +157,31 @@ export const CombatHighlightsLayer = React.memo(({ reachableTiles, spellRangeTil
           isHovered={hoveredTile?.x === t.x && hoveredTile?.y === t.y}
         />
       ))}
-      {pathTarget && (
+      {spellRangeTiles.length > 0 && hoveredTile && !spellRangeTiles.some(t => t.x === hoveredTile.x && t.y === hoveredTile.y) && (
+        <group position={[hoveredTile.x - gridSize / 2 + 0.5, 0.04, hoveredTile.y - gridSize / 2 + 0.5]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[tileSize, tileSize]} />
+            <meshBasicMaterial color={rangeColor || COMBAT_COLORS.HP_RED} transparent opacity={0.25} />
+            <mesh position={[0, 0, 0.01]}>
+              <ringGeometry args={[0.35, 0.45, 16]} />
+              <meshBasicMaterial color={COMBAT_COLORS.PA_YELLOW} transparent opacity={0.5} />
+            </mesh>
+          </mesh>
+        </group>
+      )}
+      {hasMovableTiles && !selectedSpellId && hoveredTile && (!reachableTiles.length || !reachableTiles.some(t => t.x === hoveredTile.x && t.y === hoveredTile.y)) && (
+        <group position={[hoveredTile.x - gridSize / 2 + 0.5, 0.04, hoveredTile.y - gridSize / 2 + 0.5]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[tileSize, tileSize]} />
+            <meshBasicMaterial color={COMBAT_COLORS.HP_RED} transparent opacity={0.25} />
+            <mesh position={[0, 0, 0.01]}>
+              <ringGeometry args={[0.35, 0.45, 16]} />
+              <meshBasicMaterial color={COMBAT_COLORS.PA_YELLOW} transparent opacity={0.5} />
+            </mesh>
+          </mesh>
+        </group>
+      )}
+      {pathTarget && hoveredTile && pathTarget.x === hoveredTile.x && pathTarget.y === hoveredTile.y && (
         <group position={[pathTarget.x - gridSize / 2 + 0.5, 0.04, pathTarget.y - gridSize / 2 + 0.5]}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[tileSize, tileSize]} />
@@ -167,6 +193,12 @@ export const CombatHighlightsLayer = React.memo(({ reachableTiles, spellRangeTil
           </mesh>
           <RisingHalo color={COMBAT_COLORS.PA_YELLOW} speed={1.2} />
         </group>
+      )}
+      {pathTarget && hoveredTile && (pathTarget.x !== hoveredTile.x || pathTarget.y !== hoveredTile.y) && (
+        <mesh position={[pathTarget.x - gridSize / 2 + 0.5, 0.03, pathTarget.y - gridSize / 2 + 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[tileSize, tileSize]} />
+          <meshBasicMaterial color={pmColor || COMBAT_COLORS.PM_VIOLET} transparent opacity={0.45} />
+        </mesh>
       )}
     </group>
   );

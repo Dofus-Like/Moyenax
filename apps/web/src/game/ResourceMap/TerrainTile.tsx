@@ -31,6 +31,16 @@ export interface TerrainTileProps {
     bottom: boolean;
     left: boolean;
   };
+  tacticsMode?: boolean;
+}
+
+function TacticsWall({ position }: { position: [number, number, number] }) {
+  return (
+    <mesh position={[position[0], 0.25, position[2]]} castShadow receiveShadow raycast={() => null}>
+      <boxGeometry args={[1.0, 0.5, 1.0]} />
+      <meshStandardMaterial color="#5E863F" metalness={0.3} roughness={0.6} />
+    </mesh>
+  );
 }
 
 function WallObstacle({
@@ -118,7 +128,7 @@ function FlatResource({ position, color }: { position: [number, number, number];
  * Interaction is delegated to the unified 'map-hit-plane' for 100% precision and performance.
  */
 export const TerrainTile = React.memo(({ 
-  x, y, terrain, gridSize, neighbors 
+  x, y, terrain, gridSize, neighbors, tacticsMode 
 }: TerrainTileProps) => {
   const colors = TERRAIN_COLORS[terrain];
   const props = TERRAIN_PROPERTIES[terrain];
@@ -129,28 +139,41 @@ export const TerrainTile = React.memo(({
 
   return (
     <group userData={{ x, y, terrain, type: 'decoration' }}>
-      {props.combatType === CombatTerrainType.WALL && terrain !== TerrainType.WOOD && (
-        <WallObstacle
-          position={pos}
-          color={colors.base}
-          height={0.6}
-          terrain={terrain}
-          neighbors={neighbors}
-        />
-      )}
+      {tacticsMode ? (
+        <>
+          {props.combatType === CombatTerrainType.WALL && (
+            <TacticsWall position={pos} neighbors={neighbors} />
+          )}
+          {props.combatType === CombatTerrainType.HOLE && (
+            <HoleTerrain position={pos} color={colors.base} />
+          )}
+        </>
+      ) : (
+        <>
+          {props.combatType === CombatTerrainType.WALL && terrain !== TerrainType.WOOD && (
+            <WallObstacle
+              position={pos}
+              color={colors.base}
+              height={0.6}
+              terrain={terrain}
+              neighbors={neighbors}
+            />
+          )}
 
-      {props.combatType === CombatTerrainType.HOLE && (
-        <HoleTerrain
-          position={pos}
-          color={colors.base}
-        />
-      )}
+          {props.combatType === CombatTerrainType.HOLE && (
+            <HoleTerrain
+              position={pos}
+              color={colors.base}
+            />
+          )}
 
-      {props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain !== TerrainType.HERB && (
-        <FlatResource
-          position={pos}
-          color={colors.base}
-        />
+          {props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain !== TerrainType.HERB && (
+            <FlatResource
+              position={pos}
+              color={colors.base}
+            />
+          )}
+        </>
       )}
     </group>
   );

@@ -84,6 +84,7 @@ export const UnifiedMapScene = React.memo(
     const lastHealEvent = useCombatStore((state) => state.lastHealEvent);
     const lastJumpEvent = useCombatStore((state) => state.lastJumpEvent);
     const setUiMessage = useCombatStore((state) => state.setUiMessage);
+    const tacticsMode = useCombatStore((state) => state.tacticsMode);
 
     const user = useAuthStore((state) => state.player);
 
@@ -110,8 +111,9 @@ export const UnifiedMapScene = React.memo(
     const isPointerPressedRef = useRef(false);
     const processedTimestampsRef = useRef(new Set<number>());
     const inputProcessingLock = useRef(false);
+    const isPointerOverMapRef = useRef(false);
 
-    const { raycaster, mouse, camera, scene } = useThree();
+    const { raycaster, mouse, camera, scene, gl } = useThree();
 
     const currentUserId = user?.id ?? (user as { _id?: string } | null)?._id ?? undefined;
 
@@ -323,10 +325,15 @@ export const UnifiedMapScene = React.memo(
 
       const terrain = activeMap.grid[gz][gx] as TerrainType;
       
-      setHoveredTile((previous) => (previous?.x === gx && previous?.y === gz ? previous : { x: gx, y: gz, terrain }));
+      setHoveredTile((previous) => {
+        if (previous?.x === gx && previous?.y === gz) return previous;
+        hoveredTileRef.current = { x: gx, y: gz };
+        return { x: gx, y: gz, terrain };
+      });
     }, [activeMap, camera, clearHoveredTile, mode, mouse, raycaster, scene]);
 
     const handlePointerMove = useCallback((event: ThreeEvent<PointerEvent>) => {
+      isPointerOverMapRef.current = true;
       if (mode === 'farming') {
         if (event.uv) {
           updateFarmingHoveredTile(event.uv);
@@ -344,6 +351,7 @@ export const UnifiedMapScene = React.memo(
     }, [clearHoveredTile, mode, performRaycastHover, updateFarmingHoveredTile]);
 
     useEffect(() => {
+      if (!isPointerOverMapRef.current) return;
       performRaycastHover();
     }, [performRaycastHover, isMoving, playerPosition, playerPaths, isMyTurn, combatState]);
 
@@ -597,12 +605,12 @@ export const UnifiedMapScene = React.memo(
 
     const filteredReachableTiles = useMemo(() => {
       if (mode !== 'combat' || selectedSpellId) return [];
-      // On n'affiche la portée que si la souris survole le personnage local
-      if (hoveredPlayerId !== currentUserId) return [];
+      if (!hoveredTile || hoveredPlayerId !== currentUserId) return [];
       return reachableTiles;
-    }, [mode, selectedSpellId, hoveredPlayerId, currentUserId, reachableTiles]);
+    }, [mode, selectedSpellId, hoveredTile, hoveredPlayerId, currentUserId, reachableTiles]);
 
     const combatPreviewPath = useMemo(() => {
+      if (!hoveredTile) return [];
       if (mode !== 'combat' || !isMyTurn || !currentPlayer || !deferredHoveredTile || !gameMap || selectedSpellId) {
         return [];
       }
@@ -630,7 +638,7 @@ export const UnifiedMapScene = React.memo(
       if (currentUserId) obstacles.delete(toPositionKey(currentPlayer.position.x, currentPlayer.position.y));
 
       return findPath(gameMap, currentPlayer.position, closestTile, obstacles) ?? [];
-    }, [currentPlayer, gameMap, deferredHoveredTile, isMyTurn, mode, reachableTiles, selectedSpellId, currentUserId, occupiedPositionSet]);
+    }, [currentPlayer, gameMap, deferredHoveredTile, hoveredTile, isMyTurn, mode, reachableTiles, selectedSpellId, currentUserId, occupiedPositionSet]);
 
     const spellRangeTiles = useMemo(() => {
       if (mode !== 'combat' || !currentPlayer || !selectedSpellId || !combatState?.map?.tiles) {
@@ -677,6 +685,11 @@ export const UnifiedMapScene = React.memo(
           let response;
 
           if (selectedSpellId) {
+            const inRange = spellRangeTiles.some((t) => t.x === x && t.y === y);
+            if (!inRange) {
+              setUiMessage('Action impossible\u00a0: hors de port\u00e9e.', 'error');
+              return;
+            }
             response = await combatApi.playAction(sessionId, {
               type: CombatActionType.CAST_SPELL,
               spellId: selectedSpellId,
@@ -736,6 +749,7 @@ export const UnifiedMapScene = React.memo(
         setCombatState,
         setSelectedSpell,
         setUiMessage,
+        spellRangeTiles,
       ],
     );
 
@@ -783,11 +797,21 @@ export const UnifiedMapScene = React.memo(
     );
 
     const handleMapPointerLeave = useCallback(() => {
+      isPointerOverMapRef.current = false;
       lastFarmingHoverUvRef.current = null;
       clearHoveredTile();
     }, [clearHoveredTile]);
 
     useEffect(() => {
+      const canvas = gl.domElement;
+
+      const onPointerLeaveCanvas = (): void => {
+        clearHoveredTile();
+        isPointerOverMapRef.current = false;
+      };
+
+      canvas.addEventListener('pointerleave', onPointerLeaveCanvas);
+
       let isDragging = false;
       let previousX = 0;
 
@@ -833,18 +857,28 @@ export const UnifiedMapScene = React.memo(
         isDragging = false;
       };
 
+      const onContextMenu = (event: MouseEvent) => {
+        if (mode === 'combat') {
+          event.preventDefault();
+          setSelectedSpell(null);
+        }
+      };
+
       window.addEventListener('pointerdown', onPointerDown);
       window.addEventListener('pointermove', onPointerMoveWindow);
       window.addEventListener('pointerup', onPointerUpWindow);
       window.addEventListener('pointercancel', onPointerCancelWindow);
+      window.addEventListener('contextmenu', onContextMenu);
 
       return () => {
+        canvas.removeEventListener('pointerleave', onPointerLeaveCanvas);
         window.removeEventListener('pointerdown', onPointerDown);
         window.removeEventListener('pointermove', onPointerMoveWindow);
         window.removeEventListener('pointerup', onPointerUpWindow);
         window.removeEventListener('pointercancel', onPointerCancelWindow);
+        window.removeEventListener('contextmenu', onContextMenu);
       };
-    }, [isCameraMoving, mode, updateFarmingHoveredTile]);
+    }, [isCameraMoving, mode, setSelectedSpell, updateFarmingHoveredTile, clearHoveredTile, gl]);
 
     const setPawnRef = useCallback((playerId: string, handle: PlayerPawnHandle | null) => {
       if (handle) {
@@ -894,7 +928,10 @@ export const UnifiedMapScene = React.memo(
         onPointerUp={handlePointerUp}
         onContextMenu={(event) => event.nativeEvent.preventDefault()}
       >
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, -0.1, 0]}
+        >
           <planeGeometry args={[1000, 1000]} />
           <meshBasicMaterial transparent opacity={0} />
         </mesh>
@@ -917,6 +954,7 @@ export const UnifiedMapScene = React.memo(
             sideColor={mode === 'combat' ? currentTileColors.sideColor : undefined}
             tileSize={mode === 'combat' ? tileConfig.tileSize : undefined}
             tileRadius={mode === 'combat' ? tileConfig.tileRadius : undefined}
+            tacticsMode={tacticsMode}
           />
           
           {/* Interaction Plane - Must be visible=true for raycasting but transparent for user */}
@@ -940,6 +978,7 @@ export const UnifiedMapScene = React.memo(
             isMyTurn={isMyTurn}
             selectedSpellId={selectedSpellId}
             reachableTiles={filteredReachableTiles}
+            hasMovableTiles={reachableTiles.length > 0}
             spellRangeTiles={spellRangeTiles}
             combatPreviewPath={combatPreviewPath}
             map={activeMap}

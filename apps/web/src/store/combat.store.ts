@@ -64,6 +64,7 @@ interface CombatStore {
   winnerId: string | null;
    showEnemyHp: boolean;
   showMannequins: boolean;
+  tacticsMode: boolean;
   uiMessage: UiMessage | null;
   _currentConnectionId: string | null;
 
@@ -71,6 +72,7 @@ interface CombatStore {
   setSelectedSpell: (spellId: string | null) => void;
   toggleShowEnemyHp: () => void;
   toggleShowMannequins: () => void;
+  toggleTacticsMode: () => void;
   connectToSession: (sessionId: string) => Promise<void>;
   disconnect: () => void;
   addLog: (message: string, type: CombatLog['type']) => void;
@@ -113,11 +115,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   winnerId: null,
   showEnemyHp: true,
   showMannequins: true,
+  tacticsMode: false,
   uiMessage: null,
   _currentConnectionId: null,
 
   toggleShowEnemyHp: () => set((state) => ({ showEnemyHp: !state.showEnemyHp })),
   toggleShowMannequins: () => set((state) => ({ showMannequins: !state.showMannequins })),
+  toggleTacticsMode: () => set((state) => ({ tacticsMode: !state.tacticsMode })),
 
   setCombatState: (state: CombatState) => {
     set({

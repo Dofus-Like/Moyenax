@@ -38,7 +38,7 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-hud);
   color: var(--text-main);
   overflow: hidden;
   user-select: none;
@@ -49,19 +49,45 @@
   pointer-events: auto;
 }
 
-/* Shared glass surface */
+/* ── Shared HUD surface — dark glassmorphism ── */
 .glass {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--glass-radius);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  outline-offset: 0px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.75),
+    inset 0 0 40px rgba(0, 0, 0, 0.65);
+  animation: hud-fade-in 0.25s ease both;
+}
+
+@keyframes hud-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- TOAST --- */
+@keyframes toastIn {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.85) translateY(-12px); }
+  65% { opacity: 1; transform: translateX(-50%) scale(1.04) translateY(2px); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+}
+
+@keyframes toastOut {
+  0% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) scale(0.85) translateY(-12px); }
+}
+
 .combat-toast {
   position: absolute;
   top: 28px;
@@ -69,122 +95,28 @@
   transform: translateX(-50%);
   min-width: 260px;
   max-width: 520px;
-  padding: 12px 18px;
-  border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgb(var(--glass-bg-strong-rgb) / 0.85);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  outline-offset: 0px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
   text-align: center;
   z-index: 140;
+  animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.combat-toast.info {
-  color: #c7d2fe;
-  border-color: rgb(var(--glass-accent-rgb) / 0.4);
+.combat-toast.exiting {
+  animation: toastOut 0.2s ease-in both;
 }
 
-.combat-toast.error {
-  color: var(--log-damage-text);
-  border-color: rgb(var(--hp-red-rgb) / 0.4);
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   TOP LEFT: INITIATIVE PANEL
-═══════════════════════════════════════════════════════════════ */
-.hud-initiative {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 80;
-  padding: 8px 10px;
-  min-width: 140px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.hud-initiative-title {
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--glass-accent);
-  text-align: center;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.hud-initiative-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 6px;
-  border-radius: 5px;
-  border: 1px solid transparent;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.hud-initiative-row.active.self {
-  background: rgb(var(--glass-accent-rgb) / 0.14);
-  border-color: rgb(var(--glass-accent-rgb) / 0.4);
-}
-
-.hud-initiative-row.active.foe {
-  background: rgb(var(--enemy-red-rgb) / 0.14);
-  border-color: rgb(var(--enemy-red-rgb) / 0.4);
-}
-
-.hud-initiative-token {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, var(--glass-token-a), var(--glass-token-b));
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-}
-
-.hud-initiative-row.foe .hud-initiative-token {
-  background: linear-gradient(135deg, var(--enemy-red), var(--enemy-red-deep));
-}
-
-.hud-initiative-info {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-  min-width: 0;
-}
-
-.hud-initiative-name {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--text-main);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
-}
-
-.hud-initiative-row.active.self .hud-initiative-name {
-  color: var(--glass-accent-light);
-}
-
-.hud-initiative-row.active.foe .hud-initiative-name {
-  color: var(--enemy-red-light);
-}
-
-.hud-initiative-ini {
-  font-size: 0.55rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
-  letter-spacing: 0.08em;
-}
+/* (initiative panel removed — replaced by TurnTracker widget) */
 
 /* ═══════════════════════════════════════════════════════════════
    COMBAT END OVERLAY
@@ -264,13 +196,23 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -278,19 +220,283 @@
 ═══════════════════════════════════════════════════════════════ */
 .hud-bottom-anchor {
   position: absolute;
-  bottom: 0;
+  bottom: 24px;
   left: 0;
-  width: 100%;
-  min-height: 120px;
+  right: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  background: linear-gradient(0deg, rgb(var(--glass-bg-strong-rgb) / 0.85) 0%, transparent 100%);
-  padding: 40px 0 24px;
   pointer-events: none;
   z-index: 50;
+}
+
+/* Bottom row layout */
+.hud-bottom-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  pointer-events: none;
+  width: 100%;
+}
+
+.hud-left-spacer {
+  flex: 1;
+  pointer-events: none;
+}
+
+.hud-left-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  align-self: flex-end;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.hud-left-actions > * {
+  pointer-events: auto;
+}
+
+.hud-center-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+.hud-center-group > * {
+  pointer-events: auto;
+}
+
+.hud-right-group {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 16px;
+  pointer-events: none;
+  padding-right: 24px;
+  min-width: 0;
+}
+
+.hud-chat-area {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  pointer-events: none;
+  min-width: 0;
+}
+.hud-chat-area > * {
+  pointer-events: auto;
+}
+
+.hud-bottom-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.hud-bottom-actions > * {
+  pointer-events: auto;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LOG BUTTON + PANEL
+═══════════════════════════════════════════════════════════════ */
+.hud-log-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  cursor: pointer;
+  position: relative;
+  font-family: var(--font-hud);
+
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid rgba(0, 0, 0, 0.85);
+  border-radius: 6px;
+  outline: none;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.7),
+    inset 0 0 16px 4px rgba(0, 0, 0, 0.85);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+  animation: hud-fade-in 0.3s ease both;
+}
+
+.hud-log-btn:hover,
+.hud-log-btn.active {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.8),
+    inset 0 0 16px 4px rgba(0, 0, 0, 0.6);
+}
+
+.hud-log-btn img {
+  filter: brightness(0) invert(1);
+}
+
+.hud-log-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.6rem;
+  font-family: var(--font-hud);
+  font-weight: normal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Panel logs — largeur variable, s’étire vers la gauche */
+.log-panel {
+  width: 0;
+  height: 140px;
+  overflow: hidden;
+  opacity: 0;
+  border-width: 0;
+  animation: none;
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  transition:
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    border-width 0.2s ease;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.log-panel--open {
+  width: 100%;
+  max-width: 400px;
+  opacity: 1;
+  border-width: 2px;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+}
+
+.log-panel-header {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.log-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 6px 0;
+  font-family: var(--font-hud);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  outline: none;
+}
+
+.log-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.log-tab.active {
+  color: #fff;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.log-panel-input-container {
+  display: flex;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.log-panel-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding: 6px 10px;
+  font-family: var(--font-hud);
+  font-size: 0.75rem;
+  outline: none;
+}
+
+.log-panel-list {
+  width: 100%;
+  height: 100%;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.log-panel-list::-webkit-scrollbar {
+  width: 5px;
+}
+.log-panel-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  margin: 4px 0;
+}
+.log-panel-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 3px;
+}
+.log-panel-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.log-entry {
+  font-family: var(--font-hud);
+  font-size: 0.7rem;
+  font-weight: normal;
+  line-height: 1.3;
+  padding: 3px 6px;
+  border-radius: 3px;
+  border-left: 2px solid transparent;
+}
+
+.log-entry.type-info {
+  color: #dbeafe;
+  border-left-color: #60a5fa;
+}
+.log-entry.type-damage {
+  color: #fecaca;
+  border-left-color: #ef4444;
+}
+.log-entry.type-victory {
+  color: #fef3c7;
+  border-left-color: #fbbf24;
+}
+
+.log-entry.type-chat {
+  color: #fff;
+  border-left-color: #a855f7;
+}
+
+.chat-sender {
+  color: #a855f7;
+  font-weight: bold;
 }
 
 /* --- Targeting prompt --- */
@@ -309,37 +515,16 @@
 /* ═══════════════════════════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════════════════════════ */
-@media (max-width: 1024px) {
-  .hud-initiative {
-    min-width: 120px;
-  }
-}
-
 @media (max-width: 768px) {
-  .hud-initiative {
-    top: 8px;
-    left: 8px;
-    padding: 6px 8px;
-    min-width: 110px;
-  }
-
-  .hud-initiative-title {
-    font-size: 0.5rem;
-  }
-
-  .hud-initiative-name {
-    font-size: 0.6rem;
-    max-width: 80px;
-  }
-
-  .hud-initiative-token {
-    width: 18px;
-    height: 18px;
-  }
-
   .hud-bottom-anchor {
     min-height: 90px;
     padding: 20px 0 10px;
+    left: 10px;
+    right: 10px;
+  }
+
+  .hud-bottom-row {
+    gap: 10px;
   }
 
   .end-modal {

@@ -70,7 +70,7 @@ export class SpellsService {
         case SpellEffectKind.BUFF_VIT_MAX:
           return this.applyVitBuff(caster, spell.effectConfig);
         case SpellEffectKind.SUMMON_MENHIR:
-          return this.applySummonMenhir(state, targetPos, spell.effectConfig);
+          return this.applySummonMenhir(state, targetPos, caster.playerId, spell.effectConfig);
         case SpellEffectKind.PUSH_LINE:
           return this.applyPush(state, caster.position, targetPos, spell.effectConfig);
         case SpellEffectKind.BUFF_PM:
@@ -227,6 +227,7 @@ export class SpellsService {
   private applySummonMenhir(
     state: CombatState,
     targetPos: CombatPosition,
+    casterId: string,
     effectConfig: Record<string, unknown> | null,
   ): SpellExecutionResult {
     const occupied = Object.values(state.players).some(
@@ -267,6 +268,7 @@ export class SpellsService {
       playerId: summonId,
       username: 'Menhir',
       type: 'SUMMON',
+      casterId,
       stats: rawStats as unknown as CombatPlayer['stats'],
       currentVit: rawStats.vit ?? 1,
       position: { ...targetPos },

@@ -1,0 +1,165 @@
+.end-turn-btn {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  outline: none;
+  cursor: not-allowed;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-hud);
+  box-shadow: none;
+  transition:
+    background 0.2s ease,
+    filter 0.2s ease;
+  pointer-events: auto;
+  animation: hud-fade-in 0.3s ease both;
+}
+
+/* Inner shadow simulé via un pseudo-élément (clip-path masque box-shadow) */
+.end-turn-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  background: radial-gradient(ellipse at center,
+      rgba(0, 0, 0, 0) 30%,
+      rgba(0, 0, 0, 0.55) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.end-turn-btn.is-my-turn {
+  cursor: pointer;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
+}
+
+.end-turn-btn.is-my-turn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.55));
+}
+
+.end-turn-btn.is-low {
+  animation: etb-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes etb-pulse {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.2));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.75));
+  }
+}
+
+.end-turn-btn.no-actions-left {
+  animation: etb-no-actions-pulse 1s infinite alternate ease-in-out;
+}
+
+.end-turn-btn.no-actions-left .end-turn-ring-bg {
+  stroke: #fca800;
+  fill: rgba(252, 168, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+@keyframes etb-no-actions-pulse {
+  from {
+    filter: drop-shadow(0 0 4px rgba(252, 168, 0, 0.4));
+  }
+
+  to {
+    filter: drop-shadow(0 0 16px rgba(252, 168, 0, 0.8));
+  }
+}
+
+/* ── SVG losange (timer) ── */
+.end-turn-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.etb-border-outer {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.88);
+  stroke-width: 3;
+}
+
+.end-turn-ring-bg {
+  fill: rgba(0, 0, 0, 0.55);
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 2;
+}
+
+.etb-border-inner {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.8);
+  stroke-width: 1.5;
+}
+
+.end-turn-ring-fill {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
+  transition:
+    stroke-dashoffset 0.15s linear,
+    stroke 0.3s ease;
+}
+
+/* ── Bordure losange (outline noir + blanc) via SVG séparé ── */
+.end-turn-border {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Label ── */
+.end-turn-label {
+  position: relative;
+  z-index: 3;
+  font-size: 1rem;
+  color: #ffffff;
+  pointer-events: none;
+  text-shadow:
+    -1px -1px 0 rgba(0, 0, 0, 0.95),
+    1px -1px 0 rgba(0, 0, 0, 0.95),
+    -1px 1px 0 rgba(0, 0, 0, 0.95),
+    1px 1px 0 rgba(0, 0, 0, 0.95),
+    0 2px 4px rgba(0, 0, 0, 0.9);
+  text-align: center;
+  line-height: 0.75;
+}
+
+.end-turn-btn:disabled .end-turn-label {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+@keyframes hud-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Wrapper ── */
+.end-turn-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
