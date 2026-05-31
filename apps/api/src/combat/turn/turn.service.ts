@@ -364,6 +364,24 @@ export class TurnService {
 
     const currentPlayer = state.players[playerId];
 
+    // Dégâts sur la durée (DoT) : Brûlure / Saignement
+    for (const buff of currentPlayer.buffs) {
+      if (buff.type === 'BURN' || buff.type === 'BLEED') {
+        const dotDamage = buff.type === 'BURN'
+          ? Math.max(1, buff.value - currentPlayer.stats.res)
+          : Math.max(1, buff.value - currentPlayer.stats.def);
+        currentPlayer.currentVit = Math.max(0, currentPlayer.currentVit - dotDamage);
+      }
+    }
+
+    // Vérifier mort par DoT
+    if (currentPlayer.type === 'SUMMON' && currentPlayer.currentVit <= 0) {
+      delete state.players[playerId];
+    }
+    if (currentPlayer.type === 'PLAYER' && currentPlayer.currentVit <= 0) {
+      state.players[playerId].currentVit = 0;
+    }
+
     // Décrémenter les buffs du joueur qui finit son tour
     for (const b of currentPlayer.buffs) b.remainingTurns--;
 

@@ -42,6 +42,7 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
     { label: `💰 ${t('shop')}`, path: '/shop' },
     { label: `🎒 ${t('bag')}`, path: '/inventory' },
     { label: `🔨 ${t('forge')}`, path: '/crafting' },
+    { label: '✨ Sorts', path: '/spell-creator' },
   ];
 
   const activeSkin = player?.skin ? getSkinById(player.skin) : null;

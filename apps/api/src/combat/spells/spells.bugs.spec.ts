@@ -15,6 +15,7 @@ import {
 } from '@game/shared-types';
 import { SpellsService } from './spells.service';
 import { PerfStatsService } from '../../shared/perf/perf-stats.service';
+import { PrismaService } from '../../shared/prisma/prisma.service';
 
 function makeStats(overrides: Record<string, number> = {}) {
   return {
@@ -107,6 +108,7 @@ describe('SpellsService - Bug regressions', () => {
       providers: [
         SpellsService,
         { provide: PerfStatsService, useValue: { recordGameMetric: jest.fn() } },
+        { provide: PrismaService, useValue: {} },
       ],
     }).compile();
     service = module.get(SpellsService);

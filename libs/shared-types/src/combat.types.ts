@@ -34,6 +34,27 @@ export enum SpellEffectKind {
   SUMMON_MENHIR = 'SUMMON_MENHIR',
   PUSH_LINE = 'PUSH_LINE',
   BUFF_PM = 'BUFF_PM',
+  EFFECTS_LIST = 'EFFECTS_LIST',
+  // DoTs
+  BRULURE = 'BRULURE',
+  SAIGNEMENT = 'SAIGNEMENT',
+  // Déplacement
+  ATTRACTION = 'ATTRACTION',
+  // Malus
+  FAIBLESSE = 'FAIBLESSE',
+  FRAGILITE = 'FRAGILITE',
+  IGNORANCE = 'IGNORANCE',
+  MALEDICTION = 'MALEDICTION',
+  CECITE = 'CECITE',
+  INACTIVITE = 'INACTIVITE',
+  RALENTISSEMENT = 'RALENTISSEMENT',
+  HEMORRAGIE = 'HEMORRAGIE',
+}
+
+export interface SpellEffectEntry {
+  kind: SpellEffectKind;
+  duration?: number;
+  config?: Record<string, unknown>;
 }
 
 export interface SpellDefinition {
@@ -64,7 +85,7 @@ export interface Tile {
 }
 
 export interface Buff {
-  type: 'PA' | 'PM' | 'DEF' | 'RES' | 'VIT_MAX';
+  type: 'PA' | 'PM' | 'DEF' | 'RES' | 'VIT_MAX' | 'ATK' | 'MAG' | 'PO' | 'BURN' | 'BLEED';
   value: number;
   remainingTurns: number;
 }

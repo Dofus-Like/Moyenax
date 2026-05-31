@@ -81,6 +81,11 @@ const CraftingPage = lazy(() =>
     default: module.CraftingPage,
   })),
 );
+const SpellCreatorPage = lazy(() =>
+  import("./pages/SpellCreatorPage").then((module) => ({
+    default: module.SpellCreatorPage,
+  })),
+);
 
 function PageLoader({ message }: { message?: string }) {
   const { t } = useTranslation();
@@ -195,6 +200,20 @@ root.render(
                             <GameLayout>
                               <LazyPage>
                                 <CraftingPage />
+                              </LazyPage>
+                            </GameLayout>
+                          </GameTunnelGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/spell-creator"
+                      element={
+                        <ProtectedRoute>
+                          <GameTunnelGuard>
+                            <GameLayout>
+                              <LazyPage>
+                                <SpellCreatorPage />
                               </LazyPage>
                             </GameLayout>
                           </GameTunnelGuard>

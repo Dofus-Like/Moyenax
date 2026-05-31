@@ -6,13 +6,17 @@ import {
   type CombatState,
   type CombatPlayer,
   type SpellDefinition,
+  type SpellEffectEntry,
   SpellEffectKind,
   TerrainType,
   TERRAIN_PROPERTIES,
 } from '@game/shared-types';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 
 import { PerfStatsService } from '../../shared/perf/perf-stats.service';
+import { PrismaService } from '../../shared/prisma/prisma.service';
+import { CreateSpellDto } from './dto/create-spell.dto';
 
 export type SpellRuntimeEvent =
   | {
@@ -48,7 +52,125 @@ export interface SpellExecutionResult {
 export class SpellsService {
   private nextSummonSeq = 0;
 
-  constructor(private readonly perfStats: PerfStatsService) {}
+  constructor(
+    private readonly perfStats: PerfStatsService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  async findAll(): Promise<SpellDefinition[]> {
+    const rows = await this.prisma.spell.findMany({ orderBy: { sortOrder: 'asc' } });
+    return rows.map(this.mapToDefinition);
+  }
+
+  async findOne(id: string): Promise<SpellDefinition | null> {
+    const row = await this.prisma.spell.findUnique({ where: { id } });
+    return row ? this.mapToDefinition(row) : null;
+  }
+
+  async create(dto: CreateSpellDto): Promise<SpellDefinition> {
+    const effectConfig: Prisma.InputJsonValue =
+      dto.effectKind === 'EFFECTS_LIST' && dto.effects
+        ? { effects: dto.effects.map((e) => ({ kind: e.kind, duration: e.duration, config: e.config })) } as unknown as Prisma.InputJsonValue
+        : ((dto.effectConfig ?? {}) as Prisma.InputJsonValue);
+
+    const row = await this.prisma.spell.create({
+      data: {
+        name: dto.name,
+        code: dto.code,
+        description: dto.description,
+        paCost: dto.paCost,
+        minRange: dto.minRange,
+        maxRange: dto.maxRange,
+        damageMin: dto.damage.min,
+        damageMax: dto.damage.max,
+        cooldown: dto.cooldown,
+        type: dto.type,
+        visualType: dto.visualType,
+        family: dto.family,
+        iconPath: dto.iconPath,
+        sortOrder: dto.sortOrder,
+        requiresLineOfSight: dto.requiresLineOfSight,
+        requiresLinearTargeting: dto.requiresLinearTargeting,
+        effectKind: dto.effectKind,
+        effectConfig,
+        isDefault: dto.isDefault ?? false,
+      },
+    });
+    return this.mapToDefinition(row);
+  }
+
+  async update(id: string, dto: CreateSpellDto): Promise<SpellDefinition> {
+    const existing = await this.prisma.spell.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Sort introuvable');
+
+    const effectConfig: Prisma.InputJsonValue =
+      dto.effectKind === 'EFFECTS_LIST' && dto.effects
+        ? { effects: dto.effects.map((e) => ({ kind: e.kind, duration: e.duration, config: e.config })) } as unknown as Prisma.InputJsonValue
+        : ((dto.effectConfig ?? {}) as Prisma.InputJsonValue);
+
+    const row = await this.prisma.spell.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        code: dto.code,
+        description: dto.description,
+        paCost: dto.paCost,
+        minRange: dto.minRange,
+        maxRange: dto.maxRange,
+        damageMin: dto.damage.min,
+        damageMax: dto.damage.max,
+        cooldown: dto.cooldown,
+        type: dto.type,
+        visualType: dto.visualType,
+        family: dto.family,
+        iconPath: dto.iconPath,
+        sortOrder: dto.sortOrder,
+        requiresLineOfSight: dto.requiresLineOfSight,
+        requiresLinearTargeting: dto.requiresLinearTargeting,
+        effectKind: dto.effectKind,
+        effectConfig,
+        isDefault: dto.isDefault ?? false,
+      },
+    });
+    return this.mapToDefinition(row);
+  }
+
+  async remove(id: string): Promise<void> {
+    const existing = await this.prisma.spell.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Sort introuvable');
+    await this.prisma.spell.delete({ where: { id } });
+  }
+
+  private mapToDefinition(row: {
+    id: string; name: string; code: string; description: string | null;
+    paCost: number; minRange: number; maxRange: number;
+    damageMin: number; damageMax: number; cooldown: number;
+    type: string; visualType: string; family: string;
+    iconPath: string | null; sortOrder: number;
+    requiresLineOfSight: boolean; requiresLinearTargeting: boolean;
+    effectKind: string; effectConfig: unknown;
+  }): SpellDefinition {
+    return {
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      description: row.description,
+      paCost: row.paCost,
+      minRange: row.minRange,
+      maxRange: row.maxRange,
+      damage: { min: row.damageMin, max: row.damageMax },
+      cooldown: row.cooldown,
+      type: row.type as SpellDefinition['type'],
+      visualType: row.visualType as SpellDefinition['visualType'],
+      family: row.family as SpellDefinition['family'],
+      iconPath: row.iconPath,
+      sortOrder: row.sortOrder,
+      requiresLineOfSight: row.requiresLineOfSight,
+      requiresLinearTargeting: row.requiresLinearTargeting,
+      effectKind: row.effectKind as SpellDefinition['effectKind'],
+      effectConfig: (row.effectConfig ?? null) as Record<string, unknown> | null,
+    };
+  }
 
   executeEffect(
     state: CombatState,
@@ -60,9 +182,9 @@ export class SpellsService {
     try {
       switch (spell.effectKind) {
         case SpellEffectKind.DAMAGE_PHYSICAL:
-          return this.applyDamage(state, targetPos, spell, caster.stats, false);
+          return this.applyDamage(state, targetPos, spell, caster, false);
         case SpellEffectKind.DAMAGE_MAGICAL:
-          return this.applyDamage(state, targetPos, spell, caster.stats, true);
+          return this.applyDamage(state, targetPos, spell, caster, true);
         case SpellEffectKind.HEAL:
           return this.applyHeal(state, targetPos, spell, caster.stats);
         case SpellEffectKind.TELEPORT:
@@ -75,6 +197,30 @@ export class SpellsService {
           return this.applyPush(state, caster.position, targetPos, spell.effectConfig);
         case SpellEffectKind.BUFF_PM:
           return this.applyPmBuff(caster, spell.effectConfig);
+        case SpellEffectKind.EFFECTS_LIST:
+          return this.applyEffectsList(state, spell, caster, targetPos);
+        case SpellEffectKind.BRULURE:
+          return this.applyBrulure(state, targetPos, spell.effectConfig);
+        case SpellEffectKind.SAIGNEMENT:
+          return this.applySaignement(state, targetPos, spell.effectConfig);
+        case SpellEffectKind.ATTRACTION:
+          return this.applyAttraction(state, caster.position, targetPos, spell.effectConfig);
+        case SpellEffectKind.FAIBLESSE:
+          return this.applyMalus(state, targetPos, 'ATK', spell.effectConfig);
+        case SpellEffectKind.FRAGILITE:
+          return this.applyMalus(state, targetPos, 'DEF', spell.effectConfig);
+        case SpellEffectKind.IGNORANCE:
+          return this.applyMalus(state, targetPos, 'MAG', spell.effectConfig);
+        case SpellEffectKind.MALEDICTION:
+          return this.applyMalus(state, targetPos, 'RES', spell.effectConfig);
+        case SpellEffectKind.CECITE:
+          return this.applyMalus(state, targetPos, 'PO', spell.effectConfig);
+        case SpellEffectKind.INACTIVITE:
+          return this.applyInactivite(state, targetPos, spell.effectConfig);
+        case SpellEffectKind.RALENTISSEMENT:
+          return this.applyRalentissement(state, targetPos, spell.effectConfig);
+        case SpellEffectKind.HEMORRAGIE:
+          return this.applyHemorrhage(state, targetPos, spell.effectConfig);
         default:
           throw new BadRequestException(`Effet de sort non supporté: ${spell.effectKind}`);
       }
@@ -87,7 +233,7 @@ export class SpellsService {
     state: CombatState,
     targetPos: CombatPosition,
     spell: SpellDefinition,
-    attackerStats: CombatPlayer['stats'],
+    caster: CombatPlayer,
     isMagical: boolean,
   ): SpellExecutionResult {
     const targetPlayer = Object.values(state.players).find(
@@ -105,13 +251,26 @@ export class SpellsService {
       .filter((buff) => buff.type === 'RES')
       .reduce((sum, buff) => sum + buff.value, 0);
 
-    const effectiveStats = {
+    const atkBuffs = caster.buffs
+      .filter((buff) => buff.type === 'ATK')
+      .reduce((sum, buff) => sum + buff.value, 0);
+    const magBuffs = caster.buffs
+      .filter((buff) => buff.type === 'MAG')
+      .reduce((sum, buff) => sum + buff.value, 0);
+
+    const effectiveTargetStats = {
       ...targetPlayer.stats,
       def: targetPlayer.stats.def + defBuffs,
       res: targetPlayer.stats.res + resBuffs,
     };
 
-    const damage = calculateDamage(spell, attackerStats, effectiveStats, isMagical);
+    const effectiveCasterStats = {
+      ...caster.stats,
+      atk: caster.stats.atk + atkBuffs,
+      mag: caster.stats.mag + magBuffs,
+    };
+
+    const damage = calculateDamage(spell, effectiveCasterStats, effectiveTargetStats, isMagical);
     targetPlayer.currentVit = Math.max(0, targetPlayer.currentVit - damage);
 
     if (targetPlayer.type === 'SUMMON' && targetPlayer.currentVit <= 0) {
@@ -362,6 +521,235 @@ export class SpellsService {
         caster.remainingPm += buffValue;
       }
     }
+
+    return { events: [] };
+  }
+
+  private applyEffectsList(
+    state: CombatState,
+    spell: SpellDefinition,
+    caster: CombatPlayer,
+    targetPos: CombatPosition,
+  ): SpellExecutionResult {
+    const effects = (spell.effectConfig?.effects as SpellEffectEntry[] | undefined) ?? [];
+    const allEvents: SpellRuntimeEvent[] = [];
+
+    for (const entry of effects) {
+      const subConfig: Record<string, unknown> = { ...entry.config };
+      if (entry.duration != null) {
+        subConfig.buffDuration = entry.duration;
+      }
+
+      const subSpell: SpellDefinition = {
+        ...spell,
+        effectKind: entry.kind,
+        effectConfig: subConfig,
+      };
+
+      const subResult = this.executeEffect(state, subSpell, caster, targetPos);
+      allEvents.push(...subResult.events);
+    }
+
+    return { events: allEvents };
+  }
+
+  private applyBrulure(
+    state: CombatState,
+    targetPos: CombatPosition,
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
+    return this.applyDot(state, targetPos, 'BURN', effectConfig);
+  }
+
+  private applySaignement(
+    state: CombatState,
+    targetPos: CombatPosition,
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
+    return this.applyDot(state, targetPos, 'BLEED', effectConfig);
+  }
+
+  private applyDot(
+    state: CombatState,
+    targetPos: CombatPosition,
+    buffType: 'BURN' | 'BLEED',
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
+    const targetPlayer = Object.values(state.players).find(
+      (player) => player.position.x === targetPos.x && player.position.y === targetPos.y,
+    );
+    if (!targetPlayer) return { events: [] };
+
+    const damagePerTick = this.readNumber(effectConfig, 'damagePerTick', 5);
+    const duration = this.readNumber(effectConfig, 'buffDuration', 3);
+
+    const existing = targetPlayer.buffs.find((b) => b.type === buffType);
+    if (existing) {
+      existing.value = Math.max(existing.value, damagePerTick);
+      existing.remainingTurns = Math.max(existing.remainingTurns, duration);
+    } else {
+      targetPlayer.buffs.push({ type: buffType, value: damagePerTick, remainingTurns: duration });
+    }
+
+    return { events: [] };
+  }
+
+  private applyAttraction(
+    state: CombatState,
+    casterPos: CombatPosition,
+    targetPos: CombatPosition,
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
+    const targetPlayer = Object.values(state.players).find(
+      (player) => player.position.x === targetPos.x && player.position.y === targetPos.y,
+    );
+    if (!targetPlayer) return { events: [] };
+
+    const dx = Math.abs(targetPos.x - casterPos.x);
+    const dy = Math.abs(targetPos.y - casterPos.y);
+    if (dx > 0 && dy > 0) {
+      throw new BadRequestException('Lancer en ligne uniquement');
+    }
+
+    const pullDistance = this.readNumber(effectConfig, 'pushDistance', 3);
+    const pullX = Math.sign(casterPos.x - targetPos.x);
+    const pullY = Math.sign(casterPos.y - targetPos.y);
+
+    let finalPos = { ...targetPlayer.position };
+    for (let index = 0; index < pullDistance; index += 1) {
+      const next = { x: finalPos.x + pullX, y: finalPos.y + pullY };
+      if (next.x < 0 || next.x >= state.map.width || next.y < 0 || next.y >= state.map.height) {
+        break;
+      }
+
+      const tile = state.map.tiles.find((entry) => entry.x === next.x && entry.y === next.y);
+      if (!tile || !(TERRAIN_PROPERTIES[tile.type as TerrainType]?.traversable ?? false)) {
+        break;
+      }
+
+      if (
+        Object.values(state.players).some(
+          (player) =>
+            player.playerId !== targetPlayer.playerId &&
+            player.position.x === next.x &&
+            player.position.y === next.y,
+        )
+      ) {
+        break;
+      }
+
+      finalPos = next;
+    }
+
+    targetPlayer.position = finalPos;
+    return { events: [] };
+  }
+
+  private applyMalus(
+    state: CombatState,
+    targetPos: CombatPosition,
+    buffType: 'ATK' | 'DEF' | 'MAG' | 'RES' | 'PO',
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
+    const targetPlayer = Object.values(state.players).find(
+      (player) => player.position.x === targetPos.x && player.position.y === targetPos.y,
+    );
+    if (!targetPlayer) return { events: [] };
+
+    const buffValue = -Math.abs(this.readNumber(effectConfig, 'buffValue', 3));
+    const buffDuration = this.readNumber(effectConfig, 'buffDuration', 3);
+
+    const existing = targetPlayer.buffs.find((b) => b.type === buffType);
+    if (existing) {
+      existing.value = Math.min(existing.value, buffValue);
+      existing.remainingTurns = Math.max(existing.remainingTurns, buffDuration);
+    } else {
+      targetPlayer.buffs.push({ type: buffType, value: buffValue, remainingTurns: buffDuration });
+    }
+
+    return { events: [] };
+  }
+
+  private applyInactivite(
+    state: CombatState,
+    targetPos: CombatPosition,
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
+    const targetPlayer = Object.values(state.players).find(
+      (player) => player.position.x === targetPos.x && player.position.y === targetPos.y,
+    );
+    if (!targetPlayer) return { events: [] };
+
+    const buffValue = -Math.abs(this.readNumber(effectConfig, 'buffValue', 2));
+    const buffDuration = this.readNumber(effectConfig, 'buffDuration', 2);
+
+    const existing = targetPlayer.buffs.find((b) => b.type === 'PA');
+    if (existing) {
+      targetPlayer.remainingPa += existing.value;
+      existing.value = Math.min(existing.value, buffValue);
+      existing.remainingTurns = Math.max(existing.remainingTurns, buffDuration);
+    } else {
+      targetPlayer.buffs.push({ type: 'PA', value: buffValue, remainingTurns: buffDuration });
+    }
+
+    targetPlayer.remainingPa += buffValue;
+    if (targetPlayer.remainingPa < 0) targetPlayer.remainingPa = 0;
+
+    return { events: [] };
+  }
+
+  private applyRalentissement(
+    state: CombatState,
+    targetPos: CombatPosition,
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
+    const targetPlayer = Object.values(state.players).find(
+      (player) => player.position.x === targetPos.x && player.position.y === targetPos.y,
+    );
+    if (!targetPlayer) return { events: [] };
+
+    const buffValue = -Math.abs(this.readNumber(effectConfig, 'buffValue', 2));
+    const buffDuration = this.readNumber(effectConfig, 'buffDuration', 2);
+
+    const existing = targetPlayer.buffs.find((b) => b.type === 'PM');
+    if (existing) {
+      targetPlayer.remainingPm += existing.value;
+      existing.value = Math.min(existing.value, buffValue);
+      existing.remainingTurns = Math.max(existing.remainingTurns, buffDuration);
+    } else {
+      targetPlayer.buffs.push({ type: 'PM', value: buffValue, remainingTurns: buffDuration });
+    }
+
+    targetPlayer.remainingPm += buffValue;
+    if (targetPlayer.remainingPm < 0) targetPlayer.remainingPm = 0;
+
+    return { events: [] };
+  }
+
+  private applyHemorrhage(
+    state: CombatState,
+    targetPos: CombatPosition,
+    effectConfig: Record<string, unknown> | null,
+  ): SpellExecutionResult {
+    const targetPlayer = Object.values(state.players).find(
+      (player) => player.position.x === targetPos.x && player.position.y === targetPos.y,
+    );
+    if (!targetPlayer) return { events: [] };
+
+    const buffValue = -Math.abs(this.readNumber(effectConfig, 'buffValue', 15));
+    const buffDuration = this.readNumber(effectConfig, 'buffDuration', 3);
+
+    const existing = targetPlayer.buffs.find((b) => b.type === 'VIT_MAX');
+    if (existing) {
+      targetPlayer.stats.vit -= existing.value;
+      existing.value = Math.min(existing.value, buffValue);
+      existing.remainingTurns = Math.max(existing.remainingTurns, buffDuration);
+    } else {
+      targetPlayer.buffs.push({ type: 'VIT_MAX', value: buffValue, remainingTurns: buffDuration });
+    }
+
+    targetPlayer.stats.vit += buffValue;
+    targetPlayer.currentVit = Math.max(0, Math.min(targetPlayer.stats.vit, targetPlayer.currentVit + buffValue));
 
     return { events: [] };
   }
