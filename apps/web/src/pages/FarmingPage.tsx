@@ -14,6 +14,7 @@ import { inventoryApi } from '../api/inventory.api';
 import { equipmentApi } from '../api/equipment.api';
 import { shopApi } from '../api/shop.api';
 import { craftingApi } from '../api/crafting.api';
+import { farmingApi } from '../api/farming.api';
 import {
   type PathNode,
   type PlayerStats,
@@ -117,6 +118,8 @@ export function FarmingPage() {
   const [controls, setControls] = useState<CameraControlsImpl | null>(null);
   const [isGathering, setIsGathering] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'info' | 'error' } | null>(null);
+  const [showRingChoice, setShowRingChoice] = useState(false);
+  const [ringChoiceLoading, setRingChoiceLoading] = useState<string | null>(null);
   const { active: isAssetLoading, progress: assetLoadProgress } = useProgress();
   const isFarmingLoaded = Boolean(map && isMapSceneReady && !isAssetLoading);
 
@@ -158,11 +161,16 @@ export function FarmingPage() {
 
   // -- Mappings --
   const mappedInventory = useMemo(() => {
-    return (inventoryData?.data || []).map((inv: any) => ({
-      ...inv,
-      name: inv.item.name,
-      ...getItemVisualMeta(inv.item),
-    }));
+    return (inventoryData?.data || []).map((inv: any) => {
+      const meta = getItemVisualMeta(inv.item);
+      return {
+        ...inv,
+        name: inv.item.name,
+        icon: meta.icon,
+        iconPath: inv.iconPath || meta.iconPath,
+        toneClass: meta.toneClass,
+      };
+    });
   }, [inventoryData]);
 
   const mappedForgeItems = useMemo(() => {
@@ -281,12 +289,21 @@ export function FarmingPage() {
 
   const handleUnequip = useCallback(async (slot: any) => {
     if (!slot) return;
-    await equipmentApi.unequip(slot);
-    queryClient.invalidateQueries({ queryKey: ['inventory'] });
-    queryClient.invalidateQueries({ queryKey: ['equipment'] });
-    queryClient.invalidateQueries({ queryKey: ['player-spells'] });
-    refreshPlayer();
-  }, [queryClient, refreshPlayer]);
+    try {
+      await equipmentApi.unequip(slot);
+      setActionMessage({ text: 'Équipement retiré', type: 'info' as const });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['inventory'] }),
+        queryClient.refetchQueries({ queryKey: ['equipment'] }),
+        queryClient.refetchQueries({ queryKey: ['player-spells'] }),
+        queryClient.refetchQueries({ queryKey: ['player-stats'] }),
+        fetchState(),
+        refreshPlayer(),
+      ]);
+    } catch (e: any) {
+      setActionMessage({ text: "Erreur lors du retrait", type: 'error' as const });
+    }
+  }, [queryClient, fetchState, refreshPlayer]);
 
   const handleCraft = useCallback(async (item: any) => {
     try {
@@ -376,6 +393,45 @@ export function FarmingPage() {
     setMovePath(null); setQueuedAction(null); setIsMoving(false);
   }, [movePath, movePlayer, performGather, queuedAction]);
 
+  // -- Ring choice --
+  const ringOptions = useMemo(() => {
+    const items = shopItemsData?.data || [];
+    const names = ['Anneau du Guerrier', 'Anneau du Mage', 'Anneau du Ninja'];
+    return names.map(name => items.find((i: any) => i.name === name)).filter(Boolean);
+  }, [shopItemsData]);
+
+  const handleSelectRing = useCallback(async (ring: any) => {
+    if (!ring || ringChoiceLoading) return;
+    setRingChoiceLoading(ring.name);
+    try {
+      await farmingApi.grantStartingRing(ring.id);
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['inventory'] }),
+        queryClient.refetchQueries({ queryKey: ['equipment'] }),
+        queryClient.refetchQueries({ queryKey: ['player-spells'] }),
+        queryClient.refetchQueries({ queryKey: ['player-stats'] }),
+        fetchState(),
+        refreshPlayer(),
+      ]);
+      localStorage.setItem('ring_choice_done', 'true');
+      setActionMessage({ text: `${ring.name} équipé !`, type: 'info' });
+      setShowRingChoice(false);
+    } catch (e: any) {
+      const msg = e.response?.data?.message || "Erreur lors du choix de l'anneau";
+      setActionMessage({ text: msg, type: 'error' });
+    } finally {
+      setRingChoiceLoading(null);
+    }
+  }, [ringChoiceLoading, queryClient, fetchState, refreshPlayer]);
+
+  useEffect(() => {
+    if (!equipmentData || ringOptions.length < 3 || !isMapSceneReady) return;
+    const hasAccessory = equipmentData?.data?.ACCESSORY;
+    if (!hasAccessory) {
+      setShowRingChoice(true);
+    }
+  }, [equipmentData, ringOptions, isMapSceneReady]);
+
   // -- Lifecycle --
   useEffect(() => {
     void fetchState();
@@ -426,6 +482,47 @@ export function FarmingPage() {
         </div>
       )}
 
+      {/* 💍 Ring Choice Overlay */}
+      {showRingChoice && (
+        <div className="farming-overlay">
+          <div className="ring-choice-modal">
+            <h2>Choisissez votre anneau</h2>
+            <div className="ring-choice-grid">
+              {ringOptions.map((ring: any) => {
+                const bonus = ring.statsBonus || {};
+                const stats = [
+                  bonus.atk && `ATK +${bonus.atk}`,
+                  bonus.mag && `MAG +${bonus.mag}`,
+                  bonus.def && `DEF +${bonus.def}`,
+                  bonus.res && `RES +${bonus.res}`,
+                  bonus.ini && `INI +${bonus.ini}`,
+                  bonus.vit && `PV +${bonus.vit}`,
+                  bonus.pa && `PA +${bonus.pa}`,
+                  bonus.pm && `PM +${bonus.pm}`,
+                ].filter(Boolean);
+                return (
+                  <button
+                    key={ring.id}
+                    type="button"
+                    className="ring-choice-card"
+                    onClick={() => handleSelectRing(ring)}
+                    disabled={ringChoiceLoading === ring.name}
+                  >
+                    <img src={ring.iconPath || `/assets/items/${ring.id}.png`} alt={ring.name} className="ring-choice-icon" />
+                    <div className="ring-choice-name">{ring.name}</div>
+                    <div className="ring-choice-stats">
+                      {stats.map((s: string) => (
+                        <span key={s} className="ring-choice-stat">+{s}</span>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ⚙️ Settings Overlay */}
       {showSettings && (
         <div className="settings-overlay" onClick={() => setShowSettings(false)}>
@@ -455,9 +552,7 @@ export function FarmingPage() {
         </div>
       )}
 
-      {/* 🏷️ Top Utility Bar */}
       <div className="top-left-utility">
-        <button className="gear-btn" onClick={() => setShowSettings(true)}>⚙️</button>
         <div className="round-badge">{t('round', { round: activeSession?.currentRound || round })}</div>
       </div>
 
@@ -612,7 +707,7 @@ export function FarmingPage() {
           title="Paramètres"
           onClick={() => setShowSettings(true)}
         >
-          <img src="/assets/icons/emojis.png" alt="Paramètres" style={{ width: '18px', height: '18px' }} />
+          <img src="/assets/icons/parametres.png" alt="Paramètres" style={{ width: '18px', height: '18px' }} />
         </button>
         <button
           type="button"

@@ -459,7 +459,7 @@ export class GameSessionService {
     const isPlayer1Winner = session.player1Id === payload.winnerId;
     const newWinsP1 = isPlayer1Winner ? session.player1Wins + 1 : session.player1Wins;
     const newWinsP2 = !isPlayer1Winner ? session.player2Wins + 1 : session.player2Wins;
-    const isGameOver = newWinsP1 >= 3 || newWinsP2 >= 3;
+    const isGameOver = newWinsP1 >= 2 || newWinsP2 >= 2;
 
     const botUsernames = ['Bot', 'BotWarrior', 'BotMage', 'BotRanger'];
     const isVsAi = botUsernames.includes(session.p2?.username || '') || session.player2Id === null;

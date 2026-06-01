@@ -171,8 +171,8 @@ export const UnifiedMapScene = React.memo(
         tileSideNight: { value: COMBAT_COLORS.TILE_SIDE_NIGHT },
       }),
       'Tile Settings': folder({
-        tileSize: { value: 0.95, min: 0.8, max: 1.0, step: 0.01 },
-        tileRadius: { value: 0.08, min: 0, max: 0.2, step: 0.01 },
+        tileSize: { value: 1.0, min: 0.8, max: 1.0, step: 0.01 },
+        tileRadius: { value: 0, min: 0, max: 0.2, step: 0.01 },
         pmColor: { value: COMBAT_COLORS.PM_VIOLET },
         rangeColor: { value: COMBAT_COLORS.RANGE_ORANGE },
       }),

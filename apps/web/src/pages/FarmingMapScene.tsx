@@ -98,13 +98,10 @@ export const FarmingMapScene = React.memo(
 
     const updateHoveredTile = useCallback(
       (uv: { x: number; y: number }) => {
-        if (!map) { console.warn('[HOVER] no map'); return; }
+        if (!map) return;
         lastFarmingHoverUvRef.current = uv;
 
-        if (isCameraMoving || isPointerPressedRef.current) {
-          console.warn('[HOVER] suppressed', { isCameraMoving, isPointerPressed: isPointerPressedRef.current });
-          return;
-        }
+        if (isCameraMoving || isPointerPressedRef.current) return;
 
         const gx = Math.min(map.width - 1, Math.floor(uv.x * map.width));
         const gz = Math.min(map.height - 1, Math.floor((1 - uv.y) * map.height));
@@ -117,7 +114,6 @@ export const FarmingMapScene = React.memo(
         const previous = hoveredTileRef.current;
         if (previous?.x === gx && previous.y === gz) return;
 
-        console.warn('[HOVER] tile changed', { gx, gz });
         const terrain = map.grid[gz][gx] as TerrainType;
         hoveredTileRef.current = { x: gx, y: gz };
         setHoveredTile({ x: gx, y: gz });
@@ -128,7 +124,6 @@ export const FarmingMapScene = React.memo(
 
     const handlePointerMove = useCallback(
       (event: ThreeEvent<PointerEvent>) => {
-        console.warn('[MOVE] uv?', !!event.uv);
         if (event.uv) {
           updateHoveredTile(event.uv);
         } else {
@@ -159,8 +154,19 @@ export const FarmingMapScene = React.memo(
       clearHoveredTile();
     }, [clearHoveredTile]);
 
+    const updateHoveredTileRef = useRef(updateHoveredTile);
+    const isCameraMovingRef = useRef(isCameraMoving);
+
     useEffect(() => {
-      const onPointerDown = (event: PointerEvent) => {
+      updateHoveredTileRef.current = updateHoveredTile;
+    }, [updateHoveredTile]);
+
+    useEffect(() => {
+      isCameraMovingRef.current = isCameraMoving;
+    }, [isCameraMoving]);
+
+    useEffect(() => {
+      const onPointerDown = (event: PointerEvent): void => {
         if (event.button === 0) {
           isPointerPressedRef.current = true;
           isDraggingRef.current = true;
@@ -169,7 +175,7 @@ export const FarmingMapScene = React.memo(
         }
       };
 
-      const onPointerMove = (event: PointerEvent) => {
+      const onPointerMove = (event: PointerEvent): void => {
         if (!isDraggingRef.current) return;
 
         dragDistanceRef.current += Math.abs(event.movementX || 0);
@@ -183,15 +189,15 @@ export const FarmingMapScene = React.memo(
         }
       };
 
-      const onPointerUp = () => {
+      const onPointerUp = (): void => {
         isPointerPressedRef.current = false;
         isDraggingRef.current = false;
-        if (!isCameraMoving && lastFarmingHoverUvRef.current) {
-          updateHoveredTile(lastFarmingHoverUvRef.current);
+        if (!isCameraMovingRef.current && lastFarmingHoverUvRef.current) {
+          updateHoveredTileRef.current(lastFarmingHoverUvRef.current);
         }
       };
 
-      const onPointerCancel = () => {
+      const onPointerCancel = (): void => {
         isPointerPressedRef.current = false;
         isDraggingRef.current = false;
       };
@@ -201,13 +207,13 @@ export const FarmingMapScene = React.memo(
       window.addEventListener('pointerup', onPointerUp);
       window.addEventListener('pointercancel', onPointerCancel);
 
-      return () => {
+      return (): void => {
         window.removeEventListener('pointerdown', onPointerDown);
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
         window.removeEventListener('pointercancel', onPointerCancel);
       };
-    }, [isCameraMoving, updateHoveredTile]);
+    }, []);
 
     const setPawnRef = useCallback((_playerId: string, handle: PlayerPawnHandle | null) => {
       if (handle) {

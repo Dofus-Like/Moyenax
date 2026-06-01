@@ -4,10 +4,13 @@ import {
   TERRAIN_PROPERTIES,
   TerrainType,
   GAME_EVENTS,
+  EquipmentSlotType,
 } from '@game/shared-types';
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 
+import { ShopService } from '../../economy/shop/shop.service';
+import { EquipmentService } from '../../economy/equipment/equipment.service';
 import { InventoryService } from '../../economy/inventory/inventory.service';
 import { SpendableGoldService } from '../../economy/shared/spendable-gold.service';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
@@ -22,6 +25,8 @@ export class FarmingService {
     private readonly mapGenerator: MapGeneratorService,
     private readonly inventory: InventoryService,
     private readonly spendableGold: SpendableGoldService,
+    private readonly shop: ShopService,
+    private readonly equipment: EquipmentService,
     private readonly perfLogger: PerfLoggerService,
     private readonly prisma: PrismaService,
   ) {}
@@ -125,6 +130,39 @@ export class FarmingService {
 
     state.pips = 4;
     await this.redis.setJson(key, state, 86400);
+
+    return this.withSpendableGold(playerId, state);
+  }
+
+  async grantStartingRing(playerId: string, itemId: string) {
+    const item = await this.prisma.item.findUnique({ where: { id: itemId } });
+    if (!item || item.type !== 'ACCESSORY') {
+      throw new NotFoundException('Anneau introuvable');
+    }
+
+    const raw = await this.prisma.gameSession.findFirst({
+      where: {
+        OR: [
+          { player1Id: playerId, status: 'ACTIVE' },
+          { player2Id: playerId, status: 'ACTIVE' },
+        ],
+      },
+      select: { id: true, player1Id: true, player2Id: true, player1Po: true, player2Po: true },
+    });
+
+    if (!raw) {
+      throw new BadRequestException('Aucune session active');
+    }
+
+    await this.spendableGold.credit(playerId, 500, raw);
+
+    const bought = await this.shop.buy(playerId, itemId, 1);
+
+    const invId = (bought as any).id;
+    await this.equipment.equip(playerId, invId, EquipmentSlotType.ACCESSORY);
+
+    const state = await this.redis.getJson<FarmingState>(`farming:${playerId}`);
+    if (!state) throw new BadRequestException('Aucune session de farming active');
 
     return this.withSpendableGold(playerId, state);
   }

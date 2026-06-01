@@ -17,4 +17,7 @@ export const farmingApi = {
 
   nextRound: () =>
     apiClient.post<FarmingState>('/farming/next-round').then((res) => res.data),
+
+  grantStartingRing: (itemId: string) =>
+    apiClient.post<FarmingState>('/farming/starting-ring', { itemId }).then((res) => res.data),
 };

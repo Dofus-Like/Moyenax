@@ -1,15 +1,15 @@
 .farming-page-layout {
   --rm-bg: #0f172a;
-  --rm-surface: rgba(0, 0, 0, 0.55);
+  --rm-surface: rgba(0, 0, 0, 0.95);
   --rm-border: rgba(255, 255, 255, 0.9);
   --rm-accent: #f59e0b;
   --rm-muted: rgba(255, 255, 255, 0.5);
   --rm-text: #ffffff;
 
-  --glass-bg: rgba(0, 0, 0, 0.55);
+  --glass-bg: rgba(0, 0, 0, 0.95);
   --glass-border: rgba(255, 255, 255, 0.9);
   --glass-radius: 6px;
-  --glass-blur: blur(6px);
+  --glass-blur: blur(24px);
 
   position: relative;
   width: 100vw;
@@ -174,13 +174,13 @@
 
 .bap-frame {
   width: 176px;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.95);
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 6px;
   outline: 1.5px solid rgba(0, 0, 0, 0.85);
   outline-offset: 0px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -480,13 +480,13 @@
   font-size: 1.3rem;
   cursor: pointer;
   position: relative;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.95);
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 6px;
   outline: 1.5px solid rgba(0, 0, 0, 0.85);
   outline-offset: 0px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.7),
     inset 0 0 0 1px rgba(0, 0, 0, 0.75),
@@ -539,6 +539,7 @@
 .settings-menu {
   width: 320px;
   padding: 32px;
+  color: #fff;
   background: var(--glass-bg);
   border: 2px solid var(--glass-border);
   border-radius: var(--glass-radius);
@@ -566,7 +567,7 @@
 }
 
 .language-picker-label {
-  color: rgba(255, 255, 255, 0.65);
+  color: #fff;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -598,7 +599,7 @@
 
 .menu-btn {
   padding: 16px;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.95);
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: var(--glass-radius);
   outline: 1.5px solid rgba(0, 0, 0, 0.85);
@@ -607,7 +608,8 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.5),
     inset 0 0 0 1px rgba(0, 0, 0, 0.75);
@@ -749,4 +751,134 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* 💍 Ring Choice Overlay */
+.farming-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(2, 6, 23, 0.8);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.ring-choice-modal {
+  width: min(90vw, 700px);
+  padding: 40px;
+  background: var(--glass-bg);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.75),
+    inset 0 0 40px rgba(0, 0, 0, 0.65);
+}
+
+.ring-choice-modal h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #fff;
+  font-family: var(--font-hud);
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000,
+    0 -1px 0 #000,
+    0 1px 0 #000,
+    -1px 0 0 #000,
+    1px 0 0 #000;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.ring-choice-grid {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  justify-content: center;
+}
+
+.ring-choice-card {
+  flex: 1;
+  max-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.75),
+    inset 0 0 16px rgba(0, 0, 0, 0.5);
+}
+
+.ring-choice-card:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+  background: rgba(252, 168, 0, 0.1);
+}
+
+.ring-choice-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ring-choice-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+}
+
+.ring-choice-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: var(--font-hud);
+  text-align: center;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+}
+
+.ring-choice-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.ring-choice-stat {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  background: rgba(252, 168, 0, 0.15);
+  border: 1px solid rgba(252, 168, 0, 0.5);
+  color: #fca800;
+  border-radius: 4px;
+  font-family: var(--font-hud);
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
 }

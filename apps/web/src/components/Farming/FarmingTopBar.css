@@ -4,9 +4,9 @@
   align-items: center;
   gap: 10px;
   padding: 12px 24px;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-top: none;
   border-radius: 0 0 6px 6px;

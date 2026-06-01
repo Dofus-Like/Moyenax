@@ -24,11 +24,22 @@ describe('FarmingService', () => {
     credit: jest.fn(),
   };
 
+  const shop = {
+    buy: jest.fn(),
+  };
+
+  const equipment = {
+    equip: jest.fn(),
+  };
+
   const perfLogger = {
     logEvent: jest.fn(),
   };
 
   const prisma = {
+    item: {
+      findUnique: jest.fn(),
+    },
     gameSession: {
       findFirst: jest.fn(),
     },
@@ -70,6 +81,8 @@ describe('FarmingService', () => {
       mapGenerator as any,
       inventory as any,
       spendableGold as any,
+      shop as any,
+      equipment as any,
       perfLogger as any,
       prisma as any,
     );

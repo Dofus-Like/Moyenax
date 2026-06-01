@@ -465,8 +465,8 @@ describe('GameSessionService', () => {
       id: 'session-1',
       player1Id: 'player-1',
       player2Id: 'player-2',
-      player1Wins: 1,
-      player2Wins: 1,
+      player1Wins: 0,
+      player2Wins: 0,
       currentRound: 2,
     });
     prisma.gameSession.update.mockResolvedValue({
@@ -475,8 +475,8 @@ describe('GameSessionService', () => {
       phase: 'FARMING',
       player1Ready: false,
       player2Ready: false,
-      player1Wins: 2,
-      player2Wins: 1,
+      player1Wins: 1,
+      player2Wins: 0,
       currentRound: 3,
     });
 

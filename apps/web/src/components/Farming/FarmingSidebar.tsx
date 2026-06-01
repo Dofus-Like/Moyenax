@@ -217,7 +217,7 @@ export const FarmingSidebar = ({
               onUnequip={(slot) => handleAction(onUnequip, slot)} 
             />
           ) : (
-            <ItemDetail item={selectedItem} />
+            <ItemDetail item={selectedItem} allItems={allItems} />
           )}
         </div>
       </div>
