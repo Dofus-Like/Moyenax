@@ -44,40 +44,42 @@ const ANIM_STYLES = `
 .hub-modal-card-out { animation: hub-modal-card-out ${ANIM_CLOSE_MS}ms ease-in forwards; }
 .hub-modal-cta {
   position: relative;
-  border: none;
+  border: 2px solid var(--cta-c1);
+  outline: 1.5px solid rgba(0,0,0,0.85);
   cursor: pointer;
-  font-family: inherit;
-  font-weight: 800;
-  font-size: 0.92rem;
-  letter-spacing: 0.02em;
-  padding: 13px 22px;
-  border-radius: 14px;
+  font-family: var(--font-hud);
+  font-weight: 400;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 12px 22px;
+  border-radius: 6px;
   width: 100%;
   margin-top: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-  transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease;
-  background: linear-gradient(180deg, var(--cta-c1), var(--cta-c2));
-  box-shadow: var(--cta-glow);
+  color: #fff;
+  text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 -1.5px 0 #000, 0 1.5px 0 #000, -1.5px 0 0 #000, 1.5px 0 0 #000;
+  transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease, background 160ms ease;
+  background: rgba(0,0,0,0.55);
+  box-shadow: var(--cta-glow), inset 0 0 0 1px rgba(0,0,0,0.75), inset 0 0 20px rgba(0,0,0,0.55);
   isolation: isolate;
   overflow: hidden;
 }
 .hub-modal-cta::before {
   content: "";
   position: absolute;
-  inset: 1px;
+  inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 50%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 45%);
   pointer-events: none;
 }
 .hub-modal-cta:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.08);
-  box-shadow: var(--cta-glow-strong);
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.08);
+  box-shadow: var(--cta-glow-strong), inset 0 0 0 1px rgba(0,0,0,0.7), inset 0 0 20px rgba(0,0,0,0.5);
 }
 .hub-modal-cta:active:not(:disabled) {
   transform: translateY(0);
@@ -89,25 +91,28 @@ const ANIM_STYLES = `
 }
 .hub-modal-cta:disabled {
   cursor: not-allowed;
-  filter: grayscale(0.5) brightness(0.8);
-  opacity: 0.55;
+  filter: grayscale(0.6) brightness(0.7);
+  opacity: 0.5;
   box-shadow: none;
 }
 .hub-modal-secondary {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.14);
-  color: rgba(255,255,255,0.78);
+  background: rgba(0,0,0,0.55);
+  border: 2px solid rgba(255,255,255,0.4);
+  outline: 1.5px solid rgba(0,0,0,0.85);
+  color: rgba(255,255,255,0.8);
   cursor: pointer;
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 0.84rem;
+  font-family: var(--font-hud);
+  font-weight: 400;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   padding: 11px 22px;
-  border-radius: 14px;
+  border-radius: 6px;
   width: 100%;
   margin-top: 10px;
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
-.hub-modal-secondary:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.28); color: white; }
+.hub-modal-secondary:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.85); color: #fff; }
 .hub-modal-close-medallion {
   position: relative;
   border: none;
@@ -221,7 +226,9 @@ const OVERLAY: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   zIndex: 100,
-  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.42) 60%, rgba(0,0,0,0.5) 100%)',
+  background: 'rgba(0,0,0,0.8)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
 };
 
 const DESC: CSSProperties = {
@@ -256,29 +263,19 @@ function buildModalWrapStyle(): CSSProperties {
   };
 }
 
-function buildHaloStyle(color: string): CSSProperties {
-  return {
-    position: 'absolute',
-    inset: '-60px',
-    background: `radial-gradient(ellipse at center, ${color}38 0%, ${color}12 35%, transparent 70%)`,
-    filter: 'blur(8px)',
-    pointerEvents: 'none',
-    zIndex: 0,
-  };
-}
-
 function buildModalStyle(color: string): CSSProperties {
   return {
     position: 'relative',
-    background: `linear-gradient(180deg, rgba(14,18,30,0.96) 0%, rgba(8,12,22,0.96) 100%)`,
+    background: 'rgba(0,0,0,0.95)',
     backdropFilter: 'blur(24px)',
     WebkitBackdropFilter: 'blur(24px)',
-    border: `1px solid ${color}55`,
-    boxShadow: `0 0 50px ${color}30, 0 24px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 30px ${color}08`,
-    borderRadius: '20px',
-    padding: '28px 32px 30px',
+    border: '2px solid rgba(255,255,255,0.9)',
+    outline: '1.5px solid rgba(0,0,0,0.85)',
+    boxShadow: `0 0 30px ${color}30, 0 8px 32px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(0,0,0,0.75), inset 0 0 40px rgba(0,0,0,0.65)`,
+    borderRadius: '6px',
+    padding: '24px 28px 26px',
     color: 'white',
-    fontFamily: 'system-ui, sans-serif',
+    fontFamily: 'var(--font-hud)',
     maxHeight: 'min(80vh, calc(100dvh - 32px))',
     overflowY: 'auto',
     overscrollBehavior: 'contain',
@@ -292,8 +289,8 @@ function ctaVars(color: string): CSSProperties {
   return {
     ['--cta-c1' as never]: c1,
     ['--cta-c2' as never]: c2,
-    ['--cta-glow' as never]: `0 6px 18px ${color}55, inset 0 1px 0 rgba(255,255,255,0.18)`,
-    ['--cta-glow-strong' as never]: `0 10px 30px ${color}88, 0 0 24px ${color}66, inset 0 1px 0 rgba(255,255,255,0.25)`,
+    ['--cta-glow' as never]: `0 0 16px ${color}55`,
+    ['--cta-glow-strong' as never]: `0 0 28px ${color}99`,
     ['--cta-focus' as never]: `${color}cc`,
   } as CSSProperties;
 }
@@ -355,43 +352,12 @@ export function HubPoiModal(props: HubPoiModalProps): ReactElement | null {
         className={cardClass}
         onClick={(e) => e.stopPropagation()}
       >
-        <div aria-hidden style={buildHaloStyle(color)} />
         <div className="hub-modal-scroll" style={buildModalStyle(color)} role="dialog" aria-modal="true">
-          <CornerOrnament color={color} corner="tl" />
-          <CornerOrnament color={color} corner="tr" />
           <ModalHeader poiId={renderedId} color={color} label={poiConfig?.label ?? ''} onClose={onClose} />
           {renderPanel(renderedId, props)}
         </div>
       </div>
     </div>
-  );
-}
-
-type Corner = 'tl' | 'tr' | 'bl' | 'br';
-
-const CORNER_POSITIONS: Record<Corner, CSSProperties> = {
-  tl: { top: 8, left: 8 },
-  tr: { top: 8, right: 8, transform: 'scaleX(-1)' },
-  bl: { bottom: 8, left: 8, transform: 'scaleY(-1)' },
-  br: { bottom: 8, right: 8, transform: 'scale(-1, -1)' },
-};
-
-function CornerOrnament({ color, corner }: { color: string; corner: Corner }): ReactElement {
-  const pos = CORNER_POSITIONS[corner];
-  return (
-    <svg
-      aria-hidden
-      width="44"
-      height="44"
-      viewBox="0 0 160 160"
-      fill="none"
-      style={{ position: 'absolute', ...pos, opacity: 0.55, pointerEvents: 'none' }}
-    >
-      <path d="M18 142V50C18 32.327 32.327 18 50 18H142" stroke={color} strokeOpacity="0.85" strokeWidth="6" strokeLinecap="round" />
-      <path d="M36 126V54C36 44.059 44.059 36 54 36H126" stroke={color} strokeOpacity="0.45" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="50" cy="18" r="5" fill="#ffffff" fillOpacity="0.85" />
-      <circle cx="18" cy="50" r="5" fill="#ffffff" fillOpacity="0.85" />
-    </svg>
   );
 }
 
@@ -432,11 +398,12 @@ function ModalHeader({ poiId, color, label, onClose }: { poiId: PoiId; color: st
           <PoiBadge poiId={poiId} color={color} size={48} />
           <h2 style={{
             margin: 0,
-            fontSize: '1.25rem',
-            fontWeight: 800,
+            fontSize: '1.2rem',
+            fontWeight: 400,
             color: '#ffffff',
-            letterSpacing: '-0.01em',
-            textShadow: `0 0 12px ${color}55`,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}>
@@ -465,9 +432,10 @@ function ErrorBanner({ message, color, onDismiss }: { message: string; color: st
       style={{
         marginBottom: '12px',
         padding: '10px 12px',
-        borderRadius: '10px',
-        background: `${color}1a`,
-        border: `1px solid ${color}55`,
+        borderRadius: '6px',
+        background: 'rgba(0,0,0,0.55)',
+        border: `2px solid ${color}99`,
+        outline: '1.5px solid rgba(0,0,0,0.85)',
         color: 'rgba(255,255,255,0.92)',
         fontSize: '0.84rem',
         lineHeight: 1.45,
@@ -643,9 +611,11 @@ function ProfileHeader({ username, gold, skin, banner, frame }: {
   return (
     <div style={{
       position: 'relative',
-      borderRadius: '12px',
+      borderRadius: '6px',
       padding: '12px 14px',
       background: banner.gradient,
+      border: '2px solid rgba(255,255,255,0.9)',
+      outline: '1.5px solid rgba(0,0,0,0.85)',
       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 12px rgba(0,0,0,0.3)',
       display: 'flex',
       gap: '12px',
@@ -682,9 +652,9 @@ function SkinCard({ skin, isActive, onSelect }: { skin: SkinConfig; isActive: bo
         cursor: 'pointer',
         textAlign: 'left',
         width: '100%',
-        background: isActive ? 'rgba(192,132,252,0.16)' : 'rgba(255,255,255,0.03)',
-        border: `1px solid ${isActive ? '#c084fc' : 'rgba(255,255,255,0.06)'}`,
-        boxShadow: isActive ? '0 0 0 1px rgba(192,132,252,0.25), 0 4px 14px rgba(192,132,252,0.18)' : 'none',
+        background: isActive ? 'rgba(192,132,252,0.16)' : 'rgba(0,0,0,0.55)',
+        border: `2px solid ${isActive ? '#c084fc' : 'rgba(255,255,255,0.3)'}`,
+        boxShadow: isActive ? '0 0 14px rgba(192,132,252,0.4)' : 'inset 0 0 0 1px rgba(0,0,0,0.6)',
         transition: 'background 160ms ease, border-color 160ms ease, box-shadow 200ms ease',
         color: 'inherit',
         fontFamily: 'inherit',
@@ -812,11 +782,12 @@ function RoomCard({ room, isOwn, disabled, onJoin }: { room: RoomEntry; isOwn: b
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: '10px 14px',
-      borderRadius: '10px',
+      borderRadius: '6px',
       marginBottom: '8px',
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.09)',
-      borderLeft: '3px solid rgba(34,197,94,0.45)',
+      background: 'rgba(0,0,0,0.55)',
+      border: '2px solid rgba(255,255,255,0.4)',
+      borderLeft: '3px solid #22c55e',
+      outline: '1.5px solid rgba(0,0,0,0.85)',
     }}>
       <div>
         <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{room.p1.username}</div>

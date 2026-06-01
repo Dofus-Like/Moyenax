@@ -8,17 +8,21 @@ const PANEL: CSSProperties = {
   bottom: 16,
   width: 480,
   maxWidth: 'calc(100vw - 32px)',
-  background: 'rgba(7, 16, 31, 0.78)',
-  border: '1px solid rgba(212, 169, 106, 0.28)',
-  borderRadius: 10,
+  background: 'rgba(0, 0, 0, 0.55)',
+  border: '2px solid rgba(255,255,255,0.9)',
+  outline: '1.5px solid rgba(0,0,0,0.85)',
+  borderRadius: 6,
   padding: 8,
   zIndex: 80,
-  fontFamily: 'system-ui, sans-serif',
-  color: '#f4e9d6',
+  fontFamily: 'var(--font-hud)',
+  color: '#f8fafc',
   display: 'flex',
   flexDirection: 'column',
   gap: 6,
   backdropFilter: 'blur(6px)',
+  WebkitBackdropFilter: 'blur(6px)',
+  boxShadow:
+    '0 8px 32px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(0,0,0,0.75), inset 0 0 40px rgba(0,0,0,0.65)',
 };
 
 const LOG: CSSProperties = {
@@ -29,33 +33,38 @@ const LOG: CSSProperties = {
   gap: 4,
   fontSize: 12,
   padding: '4px 6px',
-  background: 'rgba(0, 0, 0, 0.18)',
-  borderRadius: 6,
+  background: 'rgba(0, 0, 0, 0.35)',
+  borderRadius: 4,
 };
 
 const LINE: CSSProperties = { lineHeight: 1.35, wordBreak: 'break-word' };
-const AUTHOR: CSSProperties = { color: '#d4a96a', fontWeight: 600, marginRight: 6 };
+const AUTHOR: CSSProperties = { color: '#a855f7', fontWeight: 700, marginRight: 6 };
 
 const FORM: CSSProperties = { display: 'flex', gap: 6 };
 const INPUT: CSSProperties = {
   flex: 1,
-  background: 'rgba(0,0,0,0.35)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  color: '#f4e9d6',
+  background: 'rgba(0,0,0,0.55)',
+  border: '2px solid rgba(255,255,255,0.3)',
+  color: '#f8fafc',
   padding: '6px 8px',
-  borderRadius: 6,
+  borderRadius: 4,
   fontSize: 12,
+  fontFamily: 'var(--font-hud)',
   outline: 'none',
 };
 const SEND: CSSProperties = {
-  background: 'rgba(212, 169, 106, 0.85)',
-  border: 'none',
-  color: '#1a1a1a',
-  fontWeight: 700,
-  padding: '6px 10px',
-  borderRadius: 6,
+  background: 'rgba(0,0,0,0.55)',
+  border: '2px solid rgba(255,255,255,0.4)',
+  outline: '1.5px solid rgba(0,0,0,0.85)',
+  color: '#fff',
+  fontWeight: 400,
+  padding: '6px 12px',
+  borderRadius: 4,
   cursor: 'pointer',
   fontSize: 12,
+  fontFamily: 'var(--font-hud)',
+  letterSpacing: '0.05em',
+  textTransform: 'uppercase',
 };
 
 const MAX_LEN = 280;
