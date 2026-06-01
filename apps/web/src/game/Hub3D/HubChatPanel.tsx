@@ -1,93 +1,130 @@
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactElement } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactElement,
+  type RefObject,
+} from 'react';
+
+import type { HubChatMessage } from '@game/shared-types';
 
 import { useHubStore } from '../../store/hub.store';
 
-const PANEL: CSSProperties = {
-  position: 'absolute',
-  left: 16,
-  bottom: 16,
-  width: 480,
-  maxWidth: 'calc(100vw - 32px)',
-  background: 'rgba(0, 0, 0, 0.55)',
-  border: '2px solid rgba(255,255,255,0.9)',
-  outline: '1.5px solid rgba(0,0,0,0.85)',
-  borderRadius: 6,
-  padding: 8,
-  zIndex: 80,
-  fontFamily: 'var(--font-hud)',
-  color: '#f8fafc',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 6,
-  backdropFilter: 'blur(6px)',
-  WebkitBackdropFilter: 'blur(6px)',
-  boxShadow:
-    '0 8px 32px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(0,0,0,0.75), inset 0 0 40px rgba(0,0,0,0.65)',
-};
-
-const LOG: CSSProperties = {
-  height: 168,
-  overflowY: 'auto',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 4,
-  fontSize: 12,
-  padding: '4px 6px',
-  background: 'rgba(0, 0, 0, 0.35)',
-  borderRadius: 4,
-};
-
-const LINE: CSSProperties = { lineHeight: 1.35, wordBreak: 'break-word' };
-const AUTHOR: CSSProperties = { color: '#a855f7', fontWeight: 700, marginRight: 6 };
-
-const FORM: CSSProperties = { display: 'flex', gap: 6 };
-const INPUT: CSSProperties = {
-  flex: 1,
-  background: 'rgba(0,0,0,0.55)',
-  border: '2px solid rgba(255,255,255,0.3)',
-  color: '#f8fafc',
-  padding: '6px 8px',
-  borderRadius: 4,
-  fontSize: 12,
-  fontFamily: 'var(--font-hud)',
-  outline: 'none',
-};
-const SEND: CSSProperties = {
-  background: 'rgba(0,0,0,0.55)',
-  border: '2px solid rgba(255,255,255,0.4)',
-  outline: '1.5px solid rgba(0,0,0,0.85)',
-  color: '#fff',
-  fontWeight: 400,
-  padding: '6px 12px',
-  borderRadius: 4,
-  cursor: 'pointer',
-  fontSize: 12,
-  fontFamily: 'var(--font-hud)',
-  letterSpacing: '0.05em',
-  textTransform: 'uppercase',
-};
+import './HubChatPanel.css';
 
 const MAX_LEN = 280;
+const CHAT_ICON = '/assets/pack/icons/chatting.png';
 
-function getPlaceholder(status: 'idle' | 'connecting' | 'connected' | 'error'): string {
+type ChatStatus = 'idle' | 'connecting' | 'connected' | 'error';
+
+function getPlaceholder(status: ChatStatus): string {
   if (status === 'connected') return 'Parler au hub…';
-  if (status === 'error') return 'Hors-ligne — relance l\'API';
+  if (status === 'error') return "Hors-ligne — relance l'API";
   return 'Connexion…';
+}
+
+function HubChatList({ messages }: { messages: HubChatMessage[] }): ReactElement {
+  if (messages.length === 0) {
+    return <div className="log-entry type-chat hub-chat-empty">Aucun message pour le moment.</div>;
+  }
+  return (
+    <>
+      {messages.map((m) => (
+        <div key={m.id} className="log-entry type-chat">
+          <span className="chat-sender">{m.username}:</span> {m.text}
+        </div>
+      ))}
+    </>
+  );
+}
+
+function useUnseenCount(count: number, open: boolean): [number, () => void] {
+  const [unseen, setUnseen] = useState(0);
+  const prev = useRef(count);
+
+  useEffect(() => {
+    if (count > prev.current && !open) {
+      setUnseen((c) => c + (count - prev.current));
+    }
+    prev.current = count;
+  }, [count, open]);
+
+  const reset = (): void => {
+    setUnseen(0);
+  };
+
+  return [unseen, reset];
+}
+
+function ChatToggle({ open, unseen, onToggle }: { open: boolean; unseen: number; onToggle: () => void }): ReactElement {
+  return (
+    <button
+      type="button"
+      className={`hud-log-btn ${open ? 'active' : ''}`}
+      onClick={onToggle}
+      aria-label="Chat du hub"
+      title="Chat"
+    >
+      <img src={CHAT_ICON} alt="Chat" width={18} height={18} />
+      {unseen > 0 && <span className="hud-log-badge">{unseen}</span>}
+    </button>
+  );
+}
+
+interface ChatWindowProps {
+  open: boolean;
+  status: ChatStatus;
+  draft: string;
+  messages: HubChatMessage[];
+  listRef: RefObject<HTMLDivElement>;
+  onDraft: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}
+
+function ChatWindow({ open, status, draft, messages, listRef, onDraft, onSubmit }: ChatWindowProps): ReactElement {
+  return (
+    <div className={`log-panel glass ${open ? 'log-panel--open' : ''}`}>
+      <div className="log-panel-header">
+        <span className="log-tab active">Chat</span>
+      </div>
+      <div className="log-panel-list" ref={listRef}>
+        <HubChatList messages={messages} />
+      </div>
+      <form className="log-panel-input-container" onSubmit={onSubmit}>
+        <input
+          type="text"
+          className="log-panel-input"
+          placeholder={getPlaceholder(status)}
+          value={draft}
+          maxLength={MAX_LEN}
+          disabled={status !== 'connected'}
+          onChange={(event) => onDraft(event.target.value)}
+        />
+      </form>
+    </div>
+  );
 }
 
 export function HubChatPanel(): ReactElement | null {
   const status = useHubStore((state) => state.status);
   const messages = useHubStore((state) => state.chat);
   const sendChat = useHubStore((state) => state.sendChat);
+  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
-  const logRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [unseen, resetUnseen] = useUnseenCount(messages.length, open);
 
   useEffect(() => {
-    const el = logRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [messages.length, open]);
 
   if (status === 'idle') return null;
+
+  const toggle = (): void => {
+    setOpen((value) => !value);
+    resetUnseen();
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -97,36 +134,18 @@ export function HubChatPanel(): ReactElement | null {
     setDraft('');
   };
 
-  const placeholder = getPlaceholder(status);
-
   return (
-    <div style={PANEL}>
-      <div ref={logRef} style={LOG}>
-        {messages.length === 0 ? (
-          <div style={{ opacity: 0.55, fontStyle: 'italic' }}>Aucun message pour le moment.</div>
-        ) : (
-          messages.map((m) => (
-            <div key={m.id} style={LINE}>
-              <span style={AUTHOR}>{m.username}</span>
-              <span>{m.text}</span>
-            </div>
-          ))
-        )}
-      </div>
-      <form style={FORM} onSubmit={handleSubmit}>
-        <input
-          style={INPUT}
-          type="text"
-          value={draft}
-          maxLength={MAX_LEN}
-          placeholder={placeholder}
-          disabled={status !== 'connected'}
-          onChange={(event) => setDraft(event.target.value)}
-        />
-        <button type="submit" style={SEND} disabled={status !== 'connected' || !draft.trim()}>
-          Envoyer
-        </button>
-      </form>
+    <div className="hub-chat-root">
+      <ChatToggle open={open} unseen={unseen} onToggle={toggle} />
+      <ChatWindow
+        open={open}
+        status={status}
+        draft={draft}
+        messages={[...messages].reverse()}
+        listRef={listRef}
+        onDraft={setDraft}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 }
