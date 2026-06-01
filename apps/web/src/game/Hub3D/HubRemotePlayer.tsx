@@ -1,12 +1,12 @@
+import type { HubChatMessage, HubPlayerSnapshot } from '@game/shared-types';
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { Vector3, type Group } from 'three';
 
-import type { HubChatMessage, HubPlayerSnapshot } from '@game/shared-types';
 
-import { HubPawn } from './HubPawn';
 import { useHubGround } from './HubGround';
+import { HubPawn } from './HubPawn';
 import { ARRIVAL_THRESHOLD, PLAYER_SPEED, PLAYER_VERTICAL_OFFSET } from './constants';
 
 const TARGET = new Vector3();
@@ -76,18 +76,22 @@ export function HubRemotePlayer({ snapshot, lastMessage }: HubRemotePlayerProps)
 }
 
 const NAME_STYLE: CSSProperties = {
-  background: 'rgba(7, 16, 31, 0.78)',
-  border: '1px solid rgba(212, 169, 106, 0.35)',
-  color: '#f4e9d6',
+  background: 'rgba(0, 0, 0, 0.6)',
+  border: '2px solid rgba(255, 255, 255, 0.55)',
+  outline: '1.5px solid rgba(0, 0, 0, 0.85)',
+  color: '#ffffff',
   padding: '2px 8px',
   borderRadius: 6,
   fontSize: 11,
-  fontWeight: 600,
   letterSpacing: '0.04em',
-  fontFamily: 'system-ui, sans-serif',
+  fontFamily: 'var(--font-hud)',
+  textShadow:
+    '-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 -1.5px 0 #000, 0 1.5px 0 #000, -1.5px 0 0 #000, 1.5px 0 0 #000',
   pointerEvents: 'none',
   whiteSpace: 'nowrap',
   transform: 'translate(-50%, -100%)',
+  backdropFilter: 'blur(6px)',
+  WebkitBackdropFilter: 'blur(6px)',
 };
 
 function NameTag({ username }: { username: string }): ReactElement {
@@ -99,13 +103,14 @@ function NameTag({ username }: { username: string }): ReactElement {
 }
 
 const BUBBLE_STYLE: CSSProperties = {
-  background: 'rgba(255, 255, 255, 0.94)',
-  color: '#1a1a1a',
+  background: 'rgba(0, 0, 0, 0.85)',
+  border: '2px solid rgba(255, 255, 255, 0.9)',
+  outline: '1.5px solid rgba(0, 0, 0, 0.85)',
+  color: '#ffffff',
   padding: '6px 10px',
-  borderRadius: 10,
+  borderRadius: 6,
   fontSize: 12,
-  fontWeight: 500,
-  fontFamily: 'system-ui, sans-serif',
+  fontFamily: 'var(--font-hud)',
   display: 'inline-block',
   width: 'max-content',
   maxWidth: 280,
@@ -113,8 +118,10 @@ const BUBBLE_STYLE: CSSProperties = {
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
   transform: 'translate(-50%, -100%)',
-  boxShadow: '0 6px 18px rgba(0, 0, 0, 0.35)',
+  boxShadow: '0 6px 18px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.75)',
   textAlign: 'center',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
 };
 
 function ChatBubble({ message }: { message: HubChatMessage }): ReactElement | null {

@@ -285,7 +285,7 @@ export function Hub3DScene({ onPoiActivate, activePoiId, poiStateLabels, activeP
       onContextMenu={(event) => event.preventDefault()}
     >
       <HubGroundProvider>
-        <HubCamera wasDraggingRef={wasDraggingRef} />
+        <HubCamera wasDraggingRef={wasDraggingRef} enabled={activePoiId === null} />
         <HubWorld
           onPoiActivate={onPoiActivate}
           activePoiId={activePoiId}

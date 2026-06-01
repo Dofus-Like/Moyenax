@@ -57,8 +57,8 @@ function appearanceDraw(color: string): ReactElement {
 function roomsDraw(): ReactElement {
   return (
     <>
-      <path d="M22 58l26-20 26 20v14H22V58z" fill="#F4FFF8" fillOpacity="0.22" stroke="#F4FFF8" strokeWidth="3" strokeLinejoin="round" />
-      <rect x="42" y="56" width="12" height="16" fill="#F4FFF8" />
+      <path d="M22 51l26-20 26 20v14H22V51z" fill="#F4FFF8" fillOpacity="0.22" stroke="#F4FFF8" strokeWidth="3" strokeLinejoin="round" />
+      <rect x="42" y="49" width="12" height="16" fill="#F4FFF8" />
     </>
   );
 }
