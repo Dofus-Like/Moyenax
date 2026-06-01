@@ -22,6 +22,8 @@ import { pickCameraViewportConfig, useViewportMode } from './viewport';
 
 interface HubCameraProps {
   wasDraggingRef: MutableRefObject<boolean>;
+  /** When false (e.g. a POI modal is open), camera orbit/zoom input is disabled. */
+  enabled: boolean;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -200,7 +202,7 @@ function useReclampZoomOnViewportChange(zoomRef: MutableRefObject<number>, confi
   }, [zoomRef, config.zoom, config.zoomMin, config.zoomMax]);
 }
 
-export function HubCamera({ wasDraggingRef }: HubCameraProps): ReactElement {
+export function HubCamera({ wasDraggingRef, enabled }: HubCameraProps): ReactElement {
   const camera = useThree((state) => state.camera) as OrthographicCameraImpl;
   const { pivotRef } = useHubGround();
   const viewportMode = useViewportMode();
@@ -209,17 +211,20 @@ export function HubCamera({ wasDraggingRef }: HubCameraProps): ReactElement {
 
   useReclampZoomOnViewportChange(refs.zoomRef, viewportConfig);
 
-  useEffect(() => attachOrbitListeners({
-    azimuthRef: refs.azimuthRef,
-    elevationRef: refs.elevationRef,
-    zoomRef: refs.zoomRef,
-    wasDraggingRef,
-    lastInteractionRef: refs.lastInteractionRef,
-    rotateSensitivity: viewportConfig.rotateSensitivity,
-    dragThresholdPx: viewportConfig.dragThresholdPx,
-    zoomMin: viewportConfig.zoomMin,
-    zoomMax: viewportConfig.zoomMax,
-  }), [refs, wasDraggingRef, viewportConfig.rotateSensitivity, viewportConfig.dragThresholdPx, viewportConfig.zoomMin, viewportConfig.zoomMax]);
+  useEffect(() => {
+    if (!enabled) return;
+    return attachOrbitListeners({
+      azimuthRef: refs.azimuthRef,
+      elevationRef: refs.elevationRef,
+      zoomRef: refs.zoomRef,
+      wasDraggingRef,
+      lastInteractionRef: refs.lastInteractionRef,
+      rotateSensitivity: viewportConfig.rotateSensitivity,
+      dragThresholdPx: viewportConfig.dragThresholdPx,
+      zoomMin: viewportConfig.zoomMin,
+      zoomMax: viewportConfig.zoomMax,
+    });
+  }, [enabled, refs, wasDraggingRef, viewportConfig.rotateSensitivity, viewportConfig.dragThresholdPx, viewportConfig.zoomMin, viewportConfig.zoomMax]);
 
   useFrame((state, delta) => {
     if (!camera) return;
