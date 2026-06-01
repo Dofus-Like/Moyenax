@@ -10,6 +10,7 @@ Source unique de vérité pour humains et IA (Claude Code, Antigravity/Gemini, C
 4. [`docs/TESTING.md`](./docs/TESTING.md) — TDD, pyramide, seuils.
 5. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — couches, boundaries NX, god nodes.
 6. [`TEAMS_SCOPE.md`](./TEAMS_SCOPE.md) — Équipe A (World/Economy) vs B (Combat).
+7. [`design.md`](./design.md) — design system UI : **seule** référence visuelle autorisée (tout travail d'interface).
 
 Avant de modifier un service connu pour être chargé : ouvrir `graphify-out/GRAPH_REPORT.md`.
 
@@ -36,6 +37,11 @@ Liste complète : [`README.md`](./README.md).
 - Pas de `console.log` (utiliser `Logger` côté NestJS, HUD perf côté web).
 - Commentaires : par défaut **aucun**. Seulement pour le « pourquoi » non évident. Renomme avant de commenter.
 - Préférer **éditer** un fichier existant que d'en créer un nouveau.
+
+### UI / Design
+- Tout travail d'interface applique **exclusivement** le design system de [`design.md`](./design.md) (tokens, surface « glass », composants, patterns). C'est la **seule** référence visuelle.
+- ❌ Aucune autre convention visuelle, thème, couleur en dur hors token, ni librairie de composants UI.
+- Réutiliser les tokens/patterns existants ; ne pas réinventer couleurs, espacements ou composants déjà définis.
 
 ### Tests (TDD)
 - **Obligatoire** : tout fix de bug (test rouge → fix), toute logique dans `libs/game-engine`, tout code sécurité.
@@ -66,6 +72,7 @@ Liste complète : [`README.md`](./README.md).
 - ❌ Fix superficiel qui contourne la cause racine.
 - ❌ `--no-verify` sur les hooks.
 - ❌ Ajouter une méthode à un god node.
+- ❌ Introduire un style, thème, couleur ou librairie de composants UI hors [`design.md`](./design.md).
 
 ### Mantras
 - *Le test guide le code, pas l'inverse.*
@@ -73,4 +80,4 @@ Liste complète : [`README.md`](./README.md).
 - *YAGNI bat OCP.*
 
 ## Liens
-[`README.md`](./README.md) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) · [`TEAMS_SCOPE.md`](./TEAMS_SCOPE.md) · [`DEPLOY.md`](./DEPLOY.md) · `docs/{PROJECT_LAYOUT,ARCHITECTURE,TESTING,CODE_QUALITY,TECHNICAL_DOCUMENT}.md` · `graphify-out/GRAPH_REPORT.md`
+[`design.md`](./design.md) · [`README.md`](./README.md) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) · [`TEAMS_SCOPE.md`](./TEAMS_SCOPE.md) · [`DEPLOY.md`](./DEPLOY.md) · `docs/{PROJECT_LAYOUT,ARCHITECTURE,TESTING,CODE_QUALITY,TECHNICAL_DOCUMENT}.md` · `graphify-out/GRAPH_REPORT.md`
