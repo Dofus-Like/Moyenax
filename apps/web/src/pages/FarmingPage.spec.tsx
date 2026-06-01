@@ -76,8 +76,8 @@ vi.mock('camera-controls', () => ({
   },
 }));
 
-vi.mock('../game/UnifiedMap/UnifiedMapScene', () => ({
-  UnifiedMapScene: (props: {
+vi.mock('./FarmingMapScene', () => ({
+  FarmingMapScene: (props: {
     onTileClick?: (x: number, y: number, terrain: string) => void;
     onTileReached?: unknown;
     onSceneReady?: () => void;

@@ -1,10 +1,9 @@
 import { CameraControls, OrthographicCamera, useProgress } from '@react-three/drei';
 import CameraControlsImpl from 'camera-controls';
-import { Canvas, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Canvas } from '@react-three/fiber';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
+import { FarmingMapScene } from './FarmingMapScene';
 import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
 import { gameSessionApi } from '../api/game-session.api';
 import { useAuthStore } from '../store/auth.store';
@@ -18,18 +17,15 @@ import { craftingApi } from '../api/crafting.api';
 import {
   type PathNode,
   type PlayerStats,
-  type SeedId,
   findPath,
   findPathToAdjacent,
   TERRAIN_PROPERTIES,
   TerrainType,
 } from '@game/shared-types';
 import { getItemVisualMeta } from '../utils/itemVisual';
-import { getResourceIconPath } from '../utils/resourceIcons';
 import { FarmingSidebar } from '../components/Farming/FarmingSidebar';
 import { FarmingTopBar } from '../components/Farming/FarmingTopBar';
 import { SpellBar, SpellBarItem } from '../components/SpellBar/SpellBar';
-import { PortraitPawn } from '../components/PortraitPawn';
 import { playerApi } from '../api/player.api';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CameraEffects } from '../game/Combat/CameraEffects';
@@ -60,17 +56,7 @@ function findSpawnPosition(grid: TerrainType[][]): PathNode {
   return { x: 0, y: 0 };
 }
 
-function CameraSync({ zoom, x, y }: { zoom: number; x: number; y: number }) {
-  const { camera } = useThree();
-  useEffect(() => {
-    if (camera instanceof THREE.OrthographicCamera) {
-      camera.zoom = zoom;
-      camera.position.set(x, y, 10);
-      camera.updateProjectionMatrix();
-    }
-  }, [camera, zoom, x, y]);
-  return null;
-}
+
 
 type FarmingStatKey = keyof Pick<PlayerStats, 'vit' | 'atk' | 'mag' | 'def' | 'res' | 'ini' | 'pa' | 'pm'>;
 type FarmingBaseStatKey = `base${Capitalize<FarmingStatKey>}`;
@@ -85,77 +71,6 @@ const FARMING_STAT_ROWS: Array<{ key: FarmingStatKey; baseKey: FarmingBaseStatKe
   { key: 'pa', baseKey: 'basePa', label: 'PA' },
   { key: 'pm', baseKey: 'basePm', label: 'PM' },
 ];
-
-function formatStatModifier(modifier: number): string {
-  return modifier >= 0 ? `+${modifier}` : `${modifier}`;
-}
-
-const TILE_TOOLTIP_OFFSET = 14;
-const TILE_TOOLTIP_VIEWPORT_MARGIN = 8;
-const TILE_TOOLTIP_DEFAULT_SIZE = { width: 252, height: 150 };
-const TILE_TOOLTIP_UI_SELECTOR = [
-  '.top-left-utility',
-  '.top-center-container',
-  '.farming-sidebar',
-  '.bottom-left-card',
-  '.bottom-center-actions',
-  '.settings-overlay',
-  '.map-action-toast',
-].join(',');
-
-type TileTooltipPoint = { x: number; y: number };
-
-function isPointerOverFarmingUi(target: EventTarget | null) {
-  return target instanceof Element && Boolean(target.closest(TILE_TOOLTIP_UI_SELECTOR));
-}
-
-function getOverlapArea(a: DOMRect, b: DOMRect) {
-  const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
-  const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
-  return width * height;
-}
-
-function getViewportOverflowArea(rect: DOMRect, viewportWidth: number, viewportHeight: number) {
-  const overflowX = Math.max(0, -rect.left) + Math.max(0, rect.right - viewportWidth);
-  const overflowY = Math.max(0, -rect.top) + Math.max(0, rect.bottom - viewportHeight);
-  return overflowX * rect.height + overflowY * rect.width;
-}
-
-function getTileTooltipPlacement(
-  pointer: TileTooltipPoint,
-  tooltipWidth: number,
-  tooltipHeight: number,
-  viewportWidth: number,
-  viewportHeight: number,
-  blockers: DOMRect[],
-) {
-  const rawCandidates = [
-    { left: pointer.x + TILE_TOOLTIP_OFFSET, top: pointer.y + TILE_TOOLTIP_OFFSET },
-    { left: pointer.x - tooltipWidth - TILE_TOOLTIP_OFFSET, top: pointer.y + TILE_TOOLTIP_OFFSET },
-    { left: pointer.x + TILE_TOOLTIP_OFFSET, top: pointer.y - tooltipHeight - TILE_TOOLTIP_OFFSET },
-    { left: pointer.x - tooltipWidth - TILE_TOOLTIP_OFFSET, top: pointer.y - tooltipHeight - TILE_TOOLTIP_OFFSET },
-  ];
-
-  const candidates = rawCandidates.map((candidate, priority) => {
-    const left = Math.min(
-      Math.max(TILE_TOOLTIP_VIEWPORT_MARGIN, candidate.left),
-      viewportWidth - tooltipWidth - TILE_TOOLTIP_VIEWPORT_MARGIN,
-    );
-    const top = Math.min(
-      Math.max(TILE_TOOLTIP_VIEWPORT_MARGIN, candidate.top),
-      viewportHeight - tooltipHeight - TILE_TOOLTIP_VIEWPORT_MARGIN,
-    );
-    const rect = new DOMRect(left, top, tooltipWidth, tooltipHeight);
-    const uiOverlap = blockers.reduce((total, blocker) => total + getOverlapArea(rect, blocker), 0);
-    const overflow = getViewportOverflowArea(rect, viewportWidth, viewportHeight);
-
-    return { left, top, score: uiOverlap + overflow * 100 + priority * 0.01 };
-  });
-
-  return candidates.reduce((bestCandidate, candidate) =>
-    candidate.score < bestCandidate.score ? candidate : bestCandidate,
-  );
-}
 
 export function FarmingPage() {
   const navigate = useNavigate();
@@ -174,18 +89,14 @@ export function FarmingPage() {
   const [isCameraMoving, setIsCameraMoving] = useState(false);
   const [isMapSceneReady, setIsMapSceneReady] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isAttackingPortrait, setIsAttackingPortrait] = useState(false);
-  const [portraitZoom, setPortraitZoom] = useState(103);
-  const [portraitX, setPortraitX] = useState(0.02);
-  const [portraitY, setPortraitY] = useState(0.05);
+  const [statsOpen, setStatsOpen] = useState(false);
   const isActionInProgressRef = useRef(false);
-  const tileTooltipRef = useRef<HTMLDivElement | null>(null);
-  const tileTooltipRafRef = useRef<number | null>(null);
-  const tileTooltipPointerRef = useRef<TileTooltipPoint | null>(null);
-  const isPointerPressedRef = useRef(false);
   const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const didSpawnOnPageLoadRef = useRef(false);
+  const isMovingRef = useRef(false);
+
+  const handleSceneReady = useCallback(() => setIsMapSceneReady(true), []);
 
   const map = useFarmingStore((s) => s.map);
   const playerPosition = useFarmingStore((s) => s.playerPosition);
@@ -196,6 +107,12 @@ export function FarmingPage() {
   const inventoryCounts = useFarmingStore((s) => s.inventory);
   const spendableGold = useFarmingStore((s) => s.spendableGold);
   const fetchState = useFarmingStore((s) => s.fetchState);
+
+  const mapRef = useRef(map);
+  const playerPosRef = useRef(playerPosition);
+  mapRef.current = map;
+  playerPosRef.current = playerPosition;
+  isMovingRef.current = isMoving;
 
   const [controls, setControls] = useState<CameraControlsImpl | null>(null);
   const [isGathering, setIsGathering] = useState(false);
@@ -428,17 +345,19 @@ export function FarmingPage() {
   }, [gatherNode, queryClient, isGathering]);
 
   const handleTileClick = useCallback((x: number, y: number, terrain: TerrainType) => {
-    if (!map || isMoving) return;
-    const isAdjacent = Math.abs(playerPosition!.x - x) + Math.abs(playerPosition!.y - y) <= 1;
+    const currentMap = mapRef.current;
+    const currentPos = playerPosRef.current;
+    if (!currentMap || isMovingRef.current || !currentPos) return;
+    const isAdjacent = Math.abs(currentPos.x - x) + Math.abs(currentPos.y - y) <= 1;
     if (TERRAIN_PROPERTIES[terrain].harvestable) {
       if (isAdjacent) { performGather(x, y); return; }
-      const path = findPathToAdjacent(map, playerPosition!, { x, y });
+      const path = findPathToAdjacent(currentMap, currentPos, { x, y });
       if (path) { setMovePath(path); setQueuedAction({ type: 'gather', x, y }); setIsMoving(true); }
     } else if (TERRAIN_PROPERTIES[terrain].traversable) {
-      const path = findPath(map, playerPosition!, { x, y });
+      const path = findPath(currentMap, currentPos, { x, y });
       if (path) { setMovePath(path); setIsMoving(true); }
     }
-  }, [map, playerPosition, isMoving, performGather]);
+  }, [performGather]);
 
   useEffect(() => {
     // Force spell sync on mount
@@ -462,14 +381,14 @@ export function FarmingPage() {
     void fetchState();
   }, [fetchState]);
 
-  useEffect(() => {
-    setIsMapSceneReady(false);
-  }, [map]);
+  // Pas besoin de reload la 3D scene quand la grille change (gather) — meme dimensions
 
   useEffect(() => {
     if (map && !didSpawnOnPageLoadRef.current) {
       didSpawnOnPageLoadRef.current = true;
-      movePlayer(findSpawnPosition(map.grid));
+      const spawn = findSpawnPosition(map.grid);
+      movePlayer(spawn);
+      setHoverInfo({ x: spawn.x, y: spawn.y, terrain: map.grid[spawn.y][spawn.x] as TerrainType });
     }
   }, [map, movePlayer]);
 
@@ -479,106 +398,8 @@ export function FarmingPage() {
     return () => window.clearTimeout(timeout);
   }, [actionMessage]);
 
-  const updateTileTooltipPosition = useCallback((pointer: TileTooltipPoint) => {
-    const tooltip = tileTooltipRef.current;
-    if (!tooltip) return;
-
-    if (isPointerPressedRef.current) {
-      tooltip.style.visibility = 'hidden';
-      return;
-    }
-
-    const target = document.elementFromPoint(pointer.x, pointer.y);
-    if (isPointerOverFarmingUi(target)) {
-      tooltip.style.visibility = 'hidden';
-      return;
-    }
-
-    const tooltipWidth = tooltip.offsetWidth || TILE_TOOLTIP_DEFAULT_SIZE.width;
-    const tooltipHeight = tooltip.offsetHeight || TILE_TOOLTIP_DEFAULT_SIZE.height;
-    const blockers = Array.from(document.querySelectorAll(TILE_TOOLTIP_UI_SELECTOR)).map((element) =>
-      element.getBoundingClientRect(),
-    );
-    const placement = getTileTooltipPlacement(
-      pointer,
-      tooltipWidth,
-      tooltipHeight,
-      window.innerWidth,
-      window.innerHeight,
-      blockers,
-    );
-
-    tooltip.style.visibility = 'visible';
-    tooltip.style.transform = `translate3d(${placement.left}px, ${placement.top}px, 0)`;
-  }, []);
-
-  useEffect(() => {
-    if (!hoverInfo) return;
-
-    const queueTooltipPosition = (pointer: TileTooltipPoint) => {
-      tileTooltipPointerRef.current = pointer;
-      if (tileTooltipRafRef.current !== null) return;
-
-      tileTooltipRafRef.current = window.requestAnimationFrame(() => {
-        tileTooltipRafRef.current = null;
-        const latestPointer = tileTooltipPointerRef.current;
-        if (latestPointer) {
-          updateTileTooltipPosition(latestPointer);
-        }
-      });
-    };
-
-    const handlePointerMove = (event: PointerEvent) => {
-      queueTooltipPosition({ x: event.clientX, y: event.clientY });
-    };
-
-    const handlePointerDown = () => {
-      isPointerPressedRef.current = true;
-      if (tileTooltipRef.current) {
-        tileTooltipRef.current.style.visibility = 'hidden';
-      }
-    };
-
-    const handlePointerUp = () => {
-      isPointerPressedRef.current = false;
-      if (tileTooltipPointerRef.current) {
-        queueTooltipPosition(tileTooltipPointerRef.current);
-      }
-    };
-
-    const handlePointerCancel = () => {
-      isPointerPressedRef.current = false;
-    };
-
-    window.addEventListener('pointermove', handlePointerMove, { passive: true });
-    window.addEventListener('pointerdown', handlePointerDown, { passive: true });
-    window.addEventListener('pointerup', handlePointerUp, { passive: true });
-    window.addEventListener('pointercancel', handlePointerCancel, { passive: true });
-
-    if (tileTooltipPointerRef.current) {
-      queueTooltipPosition(tileTooltipPointerRef.current);
-    }
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerCancel);
-      if (tileTooltipRafRef.current !== null) {
-        window.cancelAnimationFrame(tileTooltipRafRef.current);
-        tileTooltipRafRef.current = null;
-      }
-    };
-  }, [hoverInfo, updateTileTooltipPosition]);
-
   const handleTileHover = useCallback((info: { x: number; y: number; terrain: TerrainType } | null) => {
-    setHoverInfo((previous) => {
-      if (!info || !previous) return info;
-      if (previous.x === info.x && previous.y === info.y && previous.terrain === info.terrain) {
-        return previous;
-      }
-      return info;
-    });
+    setHoverInfo(info);
   }, []);
 
   const previewPath = useMemo(() => {
@@ -640,31 +461,6 @@ export function FarmingPage() {
         <div className="round-badge">{t('round', { round: activeSession?.currentRound || round })}</div>
       </div>
 
-      {/* 📊 Tooltip Overlay */}
-      {hoverInfo && (
-        <div ref={tileTooltipRef} className="floating-tile-tooltip">
-          <div className="tooltip-header">
-            <strong>{hoverInfo.terrain}</strong>
-            <span className="coords">({hoverInfo.x}, {hoverInfo.y})</span>
-          </div>
-          <div className="tooltip-body">
-            {previewPath.length > 0 && <p className="distance">{t('tileDistance', { count: previewPath.length })}</p>}
-            {TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable && (
-              <p className="resource">
-                {t('tileResource')}
-                <img 
-                  src={getResourceIconPath(TERRAIN_PROPERTIES[hoverInfo.terrain].resourceName)} 
-                  alt="" 
-                  className="inline-res-icon" 
-                />
-                <strong>{TERRAIN_PROPERTIES[hoverInfo.terrain].resourceName}</strong>
-              </p>
-            )}
-            {!TERRAIN_PROPERTIES[hoverInfo.terrain].traversable && <p className="warning">{t('inaccessible')}</p>}
-          </div>
-        </div>
-      )}
-
       <div className="top-center-container">
         <FarmingTopBar pips={pips} resources={inventoryCounts} />
       </div>
@@ -691,7 +487,15 @@ export function FarmingPage() {
               ref={setControls} 
               minZoom={15} 
               maxZoom={80} 
-              dollyToCursor 
+              dollyToCursor={true}
+              minPolarAngle={0}
+              maxPolarAngle={Math.PI / 2.1}
+              mouseButtons={{
+                left: CameraControlsImpl.ACTION.NONE,
+                right: CameraControlsImpl.ACTION.TRUCK,
+                middle: CameraControlsImpl.ACTION.NONE,
+                wheel: CameraControlsImpl.ACTION.DOLLY
+              }}
               onRest={() => setIsCameraMoving(false)}
               onStart={() => setIsCameraMoving(true)}
             />
@@ -712,18 +516,15 @@ export function FarmingPage() {
             />
             
             <Suspense fallback={null}>
-              <UnifiedMapScene
-                mode="farming"
+              <FarmingMapScene
                 map={map}
                 playerPosition={playerPosition ?? undefined}
                 movePath={movePath}
-                previewPath={previewPath}
                 onPathComplete={handlePathComplete}
                 onTileClick={handleTileClick}
                 onTileHover={handleTileHover}
                 isCameraMoving={isCameraMoving}
-                isMoving={isMoving}
-                onSceneReady={() => setIsMapSceneReady(true)}
+                onSceneReady={handleSceneReady}
               />
             </Suspense>
           </Canvas>
@@ -743,59 +544,94 @@ export function FarmingPage() {
         onUnequip={handleUnequip}
         onCraft={handleCraft}
         onBuy={handleBuy}
+        hoverInfo={hoverInfo}
+        previewPath={previewPath}
       />
 
-      {/* 👤 Player Card & Ready Button */}
-      <div className="bottom-left-card">
-        <div className="player-portrait-card">
-          <div className="portrait-circle">
-            <Canvas 
-              orthographic 
-              dpr={1}
-              gl={{ 
-                alpha: true, 
-                antialias: false, 
-                premultipliedAlpha: false,
-                toneMapping: THREE.NoToneMapping
-              }}
-              onCreated={({ gl }) => {
-                gl.setClearColor(0x000000, 0);
-              }}
-            >
-              <CameraSync zoom={portraitZoom} x={portraitX} y={portraitY} />
-              <Suspense fallback={null}>
-                <PortraitPawn 
-                  skinId={player?.skin} 
-                  isAttacking={isAttackingPortrait}
-                  onAttackComplete={() => setIsAttackingPortrait(false)}
+      {/* 👤 Player Panel — Bottom Left (exact copy of CombatPlayerPanel) */}
+      <div className="blocky-avatar-panel farming-avatar">
+        <div className="bap-content-row">
+          <div className="bap-frame-wrapper">
+            <div className="bap-frame">
+              <div
+                className="bap-portrait"
+                style={{ '--avatar-img': 'url("/avatar_gobelin.png")' } as React.CSSProperties}
+              >
+                <div className="bap-pseudo">{player?.username}</div>
+                <div className="bap-resources">
+                  <span className="bap-res-pa">◆ {pips}</span>
+                  <span className="bap-res-pm">◆ {activeSession?.currentRound || round}</span>
+                </div>
+              </div>
+              <div className="bap-hp-bar">
+                <div
+                  className="bap-hp-fill"
+                  style={{ width: `${statsData?.data ? 100 : 0}%` }}
                 />
-              </Suspense>
-            </Canvas>
-          </div>
-          <div className="portrait-info">
-            <span className="player-name">{player?.username}</span>
-            <div className="mini-stats">
-              {statsData?.data ? (
-                FARMING_STAT_ROWS.map(({ key, baseKey, label }) => {
-                  const value = statsData.data[key];
-                  const modifier = value - statsData.data[baseKey];
-
-                  return (
-                    <span className="mini-stat" key={key}>
-                      <span className="mini-stat-label">{label}</span>
-                      <strong>{value}</strong>
-                      <span className={`mini-stat-mod ${modifier > 0 ? 'is-positive' : modifier < 0 ? 'is-negative' : ''}`}>
-                        ({formatStatModifier(modifier)})
-                      </span>
-                    </span>
-                  );
-                })
-              ) : (
-                <span className="mini-stat-loading">Stats...</span>
-              )}
+                <div className="bap-hp-text">
+                  {statsData?.data ? `${statsData.data.vit}/${statsData.data.vit}` : '?/?'}
+                </div>
+              </div>
             </div>
+
+            {statsOpen && statsData?.data && (
+              <div className="cpp-stats-container">
+                <div className="cpp-stats-grid">
+                  {(['atk', 'def', 'mag', 'res', 'ini'] as const).map((key) => {
+                    const value = statsData.data[key];
+                    const baseKey = `base${key.charAt(0).toUpperCase() + key.slice(1)}` as keyof typeof statsData.data;
+                    const modifier = value - (statsData.data[baseKey] as number);
+                    return (
+                      <div className={`cpp-stat stat-${key}`} key={key}>
+                        <span className="cpp-stat-label">{key.toUpperCase()}</span>
+                        <strong>{value}</strong>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  className="cpp-eq-toggle-btn"
+                  onClick={() => setStatsOpen(false)}
+                >
+                  ▲ Masquer
+                </button>
+              </div>
+            )}
           </div>
         </div>
+      </div>
+
+      {/* Bottom Icon Buttons (copied from CombatHUD) */}
+      <div className="farming-icon-buttons">
+        <button
+          type="button"
+          className="farming-icon-btn"
+          aria-label="Paramètres"
+          title="Paramètres"
+          onClick={() => setShowSettings(true)}
+        >
+          <img src="/assets/icons/emojis.png" alt="Paramètres" style={{ width: '18px', height: '18px' }} />
+        </button>
+        <button
+          type="button"
+          className={`farming-icon-btn${statsOpen ? ' active' : ''}`}
+          aria-label="Statistiques"
+          title="Statistiques"
+          onClick={() => setStatsOpen((v) => !v)}
+        >
+          <img src="/assets/pack/icons/graph.png" alt="Statistiques" style={{ width: '18px', height: '18px' }} />
+        </button>
+        <button
+          type="button"
+          className="farming-icon-btn"
+          aria-label="Abandonner"
+          title="Abandonner"
+          onClick={handleEndSession}
+        >
+          <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
+        </button>
       </div>
 
       {/* ⚔️ Action Bar */}
@@ -804,7 +640,6 @@ export function FarmingPage() {
           spells={mappedSpells} 
           onSpellClick={(id) => {
             console.log('Spell', id);
-            setIsAttackingPortrait(true);
           }} 
           onToggleMannequins={() => setShowSettings(true)}
           onPassTurn={handleToggleReady}

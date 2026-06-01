@@ -937,24 +937,22 @@ export const UnifiedMapScene = React.memo(
         </mesh>
 
         <group ref={mapGroupRef}>
-          {mode === 'combat' && (
-            <Suspense fallback={null}>
-              <Castle 
-                position={[-1.07, 5.34, -0.94]} 
-                targetSize={14.0} 
-                rotation={[0, 0, 0]} 
-              />
-            </Suspense>
-          )}
+          <Suspense fallback={null}>
+            <Castle 
+              position={[-1.07, 5.34, -0.94]} 
+              targetSize={14.0} 
+              rotation={[0, 0, 0]} 
+            />
+          </Suspense>
           <TerrainLayer 
             map={activeMap} 
             onTileClick={handleTileClickDispatcher} 
             checkerColorA={mode === 'combat' ? currentTileColors.checkerColorA : undefined}
             checkerColorB={mode === 'combat' ? currentTileColors.checkerColorB : undefined}
             sideColor={mode === 'combat' ? currentTileColors.sideColor : undefined}
-            tileSize={mode === 'combat' ? tileConfig.tileSize : undefined}
-            tileRadius={mode === 'combat' ? tileConfig.tileRadius : undefined}
-            tacticsMode={tacticsMode}
+            tileSize={tileConfig.tileSize}
+            tileRadius={tileConfig.tileRadius}
+            tacticsMode={mode === 'combat' ? tacticsMode : undefined}
           />
           
           {/* Interaction Plane - Must be visible=true for raycasting but transparent for user */}

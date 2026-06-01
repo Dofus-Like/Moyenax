@@ -1,0 +1,267 @@
+import type { ThreeEvent } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+
+import type { GameMap, PathNode } from '@game/shared-types';
+import { TerrainType } from '@game/shared-types';
+
+import { Castle } from '../game/ResourceMap/Castle';
+import type { PlayerPawnHandle } from '../game/ResourceMap/PlayerPawn';
+import { useAuthStore } from '../store/auth.store';
+import {
+  HoverLayer,
+  PlayersLayer,
+  TerrainLayer,
+} from '../game/UnifiedMap/UnifiedMapLayers';
+
+interface HitPlaneProps {
+  map: GameMap;
+  onPointerMove: (event: ThreeEvent<PointerEvent>) => void;
+  onPointerDown: (event: ThreeEvent<PointerEvent>) => void;
+  onPointerLeave: () => void;
+}
+
+const HitPlane = React.memo(
+  ({ map, onPointerMove, onPointerDown, onPointerLeave }: HitPlaneProps) => (
+    <mesh
+      name="map-hit-plane"
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0, 0]}
+      onPointerMove={onPointerMove}
+      onClick={onPointerDown}
+      onPointerLeave={onPointerLeave}
+      visible={true}
+    >
+      <planeGeometry args={[map.width, map.height]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  ),
+);
+
+interface FarmingMapSceneProps {
+  map: GameMap;
+  playerPosition?: PathNode;
+  movePath?: PathNode[] | null;
+  onPathComplete?: () => void;
+  onTileClick?: (x: number, y: number, terrain: TerrainType) => void;
+  onTileHover?: (info: { x: number; y: number; terrain: TerrainType } | null) => void;
+  isCameraMoving?: boolean;
+  isMoving?: boolean;
+  onTileReached?: (node: PathNode) => void;
+  onSceneReady?: () => void;
+}
+
+export const FarmingMapScene = React.memo(
+  ({
+    map,
+    playerPosition,
+    movePath,
+    onPathComplete,
+    onTileClick,
+    onTileHover,
+    isCameraMoving = false,
+    isMoving = false,
+    onTileReached,
+    onSceneReady,
+  }: FarmingMapSceneProps) => {
+    const user = useAuthStore((state) => state.player);
+
+    const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
+    const deferredHoveredTile = React.useDeferredValue(hoveredTile);
+
+    const mapGroupRef = useRef<THREE.Group>(null);
+    const hoveredTileRef = useRef<{ x: number; y: number } | null>(null);
+    const lastFarmingHoverUvRef = useRef<{ x: number; y: number } | null>(null);
+    const hasReportedSceneReadyRef = useRef(false);
+    const pawnRefs = useRef(new Map<string, PlayerPawnHandle>());
+    const wasDraggingRef = useRef(false);
+    const dragDistanceRef = useRef(0);
+    const isPointerPressedRef = useRef(false);
+    const isDraggingRef = useRef(false);
+
+    useEffect(() => {
+      hasReportedSceneReadyRef.current = false;
+    }, [map]);
+
+    useFrame(() => {
+      if (!map || hasReportedSceneReadyRef.current) return;
+      hasReportedSceneReadyRef.current = true;
+      onSceneReady?.();
+    });
+
+    const clearHoveredTile = useCallback(() => {
+      if (!hoveredTileRef.current) return;
+      hoveredTileRef.current = null;
+      setHoveredTile(null);
+      onTileHover?.(null);
+    }, [onTileHover]);
+
+    const updateHoveredTile = useCallback(
+      (uv: { x: number; y: number }) => {
+        if (!map) { console.warn('[HOVER] no map'); return; }
+        lastFarmingHoverUvRef.current = uv;
+
+        if (isCameraMoving || isPointerPressedRef.current) {
+          console.warn('[HOVER] suppressed', { isCameraMoving, isPointerPressed: isPointerPressedRef.current });
+          return;
+        }
+
+        const gx = Math.min(map.width - 1, Math.floor(uv.x * map.width));
+        const gz = Math.min(map.height - 1, Math.floor((1 - uv.y) * map.height));
+
+        if (gx < 0 || gx >= map.width || gz < 0 || gz >= map.height) {
+          clearHoveredTile();
+          return;
+        }
+
+        const previous = hoveredTileRef.current;
+        if (previous?.x === gx && previous.y === gz) return;
+
+        console.warn('[HOVER] tile changed', { gx, gz });
+        const terrain = map.grid[gz][gx] as TerrainType;
+        hoveredTileRef.current = { x: gx, y: gz };
+        setHoveredTile({ x: gx, y: gz });
+        onTileHover?.({ x: gx, y: gz, terrain });
+      },
+      [map, clearHoveredTile, isCameraMoving, onTileHover],
+    );
+
+    const handlePointerMove = useCallback(
+      (event: ThreeEvent<PointerEvent>) => {
+        console.warn('[MOVE] uv?', !!event.uv);
+        if (event.uv) {
+          updateHoveredTile(event.uv);
+        } else {
+          lastFarmingHoverUvRef.current = null;
+          clearHoveredTile();
+        }
+      },
+      [clearHoveredTile, updateHoveredTile],
+    );
+
+    const handlePointerDown = useCallback(
+      (e: ThreeEvent<PointerEvent>) => {
+        if (wasDraggingRef.current || e.button !== 0 || !e.uv || !map) return;
+
+        const gx = Math.min(map.width - 1, Math.floor(e.uv.x * map.width));
+        const gz = Math.min(map.height - 1, Math.floor((1 - e.uv.y) * map.height));
+        const terrain = map.grid[gz][gx] as TerrainType;
+        onTileClick?.(gx, gz, terrain);
+      },
+      [map, onTileClick],
+    );
+
+    const handlePointerUp = useCallback((_event: ThreeEvent<PointerEvent>) => {
+      // no-op for farming
+    }, []);
+
+    const handleMapPointerLeave = useCallback(() => {
+      clearHoveredTile();
+    }, [clearHoveredTile]);
+
+    useEffect(() => {
+      const onPointerDown = (event: PointerEvent) => {
+        if (event.button === 0) {
+          isPointerPressedRef.current = true;
+          isDraggingRef.current = true;
+          wasDraggingRef.current = false;
+          dragDistanceRef.current = 0;
+        }
+      };
+
+      const onPointerMove = (event: PointerEvent) => {
+        if (!isDraggingRef.current) return;
+
+        dragDistanceRef.current += Math.abs(event.movementX || 0);
+
+        if (dragDistanceRef.current > 5) {
+          wasDraggingRef.current = true;
+        }
+
+        if (mapGroupRef.current && wasDraggingRef.current) {
+          mapGroupRef.current.rotation.y += (event.movementX || 0) * 0.005;
+        }
+      };
+
+      const onPointerUp = () => {
+        isPointerPressedRef.current = false;
+        isDraggingRef.current = false;
+        if (!isCameraMoving && lastFarmingHoverUvRef.current) {
+          updateHoveredTile(lastFarmingHoverUvRef.current);
+        }
+      };
+
+      const onPointerCancel = () => {
+        isPointerPressedRef.current = false;
+        isDraggingRef.current = false;
+      };
+
+      window.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerCancel);
+
+      return () => {
+        window.removeEventListener('pointerdown', onPointerDown);
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerCancel);
+      };
+    }, [isCameraMoving, updateHoveredTile]);
+
+    const setPawnRef = useCallback((_playerId: string, handle: PlayerPawnHandle | null) => {
+      if (handle) {
+        pawnRefs.current.set('player', handle);
+      } else {
+        pawnRefs.current.delete('player');
+      }
+    }, []);
+
+    if (!map) return null;
+
+    return (
+      <group
+        onPointerUp={handlePointerUp}
+        onContextMenu={(event) => event.nativeEvent.preventDefault()}
+      >
+        <group ref={mapGroupRef}>
+          <Suspense fallback={null}>
+            <Castle
+              position={[-1.07, 5.34, -0.94]}
+              targetSize={14.0}
+              rotation={[0, 0, 0]}
+            />
+          </Suspense>
+
+          <TerrainLayer map={map} tacticsMode={false} checkerColorA="#434F34" checkerColorB="#434F34" tileSize={1} tileRadius={0} />
+
+          <HitPlane
+            map={map}
+            onPointerMove={handlePointerMove}
+            onPointerDown={handlePointerDown}
+            onPointerLeave={handleMapPointerLeave}
+          />
+
+          <HoverLayer hoveredTile={deferredHoveredTile} map={map} />
+
+          <PlayersLayer
+            mode="farming"
+            mapWidth={map.width}
+            playerPosition={playerPosition}
+            movePath={movePath}
+            onPathComplete={onPathComplete}
+            farmingPlayerName={user?.username ?? ''}
+            farmingPlayerSkin={user?.skin}
+            combatPlayers={[]}
+            visualPositions={{}}
+            playerPaths={{}}
+            jumpingPlayers={{}}
+            setPawnRef={setPawnRef}
+            onCombatPathComplete={() => {}}
+            onTileReached={onTileReached}
+          />
+        </group>
+      </group>
+    );
+  },
+);

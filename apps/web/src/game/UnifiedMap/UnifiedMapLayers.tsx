@@ -75,14 +75,16 @@ export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sid
 
   return (
     <group>
-      <InstancedTerrain 
-        map={map}
-        checkerColorA={checkerColorA}
-        checkerColorB={checkerColorB}
-        sideColor={sideColor}
-        tileSize={tileSize}
-        tileRadius={tileRadius}
-      />
+      {tacticsMode !== undefined && (
+        <InstancedTerrain 
+          map={map}
+          checkerColorA={checkerColorA}
+          checkerColorB={checkerColorB}
+          sideColor={sideColor}
+          tileSize={tileSize}
+          tileRadius={tileRadius}
+        />
+      )}
       {!tacticsMode && (
         <Suspense fallback={null}>
           <InstancedFoliage map={map} />

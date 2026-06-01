@@ -75,7 +75,7 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
         farmingApi.getState(),
         inventoryApi.getInventory(),
       ]);
-      const MAP_SIZE = 20;
+      const MAP_SIZE = 10;
       const grid: TerrainType[][] = Array.from({ length: MAP_SIZE }, () =>
         Array(MAP_SIZE).fill(TerrainType.GROUND),
       );

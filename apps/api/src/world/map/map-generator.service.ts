@@ -19,13 +19,13 @@ interface TerrainBudget {
 
 const RESOURCE_BUDGETS: Record<TerrainType, { count: number; clustered: boolean }> = {
   [TerrainType.GROUND]: { count: 0, clustered: false },
-  [TerrainType.IRON]: { count: 10, clustered: true },
-  [TerrainType.LEATHER]: { count: 8, clustered: false },
-  [TerrainType.CRYSTAL]: { count: 8, clustered: true },
-  [TerrainType.FABRIC]: { count: 8, clustered: false },
-  [TerrainType.WOOD]: { count: 12, clustered: true },
-  [TerrainType.HERB]: { count: 10, clustered: false },
-  [TerrainType.GOLD]: { count: 6, clustered: true },
+  [TerrainType.IRON]: { count: 3, clustered: true },
+  [TerrainType.LEATHER]: { count: 2, clustered: false },
+  [TerrainType.CRYSTAL]: { count: 2, clustered: true },
+  [TerrainType.FABRIC]: { count: 2, clustered: false },
+  [TerrainType.WOOD]: { count: 3, clustered: true },
+  [TerrainType.HERB]: { count: 3, clustered: false },
+  [TerrainType.GOLD]: { count: 2, clustered: true },
 };
 
 @Injectable()

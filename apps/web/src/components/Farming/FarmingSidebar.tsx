@@ -3,6 +3,8 @@ import { InventoryGrid } from './InventoryGrid';
 import { ForgeList } from './ForgeList';
 import { Mannequin } from './Mannequin';
 import { ItemDetail } from './ItemDetail';
+import { TERRAIN_PROPERTIES, TerrainType } from '@game/shared-types';
+import { getResourceIconPath } from '../../utils/resourceIcons';
 import { useTranslation } from '../../store/language.store';
 import './FarmingSidebar.css';
 
@@ -18,6 +20,8 @@ interface FarmingSidebarProps {
   onUnequip: (slot: any) => void;
   onCraft: (item: any) => void;
   onBuy: (item: any) => void;
+  hoverInfo?: { x: number; y: number; terrain: TerrainType } | null;
+  previewPath?: { x: number; y: number }[];
 }
 
 export const FarmingSidebar = ({ 
@@ -31,7 +35,9 @@ export const FarmingSidebar = ({
   onEquip,
   onUnequip,
   onCraft,
-  onBuy
+  onBuy,
+  hoverInfo,
+  previewPath = []
 }: FarmingSidebarProps) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'inventory' | 'forge' | 'boutique'>('inventory');
@@ -180,7 +186,32 @@ export const FarmingSidebar = ({
 
       <div className="sidebar-section section-bottom">
         <div className="sidebar-content-bottom">
-          {bottomMode === 'mannequin' ? (
+          {hoverInfo && TERRAIN_PROPERTIES[hoverInfo.terrain].harvestable ? (
+            <div className="item-detail-card tile-detail-card">
+              <div className="item-detail-header">
+                <div className="item-type-badge">Tuile</div>
+                <h3>{hoverInfo.terrain}</h3>
+              </div>
+              <div className="item-detail-visual">
+                <img
+                  src={getResourceIconPath(TERRAIN_PROPERTIES[hoverInfo.terrain].resourceName)}
+                  alt={hoverInfo.terrain}
+                  className="detail-icon"
+                />
+              </div>
+              <div className="item-detail-stats">
+                <div className="stat-row">
+                  <span className="stat-label">Coords</span>
+                  <span className="stat-value">({hoverInfo.x}, {hoverInfo.y})</span>
+                </div>
+                {previewPath.length > 0 && (
+                  <div className="stat-row">
+                    <span className="stat-label">{t('tileDistance', { count: previewPath.length })}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : bottomMode === 'mannequin' ? (
             <Mannequin 
               equipment={equipment} 
               onUnequip={(slot) => handleAction(onUnequip, slot)} 
