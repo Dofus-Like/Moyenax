@@ -187,6 +187,7 @@ interface VsAiActions extends ActionFeedback {
   hasOpenSession: boolean;
   isInQueue: boolean;
   onStart: () => void;
+  onQuickStart: () => void;
   onResume: () => void;
   onReset: () => void;
 }
@@ -496,7 +497,7 @@ function CombatPanel({ isInQueue, hasOpenSession, busy, error, onJoinQueue, onLe
   );
 }
 
-function VsAiPanel({ hasOpenSession, isInQueue, busy, error, onStart, onResume, onReset, onClearError }: VsAiActions): ReactElement {
+function VsAiPanel({ hasOpenSession, isInQueue, busy, error, onStart, onQuickStart, onResume, onReset, onClearError }: VsAiActions): ReactElement {
   const color = '#facc15';
   if (hasOpenSession) {
     return (
@@ -518,6 +519,9 @@ function VsAiPanel({ hasOpenSession, isInQueue, busy, error, onStart, onResume, 
       <p style={DESC}>Lancez un combat solo contre l'intelligence artificielle.</p>
       <button type="button" className="hub-modal-cta" style={ctaVars(color)} disabled={isInQueue || busy} onClick={onStart}>
         {busy ? <><Spinner color="#fff" /> Lancement…</> : <><ChipRuneIcon size={16} /> Lancer VS AI</>}
+      </button>
+      <button type="button" className="hub-modal-secondary" style={{ marginTop: '10px' }} disabled={isInQueue || busy} onClick={onQuickStart}>
+        <SwordCrossedIcon size={15} /> Combat direct
       </button>
       {isInQueue && <p style={FAINT}>Quittez la file d'attente d'abord.</p>}
     </div>

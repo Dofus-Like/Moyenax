@@ -16,6 +16,7 @@ interface FarmingStoreState {
   spendableGold: number;
   seedId: SeedId | null;
   isLoading: boolean;
+  harvestedTiles: Set<string>;
 
   harvestResource: (resourceId: string, amount: number) => void;
   setInventory: (inventory: Record<string, number>) => void;
@@ -58,6 +59,7 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
   spendableGold: 0,
   seedId: null,
   isLoading: false,
+  harvestedTiles: new Set(),
 
   harvestResource: (resourceId, amount) =>
     set((state) => ({
@@ -91,6 +93,7 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
         seedId: state.seedId,
         inventory: toInventoryCounts(inventoryResponse.data as InventoryEntry[]),
         map: { width: MAP_SIZE, height: MAP_SIZE, grid, seedId: state.seedId },
+        harvestedTiles: new Set(),
         isLoading: false,
       });
     } catch (e) {
@@ -100,7 +103,7 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
   },
 
   gatherNode: async (x, y) => {
-    const { playerPosition, pips, map: currentMap } = get();
+    const { playerPosition, pips, map: currentMap, harvestedTiles } = get();
     if (pips <= 0 || !playerPosition || !currentMap) {
       return null;
     }
@@ -108,6 +111,8 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
     try {
       const newState = await farmingApi.gather(x, y, playerPosition.x, playerPosition.y);
       const inventoryResponse = await inventoryApi.getInventory();
+      const next = new Set(harvestedTiles);
+      next.add(`${x},${y}`);
       const grid = currentMap.grid.map((row) => [...row]);
       for (const cell of newState.map) {
         grid[cell.y][cell.x] = cell.terrain;
@@ -116,6 +121,7 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
         pips: newState.pips,
         spendableGold: newState.spendableGold,
         inventory: toInventoryCounts(inventoryResponse.data as InventoryEntry[]),
+        harvestedTiles: next,
         map: { ...currentMap, grid },
       });
       return newState;
@@ -148,10 +154,21 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
   nextRound: async () => {
     try {
       const state = await farmingApi.nextRound();
+      const MAP_SIZE = 10;
+      const grid: TerrainType[][] = Array.from({ length: MAP_SIZE }, () =>
+        Array(MAP_SIZE).fill(TerrainType.GROUND),
+      );
+      for (const cell of state.map) {
+        if (grid[cell.y] && cell.x < MAP_SIZE) {
+          grid[cell.y][cell.x] = cell.terrain;
+        }
+      }
       set({
         pips: state.pips,
         round: state.round,
         spendableGold: state.spendableGold,
+        map: { width: MAP_SIZE, height: MAP_SIZE, grid, seedId: state.seedId },
+        harvestedTiles: new Set(),
       });
     } catch (e) {
       console.error('Erreur lors du passage Çÿ la manche suivante', e);
@@ -170,5 +187,6 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
       spendableGold: 0,
       seedId: null,
       isLoading: false,
+      harvestedTiles: new Set(),
     }),
 }));

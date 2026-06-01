@@ -297,6 +297,7 @@ export function LobbyPage(): React.ReactNode {
             busy: action.busy.vsAi,
             error: action.errors.vsAi,
             onStart: () => void handleStartVsAiCombat(),
+            onQuickStart: () => navigate('/quick-combat'),
             onResume: () => navigate('/farming'),
             onReset: () => void handleResetSession(),
             onClearError: () => action.clearError('vsAi'),
@@ -450,6 +451,17 @@ export function LobbyPage(): React.ReactNode {
           >
             {hasOpenSession ? t('resumeGame') : t('startVsAi')}
           </button>
+
+          {!hasOpenSession && (
+            <button
+              type="button"
+              className="quick-combat-btn"
+              onClick={() => navigate('/quick-combat')}
+              disabled={isInQueue}
+            >
+              ⚡ Combat direct
+            </button>
+          )}
 
           {hasOpenSession && (
             <button

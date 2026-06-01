@@ -60,6 +60,7 @@ export class FarmingService {
       state = {
         playerId,
         seedId: map.seedId,
+        mapSeed: effectiveMapSeed,
         map: gridCells,
         pips: 4,
         round: 1,
@@ -104,6 +105,7 @@ export class FarmingService {
     }
 
     state.pips -= 1;
+    node.terrain = TerrainType.GROUND;
     await this.redis.setJson(key, state, 86400);
 
     return this.withSpendableGold(playerId, state);
@@ -173,8 +175,17 @@ export class FarmingService {
 
     if (!state) throw new BadRequestException('Aucune session de farming active');
 
+    const map = await this.mapGenerator.getOrCreateMap(state.seedId, state.mapSeed);
+    const gridCells: { x: number; y: number; terrain: TerrainType }[] = [];
+    for (const [y, row] of map.grid.entries()) {
+      for (const [x, terrain] of row.entries()) {
+        gridCells.push({ x, y, terrain });
+      }
+    }
+
     state.round += 1;
     state.pips = 4;
+    state.map = gridCells;
     await this.redis.setJson(key, state, 86400);
 
     return this.withSpendableGold(playerId, state);
@@ -195,8 +206,16 @@ export class FarmingService {
       const key = `farming:${playerId}`;
       const state = await this.redis.getJson<FarmingState>(key);
       if (state) {
+        const map = await this.mapGenerator.getOrCreateMap(state.seedId, state.mapSeed);
+        const gridCells: { x: number; y: number; terrain: TerrainType }[] = [];
+        for (const [y, row] of map.grid.entries()) {
+          for (const [x, terrain] of row.entries()) {
+            gridCells.push({ x, y, terrain });
+          }
+        }
         state.round += 1;
         state.pips = 4;
+        state.map = gridCells;
         await this.redis.setJson(key, state, 86400);
       }
     }

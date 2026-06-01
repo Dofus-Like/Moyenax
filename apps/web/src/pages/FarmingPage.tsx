@@ -14,18 +14,19 @@ import { inventoryApi } from '../api/inventory.api';
 import { equipmentApi } from '../api/equipment.api';
 import { shopApi } from '../api/shop.api';
 import { craftingApi } from '../api/crafting.api';
-import { farmingApi } from '../api/farming.api';
 import {
   type PathNode,
   type PlayerStats,
   findPath,
   findPathToAdjacent,
+  SEED_CONFIGS,
   TERRAIN_PROPERTIES,
   TerrainType,
+  type SeedId,
 } from '@game/shared-types';
 import { getItemVisualMeta } from '../utils/itemVisual';
+import { getResourceIconPath } from '../utils/resourceIcons';
 import { FarmingSidebar } from '../components/Farming/FarmingSidebar';
-import { FarmingTopBar } from '../components/Farming/FarmingTopBar';
 import { SpellBar, SpellBarItem } from '../components/SpellBar/SpellBar';
 import { playerApi } from '../api/player.api';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
@@ -106,20 +107,36 @@ export function FarmingPage() {
   const round = useFarmingStore((s) => s.round);
   const pips = useFarmingStore((s) => s.pips);
   const inventoryCounts = useFarmingStore((s) => s.inventory);
+  const seedId = useFarmingStore((s) => s.seedId);
   const spendableGold = useFarmingStore((s) => s.spendableGold);
+  const harvestedTiles = useFarmingStore((s) => s.harvestedTiles);
   const fetchState = useFarmingStore((s) => s.fetchState);
 
   const mapRef = useRef(map);
   const playerPosRef = useRef(playerPosition);
+  const harvestedTilesRef = useRef(harvestedTiles);
   mapRef.current = map;
   playerPosRef.current = playerPosition;
+  harvestedTilesRef.current = harvestedTiles;
   isMovingRef.current = isMoving;
 
   const [controls, setControls] = useState<CameraControlsImpl | null>(null);
   const [isGathering, setIsGathering] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'info' | 'error' } | null>(null);
-  const [showRingChoice, setShowRingChoice] = useState(false);
-  const [ringChoiceLoading, setRingChoiceLoading] = useState<string | null>(null);
+  const pipArray = useMemo(() => Array.from({ length: 4 }, (_, i) => i < pips), [pips]);
+
+  const seedResources = useMemo(() => {
+    if (!seedId) return [];
+    const config = SEED_CONFIGS[seedId as SeedId];
+    if (!config) return [];
+    return config.resources
+      .map((t) => ({
+        name: TERRAIN_PROPERTIES[t].resourceName,
+        count: (t !== TerrainType.GOLD && inventoryCounts[TERRAIN_PROPERTIES[t].resourceName ?? '']) || 0,
+      }))
+      .filter((r) => r.name && r.name !== 'Or');
+  }, [seedId, inventoryCounts]);
+
   const { active: isAssetLoading, progress: assetLoadProgress } = useProgress();
   const isFarmingLoaded = Boolean(map && isMapSceneReady && !isAssetLoading);
 
@@ -365,6 +382,7 @@ export function FarmingPage() {
     const currentMap = mapRef.current;
     const currentPos = playerPosRef.current;
     if (!currentMap || isMovingRef.current || !currentPos) return;
+    if (harvestedTilesRef.current.has(`${x},${y}`)) return;
     const isAdjacent = Math.abs(currentPos.x - x) + Math.abs(currentPos.y - y) <= 1;
     if (TERRAIN_PROPERTIES[terrain].harvestable) {
       if (isAdjacent) { performGather(x, y); return; }
@@ -392,45 +410,6 @@ export function FarmingPage() {
     }
     setMovePath(null); setQueuedAction(null); setIsMoving(false);
   }, [movePath, movePlayer, performGather, queuedAction]);
-
-  // -- Ring choice --
-  const ringOptions = useMemo(() => {
-    const items = shopItemsData?.data || [];
-    const names = ['Anneau du Guerrier', 'Anneau du Mage', 'Anneau du Ninja'];
-    return names.map(name => items.find((i: any) => i.name === name)).filter(Boolean);
-  }, [shopItemsData]);
-
-  const handleSelectRing = useCallback(async (ring: any) => {
-    if (!ring || ringChoiceLoading) return;
-    setRingChoiceLoading(ring.name);
-    try {
-      await farmingApi.grantStartingRing(ring.id);
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['inventory'] }),
-        queryClient.refetchQueries({ queryKey: ['equipment'] }),
-        queryClient.refetchQueries({ queryKey: ['player-spells'] }),
-        queryClient.refetchQueries({ queryKey: ['player-stats'] }),
-        fetchState(),
-        refreshPlayer(),
-      ]);
-      localStorage.setItem('ring_choice_done', 'true');
-      setActionMessage({ text: `${ring.name} équipé !`, type: 'info' });
-      setShowRingChoice(false);
-    } catch (e: any) {
-      const msg = e.response?.data?.message || "Erreur lors du choix de l'anneau";
-      setActionMessage({ text: msg, type: 'error' });
-    } finally {
-      setRingChoiceLoading(null);
-    }
-  }, [ringChoiceLoading, queryClient, fetchState, refreshPlayer]);
-
-  useEffect(() => {
-    if (!equipmentData || ringOptions.length < 3 || !isMapSceneReady) return;
-    const hasAccessory = equipmentData?.data?.ACCESSORY;
-    if (!hasAccessory) {
-      setShowRingChoice(true);
-    }
-  }, [equipmentData, ringOptions, isMapSceneReady]);
 
   // -- Lifecycle --
   useEffect(() => {
@@ -482,47 +461,6 @@ export function FarmingPage() {
         </div>
       )}
 
-      {/* 💍 Ring Choice Overlay */}
-      {showRingChoice && (
-        <div className="farming-overlay">
-          <div className="ring-choice-modal">
-            <h2>Choisissez votre anneau</h2>
-            <div className="ring-choice-grid">
-              {ringOptions.map((ring: any) => {
-                const bonus = ring.statsBonus || {};
-                const stats = [
-                  bonus.atk && `ATK +${bonus.atk}`,
-                  bonus.mag && `MAG +${bonus.mag}`,
-                  bonus.def && `DEF +${bonus.def}`,
-                  bonus.res && `RES +${bonus.res}`,
-                  bonus.ini && `INI +${bonus.ini}`,
-                  bonus.vit && `PV +${bonus.vit}`,
-                  bonus.pa && `PA +${bonus.pa}`,
-                  bonus.pm && `PM +${bonus.pm}`,
-                ].filter(Boolean);
-                return (
-                  <button
-                    key={ring.id}
-                    type="button"
-                    className="ring-choice-card"
-                    onClick={() => handleSelectRing(ring)}
-                    disabled={ringChoiceLoading === ring.name}
-                  >
-                    <img src={ring.iconPath || `/assets/items/${ring.id}.png`} alt={ring.name} className="ring-choice-icon" />
-                    <div className="ring-choice-name">{ring.name}</div>
-                    <div className="ring-choice-stats">
-                      {stats.map((s: string) => (
-                        <span key={s} className="ring-choice-stat">+{s}</span>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ⚙️ Settings Overlay */}
       {showSettings && (
         <div className="settings-overlay" onClick={() => setShowSettings(false)}>
@@ -554,10 +492,22 @@ export function FarmingPage() {
 
       <div className="top-left-utility">
         <div className="round-badge">{t('round', { round: activeSession?.currentRound || round })}</div>
-      </div>
-
-      <div className="top-center-container">
-        <FarmingTopBar pips={pips} resources={inventoryCounts} />
+        <div className="top-info-panel">
+          <div className="pips-row">
+            {pipArray.map((filled, i) => (
+              <div key={i} className={`pip-diamond ${filled ? 'filled' : ''}`} />
+            ))}
+          </div>
+          <div className="res-column">
+            {seedResources.map((r) => (
+              <div key={r.name} className="res-line">
+                <img src={getResourceIconPath(r.name)} alt={r.name ?? ''} className="res-icon-img" />
+                <span className="res-name">{r.name}</span>
+                <span className="res-count">{r.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 🗺️ Main Viewport */}
@@ -613,6 +563,7 @@ export function FarmingPage() {
             <Suspense fallback={null}>
               <FarmingMapScene
                 map={map}
+                harvestedTiles={harvestedTiles}
                 playerPosition={playerPosition ?? undefined}
                 movePath={movePath}
                 onPathComplete={handlePathComplete}

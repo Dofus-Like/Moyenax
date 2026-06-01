@@ -74,10 +74,11 @@
 .top-left-utility {
   grid-area: top-left;
   z-index: 10;
-  padding: 24px;
+  padding: 16px 16px 16px 20px;
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   pointer-events: none; /* Let clicks through empty space */
 }
 
@@ -133,12 +134,96 @@
     inset 0 0 40px rgba(0, 0, 0, 0.65);
 }
 
-.top-center-container {
-  grid-area: top-center;
-  z-index: 10;
+.top-info-panel {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  outline-offset: 0px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.75),
+    inset 0 0 40px rgba(0, 0, 0, 0.65);
+}
+
+.top-info-panel .pips-row {
   display: flex;
   justify-content: center;
-  pointer-events: none;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.top-info-panel .res-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.top-info-panel .res-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+}
+
+.top-info-panel .res-icon-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.top-info-panel .res-name {
+  flex: 1;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.top-info-panel .res-count {
+  font-weight: 800;
+  color: var(--rm-accent);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  font-size: 0.85rem;
+  min-width: 20px;
+  text-align: right;
+}
+
+.top-info-panel .pip-diamond {
+  display: block;
+  width: 6px;
+  height: 6px;
+  transform: rotate(45deg);
+  margin: 2px 3px;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.top-info-panel .pip-diamond.filled {
+  background: #fca800;
+  box-shadow:
+    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    0px -1px 0 #000, 0px 1px 0 #000, -1px 0px 0 #000, 1px 0px 0 #000,
+    0 0 6px rgba(252, 168, 0, 0.65);
+}
+
+.top-info-panel .pip-diamond:not(.filled) {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    0px -1px 0 #000, 0px 1px 0 #000, -1px 0px 0 #000, 1px 0px 0 #000,
+    inset 0 0 2px rgba(0, 0, 0, 0.6);
 }
 
 .farming-top-bar {

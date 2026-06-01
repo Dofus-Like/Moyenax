@@ -1,6 +1,6 @@
 import type { ThreeEvent } from '@react-three/fiber';
 import { useFrame } from '@react-three/fiber';
-import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GameMap, PathNode } from '@game/shared-types';
 import { TerrainType } from '@game/shared-types';
@@ -40,6 +40,7 @@ const HitPlane = React.memo(
 
 interface FarmingMapSceneProps {
   map: GameMap;
+  harvestedTiles: Set<string>;
   playerPosition?: PathNode;
   movePath?: PathNode[] | null;
   onPathComplete?: () => void;
@@ -54,6 +55,7 @@ interface FarmingMapSceneProps {
 export const FarmingMapScene = React.memo(
   ({
     map,
+    harvestedTiles,
     playerPosition,
     movePath,
     onPathComplete,
@@ -65,6 +67,18 @@ export const FarmingMapScene = React.memo(
     onSceneReady,
   }: FarmingMapSceneProps) => {
     const user = useAuthStore((state) => state.player);
+
+    const visibleMap = useMemo(() => {
+      if (!map || !harvestedTiles.size) return map;
+      const grid = map.grid.map((row) => [...row]);
+      for (const key of harvestedTiles) {
+        const [x, y] = key.split(',').map(Number);
+        if (grid[y] && grid[y][x] !== undefined) {
+          grid[y][x] = TerrainType.GROUND;
+        }
+      }
+      return { ...map, grid };
+    }, [map, harvestedTiles]);
 
     const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
     const deferredHoveredTile = React.useDeferredValue(hoveredTile);
@@ -239,7 +253,7 @@ export const FarmingMapScene = React.memo(
             />
           </Suspense>
 
-          <TerrainLayer map={map} tacticsMode={false} checkerColorA="#434F34" checkerColorB="#434F34" tileSize={1} tileRadius={0} />
+          <TerrainLayer map={visibleMap} tacticsMode={false} checkerColorA="#434F34" checkerColorB="#434F34" tileSize={1} tileRadius={0} />
 
           <HitPlane
             map={map}
