@@ -8,12 +8,16 @@ import { COMBAT_COLORS } from '../constants/colors';
 import fragmentShader from './background.frag?raw';
 import vertexShader from './background.vert?raw';
 
-export function CombatBackgroundShader() {
+interface CombatBackgroundShaderProps {
+  defaultTimeOfDay?: number;
+}
+
+export function CombatBackgroundShader({ defaultTimeOfDay = 0 }: CombatBackgroundShaderProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
 
   const config = useControls('Background Shader', {
-    timeOfDay: { value: 0, min: 0, max: 2, step: 0.01, label: 'Moment (0:J, 1:C, 2:N)' },
+    timeOfDay: { value: defaultTimeOfDay, min: 0, max: 2, step: 0.01, label: 'Moment (0:J, 1:C, 2:N)' },
     'Sky Colors': folder({
       dayA: { value: COMBAT_COLORS.SHADER_BG_A },
       dayB: { value: COMBAT_COLORS.SHADER_BG_B },
@@ -21,9 +25,9 @@ export function CombatBackgroundShader() {
       sunA: { value: COMBAT_COLORS.SHADER_SUNSET_A },
       sunB: { value: COMBAT_COLORS.SHADER_SUNSET_B },
       sunC: { value: COMBAT_COLORS.SHADER_SUNSET_C },
-      nightA: { value: COMBAT_COLORS.SHADER_NIGHT_A },
-      nightB: { value: COMBAT_COLORS.SHADER_NIGHT_B },
-      nightC: { value: COMBAT_COLORS.SHADER_NIGHT_C },
+      nightA: { value: '#000000' },
+      nightB: { value: '#000000' },
+      nightC: { value: '#ffffff' },
       speed: { value: 1.0, min: 0, max: 2, label: 'Noise Speed' },
       scale: { value: 1.0, min: 0.1, max: 10 },
       opacity: { value: 1.0, min: 0, max: 1 },

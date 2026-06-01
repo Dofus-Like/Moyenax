@@ -5,7 +5,6 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 import type { GameMap, PathNode } from '@game/shared-types';
 import { TerrainType } from '@game/shared-types';
 
-import { Castle } from '../game/ResourceMap/Castle';
 import type { PlayerPawnHandle } from '../game/ResourceMap/PlayerPawn';
 import { useAuthStore } from '../store/auth.store';
 import {
@@ -46,7 +45,6 @@ interface FarmingMapSceneProps {
   onPathComplete?: () => void;
   onTileClick?: (x: number, y: number, terrain: TerrainType) => void;
   onTileHover?: (info: { x: number; y: number; terrain: TerrainType } | null) => void;
-  isCameraMoving?: boolean;
   isMoving?: boolean;
   onTileReached?: (node: PathNode) => void;
   onSceneReady?: () => void;
@@ -61,7 +59,6 @@ export const FarmingMapScene = React.memo(
     onPathComplete,
     onTileClick,
     onTileHover,
-    isCameraMoving = false,
     isMoving = false,
     onTileReached,
     onSceneReady,
@@ -115,7 +112,7 @@ export const FarmingMapScene = React.memo(
         if (!map) return;
         lastFarmingHoverUvRef.current = uv;
 
-        if (isCameraMoving || isPointerPressedRef.current) return;
+        if (isPointerPressedRef.current) return;
 
         const gx = Math.min(map.width - 1, Math.floor(uv.x * map.width));
         const gz = Math.min(map.height - 1, Math.floor((1 - uv.y) * map.height));
@@ -133,7 +130,7 @@ export const FarmingMapScene = React.memo(
         setHoveredTile({ x: gx, y: gz });
         onTileHover?.({ x: gx, y: gz, terrain });
       },
-      [map, visibleMap, clearHoveredTile, isCameraMoving, onTileHover],
+      [map, visibleMap, clearHoveredTile, onTileHover],
     );
 
     const handlePointerMove = useCallback(
@@ -169,15 +166,10 @@ export const FarmingMapScene = React.memo(
     }, [clearHoveredTile]);
 
     const updateHoveredTileRef = useRef(updateHoveredTile);
-    const isCameraMovingRef = useRef(isCameraMoving);
 
     useEffect(() => {
       updateHoveredTileRef.current = updateHoveredTile;
     }, [updateHoveredTile]);
-
-    useEffect(() => {
-      isCameraMovingRef.current = isCameraMoving;
-    }, [isCameraMoving]);
 
     useEffect(() => {
       const onPointerDown = (event: PointerEvent): void => {
@@ -206,7 +198,7 @@ export const FarmingMapScene = React.memo(
       const onPointerUp = (): void => {
         isPointerPressedRef.current = false;
         isDraggingRef.current = false;
-        if (!isCameraMovingRef.current && lastFarmingHoverUvRef.current) {
+        if (lastFarmingHoverUvRef.current) {
           updateHoveredTileRef.current(lastFarmingHoverUvRef.current);
         }
       };
@@ -245,14 +237,6 @@ export const FarmingMapScene = React.memo(
         onContextMenu={(event) => event.nativeEvent.preventDefault()}
       >
         <group ref={mapGroupRef}>
-          <Suspense fallback={null}>
-            <Castle
-              position={[-1.07, 5.34, -0.94]}
-              targetSize={14.0}
-              rotation={[0, 0, 0]}
-            />
-          </Suspense>
-
           <TerrainLayer map={visibleMap} tacticsMode={false} checkerColorA="#434F34" checkerColorB="#434F34" tileSize={1} tileRadius={0} />
 
           <HitPlane

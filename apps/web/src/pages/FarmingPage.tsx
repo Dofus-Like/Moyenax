@@ -92,10 +92,9 @@ export function FarmingPage() {
   const [hoverInfo, setHoverInfo] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
   const [movePath, setMovePath] = useState<PathNode[] | null>(null);
   const [isMoving, setIsMoving] = useState(false);
-  const [isCameraMoving, setIsCameraMoving] = useState(false);
   const [isMapSceneReady, setIsMapSceneReady] = useState(false);
   const [, setIsTransitioning] = useState(false);
-  const [statsOpen, setStatsOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(true);
   const isActionInProgressRef = useRef(false);
   const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -523,7 +522,7 @@ export function FarmingPage() {
             camera={{ fov: 30 }}
           >
             <CanvasPerfOverlay />
-            <CombatBackgroundShader />
+            <CombatBackgroundShader defaultTimeOfDay={2} />
             <OrthographicCamera 
               makeDefault 
               position={[20, 20, 20]} 
@@ -544,8 +543,6 @@ export function FarmingPage() {
                 middle: CameraControlsImpl.ACTION.NONE,
                 wheel: CameraControlsImpl.ACTION.DOLLY
               }}
-              onRest={() => setIsCameraMoving(false)}
-              onStart={() => setIsCameraMoving(true)}
             />
             
             <CameraEffects controlsRef={{ current: controls } as any} />
@@ -572,7 +569,6 @@ export function FarmingPage() {
                 onPathComplete={handlePathComplete}
                 onTileClick={handleTileClick}
                 onTileHover={handleTileHover}
-                isCameraMoving={isCameraMoving}
                 onSceneReady={handleSceneReady}
               />
             </Suspense>
@@ -638,14 +634,6 @@ export function FarmingPage() {
                     );
                   })}
                 </div>
-
-                <button
-                  type="button"
-                  className="cpp-eq-toggle-btn"
-                  onClick={() => setStatsOpen(false)}
-                >
-                  ▲ Masquer
-                </button>
               </div>
             )}
           </div>
@@ -662,6 +650,14 @@ export function FarmingPage() {
           onClick={() => setShowSettings(true)}
         >
           <img src="/assets/icons/parametres.png" alt="Paramètres" style={{ width: '18px', height: '18px' }} />
+        </button>
+        <button
+          type="button"
+          className="farming-icon-btn"
+          aria-label="Audio"
+          title="Audio"
+        >
+          <img src="/assets/icons/audio.png" alt="Audio" style={{ width: '18px', height: '18px' }} />
         </button>
         <button
           type="button"

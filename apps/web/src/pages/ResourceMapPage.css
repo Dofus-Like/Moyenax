@@ -116,22 +116,19 @@
 }
 
 .round-badge {
-  padding: 8px 16px;
-  background: var(--glass-bg);
-  border: 2px solid var(--glass-border);
-  border-radius: var(--glass-radius);
-  outline: 1.5px solid rgba(0, 0, 0, 0.85);
-  outline-offset: 0px;
-  color: var(--rm-accent);
-  font-weight: 800;
-  font-size: 0.85rem;
+  font-family: var(--font-hud);
+  font-size: 1.15rem;
+  color: #ffffff;
+  text-shadow:
+    -2px -2px 0 #000,
+     2px -2px 0 #000,
+    -2px  2px 0 #000,
+     2px  2px 0 #000,
+     0px -2px 0 #000,
+     0px  2px 0 #000,
+    -2px  0px 0 #000,
+     2px  0px 0 #000;
   letter-spacing: 0.05em;
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.6),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.75),
-    inset 0 0 40px rgba(0, 0, 0, 0.65);
 }
 
 .top-info-panel {

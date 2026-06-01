@@ -1,7 +1,6 @@
 import type { InventoryItem } from '@game/shared-types';
 import { EquipmentSlotType } from '@game/shared-types';
 
-import mannequinBg from '../assets/mannequin-bg.gif';
 import { useTranslation } from '../store/language.store';
 import './Mannequin.css';
 
@@ -64,9 +63,7 @@ export const Mannequin: React.FC<MannequinProps> = ({ equipment, onEquip, onUneq
             )}
           </div>
         ))}
-        <div className="mannequin-silhouette">
-          <img src={mannequinBg} alt="Silhouette" />
-        </div>
+        <div className="mannequin-silhouette" />
 
       </div>
     </div>
