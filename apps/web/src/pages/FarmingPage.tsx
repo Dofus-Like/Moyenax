@@ -31,8 +31,12 @@ import { SpellBar, SpellBarItem } from '../components/SpellBar/SpellBar';
 import { playerApi } from '../api/player.api';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CameraEffects } from '../game/Combat/CameraEffects';
+import { EndTurnButton } from '../game/HUD/EndTurnButton';
 import { useTranslation } from '../store/language.store';
 import './ResourceMapPage.css';
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const noop = (_id: string): void => {};
 
 function findSpawnPosition(grid: TerrainType[][]): PathNode {
   const height = grid.length;
@@ -90,7 +94,7 @@ export function FarmingPage() {
   const [isMoving, setIsMoving] = useState(false);
   const [isCameraMoving, setIsCameraMoving] = useState(false);
   const [isMapSceneReady, setIsMapSceneReady] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [, setIsTransitioning] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const isActionInProgressRef = useRef(false);
   const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(null);
@@ -396,8 +400,7 @@ export function FarmingPage() {
 
   useEffect(() => {
     // Force spell sync on mount
-    playerApi.getSpells().then(data => {
-      console.log('Initial Spells Sync:', data);
+    playerApi.getSpells().then(() => {
       queryClient.invalidateQueries({ queryKey: ['player-spells'] });
     });
   }, [queryClient]);
@@ -514,8 +517,8 @@ export function FarmingPage() {
       <main className="farming-viewport">
         {map && (
           <Canvas
-            shadows
-            gl={{ antialias: true, alpha: true }}
+            shadows={{ type: 'pcf' }}
+            gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
             dpr={[1, 2]}
             camera={{ fov: 30 }}
           >
@@ -684,18 +687,13 @@ export function FarmingPage() {
       <div className="bottom-center-actions">
         <SpellBar 
           spells={mappedSpells} 
-          onSpellClick={(id) => {
-            console.log('Spell', id);
-          }} 
+          onSpellClick={noop} 
           onToggleMannequins={() => setShowSettings(true)}
-          onPassTurn={handleToggleReady}
-          passLabel={t('ready')}
-          isReadyMode={true}
-          canPassTurn={!isTransitioning}
-          isReady={amIReady}
           attackerStats={statsData?.data}
           disableGrimoire={true}
-        />
+        >
+          <EndTurnButton mode="farming-ready" onEndTurn={handleToggleReady} isReady={amIReady} />
+        </SpellBar>
       </div>
 
       {actionMessage && <div className={`map-action-toast ${actionMessage.type}`}>{actionMessage.text}</div>}

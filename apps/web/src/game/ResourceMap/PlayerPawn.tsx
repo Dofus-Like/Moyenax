@@ -51,6 +51,8 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
     const progressRef = useRef(0);
     const animFrameRef = useRef(0);
     const frameCounterRef = useRef(0);
+    const materialRef = useRef<THREE.SpriteMaterial | null>(null);
+    const textureClonesRef = useRef<THREE.Texture[]>([]);
 
     const fromRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
     const toRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
@@ -78,6 +80,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
       const tIdle = texIdle.clone();
       const tWalk = texWalk.clone();
       const tAttack = texAttack.clone();
+      textureClonesRef.current = [tIdle, tWalk, tAttack];
       
       // Config Idle (6 frames)
       tIdle.magFilter = tIdle.minFilter = THREE.NearestFilter;
@@ -154,6 +157,18 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
         mat.customProgramCacheKey = () => `pawn-mat-${skinConfig.id}`;
         return mat;
     }, [textureIdle, skinConfig.id, uniforms]);
+
+    useEffect(() => {
+      const prev = materialRef.current;
+      materialRef.current = spriteMaterial;
+      return () => {
+        prev?.dispose();
+        if (prev) {
+          for (const t of textureClonesRef.current) t.dispose();
+          textureClonesRef.current = [];
+        }
+      };
+    }, [spriteMaterial]);
 
     // Update du map du mat en fonction de l'état (marche/attaque)
     useEffect(() => {

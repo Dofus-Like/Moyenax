@@ -108,9 +108,19 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
       return null;
     }
 
+    const prevPips = pips;
+    const prevTotal = Object.values(get().inventory).reduce((a, b) => a + b, 0);
+    const prevGold = get().spendableGold;
+
     try {
       const newState = await farmingApi.gather(x, y, playerPosition.x, playerPosition.y);
       const inventoryResponse = await inventoryApi.getInventory();
+      const newInventory = toInventoryCounts(inventoryResponse.data as InventoryEntry[]);
+      const newTotal = Object.values(newInventory).reduce((a, b) => a + b, 0);
+
+      const gainedSomething = newTotal > prevTotal || newState.spendableGold > prevGold;
+      const effectivePips = gainedSomething ? newState.pips : prevPips;
+
       const next = new Set(harvestedTiles);
       next.add(`${x},${y}`);
       const grid = currentMap.grid.map((row) => [...row]);
@@ -118,9 +128,9 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
         grid[cell.y][cell.x] = cell.terrain;
       }
       set({
-        pips: newState.pips,
+        pips: effectivePips,
         spendableGold: newState.spendableGold,
-        inventory: toInventoryCounts(inventoryResponse.data as InventoryEntry[]),
+        inventory: newInventory,
         harvestedTiles: next,
         map: { ...currentMap, grid },
       });

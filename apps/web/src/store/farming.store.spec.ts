@@ -260,6 +260,57 @@ describe('useFarmingStore', () => {
       expect(useFarmingStore.getState().harvestedTiles.has('3,2')).toBe(true);
       expect(useFarmingStore.getState().harvestedTiles.size).toBe(2);
     });
+
+    it('refunds the pip when no resource or gold was gained', async () => {
+      useFarmingStore.setState({
+        pips: 4,
+        spendableGold: 0,
+        playerPosition: { x: 1, y: 1 },
+        map: {
+          width: 20, height: 20, seedId: 'FORGE',
+          grid: Array.from({ length: 20 }, () => Array(20).fill(TerrainType.GROUND)),
+        },
+        inventory: { Bois: 2 },
+      });
+      mocks.farmingApi.gather.mockResolvedValue({
+        pips: 3,
+        spendableGold: 0,
+        map: [{ x: 2, y: 2, terrain: TerrainType.GROUND }],
+      });
+      mocks.inventoryApi.getInventory.mockResolvedValue({
+        data: [{ quantity: 2, item: { name: 'Bois', type: 'RESOURCE' } }],
+      });
+
+      await useFarmingStore.getState().gatherNode(2, 2);
+
+      expect(useFarmingStore.getState().pips).toBe(4);
+    });
+
+    it('does not refund the pip when a resource was actually added', async () => {
+      useFarmingStore.setState({
+        pips: 4,
+        spendableGold: 0,
+        playerPosition: { x: 1, y: 1 },
+        map: {
+          width: 20, height: 20, seedId: 'FORGE',
+          grid: Array.from({ length: 20 }, () => Array(20).fill(TerrainType.GROUND)),
+        },
+        inventory: { Bois: 2 },
+      });
+      mocks.farmingApi.gather.mockResolvedValue({
+        pips: 3,
+        spendableGold: 0,
+        map: [{ x: 2, y: 2, terrain: TerrainType.GROUND }],
+      });
+      mocks.inventoryApi.getInventory.mockResolvedValue({
+        data: [{ quantity: 3, item: { name: 'Bois', type: 'RESOURCE' } }],
+      });
+
+      await useFarmingStore.getState().gatherNode(2, 2);
+
+      expect(useFarmingStore.getState().pips).toBe(3);
+      expect(useFarmingStore.getState().inventory['Bois']).toBe(3);
+    });
   });
 
   describe('endPhase', () => {

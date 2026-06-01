@@ -128,12 +128,12 @@ export const FarmingMapScene = React.memo(
         const previous = hoveredTileRef.current;
         if (previous?.x === gx && previous.y === gz) return;
 
-        const terrain = map.grid[gz][gx] as TerrainType;
+        const terrain = (visibleMap ?? map).grid[gz][gx] as TerrainType;
         hoveredTileRef.current = { x: gx, y: gz };
         setHoveredTile({ x: gx, y: gz });
         onTileHover?.({ x: gx, y: gz, terrain });
       },
-      [map, clearHoveredTile, isCameraMoving, onTileHover],
+      [map, visibleMap, clearHoveredTile, isCameraMoving, onTileHover],
     );
 
     const handlePointerMove = useCallback(
@@ -154,10 +154,10 @@ export const FarmingMapScene = React.memo(
 
         const gx = Math.min(map.width - 1, Math.floor(e.uv.x * map.width));
         const gz = Math.min(map.height - 1, Math.floor((1 - e.uv.y) * map.height));
-        const terrain = map.grid[gz][gx] as TerrainType;
+        const terrain = (visibleMap ?? map).grid[gz][gx] as TerrainType;
         onTileClick?.(gx, gz, terrain);
       },
-      [map, onTileClick],
+      [map, visibleMap, onTileClick],
     );
 
     const handlePointerUp = useCallback((_event: ThreeEvent<PointerEvent>) => {
@@ -256,13 +256,13 @@ export const FarmingMapScene = React.memo(
           <TerrainLayer map={visibleMap} tacticsMode={false} checkerColorA="#434F34" checkerColorB="#434F34" tileSize={1} tileRadius={0} />
 
           <HitPlane
-            map={map}
+            map={visibleMap}
             onPointerMove={handlePointerMove}
             onPointerDown={handlePointerDown}
             onPointerLeave={handleMapPointerLeave}
           />
 
-          <HoverLayer hoveredTile={deferredHoveredTile} map={map} />
+          <HoverLayer hoveredTile={deferredHoveredTile} map={visibleMap} />
 
           <PlayersLayer
             mode="farming"

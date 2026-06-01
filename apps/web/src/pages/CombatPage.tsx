@@ -161,8 +161,8 @@ export function CombatPage() {
         {/* LEFT WINDOW: GAME & HUD */}
         <div className="combat-game-zone">
           <Canvas
-            shadows
-            gl={{ antialias: true, alpha: true }}
+            shadows={{ type: 'pcf' }}
+            gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
             dpr={[1, 2]}
             camera={{ fov: 30 }}
           >

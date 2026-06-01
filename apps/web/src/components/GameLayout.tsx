@@ -54,7 +54,7 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`game-layout ${location.pathname === '/' ? 'in-lobby' : ''} ${(isCombatPage || isFarmingPage) ? 'no-navbar' : ''}`}>
-      {!isCombatPage && <GlobalBackground />}
+      {!isCombatPage && !isFarmingPage && <GlobalBackground />}
       
       {!isCombatPage && !isFarmingPage && (
         <nav className="game-navbar">
