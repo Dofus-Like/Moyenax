@@ -9,15 +9,14 @@ import fragmentShader from './background.frag?raw';
 import vertexShader from './background.vert?raw';
 
 interface CombatBackgroundShaderProps {
-  defaultTimeOfDay?: number;
+  timeOfDay: number;
 }
 
-export function CombatBackgroundShader({ defaultTimeOfDay = 0 }: CombatBackgroundShaderProps) {
+export function CombatBackgroundShader({ timeOfDay }: CombatBackgroundShaderProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
 
   const config = useControls('Background Shader', {
-    timeOfDay: { value: defaultTimeOfDay, min: 0, max: 2, step: 0.01, label: 'Moment (0:J, 1:C, 2:N)' },
     'Sky Colors': folder({
       dayA: { value: COMBAT_COLORS.SHADER_BG_A },
       dayB: { value: COMBAT_COLORS.SHADER_BG_B },
@@ -58,8 +57,7 @@ export function CombatBackgroundShader({ defaultTimeOfDay = 0 }: CombatBackgroun
       const material = meshRef.current.material as THREE.ShaderMaterial;
       material.uniforms.uTime.value = state.clock.getElapsedTime() * config.speed;
       
-      // Use fixed timeOfDay from config
-      material.uniforms.uPhase.value = config.timeOfDay;
+      material.uniforms.uPhase.value = timeOfDay;
 
       material.uniforms.uDayA.value.set(config.dayA);
       material.uniforms.uDayB.value.set(config.dayB);

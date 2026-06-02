@@ -141,6 +141,9 @@ export const translations = {
     emptyInventory: 'Inventaire vide',
     farmingInventoryReset: 'Inventaire farming reset',
     logout: 'Se déconnecter',
+    use: 'Utiliser',
+    itemUsed: '{name} utilisé !',
+    useError: "Impossible d'utiliser cet objet",
   },
   en: {
     loading: 'Loading...',
@@ -276,6 +279,9 @@ export const translations = {
     emptyInventory: 'Empty inventory',
     farmingInventoryReset: 'Farming inventory reset',
     logout: 'Log out',
+    use: 'Use',
+    itemUsed: '{name} used!',
+    useError: 'Cannot use this item',
   },
   ja: {
     loading: '読み込み中...',
@@ -411,6 +417,9 @@ export const translations = {
     emptyInventory: 'インベントリは空です',
     farmingInventoryReset: '採集インベントリをリセットしました',
     logout: 'ログアウト',
+    use: '使用',
+    itemUsed: '{name} を使用しました！',
+    useError: 'このアイテムは使用できません',
   },
 } satisfies Record<Language, Record<string, string>>;
 

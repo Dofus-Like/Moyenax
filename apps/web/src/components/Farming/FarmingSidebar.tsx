@@ -20,6 +20,7 @@ interface FarmingSidebarProps {
   onUnequip: (slot: any) => void;
   onCraft: (item: any) => void;
   onBuy: (item: any) => void;
+  onUse?: (item: any) => void;
   hoverInfo?: { x: number; y: number; terrain: TerrainType } | null;
   previewPath?: { x: number; y: number }[];
 }
@@ -36,6 +37,7 @@ export const FarmingSidebar = ({
   onUnequip,
   onCraft,
   onBuy,
+  onUse,
   hoverInfo,
   previewPath = []
 }: FarmingSidebarProps) => {
@@ -152,7 +154,14 @@ export const FarmingSidebar = ({
                   items={inventory.filter(filterItem)} 
                   onItemHover={handleItemHover}
                   onItemClick={handleItemClick}
-                  onItemDoubleClick={(item) => handleAction(onEquip, item)}
+                  onItemDoubleClick={(item) => {
+                    const type = item.type || item.item?.type;
+                    if (type === 'CONSUMABLE' && onUse) {
+                      handleAction(onUse, item);
+                    } else {
+                      handleAction(onEquip, item);
+                    }
+                  }}
                 />
               );
             }

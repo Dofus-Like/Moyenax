@@ -131,3 +131,26 @@
   font-family: var(--font-hud);
   font-size: 0.85rem;
 }
+
+.use-item-btn {
+  width: 100%;
+  padding: 10px;
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid #4caf50;
+  color: #4caf50;
+  font-family: var(--font-hud);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 6px;
+  cursor: pointer;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+}
+
+.use-item-btn:hover {
+  background: rgba(76, 175, 80, 0.35);
+}

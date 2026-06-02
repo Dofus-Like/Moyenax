@@ -10,9 +10,10 @@ interface CastleProps {
   position: [number, number, number];
   targetSize?: number;
   rotation?: [number, number, number];
+  timeOfDay?: number;
 }
 
-export function Castle({ position, targetSize, rotation = [0, 0, 0] }: CastleProps) {
+export function Castle({ position, targetSize, rotation = [0, 0, 0], timeOfDay = 0 }: CastleProps) {
   const { scene } = useGLTF('/assets/models/castle_ruin.glb');
 
   const { clonedScene, scaleFactor, offset, materials } = useMemo(() => {
@@ -57,7 +58,6 @@ export function Castle({ position, targetSize, rotation = [0, 0, 0] }: CastlePro
   }, [scene, targetSize]);
 
   const config = useControls('Background Shader', {
-    timeOfDay: { value: 0, min: 0, max: 2, step: 1 },
     'Castle Colors': folder({
       castleDay: { value: COMBAT_COLORS.CASTLE_DAY },
       castleSun: { value: COMBAT_COLORS.CASTLE_SUN },
@@ -89,13 +89,13 @@ export function Castle({ position, targetSize, rotation = [0, 0, 0] }: CastlePro
 
     let intensity = 0;
 
-    if (config.timeOfDay <= 1) {
-      const t = config.timeOfDay;
+    if (timeOfDay <= 1) {
+      const t = timeOfDay;
       c.targetColor.lerpColors(c.dayColor, c.sunColor, t);
       c.targetEmissive.set(config.castleEmissiveSun);
       intensity = t * config.castleEmissiveIntensity;
     } else {
-      const t = config.timeOfDay - 1;
+      const t = timeOfDay - 1;
       c.targetColor.lerpColors(c.sunColor, c.nightColor, t);
       c.emissiveSun.set(config.castleEmissiveSun);
       c.emissiveNight.set(config.castleEmissiveNight);

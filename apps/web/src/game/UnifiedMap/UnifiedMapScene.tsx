@@ -49,6 +49,7 @@ interface UnifiedMapSceneProps {
   isMoving?: boolean;
   onTileReached?: (node: PathNode) => void;
   onSceneReady?: () => void;
+  timeOfDay?: number;
 }
 
 function getProjectileType(spellId: string) {
@@ -74,6 +75,7 @@ export const UnifiedMapScene = React.memo(
     isMoving = false,
     onTileReached,
     onSceneReady,
+    timeOfDay = 0,
   }: UnifiedMapSceneProps) => {
     const combatState = useCombatStore((state) => state.combatState);
     const selectedSpellId = useCombatStore((state) => state.selectedSpellId);
@@ -152,12 +154,6 @@ export const UnifiedMapScene = React.memo(
       onSceneReady?.();
     });
 
-    // Global time of day sync
-    const { timeOfDay } = useControls('Background Shader', {
-      timeOfDay: { value: 0, min: 0, max: 2, step: 1 }
-    }, { collapsed: true });
-
-    // Debug controls for the tiles per phase
     const tileConfig = useControls('Background Shader', {
       'Tile Colors': folder({
         tileDayA: { value: COMBAT_COLORS.TILE_DAY_A }, 
@@ -169,6 +165,11 @@ export const UnifiedMapScene = React.memo(
         tileNightA: { value: COMBAT_COLORS.TILE_NIGHT_A }, 
         tileNightB: { value: COMBAT_COLORS.TILE_NIGHT_B },
         tileSideNight: { value: COMBAT_COLORS.TILE_SIDE_NIGHT },
+      }),
+      'Wall Colors': folder({
+        wallDay: { value: COMBAT_COLORS.WALL_DAY },
+        wallSun: { value: COMBAT_COLORS.WALL_SUNSET },
+        wallNight: { value: COMBAT_COLORS.WALL_NIGHT },
       }),
       'Tile Settings': folder({
         tileSize: { value: 1.0, min: 0.8, max: 1.0, step: 0.01 },
@@ -216,6 +217,24 @@ export const UnifiedMapScene = React.memo(
         sideColor: '#' + cs.getHexString(),
       };
     }, [timeOfDay, tileConfig]);
+
+    const currentWallColor = useMemo(() => {
+      const c = new THREE.Color();
+      if (timeOfDay <= 1) {
+        c.lerpColors(
+          new THREE.Color(tileConfig.wallDay),
+          new THREE.Color(tileConfig.wallSun),
+          timeOfDay,
+        );
+      } else {
+        c.lerpColors(
+          new THREE.Color(tileConfig.wallSun),
+          new THREE.Color(tileConfig.wallNight),
+          timeOfDay - 1,
+        );
+      }
+      return '#' + c.getHexString();
+    }, [timeOfDay, tileConfig.wallDay, tileConfig.wallSun, tileConfig.wallNight]);
 
     const combatPlayers = useMemo(
       () => (mode === 'combat' && combatState ? Object.values(combatState.players) : []),
@@ -941,7 +960,8 @@ export const UnifiedMapScene = React.memo(
             <Castle 
               position={[-1.07, 5.34, -0.94]} 
               targetSize={14.0} 
-              rotation={[0, 0, 0]} 
+              rotation={[0, 0, 0]}
+              timeOfDay={timeOfDay}
             />
           </Suspense>
           <TerrainLayer 
@@ -953,6 +973,7 @@ export const UnifiedMapScene = React.memo(
             tileSize={tileConfig.tileSize}
             tileRadius={tileConfig.tileRadius}
             tacticsMode={mode === 'combat' ? tacticsMode : undefined}
+            wallColor={mode === 'combat' ? currentWallColor : undefined}
           />
           
           {/* Interaction Plane - Must be visible=true for raycasting but transparent for user */}

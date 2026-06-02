@@ -1,6 +1,7 @@
 import { OrthographicCamera, CameraControls, Text } from '@react-three/drei';
 import { Canvas, useLoader } from '@react-three/fiber';
 import CameraControlsImpl from 'camera-controls';
+
 import React, { useEffect, useMemo, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
@@ -18,6 +19,7 @@ import { ProfiledRegion } from '../perf/render-profiler';
 import { useAuthStore } from '../store/auth.store';
 import { useCombatStore } from '../store/combat.store';
 import { useTranslation } from '../store/language.store';
+import { getTimeOfDay } from '../utils/timeOfDay';
 import { useGameSession } from './GameTunnel';
 import './CombatPage.css';
 
@@ -144,6 +146,8 @@ export function CombatPage() {
     };
   }, [combatState?.map]);
 
+  const timeOfDay = getTimeOfDay(activeSession?.currentRound ?? 1);
+
   if (!sessionId) return null;
 
   return (
@@ -167,7 +171,7 @@ export function CombatPage() {
             camera={{ fov: 30 }}
           >
             <CanvasPerfOverlay />
-            <CombatBackgroundShader />
+            <CombatBackgroundShader timeOfDay={timeOfDay} />
             <OrthographicCamera
               makeDefault
               position={[20, 20, 20]}
@@ -216,7 +220,8 @@ export function CombatPage() {
                   mode="combat" 
                   map={gameMap} 
                   sessionId={sessionId} 
-                  isCameraMoving={isCameraMoving} 
+                  isCameraMoving={isCameraMoving}
+                  timeOfDay={timeOfDay}
                 />
               </Suspense>
             )}

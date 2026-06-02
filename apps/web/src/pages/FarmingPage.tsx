@@ -31,6 +31,8 @@ import { SpellBar, SpellBarItem } from '../components/SpellBar/SpellBar';
 import { playerApi } from '../api/player.api';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CameraEffects } from '../game/Combat/CameraEffects';
+import { countRemainingResources } from '../utils/farming';
+import { getTimeOfDay } from '../utils/timeOfDay';
 import { EndTurnButton } from '../game/HUD/EndTurnButton';
 import { useTranslation } from '../store/language.store';
 import './ResourceMapPage.css';
@@ -128,17 +130,10 @@ export function FarmingPage() {
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'info' | 'error' } | null>(null);
   const pipArray = useMemo(() => Array.from({ length: 4 }, (_, i) => i < pips), [pips]);
 
-  const seedResources = useMemo(() => {
-    if (!seedId) return [];
-    const config = SEED_CONFIGS[seedId as SeedId];
-    if (!config) return [];
-    return config.resources
-      .map((t) => ({
-        name: TERRAIN_PROPERTIES[t].resourceName,
-        count: (t !== TerrainType.GOLD && inventoryCounts[TERRAIN_PROPERTIES[t].resourceName ?? '']) || 0,
-      }))
-      .filter((r) => r.name && r.name !== 'Or');
-  }, [seedId, inventoryCounts]);
+  const remainingResources = useMemo(() => {
+    if (!seedId || !map) return [];
+    return countRemainingResources(map.grid, seedId as SeedId);
+  }, [seedId, map]);
 
   const { active: isAssetLoading, progress: assetLoadProgress } = useProgress();
   const isFarmingLoaded = Boolean(map && isMapSceneReady && !isAssetLoading);
@@ -175,6 +170,14 @@ export function FarmingPage() {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       queryClient.invalidateQueries({ queryKey: ['player-spells'] });
+      queryClient.invalidateQueries({ queryKey: ['player-stats'] });
+    },
+  });
+
+  const useItemMutation = useMutation({
+    mutationFn: (itemId: string) => inventoryApi.useItem(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
       queryClient.invalidateQueries({ queryKey: ['player-stats'] });
     },
   });
@@ -325,6 +328,15 @@ export function FarmingPage() {
     }
   }, [queryClient, fetchState, refreshPlayer]);
 
+  const handleUse = useCallback(async (item: any) => {
+    try {
+      await useItemMutation.mutateAsync(item.itemId || item.id);
+      setActionMessage({ text: t('itemUsed', { name: item.name }), type: 'info' });
+    } catch {
+      setActionMessage({ text: t('useError'), type: 'error' });
+    }
+  }, [useItemMutation, t]);
+
   const handleCraft = useCallback(async (item: any) => {
     try {
       await craftingApi.craftItem(item.id);
@@ -453,6 +465,7 @@ export function FarmingPage() {
   const p1IsMe = activeSession?.player1Id === currentPlayerId;
   const amIReady = p1IsMe ? activeSession?.player1Ready : activeSession?.player2Ready;
   const loadingProgress = Math.max(0, Math.min(100, Math.round(assetLoadProgress || 0)));
+  const timeOfDay = getTimeOfDay(activeSession?.currentRound || round || 1);
 
   return (
     <div className="farming-page-layout">
@@ -501,7 +514,7 @@ export function FarmingPage() {
             ))}
           </div>
           <div className="res-column">
-            {seedResources.map((r) => (
+            {remainingResources.map((r) => (
               <div key={r.name} className="res-line">
                 <img src={getResourceIconPath(r.name)} alt={r.name ?? ''} className="res-icon-img" />
                 <span className="res-name">{r.name}</span>
@@ -522,7 +535,7 @@ export function FarmingPage() {
             camera={{ fov: 30 }}
           >
             <CanvasPerfOverlay />
-            <CombatBackgroundShader defaultTimeOfDay={2} />
+            <CombatBackgroundShader timeOfDay={timeOfDay} />
             <OrthographicCamera 
               makeDefault 
               position={[20, 20, 20]} 
@@ -570,6 +583,8 @@ export function FarmingPage() {
                 onTileClick={handleTileClick}
                 onTileHover={handleTileHover}
                 onSceneReady={handleSceneReady}
+                playerPa={statsData?.data?.pa}
+                playerPm={statsData?.data?.pm}
               />
             </Suspense>
           </Canvas>
@@ -589,6 +604,7 @@ export function FarmingPage() {
         onUnequip={handleUnequip}
         onCraft={handleCraft}
         onBuy={handleBuy}
+        onUse={handleUse}
         hoverInfo={hoverInfo}
         previewPath={previewPath}
       />
@@ -604,8 +620,8 @@ export function FarmingPage() {
               >
                 <div className="bap-pseudo">{player?.username}</div>
                 <div className="bap-resources">
-                  <span className="bap-res-pa">◆ {pips}</span>
-                  <span className="bap-res-pm">◆ {activeSession?.currentRound || round}</span>
+                  <span className="bap-res-pa">◆{statsData?.data?.pa ?? '?'} PA</span>
+                  <span className="bap-res-pm">◆{statsData?.data?.pm ?? '?'} PM</span>
                 </div>
               </div>
               <div className="bap-hp-bar">

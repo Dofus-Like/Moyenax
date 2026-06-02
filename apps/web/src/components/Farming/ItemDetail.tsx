@@ -55,11 +55,12 @@ export const ItemDetail = ({ item, allItems = [] }: ItemDetailProps) => {
   const statsBonus = getStatsBonus(item);
   const craftCost = getCraftCost(item);
   const description = getDescription(item);
+  const itemType = item.type || item.item?.type;
 
   return (
     <div className="item-detail-card">
       <div className="item-detail-header">
-        <div className="item-type-badge">{item.type || item.item?.type || t('item')}</div>
+        <div className="item-type-badge">{itemType || t('item')}</div>
         <h3>{item.name}</h3>
       </div>
 

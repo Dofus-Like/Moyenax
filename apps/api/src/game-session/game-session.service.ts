@@ -3,6 +3,7 @@ import { OnEvent as NestOnEvent } from '@nestjs/event-emitter';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { SessionService } from '../combat/session/session.service';
+import { createDefaultPlayerStats } from '../player/default-player-stats';
 import { PlayerSpellProjectionService } from '../player/player-spell-projection.service';
 import { StatsCalculatorService } from '../player/stats-calculator.service';
 import { PrismaService } from '../shared/prisma/prisma.service';
@@ -73,6 +74,24 @@ export class GameSessionService {
             take: 5,
           },
         },
+      });
+
+      const defaults = createDefaultPlayerStats();
+      await this.prisma.playerStats.update({
+        where: { playerId: player1Id },
+        data: defaults,
+      });
+      if (player2Id) {
+        await this.prisma.playerStats.update({
+          where: { playerId: player2Id },
+          data: defaults,
+        });
+      }
+
+      const playerIds = [player1Id, player2Id].filter(Boolean) as string[];
+      await this.prisma.equipmentSlot.updateMany({
+        where: { playerId: { in: playerIds } },
+        data: { inventoryItemId: null, sessionItemId: null },
       });
 
       this.eventEmitter.emit('game.session.created', {

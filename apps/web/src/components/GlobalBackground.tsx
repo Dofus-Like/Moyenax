@@ -28,7 +28,7 @@ export function GlobalBackground() {
         }}
         dpr={[1, 2]}
       >
-        <CombatBackgroundShader />
+        <CombatBackgroundShader timeOfDay={0} />
       </Canvas>
     </div>
   );

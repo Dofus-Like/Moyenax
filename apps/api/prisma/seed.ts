@@ -900,7 +900,7 @@ async function main() {
       type: ItemType.CONSUMABLE,
       description:
         'Vous donne des muscles en carton pendant 3 minutes. Attention au contrecoup sur votre dignité.',
-      statsBonus: { buffAttaque: 5, buffDuree: 3 },
+      statsBonus: { buffAttaque: 5 },
       craftCost: { [fer.id]: 1, [herbe.id]: 1 },
       shopPrice: 15,
       iconPath: '/assets/items/potionForce.png',
@@ -908,7 +908,7 @@ async function main() {
     update: {
       iconPath: '/assets/items/potionForce.png',
       shopPrice: 15,
-      statsBonus: { buffAttaque: 5, buffDuree: 3 },
+      statsBonus: { buffAttaque: 5 },
       craftCost: { [fer.id]: 1, [herbe.id]: 1 },
       description:
         'Vous donne des muscles en carton pendant 3 minutes. Attention au contrecoup sur votre dignité.',
@@ -921,7 +921,7 @@ async function main() {
       name: 'Potion de Vitesse',
       type: ItemType.CONSUMABLE,
       description: 'Pour courir plus vite que son ombre. Ou que sa propre honte.',
-      statsBonus: { buffPM: 2, buffDuree: 2 },
+      statsBonus: { buffPM: 2 },
       craftCost: { [bois.id]: 1, [herbe.id]: 1 },
       shopPrice: 15,
       iconPath: '/assets/items/potionVitesse.png',
@@ -929,7 +929,7 @@ async function main() {
     update: {
       iconPath: '/assets/items/potionVitesse.png',
       shopPrice: 15,
-      statsBonus: { buffPM: 2, buffDuree: 2 },
+      statsBonus: { buffPM: 2 },
       craftCost: { [bois.id]: 1, [herbe.id]: 1 },
       description: 'Pour courir plus vite que son ombre. Ou que sa propre honte.',
     },

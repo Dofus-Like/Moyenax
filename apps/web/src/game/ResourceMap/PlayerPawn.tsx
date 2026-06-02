@@ -170,6 +170,8 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
       };
     }, [spriteMaterial]);
 
+
+
     // Update du map du mat en fonction de l'état (marche/attaque)
     useEffect(() => {
         if (isAttacking) spriteMaterial.map = textureAttack;

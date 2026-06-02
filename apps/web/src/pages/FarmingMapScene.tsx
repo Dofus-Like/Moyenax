@@ -48,6 +48,8 @@ interface FarmingMapSceneProps {
   isMoving?: boolean;
   onTileReached?: (node: PathNode) => void;
   onSceneReady?: () => void;
+  playerPa?: number;
+  playerPm?: number;
 }
 
 export const FarmingMapScene = React.memo(
@@ -62,6 +64,8 @@ export const FarmingMapScene = React.memo(
     isMoving = false,
     onTileReached,
     onSceneReady,
+    playerPa,
+    playerPm,
   }: FarmingMapSceneProps) => {
     const user = useAuthStore((state) => state.player);
 
@@ -256,6 +260,8 @@ export const FarmingMapScene = React.memo(
             onPathComplete={onPathComplete}
             farmingPlayerName={user?.username ?? ''}
             farmingPlayerSkin={user?.skin}
+            farmingPlayerPa={playerPa}
+            farmingPlayerPm={playerPm}
             combatPlayers={[]}
             visualPositions={{}}
             playerPaths={{}}
