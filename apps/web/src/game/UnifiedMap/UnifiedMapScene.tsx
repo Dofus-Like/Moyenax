@@ -18,8 +18,8 @@ import {
 import { combatApi } from '../../api/combat.api';
 import { useAuthStore } from '../../store/auth.store';
 import { useCombatStore } from '../../store/combat.store';
-import { Castle } from '../ResourceMap/Castle';
-import type { PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
+import { Castle } from '../Battlefield/Castle';
+import type { PlayerPawnHandle } from '../Battlefield/PlayerPawn';
 import { COMBAT_COLORS } from '../constants/colors';
 
 import {
