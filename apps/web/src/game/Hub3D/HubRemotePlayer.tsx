@@ -1,7 +1,7 @@
 import type { HubChatMessage, HubPlayerSnapshot } from '@game/shared-types';
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { Vector3, type Group } from 'three';
 
 
@@ -90,8 +90,6 @@ const NAME_STYLE: CSSProperties = {
   pointerEvents: 'none',
   whiteSpace: 'nowrap',
   transform: 'translate(-50%, -100%)',
-  backdropFilter: 'blur(6px)',
-  WebkitBackdropFilter: 'blur(6px)',
 };
 
 function NameTag({ username }: { username: string }): ReactElement {
@@ -120,18 +118,21 @@ const BUBBLE_STYLE: CSSProperties = {
   transform: 'translate(-50%, -100%)',
   boxShadow: '0 6px 18px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.75)',
   textAlign: 'center',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
 };
 
 function ChatBubble({ message }: { message: HubChatMessage }): ReactElement | null {
-  const expiresAt = useMemo(() => message.sentAt + BUBBLE_TTL_MS, [message]);
-  const [now, setNow] = useState(() => Date.now());
+  const [expired, setExpired] = useState(() => Date.now() >= message.sentAt + BUBBLE_TTL_MS);
   useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 250);
-    return (): void => window.clearInterval(t);
-  }, []);
-  if (now > expiresAt) return null;
+    const remaining = message.sentAt + BUBBLE_TTL_MS - Date.now();
+    if (remaining <= 0) {
+      setExpired(true);
+      return;
+    }
+    setExpired(false);
+    const t = window.setTimeout(() => setExpired(true), remaining);
+    return (): void => window.clearTimeout(t);
+  }, [message]);
+  if (expired) return null;
   return (
     <Html position={[0, PLAYER_VERTICAL_OFFSET + 2.1, 0]} center occlude={false} zIndexRange={[30, 0]}>
       <div style={BUBBLE_STYLE}>{message.text}</div>

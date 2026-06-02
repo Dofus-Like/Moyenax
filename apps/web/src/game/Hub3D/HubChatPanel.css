@@ -42,8 +42,6 @@
   border: 2px solid rgba(0, 0, 0, 0.85);
   border-radius: 6px;
   outline: none;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.7),
     inset 0 0 16px 4px rgba(0, 0, 0, 0.85);
@@ -86,8 +84,6 @@
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 6px;
   outline: 1.5px solid rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.6),
     inset 0 0 0 1px rgba(0, 0, 0, 0.75),
@@ -118,8 +114,6 @@
   border-width: 2px;
   pointer-events: auto;
   background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
 }
 
 .hub-chat-root .log-panel-header {
