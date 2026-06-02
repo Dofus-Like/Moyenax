@@ -34,7 +34,7 @@ import { playerApi } from '../api/player.api';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CameraEffects } from '../game/Combat/CameraEffects';
 import { useTranslation } from '../store/language.store';
-import './BattlefieldPage.css';
+import './ResourceMapPage.css';
 
 function findSpawnPosition(grid: TerrainType[][]): PathNode {
   const height = grid.length;

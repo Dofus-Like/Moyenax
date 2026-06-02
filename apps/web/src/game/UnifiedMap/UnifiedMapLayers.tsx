@@ -10,11 +10,11 @@ import {
   CombatTerrainType 
 } from '@game/shared-types';
 
-import { PathPreview } from '../Battlefield/PathPreview';
-import type { PlayerPawnHandle } from '../Battlefield/PlayerPawn';
-import { PlayerPawn } from '../Battlefield/PlayerPawn';
-import { TerrainTile } from '../Battlefield/TerrainTile';
-import { TileHoverEffect } from '../Battlefield/TileHoverEffect';
+import { PathPreview } from '../ResourceMap/PathPreview';
+import type { PlayerPawnHandle } from '../ResourceMap/PlayerPawn';
+import { PlayerPawn } from '../ResourceMap/PlayerPawn';
+import { TerrainTile } from '../ResourceMap/TerrainTile';
+import { TileHoverEffect } from '../ResourceMap/TileHoverEffect';
 
 import { CombatHighlightsLayer } from './CombatHighlights';
 import { InstancedFoliage } from './InstancedFoliage';
