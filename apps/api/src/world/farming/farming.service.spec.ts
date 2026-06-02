@@ -24,11 +24,22 @@ describe('FarmingService', () => {
     credit: jest.fn(),
   };
 
+  const shop = {
+    buy: jest.fn(),
+  };
+
+  const equipment = {
+    equip: jest.fn(),
+  };
+
   const perfLogger = {
     logEvent: jest.fn(),
   };
 
   const prisma = {
+    item: {
+      findUnique: jest.fn(),
+    },
     gameSession: {
       findFirst: jest.fn(),
     },
@@ -70,6 +81,8 @@ describe('FarmingService', () => {
       mapGenerator as any,
       inventory as any,
       spendableGold as any,
+      shop as any,
+      equipment as any,
       perfLogger as any,
       prisma as any,
     );
@@ -116,6 +129,7 @@ describe('FarmingService', () => {
     const state = {
       playerId: 'player-1',
       seedId: 'FORGE',
+      mapSeed: 123,
       round: 1,
       pips: 4,
       spendableGold: 0,
@@ -130,6 +144,31 @@ describe('FarmingService', () => {
     expect(redis.setJson).toHaveBeenCalledWith(
       'farming:player-1',
       expect.objectContaining({ pips: 3 }),
+      86400,
+    );
+  });
+
+  it('sets the harvested tile terrain to GROUND after gather', async () => {
+    const state = {
+      playerId: 'player-1',
+      seedId: 'FORGE',
+      mapSeed: 456,
+      round: 1,
+      pips: 4,
+      spendableGold: 0,
+      map: [{ x: 5, y: 5, terrain: TerrainType.WOOD }],
+    };
+    redis.getJson.mockResolvedValue(state);
+
+    await service.gatherResource('player-1', 5, 5, 5, 4);
+
+    expect(redis.setJson).toHaveBeenCalledWith(
+      'farming:player-1',
+      expect.objectContaining({
+        map: expect.arrayContaining([
+          expect.objectContaining({ x: 5, y: 5, terrain: TerrainType.GROUND }),
+        ]),
+      }),
       86400,
     );
   });
@@ -198,9 +237,10 @@ describe('FarmingService', () => {
     redis.getJson.mockResolvedValue({
       playerId: 'player-1',
       seedId: 'FORGE',
+      mapSeed: 789,
       round: 2,
       pips: 0,
-      map: [],
+      map: [{ x: 0, y: 0, terrain: TerrainType.GROUND }],
     });
 
     await expect(service.nextRound('player-1')).resolves.toEqual(
@@ -208,10 +248,53 @@ describe('FarmingService', () => {
     );
   });
 
+  it('regenerates the map on nextRound via getOrCreateMap', async () => {
+    const freshGrid = [
+      [TerrainType.WOOD, TerrainType.GROUND],
+      [TerrainType.GROUND, TerrainType.IRON],
+    ];
+    mapGenerator.getOrCreateMap.mockResolvedValue({
+      seedId: 'FORGE',
+      grid: freshGrid,
+    });
+    redis.getJson.mockResolvedValue({
+      playerId: 'player-1',
+      seedId: 'FORGE',
+      mapSeed: 789,
+      round: 2,
+      pips: 0,
+      map: [{ x: 0, y: 0, terrain: TerrainType.GROUND }],
+    });
+
+    await service.nextRound('player-1');
+
+    expect(mapGenerator.getOrCreateMap).toHaveBeenCalledWith('FORGE', 789);
+    expect(redis.setJson).toHaveBeenCalledWith(
+      'farming:player-1',
+      expect.objectContaining({
+        round: 3,
+        pips: 4,
+        map: expect.arrayContaining([
+          { x: 0, y: 0, terrain: TerrainType.WOOD },
+          { x: 1, y: 1, terrain: TerrainType.IRON },
+        ]),
+      }),
+      86400,
+    );
+  });
+
   it('refreshes both players farming states after a combat ends', async () => {
+    const freshGrid = [
+      [TerrainType.WOOD, TerrainType.GROUND],
+      [TerrainType.GROUND, TerrainType.IRON],
+    ];
+    mapGenerator.getOrCreateMap.mockResolvedValue({
+      seedId: 'FORGE',
+      grid: freshGrid,
+    });
     redis.getJson
-      .mockResolvedValueOnce({ playerId: 'winner', seedId: 'FORGE', round: 2, pips: 0, map: [] })
-      .mockResolvedValueOnce({ playerId: 'loser', seedId: 'FORGE', round: 4, pips: 1, map: [] });
+      .mockResolvedValueOnce({ playerId: 'winner', seedId: 'FORGE', mapSeed: 111, round: 2, pips: 0, map: [{ x: 0, y: 0, terrain: TerrainType.GROUND }] })
+      .mockResolvedValueOnce({ playerId: 'loser', seedId: 'FORGE', mapSeed: 222, round: 4, pips: 1, map: [{ x: 1, y: 1, terrain: TerrainType.WOOD }] });
 
     await service.handleCombatEnded({
       winnerId: 'winner',
@@ -231,6 +314,7 @@ describe('FarmingService', () => {
       expect.objectContaining({ round: 5, pips: 4 }),
       86400,
     );
+    expect(mapGenerator.getOrCreateMap).toHaveBeenCalledTimes(2);
   });
 
   it('skips missing farming states when combat ended cleanup runs', async () => {

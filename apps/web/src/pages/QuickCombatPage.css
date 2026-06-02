@@ -1,0 +1,165 @@
+.quick-combat-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(12px);
+}
+
+.quick-combat-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(252, 168, 0, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.quick-combat-modal {
+  position: relative;
+  width: min(90vw, 700px);
+  padding: 40px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 0 30px rgba(252, 168, 0, 0.25), 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(0, 0, 0, 0.75), inset 0 0 40px rgba(0, 0, 0, 0.65);
+}
+
+.quick-combat-back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-family: var(--font-hud);
+  font-weight: 400;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: 6px;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.quick-combat-back-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.85);
+  color: #fff;
+}
+
+.quick-combat-modal h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #fff;
+  font-family: var(--font-hud);
+  text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.quick-combat-desc {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+}
+
+.quick-combat-error {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(239, 68, 68, 0.6);
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.quick-combat-loading {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.quick-combat-ring-grid {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  justify-content: center;
+}
+
+.quick-combat-ring-card {
+  flex: 1;
+  max-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+.quick-combat-ring-card:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+  background: rgba(252, 168, 0, 0.1);
+}
+
+.quick-combat-ring-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quick-combat-ring-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+}
+
+.quick-combat-ring-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: var(--font-hud);
+  text-align: center;
+  text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000;
+}
+
+.quick-combat-ring-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.quick-combat-ring-stat {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  background: rgba(252, 168, 0, 0.15);
+  border: 1px solid rgba(252, 168, 0, 0.5);
+  color: #fca800;
+  border-radius: 4px;
+  font-family: var(--font-hud);
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}

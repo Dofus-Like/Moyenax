@@ -317,9 +317,10 @@
   font-family: var(--font-hud);
 
   background: rgba(0, 0, 0, 0.95);
-  border: 2px solid rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 6px;
-  outline: none;
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  outline-offset: 0px;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow:

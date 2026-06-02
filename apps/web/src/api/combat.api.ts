@@ -13,6 +13,7 @@ export const combatApi = {
     apiClient.post(`/combat/action/${sessionId}/force`, { asPlayerId, action }),
   startTestCombat: () => apiClient.post('/combat/test'),
   startVsAiCombat: () => apiClient.post('/combat/vs-ai'),
+  startQuickVsAiCombat: (ringId: string) => apiClient.post('/combat/vs-ai/quick', { ringId }),
   getState: (sessionId: string) => apiClient.get(`/combat/session/${sessionId}`),
   getStreamTicket: (sessionId: string) =>
     apiClient.post<{ ticket: string; expiresIn: number }>(`/combat/session/${sessionId}/stream-ticket`),

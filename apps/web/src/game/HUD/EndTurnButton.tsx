@@ -3,11 +3,13 @@ import React from "react";
 import "./EndTurnButton.css";
 
 interface EndTurnButtonProps {
-  isMyTurn: boolean;
+  mode?: 'combat' | 'farming-ready';
+  isMyTurn?: boolean;
   onEndTurn: () => void;
   turnDurationSec?: number;
   canCastSpell?: boolean;
   hasPm?: boolean;
+  isReady?: boolean;
 }
 
 // Losange : polygone 72×72, pointes aux 4 côtés — périmètre = 4 × côté
@@ -51,39 +53,60 @@ function useCountdown(isActive: boolean, durationSec: number) {
 }
 
 export function EndTurnButton({
+  mode = 'combat',
   isMyTurn,
   onEndTurn,
   turnDurationSec = 30,
   canCastSpell = false,
   hasPm = false,
+  isReady = false,
 }: EndTurnButtonProps) {
-  const progress = useCountdown(isMyTurn, turnDurationSec);
+  const active = mode === 'farming-ready' ? true : !!isMyTurn;
+  const progress = useCountdown(active, turnDurationSec);
   const dashOffset = PERIMETER * (1 - progress);
-  const strokeColor = isMyTurn
-    ? getStrokeColor(progress, turnDurationSec)
-    : "rgba(255,255,255,0.18)";
-  const isLow = isMyTurn && (progress * turnDurationSec) <= 5;
-  const isNoActionsLeft = isMyTurn && !canCastSpell && !hasPm;
+
+  let strokeColor: string;
+  if (!active) {
+    strokeColor = 'rgba(255,255,255,0.18)';
+  } else if (isReady) {
+    strokeColor = '#22c55e';
+  } else {
+    strokeColor = getStrokeColor(progress, turnDurationSec);
+  }
+
+  const isLow = mode === 'combat' && isMyTurn && (progress * turnDurationSec) <= 5;
+  const isNoActionsLeft = mode === 'combat' && isMyTurn && !canCastSpell && !hasPm;
+
+  let label: React.ReactNode;
+  if (mode === 'farming-ready') {
+    label = isReady ? '✓' : 'PRÊT';
+  } else if (isNoActionsLeft) {
+    label = <>END<br />TURN</>;
+  } else if (isMyTurn) {
+    label = <>PASS<br />TURN</>;
+  } else {
+    label = '…';
+  }
 
   return (
     <div className="end-turn-wrapper">
       <button
         type="button"
-        className={`end-turn-btn ${isMyTurn ? "is-my-turn" : ""} ${isLow ? "is-low" : ""} ${isNoActionsLeft ? "no-actions-left" : ""}`}
-        disabled={!isMyTurn}
-        onClick={() => {
-          if (isMyTurn) onEndTurn();
-        }}
+        className={[
+          'end-turn-btn',
+          active ? 'is-my-turn' : '',
+          isLow ? 'is-low' : '',
+          isNoActionsLeft ? 'no-actions-left' : '',
+          isReady ? 'is-ready' : '',
+        ].filter(Boolean).join(' ')}
+        disabled={!active}
+        onClick={() => onEndTurn()}
         aria-label={isMyTurn ? "Terminer le tour" : "En attente"}
       >
         <svg className="end-turn-ring" viewBox="0 0 72 72" width="72" height="72">
-          {/* Contour noir extérieur */}
           <polygon className="etb-border-outer" points="36,0 72,36 36,72 0,36" />
-          {/* Fond + contour blanc */}
           <polygon className="end-turn-ring-bg" points={DIAMOND_POINTS} />
-          {/* Contour noir intérieur */}
           <polygon className="etb-border-inner" points="36,5 67,36 36,67 5,36" />
-          {/* Timer progressif */}
           <polygon
             className="end-turn-ring-fill"
             points={DIAMOND_POINTS}
@@ -94,17 +117,7 @@ export function EndTurnButton({
             }}
           />
         </svg>
-        <span className="end-turn-label">
-          {isMyTurn ? (
-            isNoActionsLeft ? (
-              <>END<br />TURN</>
-            ) : (
-              <>PASS<br />TURN</>
-            )
-          ) : (
-            "…"
-          )}
-        </span>
+        <span className="end-turn-label">{label}</span>
       </button>
     </div>
   );

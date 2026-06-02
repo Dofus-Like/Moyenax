@@ -1,5 +1,5 @@
-import { GAME_EVENTS } from '@game/shared-types';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { GAME_EVENTS, type PlayerStats, ItemType } from '@game/shared-types';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { GameSessionService } from '../../game-session/game-session.service';
@@ -12,6 +12,12 @@ export class InventoryService {
     private readonly eventEmitter: EventEmitter2,
     private readonly gameSession: GameSessionService,
   ) {}
+
+  private readonly POTION_STAT_MAP: Record<string, keyof PlayerStats> = {
+    healVit: 'vit',
+    buffAttaque: 'atk',
+    buffPM: 'pm',
+  };
 
   async findByPlayer(playerId: string) {
     const session = await this.gameSession.getActiveSession(playerId);
@@ -120,5 +126,84 @@ export class InventoryService {
         rank: 1,
       },
     });
+  }
+
+  async useItem(playerId: string, itemId: string) {
+    const session = await this.gameSession.getActiveSession(playerId);
+
+    let inventoryRecord: any;
+    let isSessionItem = false;
+
+    if (session) {
+      inventoryRecord = await (this.prisma as any).sessionItem.findFirst({
+        where: { sessionId: session.id, playerId, itemId },
+        include: { item: true },
+      });
+      isSessionItem = true;
+    } else {
+      inventoryRecord = await this.prisma.inventoryItem.findFirst({
+        where: { playerId, itemId },
+        include: { item: true },
+      });
+    }
+
+    if (!inventoryRecord) {
+      throw new NotFoundException('Objet introuvable dans votre inventaire');
+    }
+
+    const item = inventoryRecord.item;
+    if (item.type !== ItemType.CONSUMABLE) {
+      throw new BadRequestException('Cet objet ne peut pas être consommé');
+    }
+
+    const bonus = item.statsBonus as Record<string, number> | null;
+    if (!bonus) {
+      throw new BadRequestException('Cet objet n\'a aucun effet');
+    }
+
+    const statsUpdate: Record<string, number> = {};
+    for (const [key, value] of Object.entries(bonus)) {
+      const statKey = this.POTION_STAT_MAP[key];
+      if (statKey && typeof value === 'number') {
+        const baseKey = `base${statKey.charAt(0).toUpperCase() + statKey.slice(1)}`;
+        statsUpdate[statKey] = { increment: value } as any;
+        statsUpdate[baseKey] = { increment: value } as any;
+      }
+    }
+
+    if (Object.keys(statsUpdate).length === 0) {
+      throw new BadRequestException('Bonus d\'objet non reconnu');
+    }
+
+    await this.prisma.playerStats.update({
+      where: { playerId },
+      data: statsUpdate as any,
+    });
+
+    if (inventoryRecord.quantity > 1) {
+      if (isSessionItem) {
+        await (this.prisma as any).sessionItem.update({
+          where: { id: inventoryRecord.id },
+          data: { quantity: { decrement: 1 } },
+        });
+      } else {
+        await this.prisma.inventoryItem.update({
+          where: { id: inventoryRecord.id },
+          data: { quantity: { decrement: 1 } },
+        });
+      }
+    } else {
+      if (isSessionItem) {
+        await (this.prisma as any).sessionItem.delete({
+          where: { id: inventoryRecord.id },
+        });
+      } else {
+        await this.prisma.inventoryItem.delete({
+          where: { id: inventoryRecord.id },
+        });
+      }
+    }
+
+    return this.findByPlayer(playerId);
   }
 }

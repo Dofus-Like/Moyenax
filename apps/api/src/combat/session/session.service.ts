@@ -1,14 +1,14 @@
 import { performance } from 'node:perf_hooks';
 
 import { calculateInitiativeJet } from '@game/game-engine';
-import { GAME_EVENTS } from '@game/shared-types';
+import { EquipmentSlotType, GAME_EVENTS } from '@game/shared-types';
 import type { CombatState } from '@game/shared-types';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
-
 import { PlayerSpellProjectionService } from '../../player/player-spell-projection.service';
 import { PlayerStatsService } from '../../player/player-stats.service';
+import { StatsCalculatorService } from '../../player/stats-calculator.service';
 import { PerfLoggerService } from '../../shared/perf/perf-logger.service';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { RedisService } from '../../shared/redis/redis.service';
@@ -25,6 +25,7 @@ export class SessionService {
     private readonly sse: SseService,
     private readonly playerSpellProjection: PlayerSpellProjectionService,
     private readonly playerStatsService: PlayerStatsService,
+    private readonly statsCalculator: StatsCalculatorService,
     private readonly mapService: MapService,
     private readonly eventEmitter: EventEmitter2,
     private readonly perfLogger: PerfLoggerService,
@@ -405,6 +406,57 @@ export class SessionService {
         player2Id: bot.id,
         status: 'WAITING',
         gameSessionId: activeSession?.id,
+      },
+    });
+
+    return this.accept(session.id, bot.id);
+  }
+
+  async startQuickVsAiCombat(challengerId: string, ringId: string) {
+    const bot = await this.getOrCreateBot();
+
+    const item = await this.prisma.item.findUnique({ where: { id: ringId } });
+    if (!item || item.type !== 'ACCESSORY') {
+      throw new NotFoundException('Anneau introuvable');
+    }
+
+    let invItem = await this.prisma.inventoryItem.findFirst({
+      where: { playerId: challengerId, itemId: ringId, equipmentSlot: null },
+    });
+
+    let invItemId: string;
+    if (invItem) {
+      invItemId = invItem.id;
+    } else {
+      const newItem = await this.prisma.inventoryItem.create({
+        data: { playerId: challengerId, itemId: ringId, quantity: 1, rank: 1 },
+      });
+      invItemId = newItem.id;
+    }
+
+    await this.prisma.equipmentSlot.upsert({
+      where: { playerId_slot: { playerId: challengerId, slot: EquipmentSlotType.ACCESSORY } },
+      create: { playerId: challengerId, slot: EquipmentSlotType.ACCESSORY, inventoryItemId: invItemId, sessionItemId: null },
+      update: { inventoryItemId: invItemId, sessionItemId: null },
+    });
+
+    const stats = await this.statsCalculator.computeEffectiveStats(challengerId);
+    await this.prisma.playerStats.update({
+      where: { playerId: challengerId },
+      data: stats,
+    });
+
+    await this.prisma.playerSpell.deleteMany({ where: { playerId: challengerId } });
+    const spellAssignments = await this.playerSpellProjection.buildPlayerSpellAssignments(challengerId);
+    if (spellAssignments.length > 0) {
+      await this.prisma.playerSpell.createMany({ data: spellAssignments });
+    }
+
+    const session = await this.prisma.combatSession.create({
+      data: {
+        player1Id: challengerId,
+        player2Id: bot.id,
+        status: 'WAITING',
       },
     });
 

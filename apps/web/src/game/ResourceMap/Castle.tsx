@@ -1,7 +1,7 @@
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useControls, button, folder } from 'leva';
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
 import { COMBAT_COLORS } from '../constants/colors';
@@ -10,9 +10,10 @@ interface CastleProps {
   position: [number, number, number];
   targetSize?: number;
   rotation?: [number, number, number];
+  timeOfDay?: number;
 }
 
-export function Castle({ position, targetSize, rotation = [0, 0, 0] }: CastleProps) {
+export function Castle({ position, targetSize, rotation = [0, 0, 0], timeOfDay = 0 }: CastleProps) {
   const { scene } = useGLTF('/assets/models/castle_ruin.glb');
 
   const { clonedScene, scaleFactor, offset, materials } = useMemo(() => {
@@ -56,9 +57,7 @@ export function Castle({ position, targetSize, rotation = [0, 0, 0] }: CastlePro
     };
   }, [scene, targetSize]);
 
-  // Sync with background shader's time of day
   const config = useControls('Background Shader', {
-    timeOfDay: { value: 0, min: 0, max: 2, step: 1 },
     'Castle Colors': folder({
       castleDay: { value: COMBAT_COLORS.CASTLE_DAY },
       castleSun: { value: COMBAT_COLORS.CASTLE_SUN },
@@ -72,38 +71,42 @@ export function Castle({ position, targetSize, rotation = [0, 0, 0] }: CastlePro
     }),
   }, { collapsed: true });
 
-  useFrame(() => {
-    // Phase 0: Day, 1: Sunset, 2: Night
-    const dayColor = new THREE.Color(config.castleDay);
-    const sunColor = new THREE.Color(config.castleSun);
-    const nightColor = new THREE.Color(config.castleNight);
+  const colorCache = useRef({
+    dayColor: new THREE.Color(),
+    sunColor: new THREE.Color(),
+    nightColor: new THREE.Color(),
+    targetColor: new THREE.Color(),
+    targetEmissive: new THREE.Color(),
+    emissiveSun: new THREE.Color(),
+    emissiveNight: new THREE.Color(),
+  });
 
-    const targetColor = new THREE.Color();
-    const targetEmissive = new THREE.Color();
+  useFrame(() => {
+    const c = colorCache.current;
+    c.dayColor.set(config.castleDay);
+    c.sunColor.set(config.castleSun);
+    c.nightColor.set(config.castleNight);
+
     let intensity = 0;
 
-    if (config.timeOfDay <= 1) {
-      // Day to Sunset
-      const t = config.timeOfDay;
-      targetColor.lerpColors(dayColor, sunColor, t);
-      targetEmissive.set(config.castleEmissiveSun);
+    if (timeOfDay <= 1) {
+      const t = timeOfDay;
+      c.targetColor.lerpColors(c.dayColor, c.sunColor, t);
+      c.targetEmissive.set(config.castleEmissiveSun);
       intensity = t * config.castleEmissiveIntensity;
     } else {
-      // Sunset to Night
-      const t = config.timeOfDay - 1;
-      targetColor.lerpColors(sunColor, nightColor, t);
-      targetEmissive.lerpColors(
-        new THREE.Color(config.castleEmissiveSun),
-        new THREE.Color(config.castleEmissiveNight),
-        t
-      );
+      const t = timeOfDay - 1;
+      c.targetColor.lerpColors(c.sunColor, c.nightColor, t);
+      c.emissiveSun.set(config.castleEmissiveSun);
+      c.emissiveNight.set(config.castleEmissiveNight);
+      c.targetEmissive.lerpColors(c.emissiveSun, c.emissiveNight, t);
       intensity = config.castleEmissiveIntensity;
     }
 
     for (const m of materials) {
       if (m.isMeshStandardMaterial) {
-        m.color.copy(targetColor);
-        m.emissive.copy(targetEmissive);
+        m.color.copy(c.targetColor);
+        m.emissive.copy(c.targetEmissive);
         m.emissiveIntensity = intensity;
       }
     }

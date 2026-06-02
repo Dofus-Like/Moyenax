@@ -98,7 +98,9 @@ describe('useFarmingStore', () => {
     mocks.farmingApi.nextRound.mockResolvedValue({
       pips: 4,
       round: 5,
+      seedId: 'FORGE',
       spendableGold: 3,
+      map: [{ x: 0, y: 0, terrain: TerrainType.GROUND }],
     });
 
     await useFarmingStore.getState().nextRound();
@@ -215,6 +217,100 @@ describe('useFarmingStore', () => {
 
       await expect(useFarmingStore.getState().gatherNode(1, 1)).rejects.toThrow('Network error');
     });
+
+    it('adds the harvested position to harvestedTiles', async () => {
+      useFarmingStore.setState({
+        pips: 4,
+        playerPosition: { x: 1, y: 1 },
+        map: {
+          width: 20, height: 20, seedId: 'FORGE',
+          grid: Array.from({ length: 20 }, () => Array(20).fill(TerrainType.GROUND)),
+        },
+      });
+      mocks.farmingApi.gather.mockResolvedValue({
+        pips: 3,
+        spendableGold: 0,
+        map: [{ x: 2, y: 2, terrain: TerrainType.GROUND }],
+      });
+      mocks.inventoryApi.getInventory.mockResolvedValue({ data: [] });
+
+      await useFarmingStore.getState().gatherNode(2, 2);
+
+      expect(useFarmingStore.getState().harvestedTiles.has('2,2')).toBe(true);
+    });
+
+    it('accumulates multiple harvested positions', async () => {
+      useFarmingStore.setState({
+        pips: 4,
+        playerPosition: { x: 2, y: 2 },
+        map: {
+          width: 20, height: 20, seedId: 'FORGE',
+          grid: Array.from({ length: 20 }, () => Array(20).fill(TerrainType.GROUND)),
+        },
+      });
+      mocks.farmingApi.gather
+        .mockResolvedValueOnce({ pips: 3, spendableGold: 0, map: [{ x: 2, y: 3, terrain: TerrainType.GROUND }] })
+        .mockResolvedValueOnce({ pips: 2, spendableGold: 0, map: [{ x: 3, y: 2, terrain: TerrainType.GROUND }] });
+      mocks.inventoryApi.getInventory.mockResolvedValue({ data: [] });
+
+      await useFarmingStore.getState().gatherNode(2, 3);
+      await useFarmingStore.getState().gatherNode(3, 2);
+
+      expect(useFarmingStore.getState().harvestedTiles.has('2,3')).toBe(true);
+      expect(useFarmingStore.getState().harvestedTiles.has('3,2')).toBe(true);
+      expect(useFarmingStore.getState().harvestedTiles.size).toBe(2);
+    });
+
+    it('refunds the pip when no resource or gold was gained', async () => {
+      useFarmingStore.setState({
+        pips: 4,
+        spendableGold: 0,
+        playerPosition: { x: 1, y: 1 },
+        map: {
+          width: 20, height: 20, seedId: 'FORGE',
+          grid: Array.from({ length: 20 }, () => Array(20).fill(TerrainType.GROUND)),
+        },
+        inventory: { Bois: 2 },
+      });
+      mocks.farmingApi.gather.mockResolvedValue({
+        pips: 3,
+        spendableGold: 0,
+        map: [{ x: 2, y: 2, terrain: TerrainType.GROUND }],
+      });
+      mocks.inventoryApi.getInventory.mockResolvedValue({
+        data: [{ quantity: 2, item: { name: 'Bois', type: 'RESOURCE' } }],
+      });
+
+      await useFarmingStore.getState().gatherNode(2, 2);
+
+      expect(useFarmingStore.getState().pips).toBe(4);
+    });
+
+    it('does not refund the pip when a resource was actually added', async () => {
+      useFarmingStore.setState({
+        pips: 4,
+        spendableGold: 0,
+        playerPosition: { x: 1, y: 1 },
+        map: {
+          width: 20, height: 20, seedId: 'FORGE',
+          grid: Array.from({ length: 20 }, () => Array(20).fill(TerrainType.GROUND)),
+        },
+        inventory: { Bois: 2 },
+      });
+      mocks.farmingApi.gather.mockResolvedValue({
+        pips: 3,
+        spendableGold: 0,
+        map: [{ x: 2, y: 2, terrain: TerrainType.GROUND }],
+      });
+      mocks.inventoryApi.getInventory.mockResolvedValue({
+        data: [{ quantity: 3, item: { name: 'Bois', type: 'RESOURCE' } }],
+      });
+
+      await useFarmingStore.getState().gatherNode(2, 2);
+
+      expect(useFarmingStore.getState().pips).toBe(3);
+      expect(useFarmingStore.getState().inventory['Bois']).toBe(3);
+    });
   });
 
   describe('endPhase', () => {
@@ -248,6 +344,45 @@ describe('useFarmingStore', () => {
       mocks.farmingApi.debugRefill.mockRejectedValue(new Error('Refill failed'));
 
       await expect(useFarmingStore.getState().debugRefill()).rejects.toThrow('Refill failed');
+    });
+  });
+
+  describe('harvestedTiles lifecycle', () => {
+    it('clears harvestedTiles on fetchState (map refresh)', async () => {
+      useFarmingStore.setState({
+        harvestedTiles: new Set(['2,3', '5,5']),
+      });
+      mocks.farmingApi.getState.mockResolvedValue({
+        pips: 4, round: 2, spendableGold: 0, seedId: 'FORGE',
+        map: [{ x: 0, y: 0, terrain: TerrainType.GROUND }],
+      });
+      mocks.inventoryApi.getInventory.mockResolvedValue({ data: [] });
+
+      await useFarmingStore.getState().fetchState();
+
+      expect(useFarmingStore.getState().harvestedTiles.size).toBe(0);
+    });
+
+    it('clears harvestedTiles on nextRound', async () => {
+      useFarmingStore.setState({
+        harvestedTiles: new Set(['1,1']),
+      });
+      mocks.farmingApi.nextRound.mockResolvedValue({
+        pips: 4, round: 2, seedId: 'FORGE', spendableGold: 0,
+        map: [{ x: 0, y: 0, terrain: TerrainType.WOOD }],
+      });
+
+      await useFarmingStore.getState().nextRound();
+
+      expect(useFarmingStore.getState().harvestedTiles.size).toBe(0);
+    });
+
+    it('clears harvestedTiles on reset', () => {
+      useFarmingStore.setState({ harvestedTiles: new Set(['0,0', '1,1', '2,2']) });
+
+      useFarmingStore.getState().reset();
+
+      expect(useFarmingStore.getState().harvestedTiles.size).toBe(0);
     });
   });
 

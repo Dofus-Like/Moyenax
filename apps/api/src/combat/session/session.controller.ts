@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Request, Sse, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Request, Sse, UseGuards } from '@nestjs/common';
 import { Throttle, seconds } from '@nestjs/throttler';
 import { Observable } from 'rxjs';
 
@@ -7,6 +7,7 @@ import { SseTicketResource } from '../../shared/security/sse-ticket.decorator';
 import { SseTicketGuard } from '../../shared/security/sse-ticket.guard';
 import { SseService } from '../../shared/sse/sse.service';
 
+import { QuickVsAiDto } from './dto/quick-vs-ai.dto';
 import { SessionService } from './session.service';
 
 @Controller('combat')
@@ -21,6 +22,16 @@ export class SessionController {
   @Post('vs-ai')
   async startVsAiCombat(@Request() req: { user: { id: string } }) {
     return this.sessionService.startVsAiCombat(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 20, ttl: seconds(60) } })
+  @Post('vs-ai/quick')
+  async startQuickVsAiCombat(
+    @Request() req: { user: { id: string } },
+    @Body() dto: QuickVsAiDto,
+  ) {
+    return this.sessionService.startQuickVsAiCombat(req.user.id, dto.ringId);
   }
 
   @UseGuards(JwtAuthGuard)

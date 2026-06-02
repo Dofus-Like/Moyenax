@@ -12,6 +12,7 @@ import { SessionSecurityService } from '../../shared/security/session-security.s
 import { SseTicketService } from '../../shared/security/sse-ticket.service';
 import { SseService } from '../../shared/sse/sse.service';
 import { MapService } from '../map/map.service';
+import { StatsCalculatorService } from '../../player/stats-calculator.service';
 
 import { SessionService } from './session.service';
 
@@ -66,6 +67,10 @@ describe('SessionService', () => {
           useValue: {
             getCombatLoadout: jest.fn(),
           },
+        },
+        {
+          provide: StatsCalculatorService,
+          useValue: {},
         },
         {
           provide: MapService,

@@ -1,5 +1,4 @@
 import React from 'react';
-import mannequinBg from '../../assets/mannequin-bg.gif';
 import { useTranslation } from '../../store/language.store';
 import './Mannequin.css';
 
@@ -30,19 +29,9 @@ export const Mannequin = ({
   onUnequip?: (slot: any) => void;
 }) => {
   const { t } = useTranslation();
-  const [bgZoom] = React.useState(167);
 
   return (
     <div className="mannequin-container">
-      {/* Background Knight Silhouette */}
-      <div 
-        className="knight-silhouette-bg" 
-        style={{ 
-          backgroundImage: `url(${mannequinBg})`,
-          width: `${bgZoom}%`,
-          height: `${bgZoom}%`
-        }} 
-      />
 
       <div className="mannequin-grid-exact">
         {/* Row 1: Head */}

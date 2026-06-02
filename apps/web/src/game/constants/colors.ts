@@ -12,12 +12,12 @@ export const COMBAT_COLORS = {
   SHADER_BG_A: '#cafdff',
   SHADER_BG_B: '#0a3fa7',
   SHADER_BG_C: '#ffffff',
-  SHADER_NIGHT_A: '#07184b',
-  SHADER_NIGHT_B: '#88a5be',
-  SHADER_NIGHT_C: '#00184a',
-  SHADER_SUNSET_A: '#db0000',
-  SHADER_SUNSET_B: '#ffb600',
-  SHADER_SUNSET_C: '#fffed4',
+  SHADER_NIGHT_A: '#0002a0',
+  SHADER_NIGHT_B: '#335372',
+  SHADER_NIGHT_C: '#ffffff',
+  SHADER_SUNSET_A: '#ffe000',
+  SHADER_SUNSET_B: '#ff0000',
+  SHADER_SUNSET_C: '#003cff',
   CASTLE_DAY: '#ffffff',
   CASTLE_SUN: '#ff8844',
   CASTLE_NIGHT: '#4466cc',
@@ -33,6 +33,9 @@ export const COMBAT_COLORS = {
   TILE_NIGHT_A: '#b3b7ff',
   TILE_NIGHT_B: '#686b99',
   TILE_SIDE_NIGHT: '#373752',
+  WALL_DAY: '#468700',
+  WALL_SUNSET: '#875800',
+  WALL_NIGHT: '#4a5a7a',
 
   /* ─────────────────────────────────────────────
      DA3 — Full Glassmorphism UI palette

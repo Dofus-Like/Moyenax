@@ -1,3 +1,5 @@
+import { ItemType } from '@game/shared-types';
+
 import { InventoryService } from './inventory.service';
 
 describe('InventoryService', () => {
@@ -8,6 +10,7 @@ describe('InventoryService', () => {
       findFirst: jest.fn(),
       update: jest.fn(),
       create: jest.fn(),
+      delete: jest.fn(),
     },
     inventoryItem: {
       findMany: jest.fn(),
@@ -15,9 +18,13 @@ describe('InventoryService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
       create: jest.fn(),
+      delete: jest.fn(),
     },
     item: {
       findFirst: jest.fn(),
+    },
+    playerStats: {
+      update: jest.fn(),
     },
   };
 
@@ -130,6 +137,147 @@ describe('InventoryService', () => {
       prisma.sessionItem.findFirst.mockResolvedValue(null);
 
       await expect(service.unequip('player-1', 'item-1')).rejects.toThrow('Item non trouvé');
+    });
+  });
+
+  describe('useItem', () => {
+    const consumableDef = {
+      id: 'item-potion',
+      name: 'Potion de soin',
+      type: ItemType.CONSUMABLE,
+      statsBonus: { healVit: 10, buffAttaque: 5 },
+    };
+
+    const nonConsumableDef = {
+      id: 'item-sword',
+      name: 'Épée',
+      type: ItemType.WEAPON,
+      statsBonus: null,
+    };
+
+    const noBonusConsumableDef = {
+      id: 'item-nobonus',
+      name: 'Eau',
+      type: ItemType.CONSUMABLE,
+      statsBonus: null,
+    };
+
+    const unknownBonusDef = {
+      id: 'item-unknown',
+      name: 'Mystery',
+      type: ItemType.CONSUMABLE,
+      statsBonus: { unknownField: 99 },
+    };
+
+    it('consumes a session CONSUMABLE with quantity > 1, increments playerStats and decrements quantity', async () => {
+      gameSession.getActiveSession.mockResolvedValue({ id: 'session-1' });
+      prisma.sessionItem.findFirst.mockResolvedValue({
+        id: 'si-1',
+        quantity: 3,
+        item: consumableDef,
+      });
+      prisma.playerStats.update.mockResolvedValue({});
+      prisma.sessionItem.update.mockResolvedValue({ id: 'si-1', quantity: 2, item: consumableDef });
+      prisma.sessionItem.findMany.mockResolvedValue([{ id: 'si-1', quantity: 2 }]);
+
+      const result = await service.useItem('player-1', 'item-potion');
+
+      expect(prisma.playerStats.update).toHaveBeenCalledWith({
+        where: { playerId: 'player-1' },
+        data: expect.objectContaining({
+          vit: { increment: 10 },
+          baseVit: { increment: 10 },
+          atk: { increment: 5 },
+          baseAtk: { increment: 5 },
+        }),
+      });
+      expect(prisma.sessionItem.update).toHaveBeenCalledWith({
+        where: { id: 'si-1' },
+        data: { quantity: { decrement: 1 } },
+      });
+      expect(prisma.sessionItem.delete).not.toHaveBeenCalled();
+      expect(result).toEqual([{ id: 'si-1', quantity: 2 }]);
+    });
+
+    it('consumes a session CONSUMABLE with quantity === 1, deletes the record', async () => {
+      gameSession.getActiveSession.mockResolvedValue({ id: 'session-1' });
+      prisma.sessionItem.findFirst.mockResolvedValue({
+        id: 'si-1',
+        quantity: 1,
+        item: consumableDef,
+      });
+      prisma.playerStats.update.mockResolvedValue({});
+      prisma.sessionItem.delete.mockResolvedValue({});
+      prisma.sessionItem.findMany.mockResolvedValue([]);
+
+      await service.useItem('player-1', 'item-potion');
+
+      expect(prisma.playerStats.update).toHaveBeenCalled();
+      expect(prisma.sessionItem.delete).toHaveBeenCalledWith({
+        where: { id: 'si-1' },
+      });
+      expect(prisma.sessionItem.update).not.toHaveBeenCalled();
+    });
+
+    it('consumes a persistent inventory CONSUMABLE when no active session', async () => {
+      gameSession.getActiveSession.mockResolvedValue(null);
+      prisma.inventoryItem.findFirst.mockResolvedValue({
+        id: 'inv-1',
+        quantity: 2,
+        item: consumableDef,
+      });
+      prisma.playerStats.update.mockResolvedValue({});
+      prisma.inventoryItem.update.mockResolvedValue({ id: 'inv-1', quantity: 1, item: consumableDef });
+      prisma.inventoryItem.findMany.mockResolvedValue([{ id: 'inv-1', quantity: 1 }]);
+
+      const result = await service.useItem('player-1', 'item-potion');
+
+      expect(prisma.playerStats.update).toHaveBeenCalled();
+      expect(prisma.inventoryItem.update).toHaveBeenCalledWith({
+        where: { id: 'inv-1' },
+        data: { quantity: { decrement: 1 } },
+      });
+      expect(result).toEqual([{ id: 'inv-1', quantity: 1 }]);
+    });
+
+    it('throws NotFoundException when the item is not in inventory', async () => {
+      gameSession.getActiveSession.mockResolvedValue({ id: 'session-1' });
+      prisma.sessionItem.findFirst.mockResolvedValue(null);
+
+      await expect(service.useItem('player-1', 'item-potion')).rejects.toThrow('Objet introuvable');
+    });
+
+    it('throws BadRequestException when item is not CONSUMABLE', async () => {
+      gameSession.getActiveSession.mockResolvedValue({ id: 'session-1' });
+      prisma.sessionItem.findFirst.mockResolvedValue({
+        id: 'si-sword',
+        quantity: 1,
+        item: nonConsumableDef,
+      });
+
+      await expect(service.useItem('player-1', 'item-sword')).rejects.toThrow('ne peut pas être consommé');
+    });
+
+    it('throws BadRequestException when item has no statsBonus', async () => {
+      gameSession.getActiveSession.mockResolvedValue({ id: 'session-1' });
+      prisma.sessionItem.findFirst.mockResolvedValue({
+        id: 'si-nobonus',
+        quantity: 1,
+        item: noBonusConsumableDef,
+      });
+
+      await expect(service.useItem('player-1', 'item-nobonus')).rejects.toThrow("n'a aucun effet");
+    });
+
+    it('throws BadRequestException when bonus keys are not recognized', async () => {
+      gameSession.getActiveSession.mockResolvedValue({ id: 'session-1' });
+      prisma.sessionItem.findFirst.mockResolvedValue({
+        id: 'si-unknown',
+        quantity: 1,
+        item: unknownBonusDef,
+      });
+
+      await expect(service.useItem('player-1', 'item-unknown')).rejects.toThrow('Bonus');
     });
   });
 

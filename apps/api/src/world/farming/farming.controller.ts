@@ -37,6 +37,11 @@ export class FarmingController {
     return this.farmingService.debugRefillPips(req.user.id);
   }
 
+  @Post('starting-ring')
+  async grantStartingRing(@Request() req: { user: { id: string } }, @Body() body: { itemId: string }) {
+    return this.farmingService.grantStartingRing(req.user.id, body.itemId);
+  }
+
   @Post('next-round')
   async nextRound(@Request() req: { user: { id: string } }) {
     return this.farmingService.nextRound(req.user.id);
