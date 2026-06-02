@@ -90,8 +90,6 @@ const NAME_STYLE: CSSProperties = {
   pointerEvents: 'none',
   whiteSpace: 'nowrap',
   transform: 'translate(-50%, -100%)',
-  backdropFilter: 'blur(6px)',
-  WebkitBackdropFilter: 'blur(6px)',
 };
 
 function NameTag({ username }: { username: string }): ReactElement {
@@ -120,8 +118,6 @@ const BUBBLE_STYLE: CSSProperties = {
   transform: 'translate(-50%, -100%)',
   boxShadow: '0 6px 18px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.75)',
   textAlign: 'center',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
 };
 
 function ChatBubble({ message }: { message: HubChatMessage }): ReactElement | null {
