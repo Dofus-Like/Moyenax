@@ -1,7 +1,7 @@
 import type { HubChatMessage, HubPlayerSnapshot } from '@game/shared-types';
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { Vector3, type Group } from 'three';
 
 
@@ -121,13 +121,18 @@ const BUBBLE_STYLE: CSSProperties = {
 };
 
 function ChatBubble({ message }: { message: HubChatMessage }): ReactElement | null {
-  const expiresAt = useMemo(() => message.sentAt + BUBBLE_TTL_MS, [message]);
-  const [now, setNow] = useState(() => Date.now());
+  const [expired, setExpired] = useState(() => Date.now() >= message.sentAt + BUBBLE_TTL_MS);
   useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 250);
-    return (): void => window.clearInterval(t);
-  }, []);
-  if (now > expiresAt) return null;
+    const remaining = message.sentAt + BUBBLE_TTL_MS - Date.now();
+    if (remaining <= 0) {
+      setExpired(true);
+      return;
+    }
+    setExpired(false);
+    const t = window.setTimeout(() => setExpired(true), remaining);
+    return (): void => window.clearTimeout(t);
+  }, [message]);
+  if (expired) return null;
   return (
     <Html position={[0, PLAYER_VERTICAL_OFFSET + 2.1, 0]} center occlude={false} zIndexRange={[30, 0]}>
       <div style={BUBBLE_STYLE}>{message.text}</div>
