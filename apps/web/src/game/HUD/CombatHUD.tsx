@@ -130,6 +130,9 @@ export function CombatHUD() {
 
   if (!combatState || !user || !currentPlayer) return null;
 
+  // Bac à sable /playground : pas de système de tour (ni frise, ni fin de tour, ni abandon).
+  const isSandbox = combatState.isPlayground === true;
+
   const handleCombatExit = () => {
     disconnect();
     if (activeSession?.status === "ACTIVE") {
@@ -185,13 +188,15 @@ export function CombatHUD() {
         </div>
       )}
 
-      {/* TOP CENTER: Turn tracker */}
-      <TurnTracker
-        fighters={fighters}
-        currentTurnPlayerId={combatState.currentTurnPlayerId}
-        turnNumber={combatState.turnNumber}
-        selfId={user.id}
-      />
+      {/* TOP CENTER: Turn tracker (masqué en bac à sable : pas de tours) */}
+      {!isSandbox && (
+        <TurnTracker
+          fighters={fighters}
+          currentTurnPlayerId={combatState.currentTurnPlayerId}
+          turnNumber={combatState.turnNumber}
+          selfId={user.id}
+        />
+      )}
 
       {/* BOTTOM PLAYER PANELS */}
       <CombatPlayerPanel playerId={user.id} side="left" showStats={statsOpen} />
@@ -212,20 +217,22 @@ export function CombatHUD() {
               >
                 <img src="/assets/pack/icons/emojis.png" alt="Émotes" style={{ width: '18px', height: '18px' }} />
               </button>
-              <button
-                type="button"
-                className="hud-log-btn"
-                aria-label="Abandonner"
-                title="Abandonner"
-                onClick={() => {
-                  if (window.confirm(t("confirmAbandon") || "Voulez-vous vraiment abandonner le combat ?")) {
-                    surrender();
-                    handleCombatExit();
-                  }
-                }}
-              >
-                <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
-              </button>
+              {!isSandbox && (
+                <button
+                  type="button"
+                  className="hud-log-btn"
+                  aria-label="Abandonner"
+                  title="Abandonner"
+                  onClick={() => {
+                    if (window.confirm(t("confirmAbandon") || "Voulez-vous vraiment abandonner le combat ?")) {
+                      surrender();
+                      handleCombatExit();
+                    }
+                  }}
+                >
+                  <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
+                </button>
+              )}
               <button
                 type="button"
                 className={`hud-log-btn ${tacticsMode ? "active" : ""}`}
@@ -250,12 +257,14 @@ export function CombatHUD() {
                 enemyId ? combatState.players[enemyId]?.stats : undefined
               }
             >
-              <EndTurnButton 
-                isMyTurn={isMyTurn} 
-                onEndTurn={handleEndTurn} 
-                canCastSpell={canCastSpell}
-                hasPm={hasPm}
-              />
+              {!isSandbox && (
+                <EndTurnButton
+                  isMyTurn={isMyTurn}
+                  onEndTurn={handleEndTurn}
+                  canCastSpell={canCastSpell}
+                  hasPm={hasPm}
+                />
+              )}
             </SpellBar>
           </div>
 

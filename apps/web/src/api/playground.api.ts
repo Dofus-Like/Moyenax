@@ -4,6 +4,7 @@ import { apiClient } from './client';
 
 export const playgroundApi = {
   start: () => apiClient.post<CombatState>('/playground/start'),
+  startCombat: () => apiClient.post<CombatState>('/playground/combat'),
   paint: (sessionId: string, body: { x: number; y: number; terrain: TerrainType }) =>
     apiClient.post<CombatState>(`/playground/${sessionId}/paint`, body),
   gather: (sessionId: string, body: { x: number; y: number }) =>

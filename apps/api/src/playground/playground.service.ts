@@ -30,8 +30,13 @@ export class PlaygroundService {
   ) {}
 
   async start(humanId: string): Promise<CombatState> {
-    this.logger.log(`Démarrage d'un combat playground pour ${humanId}`);
+    this.logger.log(`Démarrage d'un bac à sable playground pour ${humanId}`);
     return this.session.startPlaygroundCombat(humanId);
+  }
+
+  async startCombat(humanId: string): Promise<CombatState> {
+    this.logger.log(`Passage en mode combat (vs IA) pour ${humanId}`);
+    return this.session.startPlaygroundRealCombat(humanId);
   }
 
   async paintTile(humanId: string, sessionId: string, dto: PaintTileDto): Promise<CombatState> {

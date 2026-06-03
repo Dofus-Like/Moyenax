@@ -191,3 +191,60 @@
   opacity: 0.5;
   pointer-events: none;
 }
+
+/* --- Barre d'arène (bac à sable / combat) --- */
+.pg-arena-bar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.pg-arena-toggle {
+  pointer-events: auto;
+  padding: 10px 18px;
+  font-family: var(--font-hud, "BoldPixels", sans-serif);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  cursor: pointer;
+  background: rgb(var(--range-orange-rgb, 252 168 0) / 0.28);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  border-radius: 6px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-shadow:
+    -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+    0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000;
+}
+
+.pg-arena-toggle:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+
+.pg-arena-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pg-arena-toggle.is-combat {
+  background: rgb(var(--hp-red-rgb, 239 68 68) / 0.32);
+}
+
+.pg-arena-label {
+  font-family: var(--font-hud, "BoldPixels", sans-serif);
+  font-size: 0.55rem;
+  color: #fff;
+  opacity: 0.85;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}

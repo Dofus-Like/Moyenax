@@ -40,9 +40,12 @@ export function PlaygroundPage() {
   const authInitialize = useAuthStore((s) => s.initialize);
 
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [arena, setArena] = useState<'sandbox' | 'combat'>('sandbox');
   const [mode, setMode] = useState<PlaygroundMode>('play');
   const [selectedTerrain, setSelectedTerrain] = useState<TerrainType>(TerrainType.WOOD);
+  const [switching, setSwitching] = useState(false);
   const controlsRef = useRef<CameraControlsImpl>(null);
+  const isSandbox = arena === 'sandbox';
   // Démarrage idempotent : StrictMode invoque l'effet deux fois, mais on ne doit
   // créer qu'une seule session (sinon collision sur l'index unique combat public).
   const startedRef = useRef(false);
@@ -66,9 +69,31 @@ export function PlaygroundPage() {
     };
   }, [authInitialize, connectToSession, disconnect]);
 
+  const switchArena = useCallback(
+    async (target: 'sandbox' | 'combat') => {
+      setSwitching(true);
+      try {
+        disconnect();
+        const { data } =
+          target === 'combat'
+            ? await playgroundApi.startCombat()
+            : await playgroundApi.start();
+        setArena(target);
+        setMode('play');
+        setSessionId(data.sessionId);
+        connectToSession(data.sessionId);
+      } catch (error) {
+        console.error('Playground arena switch failed', error);
+      } finally {
+        setSwitching(false);
+      }
+    },
+    [connectToSession, disconnect],
+  );
+
   const handlePlaygroundTileClick = useCallback(
     async (x: number, y: number) => {
-      if (!sessionId) return;
+      if (!sessionId || arena !== 'sandbox') return;
       try {
         if (mode === 'paint') {
           const { data } = await playgroundApi.paint(sessionId, { x, y, terrain: selectedTerrain });
@@ -164,7 +189,7 @@ export function PlaygroundPage() {
                   map={gameMap}
                   sessionId={sessionId}
                   timeOfDay={timeOfDay}
-                  playgroundMode={mode}
+                  playgroundMode={isSandbox ? mode : 'play'}
                   onPlaygroundTileClick={handlePlaygroundTileClick}
                 />
               </Suspense>
@@ -173,7 +198,21 @@ export function PlaygroundPage() {
 
           <CombatHUD />
 
-          {sessionId && (
+          <div className="pg-arena-bar">
+            <button
+              type="button"
+              className={`pg-arena-toggle${isSandbox ? '' : ' is-combat'}`}
+              disabled={switching}
+              onClick={() => switchArena(isSandbox ? 'combat' : 'sandbox')}
+            >
+              {isSandbox ? '⚔️ Lancer un vrai combat' : '🧪 Retour au bac à sable'}
+            </button>
+            <span className="pg-arena-label">
+              {isSandbox ? 'Bac à sable — sans tours, PA/PM illimités' : 'Combat tour par tour vs IA'}
+            </span>
+          </div>
+
+          {sessionId && isSandbox && (
             <>
               <TerrainBrushPanel
                 mode={mode}

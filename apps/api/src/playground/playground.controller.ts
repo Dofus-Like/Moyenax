@@ -15,6 +15,11 @@ export class PlaygroundController {
     return this.playground.start(req.user.id);
   }
 
+  @Post('combat')
+  startCombat(@Request() req: { user: { id: string } }) {
+    return this.playground.startCombat(req.user.id);
+  }
+
   @Post(':sessionId/paint')
   paint(
     @Param('sessionId') sessionId: string,

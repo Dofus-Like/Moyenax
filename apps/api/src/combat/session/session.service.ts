@@ -286,6 +286,22 @@ export class SessionService {
     await Promise.all(open.map((s) => this.redis.del(`combat:${s.id}`)));
   }
 
+  /**
+   * Passe du bac à sable à un vrai combat tour-par-tour vs IA : ferme le combat
+   * playground ouvert puis lance un combat normal (IA mobile + PV finis, sans le
+   * flag isPlayground → système de tour et PA/PM normaux).
+   */
+  async startPlaygroundRealCombat(humanId: string): Promise<CombatState> {
+    const bot = await this.getOrCreateBot();
+    await this.closeOpenPublicSessions(humanId, bot.id);
+
+    const session = await this.prisma.combatSession.create({
+      data: { player1Id: humanId, player2Id: bot.id, status: 'WAITING' },
+    });
+
+    return this.accept(session.id, bot.id);
+  }
+
   private async buildPlaygroundState(
     sessionId: string,
     humanId: string,
