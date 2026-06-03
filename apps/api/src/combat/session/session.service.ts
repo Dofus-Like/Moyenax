@@ -327,6 +327,7 @@ export class SessionService {
       currentTurnPlayerId: humanId,
       turnNumber: 1,
       isPlayground: true,
+      noCooldown: true,
       players: {
         [humanId]: {
           playerId: humanId,
@@ -335,6 +336,7 @@ export class SessionService {
           stats: humanStats,
           currentVit: humanStats.vit,
           position: { x: 1, y: 1 },
+          spawn: { x: 1, y: 1 },
           spells,
           remainingPa: PLAYGROUND_AP,
           remainingPm: PLAYGROUND_AP,
@@ -384,6 +386,7 @@ export class SessionService {
       stats,
       currentVit: PLAYGROUND_DUMMY_VIT,
       position: { x: 8, y: 8 },
+      spawn: { x: 8, y: 8 },
       spells: [],
       remainingPa: 0,
       remainingPm: 0,

@@ -273,7 +273,7 @@ export class TurnService {
       throw new BadRequestException('PA insuffisants');
     }
 
-    if (player.spellCooldowns[spell.id] > 0) {
+    if (!state.noCooldown && player.spellCooldowns[spell.id] > 0) {
       throw new BadRequestException('Sort encore en cooldown');
     }
 
@@ -303,7 +303,7 @@ export class TurnService {
     if (!state.isPlayground) {
       player.remainingPa -= spell.paCost;
     }
-    if (spell.cooldown > 0) {
+    if (spell.cooldown > 0 && !state.noCooldown) {
       player.spellCooldowns[spell.id] = spell.cooldown;
     }
 
@@ -328,6 +328,8 @@ export class TurnService {
   }
 
   private async checkVictory(state: CombatState) {
+    // Bac à sable : aucune fin de combat (mannequins encaissent sans verrouiller la session).
+    if (state.isPlayground) return false;
     const players = Object.values(state.players).filter((p) => p.type === 'PLAYER');
     for (const player of players) {
       if (player.currentVit <= 0) {

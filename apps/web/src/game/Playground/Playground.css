@@ -210,6 +210,16 @@
   pointer-events: none;
 }
 
+.pg-arena-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.pg-arena-hub {
+  background: rgba(0, 0, 0, 0.55) !important;
+}
+
 .pg-arena-toggle {
   pointer-events: auto;
   padding: 10px 18px;

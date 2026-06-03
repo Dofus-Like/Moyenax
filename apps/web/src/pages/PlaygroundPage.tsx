@@ -2,6 +2,7 @@ import { OrthographicCamera, CameraControls, Text } from '@react-three/drei';
 import { Canvas, useLoader } from '@react-three/fiber';
 import CameraControlsImpl from 'camera-controls';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 
 import { TerrainType } from '@game/shared-types';
@@ -47,7 +48,13 @@ export function PlaygroundPage() {
   const [selectedTerrain, setSelectedTerrain] = useState<TerrainType>(TerrainType.WOOD);
   const [switching, setSwitching] = useState(false);
   const controlsRef = useRef<CameraControlsImpl>(null);
+  const navigate = useNavigate();
   const isSandbox = arena === 'sandbox';
+
+  const handleBackToHub = useCallback(() => {
+    disconnect();
+    navigate('/');
+  }, [disconnect, navigate]);
   // Démarrage idempotent : StrictMode invoque l'effet deux fois, mais on ne doit
   // créer qu'une seule session (sinon collision sur l'index unique combat public).
   const startedRef = useRef(false);
@@ -204,14 +211,23 @@ export function PlaygroundPage() {
           <CombatHUD />
 
           <div className="pg-arena-bar">
-            <button
-              type="button"
-              className={`pg-arena-toggle${isSandbox ? '' : ' is-combat'}`}
-              disabled={switching}
-              onClick={() => switchArena(isSandbox ? 'combat' : 'sandbox')}
-            >
-              {isSandbox ? '⚔️ Lancer un vrai combat' : '🧪 Retour au bac à sable'}
-            </button>
+            <div className="pg-arena-row">
+              <button
+                type="button"
+                className="pg-arena-toggle pg-arena-hub"
+                onClick={handleBackToHub}
+              >
+                🏠 Hub
+              </button>
+              <button
+                type="button"
+                className={`pg-arena-toggle${isSandbox ? '' : ' is-combat'}`}
+                disabled={switching}
+                onClick={() => switchArena(isSandbox ? 'combat' : 'sandbox')}
+              >
+                {isSandbox ? '⚔️ Lancer un vrai combat' : '🧪 Retour au bac à sable'}
+              </button>
+            </div>
             <span className="pg-arena-label">
               {isSandbox ? 'Bac à sable — sans tours, PA/PM illimités' : 'Combat tour par tour vs IA'}
             </span>

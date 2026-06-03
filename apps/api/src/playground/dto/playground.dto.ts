@@ -1,5 +1,14 @@
 import { EquipmentSlotType, TerrainType } from '@game/shared-types';
-import { IsEnum, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class PaintTileDto {
   @IsInt()
@@ -36,4 +45,75 @@ export class GrantEquipDto {
 export class UnequipDto {
   @IsEnum(EquipmentSlotType)
   slot!: EquipmentSlotType;
+}
+
+export class AddDummyDto {
+  @IsInt()
+  @Min(0)
+  x!: number;
+
+  @IsInt()
+  @Min(0)
+  y!: number;
+}
+
+export class SetDummyDto {
+  @IsString()
+  @IsNotEmpty()
+  dummyId!: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(9_999_999)
+  vit?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1000)
+  def?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1000)
+  res?: number;
+}
+
+export class SetPlayerStatsDto {
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(9_999_999)
+  vit?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1000)
+  atk?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1000)
+  mag?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1000)
+  def?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1000)
+  res?: number;
+}
+
+export class NoCooldownDto {
+  @IsBoolean()
+  enabled!: boolean;
 }

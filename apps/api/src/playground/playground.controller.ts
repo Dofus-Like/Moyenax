@@ -1,8 +1,17 @@
-import { Body, Controller, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import { GatherTileDto, GrantEquipDto, PaintTileDto, UnequipDto } from './dto/playground.dto';
+import {
+  AddDummyDto,
+  GatherTileDto,
+  GrantEquipDto,
+  NoCooldownDto,
+  PaintTileDto,
+  SetDummyDto,
+  SetPlayerStatsDto,
+  UnequipDto,
+} from './dto/playground.dto';
 import { PlaygroundService } from './playground.service';
 
 @UseGuards(JwtAuthGuard)
@@ -54,5 +63,58 @@ export class PlaygroundController {
     @Request() req: { user: { id: string } },
   ) {
     return this.playground.unequip(req.user.id, sessionId, dto);
+  }
+
+  @Post(':sessionId/dummy')
+  addDummy(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: AddDummyDto,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.playground.addDummy(req.user.id, sessionId, dto);
+  }
+
+  @Patch(':sessionId/dummy')
+  setDummy(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SetDummyDto,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.playground.setDummy(req.user.id, sessionId, dto);
+  }
+
+  @Delete(':sessionId/dummy/:dummyId')
+  removeDummy(
+    @Param('sessionId') sessionId: string,
+    @Param('dummyId') dummyId: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.playground.removeDummy(req.user.id, sessionId, dummyId);
+  }
+
+  @Post(':sessionId/dummy/reset')
+  resetDummies(
+    @Param('sessionId') sessionId: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.playground.resetDummies(req.user.id, sessionId);
+  }
+
+  @Post(':sessionId/player-stats')
+  setPlayerStats(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SetPlayerStatsDto,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.playground.setPlayerStats(req.user.id, sessionId, dto);
+  }
+
+  @Post(':sessionId/no-cooldown')
+  setNoCooldown(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: NoCooldownDto,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.playground.setNoCooldown(req.user.id, sessionId, dto);
   }
 }

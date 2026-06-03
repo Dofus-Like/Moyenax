@@ -1,4 +1,6 @@
-import type { CombatState } from '@game/shared-types';
+import { randomUUID } from 'node:crypto';
+
+import type { CombatPlayer, CombatState, PlayerStats } from '@game/shared-types';
 import { TERRAIN_PROPERTIES, TerrainType } from '@game/shared-types';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
@@ -9,7 +11,62 @@ import { PrismaService } from '../shared/prisma/prisma.service';
 import { RedisService } from '../shared/redis/redis.service';
 import { SseService } from '../shared/sse/sse.service';
 
-import { GatherTileDto, GrantEquipDto, PaintTileDto, UnequipDto } from './dto/playground.dto';
+import {
+  AddDummyDto,
+  GatherTileDto,
+  GrantEquipDto,
+  NoCooldownDto,
+  PaintTileDto,
+  SetDummyDto,
+  SetPlayerStatsDto,
+  UnequipDto,
+} from './dto/playground.dto';
+
+/** PV par défaut d'un mannequin-cible ajouté (cible « réaliste », finie). */
+const DEFAULT_TARGET_VIT = 1000;
+
+function buildTargetDummy(
+  id: string,
+  x: number,
+  y: number,
+  vit: number,
+  def: number,
+  res: number,
+): CombatPlayer {
+  const stats: PlayerStats = {
+    vit,
+    atk: 0,
+    mag: 0,
+    def,
+    res,
+    ini: 0,
+    pa: 0,
+    pm: 0,
+    baseVit: vit,
+    baseAtk: 0,
+    baseMag: 0,
+    baseDef: def,
+    baseRes: res,
+    baseIni: 0,
+    basePa: 0,
+    basePm: 0,
+  };
+  return {
+    playerId: id,
+    username: 'Bot cible',
+    type: 'PLAYER',
+    stats,
+    currentVit: vit,
+    position: { x, y },
+    spawn: { x, y },
+    spells: [],
+    remainingPa: 0,
+    remainingPm: 0,
+    spellCooldowns: {},
+    buffs: [],
+    skin: 'orc-classic',
+  };
+}
 
 /**
  * Orchestrateur dev-only (route /playground). Composition-root assumée qui relie
@@ -79,6 +136,84 @@ export class PlaygroundService {
   async unequip(humanId: string, sessionId: string, dto: UnequipDto): Promise<CombatState> {
     await this.equipment.unequip(humanId, dto.slot);
     return this.session.refreshPlaygroundLoadout(sessionId, humanId);
+  }
+
+  async addDummy(humanId: string, sessionId: string, dto: AddDummyDto): Promise<CombatState> {
+    const state = await this.session.getStateForParticipant(sessionId, humanId);
+    const id = `dummy-${randomUUID()}`;
+    state.players[id] = buildTargetDummy(id, dto.x, dto.y, DEFAULT_TARGET_VIT, 0, 0);
+    return this.persistAndBroadcast(sessionId, state);
+  }
+
+  async setDummy(humanId: string, sessionId: string, dto: SetDummyDto): Promise<CombatState> {
+    const state = await this.session.getStateForParticipant(sessionId, humanId);
+    const dummy = this.getDummy(state, humanId, dto.dummyId);
+
+    if (dto.def !== undefined) dummy.stats.def = dummy.stats.baseDef = dto.def;
+    if (dto.res !== undefined) dummy.stats.res = dummy.stats.baseRes = dto.res;
+    if (dto.vit !== undefined) {
+      dummy.stats.vit = dummy.stats.baseVit = dto.vit;
+      dummy.currentVit = dto.vit;
+    }
+    return this.persistAndBroadcast(sessionId, state);
+  }
+
+  async removeDummy(humanId: string, sessionId: string, dummyId: string): Promise<CombatState> {
+    const state = await this.session.getStateForParticipant(sessionId, humanId);
+    this.getDummy(state, humanId, dummyId);
+    delete state.players[dummyId];
+    return this.persistAndBroadcast(sessionId, state);
+  }
+
+  async resetDummies(humanId: string, sessionId: string): Promise<CombatState> {
+    const state = await this.session.getStateForParticipant(sessionId, humanId);
+    for (const player of Object.values(state.players)) {
+      if (player.playerId === humanId) continue;
+      player.currentVit = player.stats.vit;
+      if (player.spawn) player.position = { ...player.spawn };
+      player.buffs = [];
+      player.spellCooldowns = {};
+    }
+    return this.persistAndBroadcast(sessionId, state);
+  }
+
+  async setPlayerStats(
+    humanId: string,
+    sessionId: string,
+    dto: SetPlayerStatsDto,
+  ): Promise<CombatState> {
+    const state = await this.session.getStateForParticipant(sessionId, humanId);
+    const player = state.players[humanId];
+    if (!player) throw new BadRequestException('Joueur introuvable');
+
+    const stats = player.stats;
+    if (dto.atk !== undefined) stats.atk = stats.baseAtk = dto.atk;
+    if (dto.mag !== undefined) stats.mag = stats.baseMag = dto.mag;
+    if (dto.def !== undefined) stats.def = stats.baseDef = dto.def;
+    if (dto.res !== undefined) stats.res = stats.baseRes = dto.res;
+    if (dto.vit !== undefined) {
+      stats.vit = stats.baseVit = dto.vit;
+      player.currentVit = dto.vit;
+    }
+    return this.persistAndBroadcast(sessionId, state);
+  }
+
+  async setNoCooldown(
+    humanId: string,
+    sessionId: string,
+    dto: NoCooldownDto,
+  ): Promise<CombatState> {
+    const state = await this.session.getStateForParticipant(sessionId, humanId);
+    state.noCooldown = dto.enabled;
+    return this.persistAndBroadcast(sessionId, state);
+  }
+
+  private getDummy(state: CombatState, humanId: string, dummyId: string): CombatPlayer {
+    const dummy = state.players[dummyId];
+    if (!dummy || dummy.playerId === humanId) {
+      throw new BadRequestException('Mannequin introuvable');
+    }
+    return dummy;
   }
 
   private async findOrCreateInventoryItem(humanId: string, itemId: string) {
