@@ -16,7 +16,7 @@ const TREE_URLS = [
   '/assets/models/Tree_05.fbx',
 ];
 
-const TEXTURE_PATH = '/assets/models/SimpleNature_Texture.png';
+const TEXTURE_PATH = '/assets/models/forest_texture.png';
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed + 1) * 43758.5453123;
@@ -26,7 +26,7 @@ function seededRandom(seed: number): number {
 /**
  * TreeModel – Affiche un arbre FBX avec sa texture et correction de position
  */
-function TreeModel({ url, rotationY, texture }: { url: string; rotationY: number; texture: THREE.Texture }) {
+function TreeModel({ url, rotationY, texture }: { url: string; rotationY: number; texture: THREE.Texture }): React.JSX.Element {
   const fbx = useFBX(url);
 
   const { clonedTree, offset } = useMemo(() => {
@@ -73,7 +73,7 @@ function TreeModel({ url, rotationY, texture }: { url: string; rotationY: number
   );
 }
 
-export function Tree({ position, scale = 0.35, seed = 0 }: TreeProps) {
+export function Tree({ position, scale = 0.35, seed = 0 }: TreeProps): React.JSX.Element {
   const texture = useTexture(TEXTURE_PATH);
 
   const urlIdx = Math.floor(seededRandom(seed) * TREE_URLS.length);
