@@ -2,7 +2,7 @@ import { performance } from 'node:perf_hooks';
 
 import { calculateInitiativeJet } from '@game/game-engine';
 import { EquipmentSlotType, GAME_EVENTS } from '@game/shared-types';
-import type { CombatState } from '@game/shared-types';
+import type { CombatState, CombatPlayer, PlayerStats } from '@game/shared-types';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
@@ -16,6 +16,12 @@ import { SessionSecurityService } from '../../shared/security/session-security.s
 import { SseTicketService } from '../../shared/security/sse-ticket.service';
 import { SseService } from '../../shared/sse/sse.service';
 import { MapService } from '../map/map.service';
+
+/** PV du mannequin de playground : assez grand pour ne jamais tomber à 0. */
+const PLAYGROUND_DUMMY_VIT = 999_999;
+
+/** PA/PM du joueur en playground : grande réserve + jamais décrémentée (cf. TurnService). */
+const PLAYGROUND_AP = 99;
 
 @Injectable()
 export class SessionService {
@@ -218,11 +224,7 @@ export class SessionService {
       },
     };
 
-    await this.redis.setJson(`combat:${sessionId}`, initialState, 3600);
-
-    this.sse.emit(sessionId, 'STATE_UPDATED', initialState);
-    this.sse.emit(sessionId, 'TURN_STARTED', { playerId: firstPlayerId });
-    this.eventEmitter.emit(GAME_EVENTS.TURN_STARTED, { sessionId, playerId: firstPlayerId });
+    await this.commitInitialState(sessionId, initialState, firstPlayerId);
 
     this.perfLogger.logDuration('combat', 'session.accept', performance.now() - startedAt, {
       session_id: sessionId,
@@ -231,6 +233,177 @@ export class SessionService {
     });
 
     return initialState;
+  }
+
+  private async commitInitialState(
+    sessionId: string,
+    state: CombatState,
+    firstPlayerId: string,
+  ): Promise<void> {
+    await this.redis.setJson(`combat:${sessionId}`, state, 3600);
+    this.sse.emit(sessionId, 'STATE_UPDATED', state);
+    this.sse.emit(sessionId, 'TURN_STARTED', { playerId: firstPlayerId });
+    this.eventEmitter.emit(GAME_EVENTS.TURN_STARTED, { sessionId, playerId: firstPlayerId });
+  }
+
+  /**
+   * Démarre un combat « banc de test » : adversaire = mannequin immobile à PV
+   * quasi-illimités (le combat ne se termine jamais). Le joueur garde ses sorts
+   * issus de son équipement courant.
+   */
+  async startPlaygroundCombat(humanId: string): Promise<CombatState> {
+    const bot = await this.getOrCreateBot();
+    // Index unique partiel sur combat public (gameSessionId null) : un seul ouvert
+    // par player1 ET par player2. Le mannequin partagé (bot) est player2 et le
+    // combat playground ne se termine jamais → on referme tout combat public ouvert
+    // impliquant le joueur ou le bot avant d'en relancer un neuf.
+    await this.closeOpenPublicSessions(humanId, bot.id);
+
+    const session = await this.prisma.combatSession.create({
+      data: { player1Id: humanId, player2Id: bot.id, status: 'ACTIVE' },
+    });
+
+    const state = await this.buildPlaygroundState(session.id, humanId, bot.id);
+    await this.commitInitialState(session.id, state, humanId);
+    return state;
+  }
+
+  private async closeOpenPublicSessions(humanId: string, botId: string): Promise<void> {
+    const open = await this.prisma.combatSession.findMany({
+      where: {
+        gameSessionId: null,
+        status: { in: ['WAITING', 'ACTIVE'] },
+        OR: [{ player1Id: humanId }, { player2Id: botId }],
+      },
+      select: { id: true },
+    });
+    if (open.length === 0) return;
+
+    await this.prisma.combatSession.updateMany({
+      where: { id: { in: open.map((s) => s.id) } },
+      data: { status: 'FINISHED', endedAt: new Date() },
+    });
+    await Promise.all(open.map((s) => this.redis.del(`combat:${s.id}`)));
+  }
+
+  private async buildPlaygroundState(
+    sessionId: string,
+    humanId: string,
+    botId: string,
+  ): Promise<CombatState> {
+    const [loadout, spells, human, bot] = await Promise.all([
+      this.playerStatsService.getCombatLoadout(humanId),
+      this.playerSpellProjection.getCombatSpellDefinitions(humanId),
+      this.prisma.player.findUnique({
+        where: { id: humanId },
+        select: { username: true, skin: true },
+      }),
+      this.prisma.player.findUnique({
+        where: { id: botId },
+        select: { username: true, skin: true },
+      }),
+    ]);
+
+    const humanStats: PlayerStats = { ...loadout.stats, pa: PLAYGROUND_AP, pm: PLAYGROUND_AP };
+
+    return {
+      sessionId,
+      currentTurnPlayerId: humanId,
+      turnNumber: 1,
+      isPlayground: true,
+      players: {
+        [humanId]: {
+          playerId: humanId,
+          username: human?.username || 'Joueur',
+          type: 'PLAYER',
+          stats: humanStats,
+          currentVit: humanStats.vit,
+          position: { x: 1, y: 1 },
+          spells,
+          remainingPa: PLAYGROUND_AP,
+          remainingPm: PLAYGROUND_AP,
+          spellCooldowns: {},
+          buffs: [],
+          skin: human?.skin || 'soldier-classic',
+          items: loadout.items,
+        },
+        [botId]: this.buildPlaygroundDummy(botId, bot?.username, bot?.skin),
+      },
+      map: {
+        width: 10,
+        height: 10,
+        tiles: this.mapService.generateFlatMap(10, 10),
+      },
+    };
+  }
+
+  /**
+   * Mannequin : `spells:[]` + `pm:0` ⇒ l'IA (BotService) ne peut que passer son
+   * tour (ni sort, ni déplacement) ; `currentVit` énorme ⇒ ne meurt jamais.
+   */
+  private buildPlaygroundDummy(botId: string, username?: string, skin?: string): CombatPlayer {
+    const stats: PlayerStats = {
+      vit: PLAYGROUND_DUMMY_VIT,
+      atk: 0,
+      mag: 0,
+      def: 0,
+      res: 0,
+      ini: 0,
+      pa: 0,
+      pm: 0,
+      baseVit: PLAYGROUND_DUMMY_VIT,
+      baseAtk: 0,
+      baseMag: 0,
+      baseDef: 0,
+      baseRes: 0,
+      baseIni: 0,
+      basePa: 0,
+      basePm: 0,
+    };
+
+    return {
+      playerId: botId,
+      username: username || 'Bot',
+      type: 'PLAYER',
+      stats,
+      currentVit: PLAYGROUND_DUMMY_VIT,
+      position: { x: 8, y: 8 },
+      spells: [],
+      remainingPa: 0,
+      remainingPm: 0,
+      spellCooldowns: {},
+      buffs: [],
+      skin: skin || 'orc-classic',
+    };
+  }
+
+  /**
+   * Re-snapshot des stats/sorts du joueur dans le combat playground en cours,
+   * après un changement d'équipement, sans redémarrer le combat.
+   */
+  async refreshPlaygroundLoadout(sessionId: string, humanId: string): Promise<CombatState> {
+    const state = await this.redis.getJson<CombatState>(`combat:${sessionId}`);
+    if (!state) throw new BadRequestException('Session de playground introuvable');
+
+    const human = state.players[humanId];
+    if (!human) throw new BadRequestException('Joueur introuvable dans la session');
+
+    const [loadout, spells] = await Promise.all([
+      this.playerStatsService.getCombatLoadout(humanId),
+      this.playerSpellProjection.getCombatSpellDefinitions(humanId),
+    ]);
+
+    // PA/PM restent illimités quel que soit l'équipement (banc de test).
+    human.stats = { ...loadout.stats, pa: PLAYGROUND_AP, pm: PLAYGROUND_AP };
+    human.spells = spells;
+    human.items = loadout.items;
+    human.currentVit = loadout.stats.vit;
+    human.remainingPa = PLAYGROUND_AP;
+    human.remainingPm = PLAYGROUND_AP;
+
+    await this.redis.setJson(`combat:${sessionId}`, state, 3600);
+    this.sse.emit(sessionId, 'STATE_UPDATED', state);
+    return state;
   }
 
   @OnEvent(GAME_EVENTS.COMBAT_ENDED)

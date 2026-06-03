@@ -5,7 +5,7 @@ import { CombatActionType } from '@game/shared-types';
 
 
 import { combatApi } from '../api/combat.api';
-import { playSfx } from '../utils/sfx';
+import { playSfx, SPELL_CAST_SFX } from '../utils/sfx';
 
 import { useAuthStore } from './auth.store';
 
@@ -260,6 +260,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           'SPELL_CAST',
           withConnectionGuard<Omit<SpellCastEvent, 'timestamp'>>((data) => {
             set({ lastSpellCast: { ...data, timestamp: Date.now() } });
+            // Son de lancement distinct par sort, pour TOUT cast (clic case ou panneau).
+            playSfx(SPELL_CAST_SFX[data.spellId] ?? 'spellCast');
           }),
         );
 

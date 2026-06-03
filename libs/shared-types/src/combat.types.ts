@@ -112,4 +112,5 @@ export interface CombatState {
     tiles: Tile[];
   };
   winnerId?: string; // Ajout du gagnant
+  isPlayground?: boolean; // Mode banc de test (/playground) : panneaux dev, pas de fin de combat
 }
