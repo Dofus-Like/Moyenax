@@ -126,7 +126,7 @@ export const TERRAIN_LABELS: Record<TerrainType, string> = {
 
 // --- Map ---
 
-export const MAP_SIZE = 20;
+export const MAP_SIZE = 10;
 
 export interface GameMap {
   width: number;

@@ -20,46 +20,45 @@ const HINT_STYLES = `
 .hub-onboarding-btn-primary {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; padding: 11px 20px; margin-top: 14px;
-  border: none; border-radius: 10px; cursor: pointer;
-  font-family: inherit; font-size: 0.875rem; font-weight: 700;
+  border: 2px solid #fca800; outline: 1.5px solid rgba(0,0,0,0.85); border-radius: 6px; cursor: pointer;
+  font-family: var(--font-hud); font-size: 0.85rem; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase;
   color: #fff;
-  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 55%, #a855f7 100%);
-  box-shadow: 0 4px 16px rgba(124,58,237,0.32);
-  transition: filter 140ms ease, transform 120ms ease, box-shadow 140ms ease;
-  outline: none;
+  text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 -1.5px 0 #000, 0 1.5px 0 #000, -1.5px 0 0 #000, 1.5px 0 0 #000;
+  background: rgba(0,0,0,0.55);
+  box-shadow: 0 0 16px rgba(252,168,0,0.45), inset 0 0 0 1px rgba(0,0,0,0.75), inset 0 0 20px rgba(0,0,0,0.55);
+  transition: filter 140ms ease, transform 120ms ease, box-shadow 140ms ease, background 140ms ease;
 }
 .hub-onboarding-btn-primary:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 22px rgba(124,58,237,0.48);
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 0 26px rgba(252,168,0,0.8), inset 0 0 0 1px rgba(0,0,0,0.7), inset 0 0 20px rgba(0,0,0,0.5);
 }
 .hub-onboarding-btn-primary:active {
   filter: brightness(0.94);
   transform: translateY(0);
 }
 .hub-onboarding-btn-primary:focus-visible {
-  outline: 2px solid rgba(124,58,237,0.75);
-  outline-offset: 3px;
+  outline: 2px solid #fca800;
+  outline-offset: 2px;
 }
 .hub-onboarding-btn-secondary {
   display: flex; align-items: center; justify-content: center;
   width: 100%; padding: 10px 20px; margin-top: 8px;
-  border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; cursor: pointer;
-  font-family: inherit; font-size: 0.82rem; font-weight: 500;
-  color: rgba(255,255,255,0.48);
-  background: rgba(255,255,255,0.04);
+  border: 2px solid rgba(255,255,255,0.4); outline: 1.5px solid rgba(0,0,0,0.85); border-radius: 6px; cursor: pointer;
+  font-family: var(--font-hud); font-size: 0.78rem; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  background: rgba(0,0,0,0.55);
   transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
-  outline: none;
 }
 .hub-onboarding-btn-secondary:hover {
   background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.22);
-  color: rgba(255,255,255,0.78);
+  border-color: rgba(255,255,255,0.85);
+  color: #fff;
 }
 .hub-onboarding-btn-secondary:active { background: rgba(255,255,255,0.05); }
 .hub-onboarding-btn-secondary:focus-visible {
-  outline: 2px solid rgba(99,102,241,0.75);
-  outline-offset: 3px;
+  outline: 2px solid rgba(255,255,255,0.6);
+  outline-offset: 2px;
 }
 @media (max-width: 480px) {
   .hub-onboarding-outer {
@@ -99,15 +98,16 @@ const CARD: CSSProperties = {
   width: '300px',
   maxWidth: '100%',
   padding: '16px 18px 18px',
-  borderRadius: '14px',
-  background: 'rgba(8,14,28,0.88)',
-  backdropFilter: 'blur(16px) saturate(1.3)',
-  WebkitBackdropFilter: 'blur(16px) saturate(1.3)',
-  border: '1px solid rgba(99,102,241,0.22)',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
+  borderRadius: '6px',
+  background: 'rgba(0,0,0,0.55)',
+  backdropFilter: 'blur(6px)',
+  WebkitBackdropFilter: 'blur(6px)',
+  border: '2px solid rgba(255,255,255,0.9)',
+  outline: '1.5px solid rgba(0,0,0,0.85)',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(0,0,0,0.75), inset 0 0 40px rgba(0,0,0,0.65)',
   pointerEvents: 'auto',
   color: 'white',
-  fontFamily: 'system-ui, sans-serif',
+  fontFamily: 'var(--font-hud)',
 };
 
 const GUIDE_LABEL: CSSProperties = {
@@ -128,10 +128,13 @@ const GUIDE_LABEL: CSSProperties = {
 
 const TITLE: CSSProperties = {
   margin: '0 0 6px',
-  fontSize: '0.95rem',
-  fontWeight: 700,
-  color: '#f1f5f9',
-  letterSpacing: '-0.01em',
+  fontSize: '1rem',
+  fontWeight: 400,
+  color: '#ffffff',
+  letterSpacing: '0.05em',
+  textTransform: 'uppercase',
+  textShadow:
+    '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000',
 };
 
 const BODY: CSSProperties = {

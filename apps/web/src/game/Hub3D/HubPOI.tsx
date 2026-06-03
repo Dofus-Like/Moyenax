@@ -84,41 +84,42 @@ function getLabelMetrics(mobile: boolean): LabelMetrics {
 function buildChipStyle(color: string, hovered: boolean, dimmed: boolean, metrics: LabelMetrics): CSSProperties {
   return {
     pointerEvents: 'none',
-    background: 'linear-gradient(135deg, rgba(8,12,22,0.78) 0%, rgba(14,20,36,0.72) 100%)',
-    backdropFilter: 'blur(10px) saturate(1.2)',
-    WebkitBackdropFilter: 'blur(10px) saturate(1.2)',
+    background: 'rgba(0,0,0,0.55)',
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
     color: 'white',
     padding: metrics.padding,
-    borderRadius: '999px',
+    borderRadius: '6px',
     fontSize: metrics.fontSize,
-    fontWeight: 700,
+    fontWeight: 400,
     whiteSpace: 'nowrap',
-    fontFamily: 'system-ui, sans-serif',
-    border: `1px solid ${color}66`,
-    boxShadow: `0 0 14px ${color}40, 0 4px 14px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)`,
+    fontFamily: 'var(--font-hud)',
+    textTransform: 'uppercase',
+    border: '2px solid rgba(255,255,255,0.55)',
+    outline: '1.5px solid rgba(0,0,0,0.85)',
+    boxShadow: `0 0 14px ${color}40, 0 4px 14px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.7)`,
     transform: hovered && !dimmed ? 'translateY(-2px) scale(1.06)' : 'translateY(0) scale(1)',
     transition: 'transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 180ms ease, opacity 220ms ease, border-color 180ms ease',
     userSelect: 'none',
     display: 'inline-flex',
     alignItems: 'center',
     gap: metrics.gap,
-    letterSpacing: '0.02em',
+    letterSpacing: '0.03em',
     opacity: dimmed ? 0.18 : 1,
-    textShadow: '0 1px 6px rgba(0,0,0,0.55)',
     maxWidth: metrics.maxWidth,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   };
 }
 
-function buildLabelTextStyle(color: string, hovered: boolean): CSSProperties {
+function buildLabelTextStyle(): CSSProperties {
   return {
     display: 'inline-flex',
     alignItems: 'center',
-    color: hovered ? '#ffffff' : 'rgba(255,255,255,0.94)',
-    transition: 'color 160ms ease',
+    color: '#ffffff',
     paddingRight: '4px',
-    textShadow: `0 0 6px ${color}33`,
+    textShadow:
+      '-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 -1.5px 0 #000, 0 1.5px 0 #000, -1.5px 0 0 #000, 1.5px 0 0 #000',
   };
 }
 
@@ -132,15 +133,18 @@ function StatusBadge({ color, label, active }: { color: string; label: string; a
         alignItems: 'center',
         gap: '6px',
         padding: '3px 10px',
-        borderRadius: '999px',
+        borderRadius: '6px',
         fontSize: '10.5px',
-        fontWeight: 700,
+        fontFamily: 'var(--font-hud)',
         letterSpacing: '0.04em',
         textTransform: 'uppercase',
         color: '#fff',
-        background: `linear-gradient(135deg, ${color}cc 0%, ${color}99 100%)`,
-        boxShadow: `0 0 10px ${color}66, inset 0 1px 0 rgba(255,255,255,0.2)`,
-        textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+        background: 'rgba(0,0,0,0.6)',
+        border: `2px solid ${color}`,
+        outline: '1.5px solid rgba(0,0,0,0.85)',
+        boxShadow: `0 0 10px ${color}66`,
+        textShadow:
+          '-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 -1.5px 0 #000, 0 1.5px 0 #000, -1.5px 0 0 #000, 1.5px 0 0 #000',
       }}
     >
       {active && (
@@ -180,7 +184,7 @@ function PoiLabel({ poi, hovered, dimmed, pulsing, highlighted, statusLabel, sta
           style={buildChipStyle(poi.color, hovered, dimmed, metrics)}
         >
           <PoiBadge poiId={poi.id} color={poi.color} size={metrics.badgeSize} />
-          <span style={buildLabelTextStyle(poi.color, hovered)}>{poi.label}</span>
+          <span style={buildLabelTextStyle()}>{poi.label}</span>
         </div>
         {statusLabel && !dimmed && (
           <StatusBadge color={poi.color} label={statusLabel} active={stateActive} />

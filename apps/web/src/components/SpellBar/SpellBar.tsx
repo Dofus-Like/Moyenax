@@ -388,17 +388,12 @@ export const SpellBar = ({
 
         {showActions && <div className="spell-bar-separator" />}
 
-        {onToggleMannequins !== undefined && (
+        {!disableGrimoire && onToggleMannequins !== undefined && (
           <button
             type="button"
             className={`spell-bar-action grimoire ${showMannequins ? "active" : ""}`}
             onClick={onToggleMannequins}
-            disabled={disableGrimoire}
-            title={
-              disableGrimoire
-                ? t("grimoireUnavailable")
-                : t("grimoireEquipment")
-            }
+            title={t("grimoireEquipment")}
           >
             📖
           </button>

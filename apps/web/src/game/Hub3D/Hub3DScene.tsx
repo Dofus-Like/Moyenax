@@ -1,4 +1,4 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import type { MutableRefObject, ReactElement, ReactNode } from 'react';
 import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Vector3, type Group } from 'three';
@@ -77,6 +77,18 @@ class HubMapBoundary extends Component<BoundaryProps, BoundaryState> {
     if (this.state.hasError) return this.props.fallback ?? null;
     return this.props.children;
   }
+}
+
+// The hub geometry is static and the only shadow caster (players are 2D sprites
+// with a fake shadow disc). Render the shadow map once on load instead of every frame.
+function StaticShadowMap(): null {
+  const gl = useThree((state) => state.gl);
+  const { ready } = useHubGround();
+  useEffect(() => {
+    gl.shadowMap.autoUpdate = false;
+    gl.shadowMap.needsUpdate = true;
+  }, [gl, ready]);
+  return null;
 }
 
 function HubLights(): ReactElement {
@@ -261,6 +273,7 @@ function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef, poiStateLabels, 
 
   return (
     <>
+      <StaticShadowMap />
       <HubLights />
       <HubMapBoundary fallback={<NavigationFallbackFloor />} onError={onError}>
         <Suspense fallback={null}><HubMap /></Suspense>
@@ -288,7 +301,7 @@ export function Hub3DScene({ onPoiActivate, activePoiId, poiStateLabels, activeP
       onContextMenu={(event) => event.preventDefault()}
     >
       <HubGroundProvider>
-        <HubCamera wasDraggingRef={wasDraggingRef} />
+        <HubCamera wasDraggingRef={wasDraggingRef} enabled={activePoiId === null} />
         <HubWorld
           onPoiActivate={onPoiActivate}
           activePoiId={activePoiId}

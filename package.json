@@ -6,6 +6,7 @@
     "dev:api": "dotenv -e .env -- nx serve api",
     "dev:web": "dotenv -e .env -- nx serve web",
     "dev": "dotenv -e .env -- nx run-many --target=serve --projects=api,web --parallel",
+    "dev:host": "dotenv -e .env -- node scripts/dev/host.mjs",
     "perf:api:start": "PERF_API_PORT=3100 PERF_PROD_PORT=3101 dotenv -e .env -- node scripts/perf/start.mjs",
     "perf:api:baseline": "PERF_API_PORT=3100 PERF_PROD_PORT=3101 dotenv -e .env -- node scripts/perf/baseline.mjs",
     "perf:api:prod-start": "PERF_API_PORT=3100 PERF_PROD_PORT=3101 dotenv -e .env -- node scripts/perf/prod-start.mjs",

@@ -47,7 +47,7 @@ export const InventoryGrid = ({
           >
             {item && (
               <>
-                <img src={item.iconPath} alt={item.name} className="item-icon" />
+                <img src={item.iconPath || `/assets/items/${item.itemId || item.id}.png`} alt={item.name} className="item-icon" />
                 {item.quantity > 1 && (
                   <span className="item-quantity">x{item.quantity}</span>
                 )}

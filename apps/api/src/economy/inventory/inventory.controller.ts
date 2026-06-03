@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
@@ -12,5 +12,10 @@ export class InventoryController {
   @Get()
   async findAll(@Request() req: any) {
     return this.inventoryService.findByPlayer(req.user.id);
+  }
+
+  @Post('use')
+  async use(@Request() req: any, @Body() body: { itemId: string }) {
+    return this.inventoryService.useItem(req.user.id, body.itemId);
   }
 }

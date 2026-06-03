@@ -31,9 +31,10 @@ interface TerrainLayerProps {
   tileSize?: number;
   tileRadius?: number;
   tacticsMode?: boolean;
+  wallColor?: string;
 }
 
-export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius, tacticsMode }: TerrainLayerProps) => {
+export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius, tacticsMode, wallColor }: TerrainLayerProps) => {
   const decorations = useMemo(() => {
     const result: React.ReactElement[] = [];
 
@@ -50,6 +51,7 @@ export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sid
                 key={x + '-' + y} 
                 x={x} y={y} terrain={terrain} gridSize={map.width}
                 tacticsMode
+                wallColor={wallColor}
               />
             );
           }
@@ -71,18 +73,20 @@ export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sid
     }
 
     return result;
-  }, [map, tacticsMode]);
+  }, [map, tacticsMode, wallColor]);
 
   return (
     <group>
-      <InstancedTerrain 
-        map={map}
-        checkerColorA={checkerColorA}
-        checkerColorB={checkerColorB}
-        sideColor={sideColor}
-        tileSize={tileSize}
-        tileRadius={tileRadius}
-      />
+      {tacticsMode !== undefined && (
+        <InstancedTerrain 
+          map={map}
+          checkerColorA={checkerColorA}
+          checkerColorB={checkerColorB}
+          sideColor={sideColor}
+          tileSize={tileSize}
+          tileRadius={tileRadius}
+        />
+      )}
       {!tacticsMode && (
         <Suspense fallback={null}>
           <InstancedFoliage map={map} />
@@ -179,6 +183,8 @@ interface PlayersLayerProps {
   onPathComplete?: () => void;
   farmingPlayerName: string;
   farmingPlayerSkin?: string;
+  farmingPlayerPa?: number;
+  farmingPlayerPm?: number;
   combatPlayers: CombatPlayer[];
   visualPositions: Record<string, PathNode>;
   playerPaths: Record<string, PathNode[]>;
@@ -197,6 +203,8 @@ export const PlayersLayer = React.memo(
     onPathComplete,
     farmingPlayerName,
     farmingPlayerSkin,
+    farmingPlayerPa,
+    farmingPlayerPm,
     combatPlayers,
     visualPositions,
     playerPaths,
@@ -216,6 +224,8 @@ export const PlayersLayer = React.memo(
           playerData={{ username: farmingPlayerName, skin: farmingPlayerSkin }}
           setPawnRef={setPawnRef}
           mode={mode}
+          pa={farmingPlayerPa}
+          pm={farmingPlayerPm}
         />
       );
     }

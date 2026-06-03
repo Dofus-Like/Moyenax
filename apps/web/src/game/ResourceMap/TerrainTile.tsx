@@ -32,13 +32,14 @@ export interface TerrainTileProps {
     left: boolean;
   };
   tacticsMode?: boolean;
+  wallColor?: string;
 }
 
-function TacticsWall({ position }: { position: [number, number, number] }) {
+function TacticsWall({ position, wallColor }: { position: [number, number, number]; wallColor?: string }) {
   return (
     <mesh position={[position[0], 0.25, position[2]]} castShadow receiveShadow raycast={() => null}>
       <boxGeometry args={[1.0, 0.5, 1.0]} />
-      <meshStandardMaterial color="#5E863F" metalness={0.3} roughness={0.6} />
+      <meshStandardMaterial color={wallColor ?? '#5E863F'} metalness={0.3} roughness={0.6} />
     </mesh>
   );
 }
@@ -128,7 +129,7 @@ function FlatResource({ position, color }: { position: [number, number, number];
  * Interaction is delegated to the unified 'map-hit-plane' for 100% precision and performance.
  */
 export const TerrainTile = React.memo(({ 
-  x, y, terrain, gridSize, neighbors, tacticsMode 
+  x, y, terrain, gridSize, neighbors, tacticsMode, wallColor 
 }: TerrainTileProps) => {
   const colors = TERRAIN_COLORS[terrain];
   const props = TERRAIN_PROPERTIES[terrain];
@@ -142,7 +143,7 @@ export const TerrainTile = React.memo(({
       {tacticsMode ? (
         <>
           {props.combatType === CombatTerrainType.WALL && (
-            <TacticsWall position={pos} neighbors={neighbors} />
+            <TacticsWall position={pos} neighbors={neighbors} wallColor={wallColor} />
           )}
           {props.combatType === CombatTerrainType.HOLE && (
             <HoleTerrain position={pos} color={colors.base} />

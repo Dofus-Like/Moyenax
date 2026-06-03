@@ -20,50 +20,53 @@ const WRAPPER: CSSProperties = {
   position: 'absolute',
   inset: 0,
   zIndex: 100,
-  background: '#07101f',
+  background: '#0f172a',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
   gap: 24,
-  fontFamily: 'system-ui, sans-serif',
+  fontFamily: 'var(--font-hud)',
   userSelect: 'none',
   transition: 'opacity 400ms ease',
 };
 
+const PIXEL_OUTLINE =
+  '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000';
 
 const TEXT: CSSProperties = {
-  color: 'rgba(255,255,255,0.78)',
+  color: '#ffffff',
   fontSize: 14,
-  fontWeight: 600,
+  fontWeight: 400,
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
-  textShadow: '0 0 24px rgba(96,140,220,0.55)',
+  textShadow: PIXEL_OUTLINE,
 };
 
 const SLOW_TEXT: CSSProperties = {
   ...TEXT,
-  color: 'rgba(255,200,100,0.85)',
-  textShadow: '0 0 24px rgba(255,180,60,0.4)',
+  color: '#fca800',
   fontSize: 13,
 };
 
 const ERROR_TEXT: CSSProperties = {
   ...TEXT,
-  color: 'rgba(239,68,68,0.85)',
-  textShadow: '0 0 24px rgba(239,68,68,0.4)',
+  color: '#ef4444',
 };
 
 const RETRY_BTN: CSSProperties = {
   marginTop: 4,
-  padding: '7px 20px',
-  background: 'rgba(255,255,255,0.07)',
-  border: '1px solid rgba(255,255,255,0.18)',
+  padding: '8px 20px',
+  background: 'rgba(0,0,0,0.55)',
+  border: '2px solid rgba(255,255,255,0.4)',
+  outline: '1.5px solid rgba(0,0,0,0.85)',
   borderRadius: 6,
-  color: 'rgba(255,255,255,0.75)',
+  color: '#fff',
   fontSize: 12,
-  fontWeight: 600,
+  fontWeight: 400,
   letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  fontFamily: 'var(--font-hud)',
   cursor: 'pointer',
 };
 

@@ -1,0 +1,205 @@
+/* Hub chat — réplique du chat de combat (log-panel glass repliable + onglet + input).
+   Styles scopés sous .hub-chat-root pour rester identiques au combat sans collision
+   globale ni dépendance au CSS du HUD combat (Team B). */
+
+.hub-chat-root {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+  font-family: var(--font-hud);
+}
+.hub-chat-root > * {
+  pointer-events: auto;
+}
+
+@keyframes hubchat-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Toggle button (= .hud-log-btn combat) ── */
+.hub-chat-root .hud-log-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  font-family: var(--font-hud);
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid rgba(0, 0, 0, 0.85);
+  border-radius: 6px;
+  outline: none;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.7),
+    inset 0 0 16px 4px rgba(0, 0, 0, 0.85);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+  animation: hubchat-fade-in 0.3s ease both;
+}
+.hub-chat-root .hud-log-btn:hover,
+.hub-chat-root .hud-log-btn.active {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.8),
+    inset 0 0 16px 4px rgba(0, 0, 0, 0.6);
+}
+.hub-chat-root .hud-log-btn img {
+  filter: brightness(0) invert(1);
+}
+.hub-chat-root .hud-log-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.6rem;
+  font-family: var(--font-hud);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  pointer-events: none;
+}
+
+/* ── Glass surface (= .glass combat) ── */
+.hub-chat-root .glass {
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.75),
+    inset 0 0 40px rgba(0, 0, 0, 0.65);
+}
+
+/* ── Collapsible panel (= .log-panel combat) ── */
+.hub-chat-root .log-panel {
+  width: 0;
+  height: 140px;
+  overflow: hidden;
+  opacity: 0;
+  border-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-end;
+  transition:
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    border-width 0.2s ease;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.hub-chat-root .log-panel--open {
+  width: 360px;
+  max-width: calc(100vw - 80px);
+  opacity: 1;
+  border-width: 2px;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.95);
+}
+
+.hub-chat-root .log-panel-header {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+.hub-chat-root .log-tab {
+  flex: 1;
+  text-align: center;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 6px 0;
+  font-family: var(--font-hud);
+  font-size: 0.75rem;
+  outline: none;
+}
+.hub-chat-root .log-tab.active {
+  color: #ffffff;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hub-chat-root .log-panel-list {
+  width: 100%;
+  height: 100%;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  overflow-y: auto;
+}
+.hub-chat-root .log-panel-list::-webkit-scrollbar {
+  width: 5px;
+}
+.hub-chat-root .log-panel-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  margin: 4px 0;
+}
+.hub-chat-root .log-panel-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 3px;
+}
+.hub-chat-root .log-panel-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.hub-chat-root .log-entry {
+  font-family: var(--font-hud);
+  font-size: 0.7rem;
+  line-height: 1.3;
+  padding: 3px 6px;
+  border-radius: 3px;
+  border-left: 2px solid transparent;
+  word-break: break-word;
+}
+.hub-chat-root .log-entry.type-chat {
+  color: #ffffff;
+  border-left-color: #a855f7;
+}
+.hub-chat-root .hub-chat-empty {
+  opacity: 0.55;
+  font-style: italic;
+}
+.hub-chat-root .chat-sender {
+  color: #a855f7;
+  font-weight: bold;
+}
+
+.hub-chat-root .log-panel-input-container {
+  display: flex;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+.hub-chat-root .log-panel-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  padding: 6px 10px;
+  font-family: var(--font-hud);
+  font-size: 0.75rem;
+  outline: none;
+}
+.hub-chat-root .log-panel-input:disabled {
+  opacity: 0.5;
+}

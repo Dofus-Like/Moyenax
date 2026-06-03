@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => ({
     round: 1,
     pips: 4,
     spendableGold: 2,
+    harvestedTiles: new Set<string>(),
   },
   shopApi: {
     getItems: vi.fn().mockResolvedValue({ data: [] }),
@@ -76,8 +77,8 @@ vi.mock('camera-controls', () => ({
   },
 }));
 
-vi.mock('../game/UnifiedMap/UnifiedMapScene', () => ({
-  UnifiedMapScene: (props: {
+vi.mock('./FarmingMapScene', () => ({
+  FarmingMapScene: (props: {
     onTileClick?: (x: number, y: number, terrain: string) => void;
     onTileReached?: unknown;
     onSceneReady?: () => void;
@@ -120,8 +121,12 @@ vi.mock('../api/game-session.api', () => ({
   },
 }));
 
+const mockInventoryApi = vi.hoisted(() => ({
+  getInventory: vi.fn().mockResolvedValue({ data: [] }),
+}));
+
 vi.mock('../api/inventory.api', () => ({
-  inventoryApi: { getInventory: vi.fn().mockResolvedValue({ data: [] }) },
+  inventoryApi: mockInventoryApi,
 }));
 
 vi.mock('../api/player.api', () => ({
@@ -197,6 +202,7 @@ function renderFarmingPage() {
 describe('FarmingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockInventoryApi.getInventory.mockResolvedValue({ data: [] });
     queryClient.clear();
     mocks.activeSession = null;
     mocks.farmingState.round = 1;
@@ -257,6 +263,30 @@ describe('FarmingPage', () => {
     });
   });
 
+  it('does not harvest an already-harvested tile', async () => {
+    mocks.farmingState.harvestedTiles = new Set(['0,1']);
+
+    renderFarmingPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Harvest tile' }));
+
+    await waitFor(() => {
+      expect(mocks.farmingState.gatherNode).not.toHaveBeenCalled();
+    });
+  });
+
+  it('harvests a non-harvested tile', async () => {
+    mocks.farmingState.harvestedTiles = new Set([]);
+
+    renderFarmingPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Harvest tile' }));
+
+    await waitFor(() => {
+      expect(mocks.farmingState.gatherNode).toHaveBeenCalledWith(0, 1);
+    });
+  });
+
   it('does NOT navigate after the last successful harvest', async () => {
     mocks.farmingState.gatherNode.mockImplementation(async () => {
       mocks.farmingState.pips = 0;
@@ -278,12 +308,14 @@ describe('FarmingPage', () => {
   });
 
   it('shows inventory resource names from the farming store', async () => {
-    mocks.farmingState.inventory = { Bois: 3 };
+    mockInventoryApi.getInventory.mockResolvedValue({
+      data: [{ id: 'inv-1', quantity: 3, item: { name: 'Bois', type: 'RESOURCE', iconPath: '/icons/wood.png' } }],
+    });
 
     renderFarmingPage();
 
     expect(await screen.findByAltText('Bois')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('x3')).toBeInTheDocument();
   });
 
   it('calls fetchState on mount to hydrate the map', async () => {

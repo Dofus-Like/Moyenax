@@ -2,7 +2,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   height: 100%;
   min-height: 0;
   width: 100%;
@@ -14,12 +14,13 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: transparent;
-  backdrop-filter: none;
-  border: 1px solid var(--rm-border);
-  border-radius: 10px;
-  overflow: hidden; /* Mask everything inside */
-  box-shadow: none;
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  outline-offset: 0px;
+  overflow: hidden;
+  animation: hud-fade-in 0.25s ease both;
 }
 
 .section-top {
@@ -34,39 +35,37 @@
 
 .sidebar-header, .section-bottom-header {
   display: flex;
-  padding: 8px;
-  background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
 }
 
 .tab-btn, .mode-toggle {
   flex: 1;
-  padding: 10px;
+  padding: 8px;
   background: transparent;
-  border: none;
-  color: var(--rm-muted);
-  font-size: 0.85rem;
+  border: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--font-hud);
+  font-size: 0.7rem;
   font-weight: 700;
   cursor: pointer;
   border-radius: 6px;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(.4,0,.2,1);
+  text-shadow:
+    -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+     0   -2px 0 #000, 0    2px 0 #000, -2px 0   0 #000, 2px 0   0 #000;
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .tab-btn.active, .mode-toggle.active {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--rm-accent);
-  text-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
-}
-
-.tab-btn:hover, .mode-toggle:hover {
-  color: #fff;
-}
-
-.detail-indicator {
-  padding: 10px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--rm-accent);
+  background: rgba(252, 168, 0, 0.15);
+  border-color: rgba(252, 168, 0, 0.5);
+  color: #fca800;
 }
 
 .sidebar-content, .sidebar-content-bottom {
@@ -86,10 +85,10 @@
 
 .filter-bar {
   display: flex;
-  padding: 8px 12px;
-  background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  gap: 12px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 10px;
   align-items: center;
   justify-content: space-between;
 }
@@ -101,49 +100,135 @@
 
 .filter-btn {
   padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
-  color: var(--rm-muted);
-  font-size: 0.7rem;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--font-hud);
+  font-size: 0.55rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(.4,0,.2,1);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
+  text-shadow:
+    -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+     0   -2px 0 #000, 0    2px 0 #000, -2px 0   0 #000, 2px 0   0 #000;
 }
 
 .filter-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .filter-btn.active {
-  background: var(--rm-accent);
-  color: #000;
-  border-color: transparent;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+  background: rgba(252, 168, 0, 0.2);
+  color: #fca800;
+  border-color: #fca800;
+  box-shadow: 0 0 10px rgba(252, 168, 0, 0.25);
 }
 
 .sidebar-wallet {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  background: rgba(251, 191, 36, 0.1);
-  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
-  font-size: 0.78rem;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fca800;
+  font-family: var(--font-hud);
+  font-size: 0.7rem;
   font-weight: 800;
+  text-shadow:
+    -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+     0   -2px 0 #000, 0    2px 0 #000, -2px 0   0 #000, 2px 0   0 #000;
 }
 
 .sidebar-wallet-label {
-  color: rgba(255, 255, 255, 0.62);
+  color: #fff;
   font-weight: 700;
   margin-right: auto;
 }
 
 .sidebar-wallet strong {
-  color: #fde68a;
-  font-size: 0.95rem;
+  color: #fbbf24;
+  font-size: 0.85rem;
 }
+
+.tile-detail-card {
+  padding: 14px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: hud-fade-in 0.25s ease both;
+}
+
+.tile-detail-card .item-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tile-detail-card .item-detail-header h3 {
+  margin: 0;
+  font-family: var(--font-hud);
+  font-size: 0.85rem;
+  color: #fff;
+  text-shadow:
+    -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+     0   -2px 0 #000, 0    2px 0 #000, -2px 0   0 #000, 2px 0   0 #000;
+}
+
+.tile-detail-card .item-type-badge {
+  font-family: var(--font-hud);
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 3px 7px;
+  background: rgba(252, 168, 0, 0.2);
+  border: 1px solid #fca800;
+  color: #fca800;
+  border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow:
+    -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+     0   -2px 0 #000, 0    2px 0 #000, -2px 0   0 #000, 2px 0   0 #000;
+}
+
+.tile-detail-card .item-detail-visual {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+.tile-detail-card .detail-icon {
+  height: 85%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
+}
+
+.tile-detail-card .item-detail-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tile-detail-card .stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-hud);
+  font-size: 0.65rem;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-shadow:
+    -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+     0   -2px 0 #000, 0    2px 0 #000, -2px 0   0 #000, 2px 0   0 #000;
+}
+
+.tile-detail-card .stat-label { color: #fff; font-weight: 700; }
+.tile-detail-card .stat-value { color: #fff; font-weight: 800; }

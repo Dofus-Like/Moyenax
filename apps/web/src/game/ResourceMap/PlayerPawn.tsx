@@ -1,4 +1,3 @@
-import { Billboard, Text, RoundedBox } from '@react-three/drei';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';
@@ -7,7 +6,6 @@ import type { PathNode, CombatPlayer } from '@game/shared-types';
 
 import { getSkinById } from '../../game/constants/skins';
 import { useAuthStore } from '../../store/auth.store';
-import { useCombatStore } from '../../store/combat.store';
 
 const FARMING_MOVE_SPEED = 12.0;
 const COMBAT_MOVE_SPEED = 4.5;
@@ -53,6 +51,8 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
     const progressRef = useRef(0);
     const animFrameRef = useRef(0);
     const frameCounterRef = useRef(0);
+    const materialRef = useRef<THREE.SpriteMaterial | null>(null);
+    const textureClonesRef = useRef<THREE.Texture[]>([]);
 
     const fromRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
     const toRef = useRef<[number, number, number]>(toWorld(gridPosition.x, gridPosition.y, gridSize));
@@ -80,6 +80,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
       const tIdle = texIdle.clone();
       const tWalk = texWalk.clone();
       const tAttack = texAttack.clone();
+      textureClonesRef.current = [tIdle, tWalk, tAttack];
       
       // Config Idle (6 frames)
       tIdle.magFilter = tIdle.minFilter = THREE.NearestFilter;
@@ -156,6 +157,20 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
         mat.customProgramCacheKey = () => `pawn-mat-${skinConfig.id}`;
         return mat;
     }, [textureIdle, skinConfig.id, uniforms]);
+
+    useEffect(() => {
+      const prev = materialRef.current;
+      materialRef.current = spriteMaterial;
+      return () => {
+        prev?.dispose();
+        if (prev) {
+          for (const t of textureClonesRef.current) t.dispose();
+          textureClonesRef.current = [];
+        }
+      };
+    }, [spriteMaterial]);
+
+
 
     // Update du map du mat en fonction de l'état (marche/attaque)
     useEffect(() => {
@@ -306,9 +321,6 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
     });
 
     const currentUser = useAuthStore((s) => s.player);
-    const showEnemyHp = useCombatStore((s) => s.showEnemyHp);
-    const initialWorld = toWorld(gridPosition.x, gridPosition.y, gridSize);
-
     const isEnemy = useMemo(() => {
       if (!currentUser || !playerData) return true;
       const uid = currentUser.id || (currentUser as { _id?: string })._id;
@@ -316,11 +328,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
       return ownerId !== uid;
     }, [currentUser, playerData]);
 
-    // Calcul de la vie pour la barre
-    const hpPercent = useMemo(() => {
-        if (!playerData?.stats?.vit) return 1;
-        return Math.max(0, Math.min(1, (playerData.currentVit ?? 100) / playerData.stats.vit));
-    }, [playerData]);
+    const initialWorld = toWorld(gridPosition.x, gridPosition.y, gridSize);
 
     return (
       <group 
@@ -365,42 +373,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
           </sprite>
         )}
 
-        {/* BARRE DE VIE (Contrôlée par l'option globale) */}
-        {showEnemyHp && isEnemy && playerData && (
-          <Billboard position={[0, 1.4, 0]}>
-            {/* Outline Arrondi (Tracé fin) */}
-            <RoundedBox args={[1.54, 0.18, 0.01]} radius={0.09} smoothness={4}>
-              <meshBasicMaterial color="white" transparent opacity={0.15} />
-            </RoundedBox>
-
-            {/* Fond Arrondi (Pill shape) */}
-            <RoundedBox position={[0, 0, 0.01]} args={[1.5, 0.16, 0.01]} radius={0.08} smoothness={4}>
-              <meshBasicMaterial color="#0f172a" />
-            </RoundedBox>
-
-            {/* Fill (Contenu) */}
-            {hpPercent > 0 && (
-              <mesh position={[-(1.5 * (1 - hpPercent)) / 2, 0, 0.02]}>
-                <planeGeometry args={[1.5 * hpPercent, 0.14]} />
-                <meshBasicMaterial color="#ef4444" />
-              </mesh>
-            )}
-
-            {/* Texte PV précis (Format large restauré) */}
-            <Text
-              position={[0, 0, 0.03]}
-              fontSize={0.2}
-              color="white"
-              anchorX="center"
-              anchorY="middle"
-              fontWeight="900"
-              outlineWidth={0.025}
-              outlineColor="black"
-            >
-              {`${Math.ceil(playerData.currentVit ?? 100)} / ${playerData?.stats?.vit ?? 100} PV`}
-            </Text>
-          </Billboard>
-        )}
+        {/* BARRE DE VIE retirée pour farming */}
       </group>
     );
   }

@@ -116,7 +116,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   winnerId: null,
   showEnemyHp: true,
   showMannequins: true,
-  tacticsMode: false,
+  tacticsMode: true,
   uiMessage: null,
   _currentConnectionId: null,
 
