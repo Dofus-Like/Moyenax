@@ -2,10 +2,25 @@ import React, { useCallback, useState } from "react";
 import { useAuthStore } from "../../store/auth.store";
 import { useCombatStore } from "../../store/combat.store";
 import { combatApi } from "../../api/combat.api";
-import { playSfx } from "../../utils/sfx";
+import { playSfx, type SfxName } from "../../utils/sfx";
 import { CombatActionType } from "@game/shared-types";
 
 import "./CombatPlayerPanel.css";
+
+// Un son de lancement distinct par sort (par code), fallback générique « spellCast ».
+const SPELL_CAST_SFX: Record<string, SfxName> = {
+  "spell-boule-de-feu": "castFireball",
+  "spell-frappe": "castSlash",
+  "spell-claque": "castSlap",
+  "spell-kunai": "castKunai",
+  "spell-bombe-repousse": "castBomb",
+  "spell-soin": "castHeal",
+  "spell-heal": "castHeal",
+  "spell-endurance": "castEndurance",
+  "spell-velocite": "castVelocite",
+  "spell-buff-pm": "castVelocite",
+  "spell-bond": "castLeap",
+};
 
 const getBuffDetails = (type: string, value: number) => {
   const isPositive = value >= 0;
@@ -279,7 +294,8 @@ export function CombatPlayerPanel({ playerId, side, showStats }: CombatPlayerPan
           targetY: targetPos.y,
         });
         if (res?.data) setCombatState(res.data);
-        playSfx("spellCast");
+        const castSpell = caster.spells.find((s) => s.id === selectedSpellId);
+        playSfx((castSpell && SPELL_CAST_SFX[castSpell.code]) || "spellCast");
         setSelectedSpell(null);
       } catch (err) {
         const message =

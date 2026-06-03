@@ -84,9 +84,28 @@ const SFX = {
   // sélection d'un sort : tick net et bref, distinct du hover
   spellSelect:
     '11111mqKRf3EAozFPfdYbTQfXhKEvWb21L29W5VViiFHX4mvC1Qbi8mJWgFDfANkLNMYJz9sDVQYNVWuv7Kur2CJW3EPVqBWAeVkL6sitWKui52oBbWoFwD',
-  // lancement d'un sort
+  // lancement d'un sort (générique / fallback)
   spellCast:
     '57uBnWj15e1y9f7Xt2fsyFypDugHtrnNYDqLdQBLUfVQhucqTMmey7T2hZE7qEypSSefBCkwqWYxbr9wQCCHFnzm76aFs11XYT6PsHoDXdqsCgJuEuFtwBpTq',
+  // lancement par sort (un son distinct par sort)
+  castFireball:
+    '34T6PktrziK1ftbhdCQY6Didw1Smn6DNiZNc5ZQXH36b2e8X4q6FrPf439v4NbiBnPLFpXGBhHd4ehcjr8b3MzcCZQpWS9n6yWRvnUvoaFGqSZJ2DNw26hMJf',
+  castSlash:
+    '7BMHBGQSJ3xdK4H9FK5wBswLYqdrSPyGMSHe8bWuJuuAK5CNuKMS6VZ2Zgd2uyQH4pQ5JiP9f4cXW9wWDb39F6KYZS3DjS8d735mkkJyCrp3LX18KBcGtf7Nf',
+  castSlap:
+    '7BMHBGL5s2mdZJ4Cnc9SjDcPTEsHNbaRUcG2kFkyAcUcNZJEFn6pn1n5PnzNE1vt2pahjt7cayJvKtqNTrtJM6GmyfaQLhFS45Nes4r24muwdexQTzv9Y4kNB',
+  castKunai:
+    '34T6PktrzF8yDcSN3ZhgQhNfzkgWfHrKFvHuKhCpcctk9YkvegL12sYdM5RDdivQxo87yZPiNx8A163nsYbxUVvWmFmUZTYBDA2wCu2L611BTFpuQvWc2ti3Z',
+  castBomb:
+    '7BMHBGQSJX8gKhJMwBXeDk5UedsLfTw2oe3ZfbgKeThQnB2Rs5mNLa1QNhnqP2hd835FEfGjiZDgZatbkYGXGB1Rw41ZNSeWPAsfDD91UaqxE5KkzUYha6tD5',
+  castHeal:
+    '6GynYUsWXyecEcr1B4UTcgod7VDz2ai4BgAi3FVET2KWSnMsBScMveiY4gARzpQHCTKbWHPzQUdBf1LmsppmnCfwfSAwewgccchGsd9qVPJ7MqTi2aeP6Xsx3',
+  castEndurance:
+    '11111HnDKZGF24NYXCUEeGk932W81NasicnGf1m6Sgj7JDTph9AM9kS7A7nkEr5vNtkxAinVULY5Ew8SoZJorBP7oVZfveNb1ZDAfTSRjvdHczzQw7S2FQ2j',
+  castVelocite:
+    '11111mqnbhVWL9Zv6NBPBWMDjhC6J1YqAUe8MtPJ4AwNeBr87RxcR7Qi7xqKq4Q8nifZ9V1qbwrJGH1LDEvGDoYo8rFF6h9KzMQjiCWLj3cm8aQGqw2s14s',
+  castLeap:
+    '11111Fc13ScxjeU5T2qZVimPPgv4qtk1g1fcX6xyoGEqm2wgtEMPujo6c4DKD9onX5BAeeRmKQX1JtFBMaBTu4MMr4uZqp4bvqfe8bneqTZffQty1yindTnP',
   // dégâts infligés
   damageDealt:
     '34T6PkjPGwq3wpvt66AnJsmdzYpb5joLRYgpu9YhSi2UNqTAKSKGG1YTTf3jcs8Bv6vr8r8X9Q2RTTRhnDe6JgZz7wncNfrnGKgtcqgZ4DFtSW21QhDSq8q3M',
@@ -98,9 +117,9 @@ const SFX = {
   // mort d'une entité
   death:
     '34T6PkicSdTR6Xme3pviEDkPeYg1X1YdmZDnUX2p8QdjannV8Dz8XLjaTBnwjTajHmjf7ahzZuYdNBxwQ6KeZfZq25BcAinVcY1zM9T8Bcopuf3QUkFj1fXGs',
-  // combat gagné
+  // combat gagné : carillon céleste long, montant et scintillant
   victory:
-    '11111BxFXqzoXRbMvHsQUjUJuFn81kVoGuXL5DVDzAUDYL3ktPTvLT4HPM1h58eMqu4i5ZtjJyNxj5gbKqnGcMWi1UbUvfyDerGZW62z82khuqQhJRd87HLK',
+    '5CxcQv9h3zsip9JtC4Jjm5HQsJvzk5AUcSrqePpCrf7PnPojFQzeaNEjyGCgE5jtfY1APzwaViJMcp742tLCwige2fMCpuhP1CRGpry64CPJY5k2mQdsd1CsZ',
   // combat perdu
   defeat:
     '34T6PknGC943Fk4h3fDg7YNG37MjvjEK7RpS5Dsa6Jt2zbJ7PjJiCvJ5YMuXUeZYf4z2c5MxkTRu7h7fF1t5so3PKjJs5MHArJnsiipmYiivWmNH3XtH4Xwfm',
