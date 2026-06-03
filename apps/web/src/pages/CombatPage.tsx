@@ -179,19 +179,25 @@ export function CombatPage() {
               near={0.1}
               far={1000}
             />
-            <CameraControls 
-              ref={controlsRef} 
-              onRest={onRest} 
+            <CameraControls
+              ref={controlsRef}
+              onRest={onRest}
               onStart={onStart}
               minPolarAngle={0}
               maxPolarAngle={Math.PI / 2.1}
+              minZoom={15}
+              maxZoom={120}
               mouseButtons={{
-                left: CameraControlsImpl.ACTION.NONE,
-                right: CameraControlsImpl.ACTION.TRUCK,
+                left: CameraControlsImpl.ACTION.ROTATE,
+                right: CameraControlsImpl.ACTION.NONE,
                 middle: CameraControlsImpl.ACTION.NONE,
-                wheel: CameraControlsImpl.ACTION.DOLLY
+                wheel: CameraControlsImpl.ACTION.ZOOM
               }}
-              dollyToCursor={true}
+              touches={{
+                one: CameraControlsImpl.ACTION.TOUCH_ROTATE,
+                two: CameraControlsImpl.ACTION.TOUCH_ZOOM,
+                three: CameraControlsImpl.ACTION.NONE
+              }}
             />
             
             <CameraEffects controlsRef={controlsRef} />
@@ -202,6 +208,8 @@ export function CombatPage() {
               intensity={2}
               castShadow
               shadow-mapSize={[1024, 1024]}
+              shadow-bias={-0.0004}
+              shadow-normalBias={0.04}
               shadow-camera-far={50}
               shadow-camera-left={-10}
               shadow-camera-right={10}

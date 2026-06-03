@@ -8,7 +8,7 @@ export interface BushProps {
   seed?: number;
 }
 
-const BUSH_URL = '/assets/models/Bush_03.fbx';
+const BUSH_URLS = ['/assets/models/Bush_4E.fbx', '/assets/models/Bush_4F.fbx'];
 const TEXTURE_PATH = '/assets/models/forest_texture.png';
 
 function seededRandom(seed: number): number {
@@ -69,16 +69,16 @@ function BushModel({ url, rotationY, texture }: { url: string; rotationY: number
 
 export function Bush({ position, scale = 1.0, seed = 0 }: BushProps): React.JSX.Element {
   const texture = useTexture(TEXTURE_PATH);
-  
-  // On utilise uniquement le buisson 3 comme demandé
+
+  const url = BUSH_URLS[Math.floor(seededRandom(seed) * BUSH_URLS.length)];
   const rotationY = seededRandom(seed * 3) * Math.PI * 2;
 
   return (
     <group position={position} scale={scale}>
-      <BushModel url={BUSH_URL} rotationY={rotationY} texture={texture} />
+      <BushModel url={url} rotationY={rotationY} texture={texture} />
     </group>
   );
 }
 
-useFBX.preload(BUSH_URL);
+for (const url of BUSH_URLS) useFBX.preload(url);
 useTexture.preload(TEXTURE_PATH);

@@ -78,30 +78,10 @@ export function CameraEffects({ controlsRef }: CameraEffectsProps) {
     }
   }, [lastSpellCast, combatState, camera, controlsRef]);
 
-  // 2. Auto-Focus on Turn Change
+  // Auto-focus disabled: camera stays centered on scene, not on active player.
   useEffect(() => {
     if (!combatState || !controlsRef.current) return;
-    if (combatState.currentTurnPlayerId === lastTurnPlayerId.current) return;
-    
-    const prevPlayerId = lastTurnPlayerId.current;
     lastTurnPlayerId.current = combatState.currentTurnPlayerId;
-
-    // Only auto-focus if turn actually changed and user hasn't touched the camera recently
-    if (prevPlayerId && Date.now() - lastUserInteractionRef.current > 3000) {
-      const activePlayer = combatState.players[combatState.currentTurnPlayerId];
-      if (activePlayer) {
-        const targetX = activePlayer.position.x - combatState.map.width / 2 + 0.5;
-        const targetZ = activePlayer.position.y - combatState.map.height / 2 + 0.5;
-        
-        // Find center between current view and player for a smoother "feel"
-        // or just center on player
-        controlsRef.current.setLookAt(
-          targetX + 10, 10, targetZ + 10, // Offset for orthographic angle
-          targetX, 0, targetZ,
-          true
-        );
-      }
-    }
   }, [combatState, controlsRef]);
 
   // 3. Shake Animation Frame
