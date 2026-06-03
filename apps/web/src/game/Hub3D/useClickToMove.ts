@@ -9,6 +9,10 @@ import {
   PLAYER_SPEED,
   ROTATION_LERP_RATE,
 } from './constants';
+import { playSfx } from '../../utils/sfx';
+
+// Distance parcourue entre deux pas (≈ 0.35 s de marche à PLAYER_SPEED).
+const FOOTSTEP_STRIDE = 1.6;
 
 interface UseClickToMoveOptions<TMeta> {
   playerRef: RefObject<Group | null>;
@@ -81,6 +85,8 @@ export function useClickToMove<TMeta = unknown>({
   onArrive,
 }: UseClickToMoveOptions<TMeta>): UseClickToMoveResult<TMeta> {
   const targetRef = useRef<InternalTarget<TMeta> | null>(null);
+  const footstepDistRef = useRef(0);
+  const footstepFlipRef = useRef(false);
 
   const setTarget = useCallback((point: Vector3, metadata: TMeta | null = null): void => {
     const clamped = clampToNavigation(point.clone());
@@ -91,7 +97,12 @@ export function useClickToMove<TMeta = unknown>({
   useFrame((_, delta): void => {
     const player = playerRef.current;
     const target = targetRef.current;
-    if (!player || !target) return;
+    if (!player || !target) {
+      footstepDistRef.current = 0;
+      return;
+    }
+    const prevX = player.position.x;
+    const prevZ = player.position.z;
     stepTowardTarget(player, target, delta, {
       onArrive,
       snapY,
@@ -99,6 +110,13 @@ export function useClickToMove<TMeta = unknown>({
         targetRef.current = null;
       },
     });
+    // Un pas par tranche de distance parcourue, alterné A/B (cadence naturelle).
+    footstepDistRef.current += Math.hypot(player.position.x - prevX, player.position.z - prevZ);
+    if (footstepDistRef.current >= FOOTSTEP_STRIDE) {
+      footstepDistRef.current = 0;
+      footstepFlipRef.current = !footstepFlipRef.current;
+      playSfx(footstepFlipRef.current ? 'footstepA' : 'footstepB');
+    }
   });
 
   return { setTarget };
