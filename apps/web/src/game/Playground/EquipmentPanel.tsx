@@ -4,19 +4,25 @@ import { useMemo, useState } from 'react';
 import type { CombatState, ItemDefinition } from '@game/shared-types';
 import { EquipmentSlotType, ItemType } from '@game/shared-types';
 
+import { equipmentApi } from '../../api/equipment.api';
 import { itemsApi } from '../../api/items.api';
 import { playgroundApi } from '../../api/playground.api';
-import { useAuthStore } from '../../store/auth.store';
 import { useCombatStore } from '../../store/combat.store';
 
 import './Playground.css';
 
-const SLOT_BY_TYPE: Partial<Record<ItemType, EquipmentSlotType>> = {
-  [ItemType.WEAPON]: EquipmentSlotType.WEAPON_RIGHT,
-  [ItemType.ARMOR_HEAD]: EquipmentSlotType.ARMOR_HEAD,
-  [ItemType.ARMOR_CHEST]: EquipmentSlotType.ARMOR_CHEST,
-  [ItemType.ARMOR_LEGS]: EquipmentSlotType.ARMOR_LEGS,
-  [ItemType.ACCESSORY]: EquipmentSlotType.ACCESSORY,
+// Une arme peut aller dans chaque main ; les autres types n'ont qu'un slot.
+const SLOTS_BY_TYPE: Partial<Record<ItemType, EquipmentSlotType[]>> = {
+  [ItemType.WEAPON]: [EquipmentSlotType.WEAPON_RIGHT, EquipmentSlotType.WEAPON_LEFT],
+  [ItemType.ARMOR_HEAD]: [EquipmentSlotType.ARMOR_HEAD],
+  [ItemType.ARMOR_CHEST]: [EquipmentSlotType.ARMOR_CHEST],
+  [ItemType.ARMOR_LEGS]: [EquipmentSlotType.ARMOR_LEGS],
+  [ItemType.ACCESSORY]: [EquipmentSlotType.ACCESSORY],
+};
+
+const SLOT_HAND_LABEL: Partial<Record<EquipmentSlotType, string>> = {
+  [EquipmentSlotType.WEAPON_RIGHT]: 'Droite',
+  [EquipmentSlotType.WEAPON_LEFT]: 'Gauche',
 };
 
 const GROUP_ORDER: ItemType[] = [
@@ -28,12 +34,14 @@ const GROUP_ORDER: ItemType[] = [
 ];
 
 const GROUP_LABELS: Record<string, string> = {
-  [ItemType.WEAPON]: 'Armes',
+  [ItemType.WEAPON]: 'Armes (une par main)',
   [ItemType.ARMOR_HEAD]: 'Tête',
   [ItemType.ARMOR_CHEST]: 'Torse',
   [ItemType.ARMOR_LEGS]: 'Jambes',
   [ItemType.ACCESSORY]: 'Anneaux',
 };
+
+type EquipmentBySlot = Partial<Record<EquipmentSlotType, { itemId: string } | null>>;
 
 interface EquipmentPanelProps {
   sessionId: string;
@@ -41,9 +49,6 @@ interface EquipmentPanelProps {
 
 export function EquipmentPanel({ sessionId }: EquipmentPanelProps) {
   const setCombatState = useCombatStore((s) => s.setCombatState);
-  const combatState = useCombatStore((s) => s.combatState);
-  const user = useAuthStore((s) => s.player);
-  const userId = user?.id ?? (user as { _id?: string } | null)?._id ?? undefined;
   const [busy, setBusy] = useState(false);
 
   const { data: items = [] } = useQuery({
@@ -51,14 +56,13 @@ export function EquipmentPanel({ sessionId }: EquipmentPanelProps) {
     queryFn: async () => (await itemsApi.getAll()).data as ItemDefinition[],
   });
 
-  const equippedIds = useMemo(() => {
-    const self = userId ? combatState?.players?.[userId] : undefined;
-    const list = (self?.items ?? []) as { id: string }[];
-    return new Set(list.map((it) => it.id));
-  }, [combatState, userId]);
+  const { data: equipment, refetch: refetchEquipment } = useQuery({
+    queryKey: ['playground', 'equipment'],
+    queryFn: async () => (await equipmentApi.getEquipment()).data as EquipmentBySlot,
+  });
 
   const groups = useMemo(() => {
-    const equippable = items.filter((it) => SLOT_BY_TYPE[it.type]);
+    const equippable = items.filter((it) => SLOTS_BY_TYPE[it.type]);
     return GROUP_ORDER.map((type) => ({
       type,
       label: GROUP_LABELS[type],
@@ -66,27 +70,28 @@ export function EquipmentPanel({ sessionId }: EquipmentPanelProps) {
     })).filter((g) => g.items.length > 0);
   }, [items]);
 
-  const applyState = (state: CombatState) => setCombatState(state);
+  const apply = async (state: CombatState) => {
+    setCombatState(state);
+    await refetchEquipment();
+  };
 
-  const handleEquip = async (item: ItemDefinition) => {
-    const slot = SLOT_BY_TYPE[item.type];
-    if (!slot || busy) return;
+  const handleEquip = async (item: ItemDefinition, slot: EquipmentSlotType) => {
+    if (busy) return;
     setBusy(true);
     try {
       const { data } = await playgroundApi.grantEquip(sessionId, { itemId: item.id, slot });
-      applyState(data);
+      await apply(data);
     } finally {
       setBusy(false);
     }
   };
 
-  const handleUnequip = async (item: ItemDefinition) => {
-    const slot = SLOT_BY_TYPE[item.type];
-    if (!slot || busy) return;
+  const handleUnequip = async (slot: EquipmentSlotType) => {
+    if (busy) return;
     setBusy(true);
     try {
       const { data } = await playgroundApi.unequip(sessionId, { slot });
-      applyState(data);
+      await apply(data);
     } finally {
       setBusy(false);
     }
@@ -95,27 +100,37 @@ export function EquipmentPanel({ sessionId }: EquipmentPanelProps) {
   return (
     <div className={`pg-panel pg-panel--right${busy ? ' pg-busy' : ''}`}>
       <h3 className="pg-title">🎒 Équipement</h3>
-      <p className="pg-hint">Équipe gratuitement n'importe quel objet — stats et sorts se mettent à jour en direct.</p>
+      <p className="pg-hint">Équipe gratuitement n'importe quel objet — stats et sorts en direct. Une arme par main.</p>
 
       {groups.map((group) => (
         <div key={group.type} className="pg-equip-group">
           <p className="pg-subtitle">{group.label}</p>
           {group.items.map((item) => {
-            const equipped = equippedIds.has(item.id);
+            const slots = SLOTS_BY_TYPE[item.type] ?? [];
+            const dualWield = slots.length > 1;
             return (
-              <button
-                key={item.id}
-                type="button"
-                className={`pg-item-btn${equipped ? ' is-equipped' : ''}`}
-                onClick={() => (equipped ? handleUnequip(item) : handleEquip(item))}
-              >
-                <span>{item.name}</span>
-                {equipped ? (
-                  <span className="pg-unequip">✕</span>
-                ) : (
-                  <span className="pg-item-rank">rang {item.rank}</span>
-                )}
-              </button>
+              <div key={item.id} className="pg-item-row">
+                <span className="pg-item-name">{item.name}</span>
+                <div className="pg-item-actions">
+                  {slots.map((slot) => {
+                    const equippedHere = equipment?.[slot]?.itemId === item.id;
+                    const hand = SLOT_HAND_LABEL[slot];
+                    let label: string;
+                    if (equippedHere) label = dualWield ? `✕ ${hand}` : '✕';
+                    else label = dualWield ? (hand ?? '') : 'Équiper';
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        className={`pg-slot-btn${equippedHere ? ' is-equipped' : ''}`}
+                        onClick={() => (equippedHere ? handleUnequip(slot) : handleEquip(item, slot))}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </div>
