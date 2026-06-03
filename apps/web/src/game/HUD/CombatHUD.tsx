@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import type { CombatPlayer } from "@game/shared-types";
 import { CombatActionType, SpellFamily } from "@game/shared-types";
@@ -107,6 +107,8 @@ export function CombatHUD() {
 
   const user = useAuthStore((s) => s.player);
   const navigate = useNavigate();
+  // Sur /playground, l'écran de fin de combat est géré par la page (retour bac à sable).
+  const isPlaygroundRoute = useLocation().pathname.startsWith("/playground");
   const { activeSession } = useGameSession();
 
   const currentPlayer =
@@ -170,7 +172,7 @@ export function CombatHUD() {
         <div key={uiMessage.id} className={`combat-toast${isToastExiting ? ' exiting' : ''}`}>{uiMessage.text}</div>
       )}
 
-      {showCombatEnd && (
+      {showCombatEnd && !isPlaygroundRoute && (
         <div
           className={`combat-end-overlay ${isWinner ? "victory" : "defeat"}`}
         >

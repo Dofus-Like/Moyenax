@@ -252,3 +252,55 @@
   opacity: 0.85;
   text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }
+
+/* --- Écran de fin de combat (mode combat du playground) --- */
+.pg-end-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(10px);
+  animation: hud-fade-in 0.25s ease both;
+}
+
+.pg-end-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 28px 36px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  outline: 1.5px solid rgba(0, 0, 0, 0.85);
+  border-radius: 6px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
+}
+
+.pg-end-overlay.is-victory .pg-end-card {
+  border-color: var(--victory-gold, #fbbf24);
+  box-shadow: 0 0 40px rgb(var(--victory-gold-rgb, 251 191 36) / 0.5);
+}
+
+.pg-end-overlay.is-defeat .pg-end-card {
+  border-color: var(--hp-red, #ef4444);
+  box-shadow: 0 0 40px rgb(var(--hp-red-rgb, 239 68 68) / 0.5);
+}
+
+.pg-end-title {
+  margin: 0;
+  font-family: var(--font-hud, "BoldPixels", sans-serif);
+  font-size: 2.2rem;
+  color: #fff;
+  text-shadow:
+    -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+    0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000;
+}
+
+.pg-end-actions {
+  display: flex;
+  gap: 12px;
+}

@@ -34,10 +34,12 @@ function CombatPreloader() {
 
 export function PlaygroundPage() {
   const combatState = useCombatStore((s) => s.combatState);
+  const winnerId = useCombatStore((s) => s.winnerId);
   const connectToSession = useCombatStore((s) => s.connectToSession);
   const disconnect = useCombatStore((s) => s.disconnect);
   const setCombatState = useCombatStore((s) => s.setCombatState);
   const authInitialize = useAuthStore((s) => s.initialize);
+  const user = useAuthStore((s) => s.player);
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [arena, setArena] = useState<'sandbox' | 'combat'>('sandbox');
@@ -49,6 +51,9 @@ export function PlaygroundPage() {
   // Démarrage idempotent : StrictMode invoque l'effet deux fois, mais on ne doit
   // créer qu'une seule session (sinon collision sur l'index unique combat public).
   const startedRef = useRef(false);
+  const userId = user?.id ?? (user as { _id?: string } | null)?._id ?? undefined;
+  const combatEnded = arena === 'combat' && !!winnerId && !switching;
+  const isWinner = !!userId && winnerId === userId;
 
   useEffect(() => {
     const boot = async () => {
@@ -222,6 +227,32 @@ export function PlaygroundPage() {
               />
               <EquipmentPanel sessionId={sessionId} />
             </>
+          )}
+
+          {combatEnded && (
+            <div className={`pg-end-overlay ${isWinner ? 'is-victory' : 'is-defeat'}`}>
+              <div className="pg-end-card">
+                <h2 className="pg-end-title">{isWinner ? '🏆 Victoire' : '💀 Défaite'}</h2>
+                <div className="pg-end-actions">
+                  <button
+                    type="button"
+                    className="pg-arena-toggle"
+                    disabled={switching}
+                    onClick={() => switchArena('combat')}
+                  >
+                    ⚔️ Rejouer
+                  </button>
+                  <button
+                    type="button"
+                    className="pg-arena-toggle is-combat"
+                    disabled={switching}
+                    onClick={() => switchArena('sandbox')}
+                  >
+                    🧪 Retour au bac à sable
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
