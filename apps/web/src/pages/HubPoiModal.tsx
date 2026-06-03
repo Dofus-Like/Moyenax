@@ -209,7 +209,16 @@ interface RoomsActions extends ActionFeedback {
   onCreateRoom: () => void;
   onJoinRoom: (id: string) => void;
   onCancelRoom: () => void;
+  onPlayground: () => void;
 }
+
+// Banc de test dev : visible uniquement quand le debug est activé (route /playground
+// backend gatée par ENABLE_DEBUG_ROUTES).
+const SHOW_PLAYGROUND = ['1', 'true', 'on', 'yes'].includes(
+  String(import.meta.env.VITE_SHOW_DEBUG ?? '')
+    .toLowerCase()
+    .trim(),
+);
 
 export interface HubPoiModalProps {
   activePoiId: PoiId | null;
@@ -862,7 +871,7 @@ function RoomsHints({ isWaiting, isInQueue, hasOpenSession, busy, color }: { isW
   return null;
 }
 
-function RoomsPanel({ rooms, loading, isWaiting, hasOpenSession, isInQueue, playerId, busy, error, onCreateRoom, onJoinRoom, onCancelRoom, onClearError }: RoomsActions): ReactElement {
+function RoomsPanel({ rooms, loading, isWaiting, hasOpenSession, isInQueue, playerId, busy, error, onCreateRoom, onJoinRoom, onCancelRoom, onClearError, onPlayground }: RoomsActions): ReactElement {
   const createDisabled = isInQueue || (hasOpenSession && !isWaiting) || busy;
   const cta = buildRoomsCta(isWaiting, busy);
   return (
@@ -889,6 +898,19 @@ function RoomsPanel({ rooms, loading, isWaiting, hasOpenSession, isInQueue, play
           onJoinRoom={onJoinRoom}
         />
       </div>
+      {SHOW_PLAYGROUND && (
+        <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: '12px' }}>
+          <p style={FAINT}>Dev — banc de test sans enjeu.</p>
+          <button
+            type="button"
+            className="hub-modal-cta"
+            style={ctaVars('#a855f7')}
+            onClick={onPlayground}
+          >
+            🧪 Playground (bac à sable)
+          </button>
+        </div>
+      )}
     </div>
   );
 }

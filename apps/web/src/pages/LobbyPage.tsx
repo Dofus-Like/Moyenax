@@ -324,6 +324,7 @@ export function LobbyPage(): React.ReactNode {
             onJoinRoom: (id) => void handleJoinRoom(id),
             onCancelRoom: () => void handleCancelOpenSession(),
             onClearError: () => action.clearError('rooms'),
+            onPlayground: () => navigate('/playground'),
           }}
         />
       </section>
