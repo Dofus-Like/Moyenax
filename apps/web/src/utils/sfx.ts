@@ -18,111 +18,113 @@ const JSFXR_PRESETS = [
 /**
  * Catalogue de tous les sons du jeu.
  * Chaque valeur est une chaîne sérialisée (base58) jouable telle quelle.
- * Ce sont des PLACEHOLDERS générés automatiquement : pour finaliser un son,
- * design-le sur https://sfxr.me/ → bouton « Copy » → remplace la chaîne ci-dessous.
+ * Sons synthétisés au modèle sfxr (oscillateur → enveloppe ADSR → effets) :
+ * positif = fréquence montante / arpège up ; négatif = chute / bruit ;
+ * UI = blip court. Pour retoucher un son : coller la chaîne dans le bouton
+ * « Serialize » de https://sfxr.me/, ajuster, puis remplacer la valeur ci-dessous.
  */
 const SFX = {
   // ── UI globale ──
   // clic sur un bouton
   uiClick:
-    '7BMHBGSAYZAe3Z5cbtdoJeMJnrmeq3BdPbM4xeWfXHS5bZ3ayktkk42nGqnbPEA9g33QuMeTjamhffujeMbpFeMjiGFJasEBtTdMcsiuLghQSkNypPGNiczAB',
+    '11111mqKRconoRwXjTTzBFYkfLx1Jt7ZJox3Sp2334mnSmDcQRrDH53AYQ62PUUkifJ7ai5FQtecbfDH1LeQn3UhTmy6NF6H74TiXJs3KniV9ZCXL16Zu8B',
   // survol d'un élément cliquable
   uiHover:
-    '11111BE6VFBF744gn9qTfkxij2XSMNnMu7662deWFbH15WaHMvQrWdeZo1oaxrcPaFzqvobSW1FBHGxWDh8v5T7RF5t7NTgeTED99xrpDzzHEVPQWJtdArSj',
+    '57uBnWSzi74KNuiVRdtuw5op9QsFo35J4dJ6YDB82XfKfbSvG9wUcSkCtV4RPJnMnfqQQ8VBD2U2wtzYGYWkHyFBBFAVzQ2r3bodFcHzyTjo61FCBqKfz4d8K',
   // ouverture modale / panneau
   uiOpenPanel:
-    '11111936hwUVoogjXucie8r33tTg9zojcXttGtjz1HcXzQqtLGDADro4zUfPyaMMCHZrZUDBP6H3KjfwCLbkWfcvwtS7y53ewgaV52kEBbucDuPAQLaB8GnT',
+    '11111BFZ5uaXrYQKxtYCzBNihCZT8ZyduvvntD9MWtxwAfQsYQZHHZgZkHye13yMQ29QWwEeWGvbCtMA1DsACFTrje3RzXokngJYrrMQ7gzdrHSHjbXr9k79',
   // fermeture modale / panneau
   uiClosePanel:
-    '11111E3FE9BfoPHD1eAMDnRr1nvQvS3EjpKDAksMg98grUeqB2mUBVtAVt5ArvPn4oWKuzSa8j5xFJFZi8XvWy6Jxmv23geYVAkhwGf7HTdZavQw88E7vZx3',
+    '11111BFZ5uaXrYQKxtYCzActXhgSCfCxLnbTza8jrKLqWFVPLhuWy6TpzFw2oPgN229T4Ya4NP3yDgCZiAACPnYUWpQjQ7sgCGwACSbcKxkKMvGBrZBSFZ11',
   // validation d'une action
   uiConfirm:
-    '111113ceqC6Zumcz1qwmbHE1BWeDnDLtKRCnamTAzqj1ZiBtdmpwSBuxWsMxwfLKvgbGdj4QcSSUALBkG6hG8X2VuXKDhSXM3UjgdiUvJVM9H6QhycLMBJAb',
+    '11111mqnbhVWL9ZnCaMtPrgxZDPm8X8ZFJnFshDqdoMX826JxMddorM6XYuDbBecW2JH9SMZGZ6oWzHKpPvrbgj118jXcNXGQYKb5rJ8Kkcb1rnpBQZrxQ7',
   // annulation / retour
   uiCancel:
-    '11111CR4QqTjHqduqz64rHY981GDsoLQxNYH5V65D6j3VBtbKJb5oPwW2fiBQHssyi7LRzZQysirHz25SRHLySpn8hmyhc5B8fpGgt8JA9xMnvrMmuabHTPV',
+    '11111FbzaGYH27kT1ixh49Ae8edhM8CH2uGVdkUq9mS6WPQ8yozpzyHaT9GDDkqRVcZgNFY6NyyVBxcYZ831sHTQ7WzUHqSUcL7ChQCmXU8iiLmDJs63TD5R',
   // action interdite / sort indisponible
   uiError:
-    '7BMHBGKtrWkQpNS1RBNdNx96uWBToBXYMUY26wxPvnRnKuMUS1f9Tk7jrBSG7ebz23SDd5mnmZfmRS4maj6DE5tXdn87sfhQYcJR4gdVnMsd5wA7Ybzu3SnuV',
+    '11111Fc13SajJH62dUhiN7ZGt2JqPtHjibMWYthkswjYK9uc12k3uxAo9JzBfxAi8vzykAUc1ZBtb3CQSAaXpCPExHVrsH6A4YBFndywwJVsDWqLSFwJTJSK',
   // notif / nouveau message chat
   notification:
-    '34T6PkyHfy7J4BFGhBwSdV9d2QdGbCwLCVi7d7pyU6PkLiie8Np9gURxq3kHBufmXJjvSyzTPtqrueGHdjbhDcSzrnrhKVvEW1SfuoijgxXq44XL7YdWmY471',
+    '57uBnWgpsMuKsNhdRDLhdoA9jSSJBhxAEf8McCPnfejXv2sup9ZacGCeVzv7dvooVGh7PtCnbyVHFMjJRTQRjzcAJH8H8Sf94ujHHdVWmwdRRBixZ8webqKpK',
 
   // ── Hub 3D ──
   // clic-au-sol → déplacement du pion
   hubMove:
-    '834tvoAXQVJzmvfskxcc8bEzH1Gtp3UekDyBjV7LF5cRS9E7LyfjGBCL1FGtXCv9cypGcwFBn835ch3iHuxqxnQ3zUX9rkPaPgNPHQ6tpHMoq5uSTMaHgFojd',
+    '7GQejrnpd57C6wc4VBZzcj27ByqttA8yjhVv8vs4LDT64mie5nFfeFrpmpwPYn6cSYwGhixnEJNCjxk1aFwjTf66Yp7yVwQu9W1DhqJXy33E6ee36raxFvPCb',
   // entrée dans un POI / portail
   hubPoiEnter:
-    '34T6PkxD6GFBYEogKLPZfFN3csc4tr1HmdYWVNoHibbGgw4U9fMa2s9fMZbXe4PtJncULvebpCAXAdQpwe4X5XbJpaeDQvr5PBcdGhAQS4DmopEcQEbVS7zJb',
+    '57uBnWcURsYN8D8HHpj1ngfNS93RqN9UjGXgrstKxtPYGNYyDrPftGhTwpjVYemz5HtLfeA8CZMT2kGCuF76pKLGWZ7zACasSKC92Kceb6weFUhXSHPYytLcF',
   // message reçu dans le hub
   hubChatMessage:
-    '34T6Pko4wNt3ofcJawzWRAmqa6rpbFsFT4XNNbMyoFiN8CqBKtZNBpXNggdiVoYycad2dGkkpphJjRQYgneALYqC8YuvZn4xxHYRDMYG3VkSkc5MH8LChFwGs',
+    '11111BFZ5uaXrYQKyqeEPjMfsQNRSgWnrVLRGhnLcRaJFVi5qeyhKrV3XGpgdr4czvDQBtLE4E9gUxyrQfupj7ggQxRv8kSHqBTYQsykhkcAtE5vrWEJ1ho5',
 
   // ── Combat ──
   // début du combat
   combatStart:
-    '111118oD8zUvTtxxppavCAgXZCRnobext1SPTMhAzd9nxNiNjrnNCdJDYJzZRbwNMH71mffj2iirzDtiAj1CoRuszT2gMsuRfozxTWkBUMfSHaJ6V8dAZuq1',
+    '34T6PkyDRjVyCDXRLjjPT84kTNyXF3KRTFtoEgHnaL5QcUbgVoijutchfPwVNKkNK82PJmdCK8BqZZUoREajhT9FYcFUA1KRNFC6EmVoLn7ztg5XQ2t1S3DF5',
   // début de mon tour
   turnStart:
-    '34T6PknUDkHeBMisGth46VKj5yz1k5FsB2D9kc2fVmWDQAEfr4opwSJ3RmweX2irUkszvvovvgdCMA15aLM7pX4xEd3wCAeR4Jvi7nwpxEUsAWA2DnL4wWT2P',
+    '11111Fc13ScxjeU5T2qZVjXDep2xY8ZzKMwFgG3JrDEXxsyzvK4jgDBfRYwQ3wKz57xrUF7XSPS83w98THbufRYAQaNnJJNwJPKMPTnJELTPJDza29kfuAbh',
   // passer le tour
   turnPass:
-    '7BMHBGKourpXx5G4jgi9zVTsZR7KiVtYA4CQ1oK9EAb8EJx9WnjX3cVN68e96C7iXkrkSmuUWso4wLFCFLfcTPoAynUMVxwjHnaEL5ay25jzyYPM5HZLpk4Y7',
+    '11111mqnbfG4xmX4YNCKtN1KTHEviYYEmo79SDHSBRsbKR8LBRt2K7M96SCoDBPRr8F5eZ5vttHuG4rVxSW1K8SX4VnmBp3TFVYsMBadi89UDxCUMQ2VgF9',
   // survol d'un sort dans la SpellBar
   spellHover:
-    '11111EQ8mTw3dmjpnCqauwKbzBoYs4yNaHx3g5pZ2PrxGYgfrv2fRgfDE3Byvf9WTV224aVyjWp4coYeMPvkF27LWgt4tzRusk5bLJLMUWzDj8WVmFaX2cgP',
+    '57uBnWSzi74KNuiVRdtuw5op9QsFo35J4dJ6YDB82XfKfbSvG9wUcSkCtV4RPJnMnfqQQ8VBD2U2wtzYGYWkHyFBBFAVzQ2r3bodFcHzyTjo5zewPaVQA4nHd',
   // sélection d'un sort
   spellSelect:
-    '7BMHBGSdGtHMXFx8SkVCLzBxJPr6pbpJyF7ADLEYtCczRGzQH6cPhheEx9ZbAgEbpx8fUJYovLLHp2eowKHzECovdgyZ52zrwUZ98jkZ84qtWNtAiaTazKdks',
+    '11111FbzaGYH27kT1ixh48Qoy9kgRDRbQgpbxoBRhc3xMy3FvoDunJ5kDgAoFV2QVdAkhaUEoZ4AdXBY3TDMn6gE5GaWy2eR4m7LGkaEJyyro3CiGyP3Ferb',
   // lancement d'un sort
   spellCast:
-    '34T6PkxqwT7qokYbzugRJ95c5J65tVFaJVwmS4wSYbnaTxTTLhnVDf3sp9idtwZjooQofcf9enrMVSPwQVxf4Ke9Z6EXQ6vnyBFk3hzW5GQgdorWc6VFkZK7m',
+    '57uBnWj15e1y9f7Xt2fsyFypDugHtrnNYDqLdQBLUfVQhucqTMmey7T2hZE7qEypSSefBCkwqWYxbr9wQCCHFnzm76aFs11XYT6PsHoDXdqsCgJuEuFtwBpTq',
   // dégâts infligés
   damageDealt:
-    '7BMHBGKL98v5MsdYKeHHyn1MMDzZ2qM5P8voU9eb46pHTrRcvx4aMKtzALTbvmFMPuWSz3ghrjGubxA78iiyQdoQiTyHbkrkKLCg1ZhiXMrJXHLYqGxadDUvs',
+    '34T6PkjPGwq3wpvt66AnJsmdzYpb5joLRYgpu9YhSi2UNqTAKSKGG1YTTf3jcs8Bv6vr8r8X9Q2RTTRhnDe6JgZz7wncNfrnGKgtcqgZ4DFtSW21QhDSq8q3M',
   // dégâts subis
   damageTaken:
-    '34T6PkkyJkndzpMrAmYLFmcwK1Y6c7rvzCVTkoWdSgy2enLsgb6Ee8Jz81jxsRpHhFCETRJoU2CBW2959HzugKginxbjSzCe6cMC42MUjqsMBo161pLXVutNs',
+    '7BMHBGQSJX8fmLSUpgxLXiWijHNXMFToG9GbYpLdreYDzcyGiA9ar2XUd6FH5vWXjdcLnzHwAnXhEwqooRATJgzTSjFSGhfwcrHD5dzNDiJ3Fk7sPy2nPs6jy',
   // soin
-  heal: '111114tcL7xeGigZdYb9Gsxuc7dNvFQ81C98D9SrwVj6VWYcLgsMakhquWNpENiToi9W3rABqxjzy5dStWmJF8uy7HRNEHtUMSQpPPxh9m7Mz1kFocKpqAQP',
+  heal: '6mTcDiwN3gGS1yVHs6vsJtYKJWtXhdRgXdXxtxXXh1v77nYddqMENgrgPUPPkrAtHEBPPjcDinPr3495si8uepDEKxSNv74kaUchMeRczYnrRstc6RyGsX527',
   // mort d'une entité
   death:
-    '7BMHBGJ33fTZAKaaJWdTupoSLYsAxtUVH6xkaX9Dxa3jr7wdvGQK1FG6vQ4wMcEfFvQ8gFKHGZ4NPhCg4QXAJwYUtiiMbZ9dsNETS8ep3fFs7VTbmPG7CHb3M',
+    '34T6PkicSdTR6Xme3pviEDkPeYg1X1YdmZDnUX2p8QdjannV8Dz8XLjaTBnwjTajHmjf7ahzZuYdNBxwQ6KeZfZq25BcAinVcY1zM9T8Bcopuf3QUkFj1fXGs',
   // combat gagné
   victory:
-    '34T6Pku3U5727goi4i1eCG4vG4ywgGeT5rMFGbLxcot5Q6KTZUJZSMqDf7U3pzohgvgqAAiGQjitkhxGuTzVHra8wN2MgBpEwMWWyhr2JfPvJNW4EXArAaeYo',
+    '11111BxFXqzoXRbMvHsQUjUJuFn81kVoGuXL5DVDzAUDYL3ktPTvLT4HPM1h58eMqu4i5ZtjJyNxj5gbKqnGcMWi1UbUvfyDerGZW62z82khuqQhJRd87HLK',
   // combat perdu
   defeat:
-    '7BMHBGGgLzmRkAf84AwxNYizEfgdjmEYFmEM2YZRdVBS8cTw5LV3Dv8qaqpFH1x7J7ak6R46oADBQEoFrtrYCwh7fQNiQtCSdGFL2V5kPh2LZojFBFnZYzp2K',
+    '34T6PknGC943Fk4h3fDg7YNG37MjvjEK7RpS5Dsa6Jt2zbJ7PjJiCvJ5YMuXUeZYf4z2c5MxkTRu7h7fF1t5so3PKjJs5MHArJnsiipmYiivWmNH3XtH4Xwfm',
 
   // ── Récolte / Farming ──
   // début de récolte
   harvestStart:
-    '11111JBbzcKofpopFbPPVjKi3ZFy1W4oxSqRk8tprS13TqsRqryzDiq27c5YDCuCj9s7Z2vSchUoge6JJH3ex3oLUru6RTDvvELWMGycbEcxfdNJGHSkHp5m',
+    '7GQhofvxECXcBbjtgz5sESMpc9yrKi13Q2cUgZ7N7ZSAvXzShDotUiPpwqiRB8xsMEQAWBjP8S8W4MFX5FgAj2cxA3Vj9F5C1gx6aWAzGybxn4C5qoB5jmTDZ',
   // ressource obtenue
   harvestComplete:
-    '34T6PkvnJAW2EMsPE5HPxm7ExNR9eoHGGHWwbR3ykYzLfW2ZKTWUFQXPqKYnYer1kFQR6Fdjcp46NSxMUpNG5Z9RzoAJd6DeD9WYdtGzSgz7SZZw1dwrh8AzT',
+    '11111Fc13ScQNrjpJKzkx7r3wXcABZWLqPmFjkSjgrvegMxrFj4NshBu6e3uKEMNV9cgkZ1BzByNFWF1kY2VGPVxmC5tANYw9jk8BzMQLLPEraVg9tfv6JTZ',
 
   // ── Inventaire / Économie / Craft ──
   // équiper un objet
   itemEquip:
-    '34T6Pm2ZaW35Yvrd7TdEFqKEr6JyhzNQ2mNjmm2Xi55BeugJR7PgRx3NnytNtWM3VviBUt1EPKo6MPnFriqSX88hVhoSzMpixEPqyW6a94ebdUw85tdZjbp9d',
+    '34T6PktrzF8yDcSN3aenS6uu7iaK6oMAfUFFZAE1Az9Cm9NqpZfGLjzbn4C1w1U6wsFtExdGWZve2DgMhf342tBae6T5FTSQH9jrpwcKmy8Eoy5b94kpC2gPH',
   // ramasser un objet / loot
   itemPickup:
-    '34T6PkktQMdRBvYdvGH1ddSLWUvR5z2kee2xi9itdVXK3utVTrwikhWD1Uj2gBqXZf6NFUrNNwmnaawep4tKpwCJYqbFLBPK4CnYudRetrMR36UYKxsPn43jm',
+    '11111mqnbhVWL9Zs9Q23sp1SvjVrHmVV5b5fC7NEyf7819r5ZUd4phqPcEbHpUatpbjuN5SyrrDFbvNZ7GVo3gWBJ2UpvdBqoroNwEv95pKAB7E97jnzWR5',
   // gain de kamas
   coinGain:
-    '34T6PktSYnNNjzPk9tt7A1bafkkbfhLfWuK8pGvCqBxspVEzpVNnFS3tuEdSZsZEGvUh5GdQSM4knJWUSL2Ldh3Fx3FFgamtuNL6gm2v5babU1AARwqXe993V',
+    '11111BFZ5ucmHywDrRxPp2nxqiSdUgqEuR5uotQm3xUjYmkY1apTn4rp22xivcMScdDHXVHFtDG53d5dkw9tLSAgWgfu5n6YzzWbDmbgxm4NEKnzPizz46LP',
   // craft réussi
   craftSuccess:
-    '34T6PkkUMefgSuJV7q5psuY9XDoNKYk7MKXXSDfZy1cdGypxH5UP9PghGFx4EPbsn52wUsZUNUHc47RkBJvkdf9Yx8dp6iAuYGH6cPUFPbiuo13pdPFGum1P5',
+    '11111FbzaGb4pVMBofptYCQScfYv9Tv1zujo4u8hGmZXzCqQT4DfC8wHejZsArMBrj3wMzL2Kw7BZco3KWQrhApRqXbbUuaFzm9VMR9vU3woAjyPZFq8BCE3',
   // craft échoué
   craftFail:
-    '11111HqcNCQKvksSu87LUm1GCUsuwvqKc8o8SpfeeWNhDdAzxw2MjwLhA1nmubHqyyzS4Yeq4qsWXmKDmqQqC7kbhSVcqS81mi9YPTHDhS9weBjE95yjt3AP',
+    '11111HnDKZE1agzVtV56SbtMtryh9CGs13sXabMb42AU5LcpZ6xZi5JtzMGNopDkbi5MdmMHM317dSg12srmhWZCgTVmXjT37PH4N14xMf26AQmXFFk1gMWf',
   // montée de niveau
   levelUp:
-    '111112DsLb7KFgVTpByWJFQb51MeeE4YqCFdCvAEg84wfdGNvJMZmMUrpjwNb54LkZgDxMbSuGfVf678thGbnoes4CJqAjpEF9KfLWLjFcKU5LQVhNURhjrX',
+    '11111BxFXqzoXRbMkQDTLxj9cS468yVaPnJPRBSfLYVmcctj4fGSJt4q6cGtUqiKttqadhm7HiRQaRDqkLrnwkGEKj8eezcGCroxpmivtoeFSNyEZT9TpomR',
 } satisfies Record<string, string>;
 
 export type SfxName = keyof typeof SFX;
