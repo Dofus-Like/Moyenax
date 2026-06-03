@@ -402,10 +402,13 @@ export function FarmingPage() {
     if (TERRAIN_PROPERTIES[terrain].harvestable) {
       if (isAdjacent) { performGather(x, y); return; }
       const path = findPathToAdjacent(currentMap, currentPos, { x, y });
-      if (path) { setMovePath(path); setQueuedAction({ type: 'gather', x, y }); setIsMoving(true); }
+      // Un chemin vide (déjà à portée) ne déclenche jamais onPathComplete : on récolte
+      // directement, sinon isMoving resterait bloqué à true (joueur figé).
+      if (path && path.length > 0) { setMovePath(path); setQueuedAction({ type: 'gather', x, y }); setIsMoving(true); }
+      else if (path) { performGather(x, y); }
     } else if (TERRAIN_PROPERTIES[terrain].traversable) {
       const path = findPath(currentMap, currentPos, { x, y });
-      if (path) { setMovePath(path); setIsMoving(true); }
+      if (path && path.length > 0) { setMovePath(path); setIsMoving(true); }
     }
   }, [performGather]);
 
