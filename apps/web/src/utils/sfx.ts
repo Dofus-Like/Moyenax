@@ -109,9 +109,24 @@ const SFX = {
   // début de récolte
   harvestStart:
     '7GQhofvxECXcBbjtgz5sESMpc9yrKi13Q2cUgZ7N7ZSAvXzShDotUiPpwqiRB8xsMEQAWBjP8S8W4MFX5FgAj2cxA3Vj9F5C1gx6aWAzGybxn4C5qoB5jmTDZ',
-  // ressource obtenue
+  // ressource obtenue (fallback générique)
   harvestComplete:
     '11111Fc13ScQNrjpJKzkx7r3wXcABZWLqPmFjkSjgrvegMxrFj4NshBu6e3uKEMNV9cgkZ1BzByNFWF1kY2VGPVxmC5tANYw9jk8BzMQLLPEraVg9tfv6JTZ',
+  // variantes par ressource (même famille, hauteur/timbre différents)
+  harvestWood:
+    '11111Fc13ScQNrjpJKzkx6VfgYHwhJhy6zVR5MfBQHfA9Edi3azvD4gQWBUzdaZJGgyXTAPDsM7f7821NnjJmTFKpUMDfsNLmnGH3gumE5WCL51ztGBuXrS3',
+  harvestIron:
+    '11111Fc13ScQNrjpJKzkx7EeHoUY3rR9j4ptaauM1jnETHdErHiKiw3JSPvtnsrCKuhtTjUQTf8QnvGYVdU7dCuL4K4w5xto43wRE4FNzNyRWLE5ChkWinvK',
+  harvestCrystal:
+    '11111Fc13ScQNrjpJKzkx8bt1QFsqgc9mPaDe71CnCDD3MT9fd24c8tDTYKdxUqAzSMhkBsiGCoAbFH7UMDJpLwH2xCKPTffqzwoHnarQFbNhFuHupLeLj6F',
+  harvestLeather:
+    '11111Fc13ScQNrjp3VYRGKkdTpRwCG8Kb3e2NiD7JkJu9fzvufVYPk9dJR15zjwDHSEmLvroM8fSgC2c43umHD821PYPiCtw4gzLAmhAC8NrtS2JEaftfRP5',
+  harvestFabric:
+    '11111Fc13ScQNrjpJKzkx7hdL8ctd2mZKPoYWiisiFA5e7x1RpUHPeTNrLiPuzWuaDxf32WWoUaxWzAmk8JFM1p7Pc7DLriJ1cbwS56BMjjr9oqfE228kz31',
+  harvestHerb:
+    '57uBnWgpsMuKK1uuA4drqFZzE9msHyXhFSiuGgAfuMVRPGu5xGtCTnW73sDjo7Du5Qp4wYc753qEVoMK1JCwuktKmVBEvtHh5nqZrhoRuqCo5XHqqFBGBkAxF',
+  harvestGold:
+    '11111Fc13ScQNrjpJKzkx9MiDiFq9kuUs8BvHtCZWbvS2VKB5UxuUuEtQsgjGX3oKxkxrnu7zhqRVH1dVBxCDG7hTd62Lpkk97PMCYdGgmucB8jfzQembvEj',
 
   // ── Inventaire / Économie / Craft ──
   // équiper un objet
@@ -143,6 +158,13 @@ const cache = new Map<SfxName, SfxrAudio>();
 // 1 = volume du preset ; < 1 pour atténuer un son trop fort.
 const SFX_VOLUME: Partial<Record<SfxName, number>> = {
   harvestComplete: 0.5,
+  harvestWood: 0.5,
+  harvestIron: 0.5,
+  harvestCrystal: 0.5,
+  harvestLeather: 0.5,
+  harvestFabric: 0.5,
+  harvestHerb: 0.5,
+  harvestGold: 0.5,
   // Les pas doivent rester discrets (joués souvent en marchant).
   footstepA: 0.3,
   footstepB: 0.3,

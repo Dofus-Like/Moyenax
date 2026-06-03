@@ -5,7 +5,18 @@ import { TerrainType } from '@game/shared-types';
 
 import { farmingApi } from '../api/farming.api';
 import { inventoryApi } from '../api/inventory.api';
-import { playSfx } from '../utils/sfx';
+import { playSfx, type SfxName } from '../utils/sfx';
+
+// Un son de récolte par ressource : la case récoltée donne sa hauteur / son timbre.
+const HARVEST_SFX: Partial<Record<TerrainType, SfxName>> = {
+  [TerrainType.WOOD]: 'harvestWood',
+  [TerrainType.IRON]: 'harvestIron',
+  [TerrainType.CRYSTAL]: 'harvestCrystal',
+  [TerrainType.LEATHER]: 'harvestLeather',
+  [TerrainType.FABRIC]: 'harvestFabric',
+  [TerrainType.HERB]: 'harvestHerb',
+  [TerrainType.GOLD]: 'harvestGold',
+};
 
 interface FarmingStoreState {
   inventory: Record<string, number>;
@@ -135,7 +146,8 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
         harvestedTiles: next,
         map: { ...currentMap, grid },
       });
-      playSfx('harvestComplete');
+      const terrain = currentMap.grid[y]?.[x];
+      playSfx((terrain && HARVEST_SFX[terrain]) || 'harvestComplete');
       return newState;
     } catch (e) {
       console.error('Erreur lors de la rÇ¸colte', e);
