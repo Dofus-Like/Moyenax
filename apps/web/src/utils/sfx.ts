@@ -143,6 +143,9 @@ const cache = new Map<SfxName, SfxrAudio>();
 // 1 = volume du preset ; < 1 pour atténuer un son trop fort.
 const SFX_VOLUME: Partial<Record<SfxName, number>> = {
   harvestComplete: 0.5,
+  // Les pas doivent rester discrets (joués souvent en marchant).
+  footstepA: 0.3,
+  footstepB: 0.3,
 };
 
 let muted = false;

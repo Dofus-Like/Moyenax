@@ -233,7 +233,15 @@ describe('FarmingPage', () => {
 
     await screen.findByTestId('map-scene');
 
-    expect(mocks.latestMapProps?.onTileReached).toBeUndefined();
+    // onTileReached est branché (sons de pas) mais ne doit jamais déplacer le joueur :
+    // la position n'est mise à jour qu'à la fin du chemin (onPathComplete).
+    mocks.farmingState.movePlayer.mockClear();
+    (mocks.latestMapProps?.onTileReached as ((node: { x: number; y: number }) => void) | undefined)?.({
+      x: 1,
+      y: 0,
+    });
+
+    expect(mocks.farmingState.movePlayer).not.toHaveBeenCalled();
   });
 
   it('does not render the end round button in normal game flow', async () => {

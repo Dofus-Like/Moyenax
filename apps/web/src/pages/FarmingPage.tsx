@@ -417,6 +417,14 @@ export function FarmingPage() {
     }
   }, [performGather]);
 
+  // Un pas par case réellement franchie pendant l'animation, en alternant A/B
+  // (démarche naturelle, synchro sur le pion — ni trop, ni trop peu).
+  const footstepFlipRef = useRef(false);
+  const handleTileReached = useCallback(() => {
+    footstepFlipRef.current = !footstepFlipRef.current;
+    playSfx(footstepFlipRef.current ? 'footstepA' : 'footstepB');
+  }, []);
+
   useEffect(() => {
     // Force spell sync on mount
     playerApi.getSpells().then(() => {
@@ -588,6 +596,7 @@ export function FarmingPage() {
                 playerPosition={playerPosition ?? undefined}
                 movePath={movePath}
                 onPathComplete={handlePathComplete}
+                onTileReached={handleTileReached}
                 onTileClick={handleTileClick}
                 onTileHover={handleTileHover}
                 onSceneReady={handleSceneReady}
