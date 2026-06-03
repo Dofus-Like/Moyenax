@@ -37,7 +37,7 @@ export function TerrainBrushPanel({
   onTerrainChange,
 }: TerrainBrushPanelProps) {
   return (
-    <div className="pg-panel pg-panel--left">
+    <div className="pg-panel">
       <h3 className="pg-title">🧪 Playground</h3>
 
       <div className="pg-mode-row">

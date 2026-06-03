@@ -98,7 +98,7 @@ export function EquipmentPanel({ sessionId }: EquipmentPanelProps) {
   };
 
   return (
-    <div className={`pg-panel pg-panel--right${busy ? ' pg-busy' : ''}`}>
+    <div className={`pg-panel${busy ? ' pg-busy' : ''}`}>
       <h3 className="pg-title">🎒 Équipement</h3>
       <p className="pg-hint">Équipe gratuitement n'importe quel objet — stats et sorts en direct. Une arme par main.</p>
 

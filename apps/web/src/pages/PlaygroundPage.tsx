@@ -11,7 +11,9 @@ import { playgroundApi } from '../api/playground.api';
 import { CameraEffects } from '../game/Combat/CameraEffects';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CombatHUD } from '../game/HUD/CombatHUD';
+import { DamageMeterPanel } from '../game/Playground/DamageMeterPanel';
 import { EquipmentPanel } from '../game/Playground/EquipmentPanel';
+import { PlaygroundControlsPanel } from '../game/Playground/PlaygroundControlsPanel';
 import { TerrainBrushPanel, type PlaygroundMode } from '../game/Playground/TerrainBrushPanel';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import '../game/constants/colors';
@@ -235,13 +237,19 @@ export function PlaygroundPage() {
 
           {sessionId && isSandbox && (
             <>
-              <TerrainBrushPanel
-                mode={mode}
-                onModeChange={setMode}
-                selectedTerrain={selectedTerrain}
-                onTerrainChange={setSelectedTerrain}
-              />
-              <EquipmentPanel sessionId={sessionId} />
+              <div className="pg-stack pg-stack--left">
+                <TerrainBrushPanel
+                  mode={mode}
+                  onModeChange={setMode}
+                  selectedTerrain={selectedTerrain}
+                  onTerrainChange={setSelectedTerrain}
+                />
+                <PlaygroundControlsPanel sessionId={sessionId} />
+              </div>
+              <div className="pg-stack pg-stack--right">
+                <EquipmentPanel sessionId={sessionId} />
+                <DamageMeterPanel />
+              </div>
             </>
           )}
 
