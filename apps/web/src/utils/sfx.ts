@@ -50,6 +50,13 @@ const SFX = {
   notification:
     '57uBnWgpsMuKsNhdRDLhdoA9jSSJBhxAEf8McCPnfejXv2sup9ZacGCeVzv7dvooVGh7PtCnbyVHFMjJRTQRjzcAJH8H8Sf94ujHHdVWmwdRRBixZ8webqKpK',
 
+  // ── Déplacements ──
+  // pas (alternance A/B), tick sourd et discret
+  footstepA:
+    '7GQhofNsKrf4HEeHnFgtSf5zs6A4v1g3pEktRUFkNDSyHnjXT8n9vBSG5RJyTqbdtaEoRUWzJfdD75bHedqZhmB6xCw4dnWTJkusMgtVFcBFksZdL26nrsnDu',
+  footstepB:
+    '7GQhofNsKrf4HEeHnFgtSf7yWZ9m1BXxe7ZdYftiAuWfRfn7XRXLN6TcTNjRkCi3iSGYHRKL18WWjwBG1zYx41znDBsEvBzgxF8YwUJr6rVRoaCno93MAdfLj',
+
   // ── Hub 3D ──
   // clic-au-sol → déplacement du pion
   hubMove:
@@ -62,21 +69,21 @@ const SFX = {
     '11111BFZ5uaXrYQKyqeEPjMfsQNRSgWnrVLRGhnLcRaJFVi5qeyhKrV3XGpgdr4czvDQBtLE4E9gUxyrQfupj7ggQxRv8kSHqBTYQsykhkcAtE5vrWEJ1ho5',
 
   // ── Combat ──
-  // début du combat
+  // début du combat / passage ressource <-> combat : montée ample et grave
   combatStart:
-    '34T6PkyDRjVyCDXRLjjPT84kTNyXF3KRTFtoEgHnaL5QcUbgVoijutchfPwVNKkNK82PJmdCK8BqZZUoREajhT9FYcFUA1KRNFC6EmVoLn7ztg5XQ2t1S3DF5',
-  // début de mon tour
+    '1111111UE45rPBH3pEkHbGvzboCiDwSmhcDSZZiBmh9yd1AizBgsWyRwCfCuSgWs1o7HPqX8L7XUWdPkrhqRLWQo1BMz9X6nrbc3FUiPqtoDgWTvwTHvGZV',
+  // début de mon tour / changement de manche : carillon doux montant
   turnStart:
-    '11111Fc13ScxjeU5T2qZVjXDep2xY8ZzKMwFgG3JrDEXxsyzvK4jgDBfRYwQ3wKz57xrUF7XSPS83w98THbufRYAQaNnJJNwJPKMPTnJELTPJDza29kfuAbh',
-  // passer le tour
+    '57uBnWcURsYMZrGQBhvpxpdeWn9nxPRHtjEspc4CmAa6HuY8CCnZ3GnwZ7pBCcNQtx9gmtycGKpxCNyVVQp9emhuJS8RYk6bVidMDJncfjk8nWnvFQvh9ntVu',
+  // passer le tour / fin de manche : descente douce et feutrée
   turnPass:
-    '11111mqnbfG4xmX4YNCKtN1KTHEviYYEmo79SDHSBRsbKR8LBRt2K7M96SCoDBPRr8F5eZ5vttHuG4rVxSW1K8SX4VnmBp3TFVYsMBadi89UDxCUMQ2VgF9',
+    '57uBnWgpsMuHdwLFNVgVUEjwsXZwpULXmFX7kZz8X6SRH6SbmGNSRY5WNSSYoce7ZDDBqDg4KaFvsiGarqcBCL3HEx2QZEMvNAMAbR4EQDHwA7nbojq5UPh4K',
   // survol d'un sort dans la SpellBar
   spellHover:
     '57uBnWSzi74KNuiVRdtuw5op9QsFo35J4dJ6YDB82XfKfbSvG9wUcSkCtV4RPJnMnfqQQ8VBD2U2wtzYGYWkHyFBBFAVzQ2r3bodFcHzyTjo5zewPaVQA4nHd',
-  // sélection d'un sort
+  // sélection d'un sort : tick net et bref, distinct du hover
   spellSelect:
-    '11111FbzaGYH27kT1ixh48Qoy9kgRDRbQgpbxoBRhc3xMy3FvoDunJ5kDgAoFV2QVdAkhaUEoZ4AdXBY3TDMn6gE5GaWy2eR4m7LGkaEJyyro3CiGyP3Ferb',
+    '11111mqKRf3EAozFPfdYbTQfXhKEvWb21L29W5VViiFHX4mvC1Qbi8mJWgFDfANkLNMYJz9sDVQYNVWuv7Kur2CJW3EPVqBWAeVkL6sitWKui52oBbWoFwD',
   // lancement d'un sort
   spellCast:
     '57uBnWj15e1y9f7Xt2fsyFypDugHtrnNYDqLdQBLUfVQhucqTMmey7T2hZE7qEypSSefBCkwqWYxbr9wQCCHFnzm76aFs11XYT6PsHoDXdqsCgJuEuFtwBpTq',
@@ -132,6 +139,12 @@ export type SfxName = keyof typeof SFX;
 // Un son est synthétisé une seule fois puis rejoué (chaque play() crée une nouvelle source).
 const cache = new Map<SfxName, SfxrAudio>();
 
+// La chaîne base58 sfxr ne porte PAS le volume : on l'applique à la lecture.
+// 1 = volume du preset ; < 1 pour atténuer un son trop fort.
+const SFX_VOLUME: Partial<Record<SfxName, number>> = {
+  harvestComplete: 0.5,
+};
+
 let muted = false;
 
 /** Coupe / réactive tous les SFX (ex. réglage joueur). */
@@ -154,6 +167,8 @@ export function playSfx(name: SfxName): void {
       audio = buildAudio(SFX[name]);
       cache.set(name, audio);
     }
+    const volume = SFX_VOLUME[name];
+    if (volume !== undefined) audio.setVolume?.(volume);
     audio.play();
   } catch {
     /* sfx best-effort */
