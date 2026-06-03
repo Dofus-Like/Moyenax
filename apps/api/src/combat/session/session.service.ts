@@ -452,11 +452,22 @@ export class SessionService {
       await this.prisma.playerSpell.createMany({ data: spellAssignments });
     }
 
+    // Lier le combat à la session active (comme startVsAiCombat / startTestCombat) :
+    // sans gameSessionId, endCombat ne réconcilie jamais la phase et le joueur n'est
+    // pas redirigé du mode farming vers le mode ressource après un combat aléatoire.
+    const activeSession = await this.prisma.gameSession.findFirst({
+      where: {
+        OR: [{ player1Id: challengerId }, { player2Id: challengerId }],
+        status: 'ACTIVE',
+      },
+    });
+
     const session = await this.prisma.combatSession.create({
       data: {
         player1Id: challengerId,
         player2Id: bot.id,
         status: 'WAITING',
+        gameSessionId: activeSession?.id,
       },
     });
 

@@ -39,6 +39,26 @@ describe('SessionService', () => {
             player: {
               findUnique: jest.fn(),
             },
+            gameSession: {
+              findFirst: jest.fn(),
+            },
+            item: {
+              findUnique: jest.fn(),
+            },
+            inventoryItem: {
+              findFirst: jest.fn(),
+              create: jest.fn(),
+            },
+            equipmentSlot: {
+              upsert: jest.fn(),
+            },
+            playerStats: {
+              update: jest.fn(),
+            },
+            playerSpell: {
+              deleteMany: jest.fn(),
+              createMany: jest.fn(),
+            },
           },
         },
         {
@@ -60,6 +80,7 @@ describe('SessionService', () => {
           useValue: {
             syncPlayerSpells: jest.fn(),
             getCombatSpellDefinitions: jest.fn(),
+            buildPlayerSpellAssignments: jest.fn().mockResolvedValue([]),
           },
         },
         {
@@ -70,7 +91,9 @@ describe('SessionService', () => {
         },
         {
           provide: StatsCalculatorService,
-          useValue: {},
+          useValue: {
+            computeEffectiveStats: jest.fn().mockResolvedValue({}),
+          },
         },
         {
           provide: MapService,
@@ -200,6 +223,34 @@ describe('SessionService', () => {
       expect(state.players[player1Id].type).toBe('PLAYER');
       expect(state.players[player2Id].type).toBe('PLAYER');
       expect(redisService.setJson).toHaveBeenCalledWith(`combat:${sessionId}`, state, 3600);
+    });
+  });
+
+  describe('startQuickVsAiCombat', () => {
+    it('links the combat to the active game session so the phase is reconciled at end', async () => {
+      jest.spyOn(service as unknown as { getOrCreateBot: () => Promise<{ id: string }> }, 'getOrCreateBot')
+        .mockResolvedValue({ id: 'bot-1' });
+      const acceptSpy = jest.spyOn(service, 'accept').mockResolvedValue({} as never);
+
+      (prismaService.item.findUnique as jest.Mock).mockResolvedValue({ id: 'ring-1', type: 'ACCESSORY' });
+      (prismaService.inventoryItem.findFirst as jest.Mock).mockResolvedValue({ id: 'inv-1' });
+      (prismaService.equipmentSlot.upsert as jest.Mock).mockResolvedValue({});
+      (prismaService.playerStats.update as jest.Mock).mockResolvedValue({});
+      (prismaService.playerSpell.deleteMany as jest.Mock).mockResolvedValue({});
+      (prismaService.gameSession.findFirst as jest.Mock).mockResolvedValue({ id: 'game-session-1' });
+      (prismaService.combatSession.create as jest.Mock).mockResolvedValue({ id: 'combat-1' });
+
+      await service.startQuickVsAiCombat('player-1', 'ring-1');
+
+      expect(prismaService.combatSession.create).toHaveBeenCalledWith({
+        data: {
+          player1Id: 'player-1',
+          player2Id: 'bot-1',
+          status: 'WAITING',
+          gameSessionId: 'game-session-1',
+        },
+      });
+      expect(acceptSpy).toHaveBeenCalledWith('combat-1', 'bot-1');
     });
   });
 });
