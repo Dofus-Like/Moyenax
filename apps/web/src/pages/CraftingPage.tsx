@@ -8,6 +8,7 @@ import { useAuthStore, type AuthState } from '../store/auth.store';
 import { useTranslation } from '../store/language.store';
 import { getItemVisualMeta } from '../utils/itemVisual';
 import { getSessionPo } from '../utils/sessionPo';
+import { playSfx } from '../utils/sfx';
 import { useGameSession } from './GameTunnel';
 import './CraftingPage.css';
 
@@ -180,9 +181,11 @@ export function CraftingPage(): React.ReactNode {
       await craftingApi.craftItem(itemId);
       if (activeSession) await refreshSession({ silent: true });
       else await refreshPlayer();
+      playSfx('craftSuccess');
       setMessage({ text: t('craftedSuccess'), type: 'success' });
       void queryClient.invalidateQueries({ queryKey: ['inventory'] });
     } catch (error: unknown) {
+      playSfx('craftFail');
       const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setMessage({ text: msg || t('craftError'), type: 'error' });
     }
@@ -194,11 +197,13 @@ export function CraftingPage(): React.ReactNode {
       await craftingApi.mergeItem(itemId, rank);
       if (activeSession) await refreshSession({ silent: true });
       else await refreshPlayer();
+      playSfx('craftSuccess');
       setMessage({ text: t('fusionSuccess'), type: 'success' });
       void queryClient.invalidateQueries({ queryKey: ['inventory'] });
       setFusionSlot1(null);
       setFusionSlot2(null);
     } catch (error: unknown) {
+      playSfx('craftFail');
       const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setMessage({ text: msg || t('fusionError'), type: 'error' });
     } finally {

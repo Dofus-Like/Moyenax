@@ -4,6 +4,7 @@ import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState 
 import { Vector3, type Group } from 'three';
 
 import { useHubStore } from '../../store/hub.store';
+import { playSfx } from '../../utils/sfx';
 
 import { HubAmbientParticles } from './HubAmbientParticles';
 import { HubCamera } from './HubCamera';
@@ -194,6 +195,7 @@ function useDelayedActivation(onPoiActivate: (id: PoiId) => void): {
     if (!metadata) { setPendingPoiId(null); return; }
     cancelPending();
     timerRef.current = window.setTimeout(() => {
+      playSfx('hubPoiEnter');
       onPoiActivate(metadata);
       setPendingPoiId(null);
       timerRef.current = null;
@@ -246,6 +248,7 @@ function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef, poiStateLabels, 
     setTarget(point, null);
     ripple.triggerAt(point);
     reportMove(point);
+    playSfx('hubMove');
   }, [setTarget, setPendingPoiId, ripple, cancelPending, reportMove]);
 
   useHubInputController({

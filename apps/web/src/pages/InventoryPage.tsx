@@ -10,6 +10,7 @@ import { inventoryApi } from '../api/inventory.api';
 import { playerApi } from '../api/player.api';
 import { Mannequin } from '../components/Mannequin';
 import { getItemVisualMeta } from '../utils/itemVisual';
+import { playSfx } from '../utils/sfx';
 import { useTranslation } from '../store/language.store';
 import { useGameSession } from './GameTunnel';
 import './InventoryPage.css';
@@ -80,6 +81,7 @@ export function InventoryPage(): React.ReactNode {
     )?.[0] as EquipmentSlotType;
 
     if (equippedSlot) {
+      playSfx('itemEquip');
       unequipMutation.mutate(equippedSlot);
       return;
     }
@@ -102,6 +104,7 @@ export function InventoryPage(): React.ReactNode {
     }
 
     if (targetSlot) {
+      playSfx('itemEquip');
       equipMutation.mutate({ slot: targetSlot, id: inv.id });
     }
   };

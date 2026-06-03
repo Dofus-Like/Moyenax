@@ -147,10 +147,15 @@ function buildAudio(value: string): SfxrAudio {
 /** Joue un son du catalogue. À déclencher sur une interaction joueur (clic, hover, action). */
 export function playSfx(name: SfxName): void {
   if (muted) return;
-  let audio = cache.get(name);
-  if (!audio) {
-    audio = buildAudio(SFX[name]);
-    cache.set(name, audio);
+  // L'audio ne doit jamais casser la logique de jeu (autoplay bloqué, AudioContext indispo, jsdom).
+  try {
+    let audio = cache.get(name);
+    if (!audio) {
+      audio = buildAudio(SFX[name]);
+      cache.set(name, audio);
+    }
+    audio.play();
+  } catch {
+    /* sfx best-effort */
   }
-  audio.play();
 }

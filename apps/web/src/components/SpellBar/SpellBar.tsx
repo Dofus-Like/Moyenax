@@ -2,6 +2,7 @@ import React from "react";
 
 import { SpellFamily, SpellEffectKind, PlayerStats } from "@game/shared-types";
 import { useTranslation } from "../../store/language.store";
+import { playSfx } from "../../utils/sfx";
 import "./SpellBar.css";
 
 const SPELL_FAMILY_ORDER: Record<SpellFamily, number> = {
@@ -343,11 +344,16 @@ export const SpellBar = ({
             <div
               key={spell.id}
               className={`spell-card ${disabled ? "disabled" : ""} ${isActive ? "active" : ""} ${familyClassName}`}
-              onMouseEnter={() => setHoveredSpellId(spell.id)}
+              onMouseEnter={() => {
+                if (!disabled) playSfx("spellHover");
+                setHoveredSpellId(spell.id);
+              }}
               onMouseLeave={() => setHoveredSpellId(null)}
-              onClick={() =>
-                !disabled && onSpellClick(isActive ? "" : spell.id)
-              }
+              onClick={() => {
+                if (disabled) return;
+                playSfx("spellSelect");
+                onSpellClick(isActive ? "" : spell.id);
+              }}
             >
               {isHovered && (
                 <SpellTooltip
@@ -403,7 +409,10 @@ export const SpellBar = ({
             type="button"
             className={`spell-bar-action pass ${(isMyTurn && canPassTurn) || isReadyMode ? "ready" : ""} ${isReady ? "is-ready" : ""}`}
             disabled={(!isMyTurn || !canPassTurn) && !isReadyMode}
-            onClick={onPassTurn}
+            onClick={() => {
+              playSfx("turnPass");
+              onPassTurn?.();
+            }}
             title={isReadyMode ? t("ready") : t("endTurn")}
           >
             <span className="pass-icon">{isReadyMode ? "✓" : "⏭"}</span>

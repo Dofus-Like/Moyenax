@@ -26,6 +26,7 @@ import {
 } from '@game/shared-types';
 import { getItemVisualMeta } from '../utils/itemVisual';
 import { getResourceIconPath } from '../utils/resourceIcons';
+import { playSfx } from '../utils/sfx';
 import { FarmingSidebar } from '../components/Farming/FarmingSidebar';
 import { FarmingTopBar } from '../components/Farming/FarmingTopBar';
 import { SpellBar, SpellBarItem } from '../components/SpellBar/SpellBar';
@@ -275,8 +276,10 @@ export function FarmingPage() {
         refreshPlayer(),
         refreshSession({ silent: true }),
       ]);
+      playSfx('coinGain');
       setActionMessage({ text: t('bought', { name: item.name }), type: 'info' });
     } catch (e) {
+      playSfx('uiError');
       setActionMessage({ text: t('notEnoughCoins'), type: 'error' });
     }
   }, [fetchState, queryClient, refreshPlayer, refreshSession, t]);
@@ -344,6 +347,7 @@ export function FarmingPage() {
         if (!hasRight) slot = 'WEAPON_RIGHT';
         else if (!hasLeft) slot = 'WEAPON_LEFT';
         else {
+          playSfx('uiError');
           setActionMessage({ text: "Vous avez déjà 2 armes équipées", type: 'error' });
           return;
         }
@@ -355,7 +359,8 @@ export function FarmingPage() {
       
       if (slot) await equipmentApi.equip(slot, inv.id);
     }
-    
+
+    playSfx('itemEquip');
     queryClient.invalidateQueries({ queryKey: ['inventory'] });
     queryClient.invalidateQueries({ queryKey: ['equipment'] });
     queryClient.invalidateQueries({ queryKey: ['player-spells'] });
@@ -377,8 +382,10 @@ export function FarmingPage() {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       await fetchState();
       refreshPlayer();
+      playSfx('craftSuccess');
       setActionMessage({ text: t('crafted', { name: item.name }), type: 'info' });
     } catch (e: any) {
+      playSfx('craftFail');
       const errorMsg = e.response?.data?.message || t('notEnoughResources');
       setActionMessage({ text: errorMsg, type: 'error' });
     }
@@ -419,6 +426,7 @@ export function FarmingPage() {
   const performGather = useCallback(async (x: number, y: number) => {
     if (isGathering) return;
     setIsGathering(true);
+    playSfx('harvestStart');
     try {
       await gatherNode(x, y);
       await queryClient.invalidateQueries({ queryKey: ['inventory'] });

@@ -5,6 +5,7 @@ import { TerrainType } from '@game/shared-types';
 
 import { farmingApi } from '../api/farming.api';
 import { inventoryApi } from '../api/inventory.api';
+import { playSfx } from '../utils/sfx';
 
 interface FarmingStoreState {
   inventory: Record<string, number>;
@@ -118,6 +119,7 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
         inventory: toInventoryCounts(inventoryResponse.data as InventoryEntry[]),
         map: { ...currentMap, grid },
       });
+      playSfx('harvestComplete');
       return newState;
     } catch (e) {
       console.error('Erreur lors de la rÇ¸colte', e);

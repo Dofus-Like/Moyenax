@@ -2,6 +2,7 @@ import React, { useCallback, useState } from "react";
 import { useAuthStore } from "../../store/auth.store";
 import { useCombatStore } from "../../store/combat.store";
 import { combatApi } from "../../api/combat.api";
+import { playSfx } from "../../utils/sfx";
 import { CombatActionType } from "@game/shared-types";
 
 import "./CombatPlayerPanel.css";
@@ -278,6 +279,7 @@ export function CombatPlayerPanel({ playerId, side, showStats }: CombatPlayerPan
           targetY: targetPos.y,
         });
         if (res?.data) setCombatState(res.data);
+        playSfx("spellCast");
         setSelectedSpell(null);
       } catch (err) {
         const message =
