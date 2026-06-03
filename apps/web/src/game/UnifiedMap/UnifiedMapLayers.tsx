@@ -57,8 +57,8 @@ export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sid
           }
         } else {
           // Normal mode: skip instanced foliage, only render non-ground decorations
-          const isInstancedFoliage = (props.combatType === CombatTerrainType.WALL && terrain === TerrainType.WOOD) || 
-                                     (props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain === TerrainType.HERB);
+          // All WALL terrain → 3D models (trees or rocks). HERB → bushes. Skip TerrainTile for these.
+          const isInstancedFoliage = props.combatType === CombatTerrainType.WALL || terrain === TerrainType.HERB;
 
           if (!isInstancedFoliage && (props.combatType !== CombatTerrainType.FLAT || props.harvestable)) {
             result.push(

@@ -8,8 +8,8 @@ export interface BushProps {
   seed?: number;
 }
 
-const BUSH_URL = '/assets/models/Bush_03.fbx';
-const TEXTURE_PATH = '/assets/models/SimpleNature_Texture.png';
+const BUSH_URLS = ['/assets/models/Bush_4E.fbx', '/assets/models/Bush_4F.fbx'];
+const TEXTURE_PATH = '/assets/models/forest_texture.png';
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed + 1) * 43758.5453123;
@@ -19,7 +19,7 @@ function seededRandom(seed: number): number {
 /**
  * BushModel – Affiche le buisson (modèle 03) avec texture et centrage
  */
-function BushModel({ url, rotationY, texture }: { url: string; rotationY: number; texture: THREE.Texture }) {
+function BushModel({ url, rotationY, texture }: { url: string; rotationY: number; texture: THREE.Texture }): React.JSX.Element {
   const fbx = useFBX(url);
 
   const { clonedBush, offset } = useMemo(() => {
@@ -61,24 +61,24 @@ function BushModel({ url, rotationY, texture }: { url: string; rotationY: number
 
   // FBX scale multiplier
   return (
-    <group rotation={[0, rotationY, 0]} scale={0.01}>
+    <group rotation={[0, rotationY, 0]} scale={0.05}>
       <primitive object={clonedBush} position={offset} />
     </group>
   );
 }
 
-export function Bush({ position, scale = 1.0, seed = 0 }: BushProps) {
+export function Bush({ position, scale = 1.0, seed = 0 }: BushProps): React.JSX.Element {
   const texture = useTexture(TEXTURE_PATH);
-  
-  // On utilise uniquement le buisson 3 comme demandé
+
+  const url = BUSH_URLS[Math.floor(seededRandom(seed) * BUSH_URLS.length)];
   const rotationY = seededRandom(seed * 3) * Math.PI * 2;
 
   return (
     <group position={position} scale={scale}>
-      <BushModel url={BUSH_URL} rotationY={rotationY} texture={texture} />
+      <BushModel url={url} rotationY={rotationY} texture={texture} />
     </group>
   );
 }
 
-useFBX.preload(BUSH_URL);
+for (const url of BUSH_URLS) useFBX.preload(url);
 useTexture.preload(TEXTURE_PATH);

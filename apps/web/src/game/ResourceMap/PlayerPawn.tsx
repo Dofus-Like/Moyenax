@@ -1,3 +1,4 @@
+import { useFBX, useTexture } from '@react-three/drei';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';
@@ -35,6 +36,179 @@ export type PlayerPawnHandle = {
 function toWorld(gx: number, gy: number, gridSize: number): [number, number, number] {
   return [gx - gridSize / 2 + 0.5, 0, gy - gridSize / 2 + 0.5];
 }
+
+const MENHIR_URLS = [
+  '/assets/models/Rock_1N.fbx',
+  '/assets/models/Rock_1P.fbx',
+  '/assets/models/Rock_1Q.fbx',
+];
+const MENHIR_TEXTURE = '/assets/models/forest_texture.png';
+const MENHIR_GLOW = '#8b5cf6';
+
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed + 1) * 43758.5453123;
+  return x - Math.floor(x);
+}
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  return Math.abs(hash);
+}
+
+// One shared radial-gradient texture for every menhir halo (≈16KB on GPU, created once).
+let haloTexture: THREE.CanvasTexture | null = null;
+function getHaloTexture(): THREE.CanvasTexture {
+  if (haloTexture) return haloTexture;
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, 'rgba(196,181,253,0.9)');
+  g.addColorStop(0.4, 'rgba(139,92,246,0.35)');
+  g.addColorStop(1, 'rgba(139,92,246,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  haloTexture = new THREE.CanvasTexture(canvas);
+  haloTexture.colorSpace = THREE.SRGBColorSpace;
+  return haloTexture;
+}
+
+function MenhirHalo({ seed }: { seed: number }): React.JSX.Element {
+  const matRef = useRef<THREE.SpriteMaterial>(null);
+  const texture = useMemo(() => getHaloTexture(), []);
+
+  useFrame((state) => {
+    if (!matRef.current) return;
+    const pulse = 0.7 + 0.3 * Math.sin(state.clock.elapsedTime * 2 + seed);
+    matRef.current.opacity = pulse;
+  });
+
+  return (
+    <sprite position={[0, 0.55, 0]} scale={[1.7, 1.7, 1]}>
+      <spriteMaterial
+        ref={matRef}
+        map={texture}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        opacity={0.8}
+      />
+    </sprite>
+  );
+}
+
+const PARTICLE_COUNT = 10;
+
+interface ParticleParam { radius: number; height: number; speed: number; phase: number; wobble: number; }
+
+function MenhirParticles({ seed }: { seed: number }): React.JSX.Element {
+  const pointsRef = useRef<THREE.Points>(null);
+
+  const params = useMemo<ParticleParam[]>(() => {
+    const out: ParticleParam[] = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const s = seed + i * 37;
+      out.push({
+        radius: 0.28 + seededRandom(s) * 0.22,
+        height: 0.25 + seededRandom(s * 3) * 0.9,
+        speed: 0.5 + seededRandom(s * 5) * 0.8,
+        phase: seededRandom(s * 7) * Math.PI * 2,
+        wobble: 0.08 + seededRandom(s * 11) * 0.14,
+      });
+    }
+    return out;
+  }, [seed]);
+
+  const positions = useMemo(() => new Float32Array(PARTICLE_COUNT * 3), []);
+
+  useFrame((state) => {
+    if (!pointsRef.current) return;
+    const t = state.clock.elapsedTime;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const p = params[i];
+      const a = t * p.speed + p.phase;
+      positions[i * 3] = Math.cos(a) * p.radius + Math.sin(t * 1.3 + p.phase) * p.wobble;
+      positions[i * 3 + 1] = p.height + Math.sin(t * p.speed * 1.5 + p.phase) * 0.15;
+      positions[i * 3 + 2] = Math.sin(a) * p.radius + Math.cos(t * 1.1 + p.phase) * p.wobble;
+    }
+    pointsRef.current.geometry.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        size={1}
+        color={MENHIR_GLOW}
+        transparent
+        opacity={0.95}
+        sizeAttenuation
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+function MenhirModel({ seed }: { seed: number }): React.JSX.Element {
+  const texture = useTexture(MENHIR_TEXTURE);
+  const url = MENHIR_URLS[Math.floor(seededRandom(seed) * MENHIR_URLS.length)];
+  const fbx = useFBX(url);
+
+  const { object, offset, scale, rotationY } = useMemo(() => {
+    const clone = fbx.clone(true);
+    const box = new THREE.Box3().setFromObject(clone);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+
+    clone.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const m of mats) {
+        const mat = m as THREE.MeshStandardMaterial;
+        if ('map' in mat) {
+          mat.map = texture;
+          mat.map.colorSpace = THREE.SRGBColorSpace;
+          mat.color.setHex(0xffffff);
+        }
+        mat.roughness = 1.0;
+        mat.metalness = 0.0;
+        mat.emissive = new THREE.Color(MENHIR_GLOW);
+        mat.emissiveIntensity = 0.3;
+        mat.needsUpdate = true;
+      }
+    });
+
+    const fit = 1.3 / Math.max(size.x, size.y, size.z);
+    const rotationY = seededRandom(seed * 7) * Math.PI * 2;
+    return {
+      object: clone,
+      offset: [-center.x, -box.min.y, -center.z] as [number, number, number],
+      scale: fit,
+      rotationY,
+    };
+  }, [fbx, texture, seed]);
+
+  return (
+    <group>
+      <group scale={scale} rotation={[0, rotationY, 0]}>
+        <primitive object={object} position={offset} />
+      </group>
+      <MenhirHalo seed={seed} />
+      <MenhirParticles seed={seed} />
+    </group>
+  );
+}
+
+for (const url of MENHIR_URLS) useFBX.preload(url);
+useTexture.preload(MENHIR_TEXTURE);
 
 export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
   ({ gridPosition, gridSize, path, onPathComplete, playerData, lookAtPosition, isJumping, onTileReached, mode = 'farming' }, ref) => {
@@ -355,10 +529,7 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
         </mesh>
 
         {isSummon && spriteType === 'menhir' ? (
-          <mesh position={[0, 0.4, 0]}>
-             <capsuleGeometry args={[0.3, 0.4, 4, 8]} />
-             <meshStandardMaterial color="#64748b" roughness={0.9} />
-          </mesh>
+          <MenhirModel seed={hashString(playerData?.playerId ?? skinConfig.id)} />
         ) : (
           <sprite 
             ref={spriteRef} 
