@@ -75,9 +75,9 @@ const SFX = {
   // début de mon tour / changement de manche : carillon doux montant
   turnStart:
     '57uBnWcURsYMZrGQBhvpxpdeWn9nxPRHtjEspc4CmAa6HuY8CCnZ3GnwZ7pBCcNQtx9gmtycGKpxCNyVVQp9emhuJS8RYk6bVidMDJncfjk8nWnvFQvh9ntVu',
-  // passer le tour / fin de manche : descente douce et feutrée
+  // passer le tour / fin de manche : deux notes douces et claires, légèrement descendantes
   turnPass:
-    '57uBnWgpsMuHdwLFNVgVUEjwsXZwpULXmFX7kZz8X6SRH6SbmGNSRY5WNSSYoce7ZDDBqDg4KaFvsiGarqcBCL3HEx2QZEMvNAMAbR4EQDHwA7nbojq5UPh4K',
+    '57uBnWV6nyhNhfnjchC6ZhRkwuixLKJgEwNtgDyyP6ov1kAdmsVCxHhSYehyNMsmmgpXrPxdL9aSeuGD1oMqqXPQ8r8HrYNZKj4ecmtnVSFx2RYp6QkVYEij1',
   // survol d'un sort dans la SpellBar
   spellHover:
     '57uBnWSzi74KNuiVRdtuw5op9QsFo35J4dJ6YDB82XfKfbSvG9wUcSkCtV4RPJnMnfqQQ8VBD2U2wtzYGYWkHyFBBFAVzQ2r3bodFcHzyTjo5zewPaVQA4nHd',
