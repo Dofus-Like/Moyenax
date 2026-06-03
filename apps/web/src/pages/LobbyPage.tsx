@@ -80,7 +80,11 @@ export function LobbyPage(): React.ReactNode {
       ]);
 
       setRooms(roomsResponse.data);
-      setIsInQueue(Boolean(queueResponse.data?.queued) && !activeSession);
+      // Ne jamais repasser isInQueue à false ici : lors d'un match le serveur retire le
+      // joueur de la file AVANT que la session soit visible. On ne quitte la recherche que
+      // sur session active (navigation) ou annulation explicite — sinon le joueur en
+      // attente perd son polling et n'est jamais envoyé dans la room.
+      setIsInQueue((prev) => prev || (Boolean(queueResponse.data?.queued) && !activeSession));
     } catch (error) {
       console.error('Failed to fetch lobby state', error);
     } finally {
@@ -209,19 +213,15 @@ export function LobbyPage(): React.ReactNode {
 
     const interval = window.setInterval(async () => {
       try {
-        const [sessionResponse, queueResponse] = await Promise.all([
-          gameSessionApi.getActiveSession(),
-          gameSessionApi.getQueueStatus(),
-        ]);
-
+        // On poll uniquement la session active : ne pas se baser sur la file pour arrêter
+        // la recherche, sinon le joueur en attente (retiré de la file au moment du match,
+        // avant que la session soit visible) perd son polling et reste bloqué dans le lobby.
+        const sessionResponse = await gameSessionApi.getActiveSession();
         if (sessionResponse.data && sessionResponse.data.status === 'ACTIVE') {
           setIsInQueue(false);
           await refreshSession({ silent: true });
           navigate('/farming');
-          return;
         }
-
-        setIsInQueue(Boolean(queueResponse.data?.queued));
       } catch (error) {
         console.error('Error polling queue/session:', error);
       }
