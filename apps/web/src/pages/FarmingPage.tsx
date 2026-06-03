@@ -96,6 +96,7 @@ export function FarmingPage() {
   const [movePath, setMovePath] = useState<PathNode[] | null>(null);
   const [isMoving, setIsMoving] = useState(false);
   const [isMapSceneReady, setIsMapSceneReady] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [, setIsTransitioning] = useState(false);
   const [statsOpen, setStatsOpen] = useState(true);
   const isActionInProgressRef = useRef(false);
@@ -138,6 +139,13 @@ export function FarmingPage() {
 
   const { active: isAssetLoading, progress: assetLoadProgress } = useProgress();
   const isFarmingLoaded = Boolean(map && isMapSceneReady && !isAssetLoading);
+  // N'afficher l'écran de chargement qu'au tout premier chargement. Sinon il réapparaît à
+  // chaque récolte (le swap de modèle 3D de la case relance useProgress().active) ; et comme
+  // c'est un overlay plein écran qui capture les clics (z-index 9999, sans pointer-events:none),
+  // il « bloque » le perso en avalant les clics de déplacement suivants.
+  useEffect(() => {
+    if (isFarmingLoaded) setHasLoadedOnce(true);
+  }, [isFarmingLoaded]);
 
   // -- Data Fetching --
   const { data: inventoryData } = useQuery({
@@ -410,10 +418,13 @@ export function FarmingPage() {
     if (TERRAIN_PROPERTIES[terrain].harvestable) {
       if (isAdjacent) { performGather(x, y); return; }
       const path = findPathToAdjacent(currentMap, currentPos, { x, y });
-      if (path) { setMovePath(path); setQueuedAction({ type: 'gather', x, y }); setIsMoving(true); }
+      // Un chemin vide (déjà à portée) ne déclenche jamais onPathComplete : on récolte
+      // directement, sinon isMoving resterait bloqué à true (joueur figé).
+      if (path && path.length > 0) { setMovePath(path); setQueuedAction({ type: 'gather', x, y }); setIsMoving(true); }
+      else if (path) { performGather(x, y); }
     } else if (TERRAIN_PROPERTIES[terrain].traversable) {
       const path = findPath(currentMap, currentPos, { x, y });
-      if (path) { setMovePath(path); setIsMoving(true); }
+      if (path && path.length > 0) { setMovePath(path); setIsMoving(true); }
     }
   }, [performGather]);
 
@@ -485,7 +496,7 @@ export function FarmingPage() {
 
   return (
     <div className="farming-page-layout">
-      {!isFarmingLoaded && (
+      {!hasLoadedOnce && (
         <div className="loading-screen farming-loading-screen" role="status" aria-live="polite">
           <span>⚔️ {t('loading')}</span>
           {isAssetLoading && <small>{loadingProgress}%</small>}

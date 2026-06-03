@@ -191,6 +191,8 @@ export function CombatPage() {
               ref={controlsRef}
               onRest={onRest}
               onStart={onStart}
+              minZoom={15}
+              maxZoom={80}
               minPolarAngle={0}
               maxPolarAngle={Math.PI / 2.1}
               minZoom={15}

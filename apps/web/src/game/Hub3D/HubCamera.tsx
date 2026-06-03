@@ -18,7 +18,7 @@ import {
   CAMERA_ORBIT_RADIUS,
   CAMERA_ZOOM_SENSITIVITY,
 } from './constants';
-import { pickCameraViewportConfig, useViewportMode } from './viewport';
+import { pickCameraViewportConfig, useViewportMode, type CameraViewportConfig } from './viewport';
 
 interface HubCameraProps {
   wasDraggingRef: MutableRefObject<boolean>;
@@ -61,7 +61,7 @@ interface OrbitListenersConfig {
 }
 
 interface DragState {
-  rightDragging: boolean;
+  leftDragging: boolean;
   prevX: number;
   prevY: number;
   leftDragDistance: number;
@@ -70,25 +70,21 @@ interface DragState {
 function nowS(): number { return performance.now() / 1000; }
 
 function handleOrbitPointerDown(event: PointerEvent, state: DragState, cfg: OrbitListenersConfig): void {
-  if (event.button === 2) {
-    state.rightDragging = true;
-    state.prevX = event.clientX;
-    state.prevY = event.clientY;
-    cfg.lastInteractionRef.current = nowS();
-    return;
-  }
-  if (event.button === 0) {
-    state.leftDragDistance = 0;
-    cfg.wasDraggingRef.current = false;
-    state.prevX = event.clientX;
-    state.prevY = event.clientY;
-  }
+  // Bouton gauche : prépare un éventuel drag caméra. Sous le seuil c'est un clic-au-sol
+  // (déplacement du pion) ; au-delà, on oriente la caméra.
+  if (event.button !== 0) return;
+  state.leftDragging = true;
+  state.leftDragDistance = 0;
+  cfg.wasDraggingRef.current = false;
+  state.prevX = event.clientX;
+  state.prevY = event.clientY;
 }
 
 function applyOrbitDelta(dx: number, dy: number, cfg: OrbitListenersConfig): void {
   cfg.azimuthRef.current -= dx * cfg.rotateSensitivity;
+  // +dy : tirer vers le haut élève la vue (axe vertical non inversé).
   cfg.elevationRef.current = clamp(
-    cfg.elevationRef.current - dy * cfg.rotateSensitivity,
+    cfg.elevationRef.current + dy * cfg.rotateSensitivity,
     CAMERA_ORBIT_MIN_ELEVATION,
     CAMERA_ORBIT_MAX_ELEVATION,
   );
@@ -96,17 +92,15 @@ function applyOrbitDelta(dx: number, dy: number, cfg: OrbitListenersConfig): voi
 }
 
 function handleOrbitPointerMove(event: PointerEvent, state: DragState, cfg: OrbitListenersConfig): void {
+  if (!state.leftDragging || !(event.buttons & 1)) return;
   const dx = event.clientX - state.prevX;
   const dy = event.clientY - state.prevY;
   state.prevX = event.clientX;
   state.prevY = event.clientY;
-  if (state.rightDragging) {
+  state.leftDragDistance += Math.hypot(dx, dy);
+  if (state.leftDragDistance > cfg.dragThresholdPx) {
+    cfg.wasDraggingRef.current = true;
     applyOrbitDelta(dx, dy, cfg);
-    return;
-  }
-  if (event.buttons & 1) {
-    state.leftDragDistance += Math.hypot(dx, dy);
-    if (state.leftDragDistance > cfg.dragThresholdPx) cfg.wasDraggingRef.current = true;
   }
 }
 
@@ -152,11 +146,11 @@ function stepCamera({ camera, pivot, refs, delta, t }: StepCameraArgs): void {
 }
 
 function attachOrbitListeners(cfg: OrbitListenersConfig): () => void {
-  const state: DragState = { rightDragging: false, prevX: 0, prevY: 0, leftDragDistance: 0 };
+  const state: DragState = { leftDragging: false, prevX: 0, prevY: 0, leftDragDistance: 0 };
 
   const onDown = (e: PointerEvent): void => handleOrbitPointerDown(e, state, cfg);
   const onMove = (e: PointerEvent): void => handleOrbitPointerMove(e, state, cfg);
-  const onUp = (e: PointerEvent): void => { if (e.button === 2) state.rightDragging = false; };
+  const onUp = (e: PointerEvent): void => { if (e.button === 0) state.leftDragging = false; };
   const onWheel = (e: WheelEvent): void => {
     cfg.zoomRef.current = clamp(
       cfg.zoomRef.current - e.deltaY * CAMERA_ZOOM_SENSITIVITY,
@@ -240,8 +234,8 @@ export function HubCamera({ wasDraggingRef, enabled }: HubCameraProps): ReactEle
         Math.cos(CAMERA_ORBIT_INITIAL_AZIMUTH) * Math.cos(CAMERA_ORBIT_INITIAL_ELEVATION) * CAMERA_ORBIT_RADIUS,
       ]}
       zoom={viewportConfig.zoom}
-      near={0.1}
-      far={300}
+      near={-500}
+      far={1000}
     />
   );
 }
