@@ -440,3 +440,60 @@
   opacity: 0.65;
   font-size: 0.5rem;
 }
+
+/* --- Diff de stats / presets de build --- */
+.pg-diff {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  font-size: 0.58rem;
+  font-weight: bold;
+  animation: hud-fade-in 0.2s ease both;
+}
+
+.pg-diff-up {
+  color: var(--heal-green, #22c55e);
+}
+
+.pg-diff-down {
+  color: var(--hp-red, #ef4444);
+}
+
+.pg-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pg-preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pg-preset-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pg-preset-load {
+  flex: 1;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 0.6rem;
+  text-align: left;
+  color: #fff;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+}
+
+.pg-preset-load:hover {
+  background: rgb(var(--range-orange-rgb, 252 168 0) / 0.25);
+  border-color: rgba(255, 255, 255, 0.7);
+}

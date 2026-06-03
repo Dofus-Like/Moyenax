@@ -1,15 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
-import type { CombatState, ItemDefinition } from '@game/shared-types';
+import type { CombatState, ItemDefinition, PlayerStats } from '@game/shared-types';
 import { EquipmentSlotType, ItemType } from '@game/shared-types';
 
 import { equipmentApi } from '../../api/equipment.api';
 import { itemsApi } from '../../api/items.api';
 import { playgroundApi } from '../../api/playground.api';
+import { useAuthStore } from '../../store/auth.store';
 import { useCombatStore } from '../../store/combat.store';
 
 import './Playground.css';
+
+const ALL_SLOTS = Object.values(EquipmentSlotType);
+const STAT_KEYS: Array<keyof PlayerStats> = ['vit', 'atk', 'mag', 'def', 'res', 'pa', 'pm', 'ini'];
+const PRESETS_KEY = 'pg-build-presets';
+
+type BuildPreset = Partial<Record<EquipmentSlotType, string | null>>;
+
+function loadPresets(): Record<string, BuildPreset> {
+  try {
+    return JSON.parse(localStorage.getItem(PRESETS_KEY) ?? '{}') as Record<string, BuildPreset>;
+  } catch {
+    return {};
+  }
+}
+
+function statDiff(before: PlayerStats | undefined, after: PlayerStats | undefined) {
+  if (!before || !after) return [];
+  return STAT_KEYS.map((k) => ({ key: k, delta: after[k] - before[k] })).filter((d) => d.delta !== 0);
+}
 
 // Une arme peut aller dans chaque main ; les autres types n'ont qu'un slot.
 const SLOTS_BY_TYPE: Partial<Record<ItemType, EquipmentSlotType[]>> = {
@@ -49,7 +69,22 @@ interface EquipmentPanelProps {
 
 export function EquipmentPanel({ sessionId }: EquipmentPanelProps) {
   const setCombatState = useCombatStore((s) => s.setCombatState);
+  const combatState = useCombatStore((s) => s.combatState);
+  const user = useAuthStore((s) => s.player);
+  const userId = user?.id ?? (user as { _id?: string } | null)?._id ?? undefined;
   const [busy, setBusy] = useState(false);
+  const [diff, setDiff] = useState<Array<{ key: string; delta: number }>>([]);
+  const [presets, setPresets] = useState<Record<string, BuildPreset>>(loadPresets);
+  const diffTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const myStats = () => (userId ? combatState?.players?.[userId]?.stats : undefined);
+
+  const showDiff = (before: PlayerStats | undefined, after: PlayerStats | undefined) => {
+    const d = statDiff(before, after);
+    setDiff(d);
+    clearTimeout(diffTimer.current);
+    if (d.length > 0) diffTimer.current = setTimeout(() => setDiff([]), 4000);
+  };
 
   const { data: items = [] } = useQuery({
     queryKey: ['playground', 'items'],
@@ -78,9 +113,11 @@ export function EquipmentPanel({ sessionId }: EquipmentPanelProps) {
   const handleEquip = async (item: ItemDefinition, slot: EquipmentSlotType) => {
     if (busy) return;
     setBusy(true);
+    const before = myStats();
     try {
       const { data } = await playgroundApi.grantEquip(sessionId, { itemId: item.id, slot });
       await apply(data);
+      showDiff(before, userId ? data.players[userId]?.stats : undefined);
     } finally {
       setBusy(false);
     }
@@ -89,9 +126,53 @@ export function EquipmentPanel({ sessionId }: EquipmentPanelProps) {
   const handleUnequip = async (slot: EquipmentSlotType) => {
     if (busy) return;
     setBusy(true);
+    const before = myStats();
     try {
       const { data } = await playgroundApi.unequip(sessionId, { slot });
       await apply(data);
+      showDiff(before, userId ? data.players[userId]?.stats : undefined);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const savePreset = () => {
+    const name = window.prompt('Nom du preset de build ?')?.trim();
+    if (!name) return;
+    const build: BuildPreset = {};
+    for (const slot of ALL_SLOTS) build[slot] = equipment?.[slot]?.itemId ?? null;
+    const next = { ...presets, [name]: build };
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(next));
+    setPresets(next);
+  };
+
+  const deletePreset = (name: string) => {
+    const next = { ...presets };
+    delete next[name];
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(next));
+    setPresets(next);
+  };
+
+  const loadPreset = async (name: string) => {
+    if (busy) return;
+    const build = presets[name];
+    if (!build) return;
+    setBusy(true);
+    const before = myStats();
+    let last: CombatState | undefined;
+    try {
+      for (const slot of ALL_SLOTS) {
+        const target = build[slot] ?? null;
+        const current = equipment?.[slot]?.itemId ?? null;
+        if (target === current) continue;
+        last = target
+          ? (await playgroundApi.grantEquip(sessionId, { itemId: target, slot })).data
+          : (await playgroundApi.unequip(sessionId, { slot })).data;
+      }
+      if (last) {
+        await apply(last);
+        showDiff(before, userId ? last.players[userId]?.stats : undefined);
+      }
     } finally {
       setBusy(false);
     }
@@ -101,6 +182,35 @@ export function EquipmentPanel({ sessionId }: EquipmentPanelProps) {
     <div className={`pg-panel${busy ? ' pg-busy' : ''}`}>
       <h3 className="pg-title">🎒 Équipement</h3>
       <p className="pg-hint">Équipe gratuitement n'importe quel objet — stats et sorts en direct. Une arme par main.</p>
+
+      {diff.length > 0 && (
+        <div className="pg-diff">
+          {diff.map((d) => (
+            <span key={d.key} className={d.delta > 0 ? 'pg-diff-up' : 'pg-diff-down'}>
+              {d.key.toUpperCase()} {d.delta > 0 ? '+' : ''}{d.delta}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="pg-presets">
+        <div className="pg-meter-head">
+          <p className="pg-subtitle" style={{ margin: 0 }}>Builds</p>
+          <button type="button" className="pg-mini-btn" onClick={savePreset}>💾 Sauver</button>
+        </div>
+        {Object.keys(presets).length > 0 && (
+          <div className="pg-preset-list">
+            {Object.keys(presets).map((name) => (
+              <div key={name} className="pg-preset-row">
+                <button type="button" className="pg-preset-load" onClick={() => loadPreset(name)}>
+                  {name}
+                </button>
+                <button type="button" className="pg-unequip" onClick={() => deletePreset(name)}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {groups.map((group) => (
         <div key={group.type} className="pg-equip-group">
