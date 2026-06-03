@@ -71,7 +71,7 @@ function buildTargetDummy(
 /**
  * Orchestrateur dev-only (route /playground). Composition-root assumée qui relie
  * Combat + Economy : ce module n'est ni l'un ni l'autre, il ne viole donc pas la
- * règle de découplage Combat↔Economy. Chargé uniquement si ENABLE_DEBUG_ROUTES.
+ * règle de découplage Combat↔Economy. Chargé uniquement si SHOW_DEBUG est actif.
  */
 @Injectable()
 export class PlaygroundService {

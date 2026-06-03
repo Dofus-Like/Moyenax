@@ -11,7 +11,7 @@ import { PlaygroundService } from './playground.service';
 
 /**
  * Module dev-only (banc de test /playground). Importé dans AppModule uniquement
- * quand ENABLE_DEBUG_ROUTES=true. Orchestre Combat + Economy via leurs services
+ * quand SHOW_DEBUG est actif. Orchestre Combat + Economy via leurs services
  * exportés (SessionService, EquipmentService, InventoryService).
  */
 @Module({

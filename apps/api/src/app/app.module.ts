@@ -23,8 +23,10 @@ import { SseModule } from '../shared/sse/sse.module';
 import { VersionModule } from '../version/version.module';
 import { WorldModule } from '../world/world.module';
 
-// Module dev-only : banc de test /playground, jamais chargé en production.
-const devModules = process.env.ENABLE_DEBUG_ROUTES === 'true' ? [PlaygroundModule] : [];
+// Module dev-only : banc de test /playground, gaté par SHOW_DEBUG (même flag que
+// le perf HUD et les debug endpoints back+front ; côté web : VITE_SHOW_DEBUG).
+const showDebugFlag = (process.env.SHOW_DEBUG ?? '').toLowerCase().trim();
+const devModules = ['1', 'true', 'on', 'yes'].includes(showDebugFlag) ? [PlaygroundModule] : [];
 
 @Module({
   imports: [
