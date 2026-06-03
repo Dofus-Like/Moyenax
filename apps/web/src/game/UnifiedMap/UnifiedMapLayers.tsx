@@ -252,6 +252,7 @@ export const PlayersLayer = React.memo(
               lookAtPosition={opponentPosition}
               isJumping={!!jumpingPlayers[player.playerId]}
               onPathComplete={() => onCombatPathComplete(player.playerId)}
+              onTileReached={onTileReached}
               setPawnRef={setPawnRef}
               mode={mode}
             />

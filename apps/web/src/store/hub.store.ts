@@ -12,6 +12,7 @@ import {
 import { create } from 'zustand';
 
 import { hubApi } from '../api/hub.api';
+import { playSfx } from '../utils/sfx';
 
 const HUB_STREAM_BASE = '/api/v1/hub/events/global';
 
@@ -168,6 +169,9 @@ function attachSseHandlers(source: EventSource, set: SetFn, get: GetFn, connecti
   }));
 
   source.addEventListener(HUB_EVENTS.CHAT_MESSAGE, guard<HubChatPayload>(({ message }) => {
+    if (message.playerId !== get().selfId) {
+      playSfx('hubChatMessage');
+    }
     set((state) => ({ chat: [...state.chat, message].slice(-100) }));
   }));
 

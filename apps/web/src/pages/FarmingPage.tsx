@@ -26,6 +26,7 @@ import {
 } from '@game/shared-types';
 import { getItemVisualMeta } from '../utils/itemVisual';
 import { getResourceIconPath } from '../utils/resourceIcons';
+import { playSfx } from '../utils/sfx';
 import { FarmingSidebar } from '../components/Farming/FarmingSidebar';
 import { SpellBar, SpellBarItem } from '../components/SpellBar/SpellBar';
 import { playerApi } from '../api/player.api';
@@ -223,8 +224,10 @@ export function FarmingPage() {
         refreshPlayer(),
         refreshSession({ silent: true }),
       ]);
+      playSfx('coinGain');
       setActionMessage({ text: t('bought', { name: item.name }), type: 'info' });
     } catch (e) {
+      playSfx('uiError');
       setActionMessage({ text: t('notEnoughCoins'), type: 'error' });
     }
   }, [fetchState, queryClient, refreshPlayer, refreshSession, t]);
@@ -292,6 +295,7 @@ export function FarmingPage() {
         if (!hasRight) slot = 'WEAPON_RIGHT';
         else if (!hasLeft) slot = 'WEAPON_LEFT';
         else {
+          playSfx('uiError');
           setActionMessage({ text: "Vous avez déjà 2 armes équipées", type: 'error' });
           return;
         }
@@ -303,7 +307,8 @@ export function FarmingPage() {
       
       if (slot) await equipmentApi.equip(slot, inv.id);
     }
-    
+
+    playSfx('itemEquip');
     queryClient.invalidateQueries({ queryKey: ['inventory'] });
     queryClient.invalidateQueries({ queryKey: ['equipment'] });
     queryClient.invalidateQueries({ queryKey: ['player-spells'] });
@@ -343,8 +348,10 @@ export function FarmingPage() {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       await fetchState();
       refreshPlayer();
+      playSfx('craftSuccess');
       setActionMessage({ text: t('crafted', { name: item.name }), type: 'info' });
     } catch (e: any) {
+      playSfx('craftFail');
       const errorMsg = e.response?.data?.message || t('notEnoughResources');
       setActionMessage({ text: errorMsg, type: 'error' });
     }
@@ -385,6 +392,7 @@ export function FarmingPage() {
   const performGather = useCallback(async (x: number, y: number) => {
     if (isGathering) return;
     setIsGathering(true);
+    playSfx('harvestStart');
     try {
       await gatherNode(x, y);
       await queryClient.invalidateQueries({ queryKey: ['inventory'] });
@@ -408,6 +416,14 @@ export function FarmingPage() {
       if (path) { setMovePath(path); setIsMoving(true); }
     }
   }, [performGather]);
+
+  // Un pas par case réellement franchie pendant l'animation, en alternant A/B
+  // (démarche naturelle, synchro sur le pion — ni trop, ni trop peu).
+  const footstepFlipRef = useRef(false);
+  const handleTileReached = useCallback(() => {
+    footstepFlipRef.current = !footstepFlipRef.current;
+    playSfx(footstepFlipRef.current ? 'footstepA' : 'footstepB');
+  }, []);
 
   useEffect(() => {
     // Force spell sync on mount
@@ -580,6 +596,7 @@ export function FarmingPage() {
                 playerPosition={playerPosition ?? undefined}
                 movePath={movePath}
                 onPathComplete={handlePathComplete}
+                onTileReached={handleTileReached}
                 onTileClick={handleTileClick}
                 onTileHover={handleTileHover}
                 onSceneReady={handleSceneReady}

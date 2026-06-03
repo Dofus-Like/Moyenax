@@ -5,6 +5,7 @@ import { CombatActionType } from '@game/shared-types';
 
 
 import { combatApi } from '../api/combat.api';
+import { playSfx } from '../utils/sfx';
 
 import { useAuthStore } from './auth.store';
 
@@ -147,6 +148,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   setUiMessage: (text, type = 'info') => {
+    if (text && type === 'error') {
+      playSfx('uiError');
+    }
     set({
       uiMessage: text ? { id: createId('combat-ui'), text, type } : null,
     });
@@ -183,6 +187,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         winnerId: response.data.winnerId || null,
       });
       get().addLog('Combat initialise', 'info');
+      if (!response.data.winnerId) {
+        playSfx('combatStart');
+      }
     } catch (error) {
       console.error('Failed to fetch initial state', error);
       if (get()._currentConnectionId !== connectionId) return;
@@ -263,6 +270,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             const isSelf = data.playerId === useAuthStore.getState().player?.id;
             const displayName = player?.username || (isSelf ? 'Vous' : 'Adversaire');
             get().addLog(`Debut du tour de ${displayName}`, 'info');
+            if (isSelf) {
+              playSfx('turnStart');
+            }
           }),
         );
 
@@ -274,6 +284,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             const isSelf = data.targetId === useAuthStore.getState().player?.id;
             const displayName = player?.username || (isSelf ? 'Vous' : 'Adversaire');
             get().addLog(`-${data.damage} PV sur ${displayName}`, 'damage');
+            playSfx(isSelf ? 'damageTaken' : 'damageDealt');
+            if (data.remainingVit !== undefined && data.remainingVit <= 0) {
+              playSfx('death');
+            }
           }),
         );
 
@@ -281,6 +295,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           'HEAL_DEALT',
           withConnectionGuard<Omit<HealEvent, 'timestamp'>>((data) => {
             set({ lastHealEvent: { ...data, timestamp: Date.now() } });
+            playSfx('heal');
           }),
         );
 
@@ -299,6 +314,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             const displayName = player?.username || (isMe ? 'Vous' : 'Adversaire');
             get().addLog(`Combat fini. Vainqueur : ${displayName}`, 'victory');
             set({ winnerId: data.winnerId });
+            playSfx(isMe ? 'victory' : 'defeat');
           }),
         );
 

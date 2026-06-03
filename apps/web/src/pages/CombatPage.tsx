@@ -19,6 +19,7 @@ import { ProfiledRegion } from '../perf/render-profiler';
 import { useAuthStore } from '../store/auth.store';
 import { useCombatStore } from '../store/combat.store';
 import { useTranslation } from '../store/language.store';
+import { playSfx } from '../utils/sfx';
 import { getTimeOfDay } from '../utils/timeOfDay';
 import { useGameSession } from './GameTunnel';
 import './CombatPage.css';
@@ -60,6 +61,13 @@ export function CombatPage() {
   const { activeSession, refreshSession } = useGameSession();
   const onRest = React.useCallback(() => setIsCameraMoving(false), []);
   const onStart = React.useCallback(() => setIsCameraMoving(true), []);
+
+  // Un pas par case franchie par un pion en combat, alterné A/B.
+  const footstepFlipRef = React.useRef(false);
+  const handleTileReached = React.useCallback(() => {
+    footstepFlipRef.current = !footstepFlipRef.current;
+    playSfx(footstepFlipRef.current ? 'footstepA' : 'footstepB');
+  }, []);
 
 
 
@@ -224,12 +232,13 @@ export function CombatPage() {
 
             {gameMap && (
               <Suspense fallback={null}>
-                <UnifiedMapScene 
-                  mode="combat" 
-                  map={gameMap} 
-                  sessionId={sessionId} 
+                <UnifiedMapScene
+                  mode="combat"
+                  map={gameMap}
+                  sessionId={sessionId}
                   isCameraMoving={isCameraMoving}
                   timeOfDay={timeOfDay}
+                  onTileReached={handleTileReached}
                 />
               </Suspense>
             )}
