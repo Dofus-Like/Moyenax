@@ -85,6 +85,14 @@ export class PlayerSpellProjectionService {
     return assignments;
   }
 
+  /** Catalogue complet (banc de test admin) : tous les sorts, indépendamment de l'équipement. */
+  async getAllSpellDefinitions(): Promise<SpellDefinition[]> {
+    const spells = await this.prisma.spell.findMany();
+    return spells
+      .sort((left, right) => this.compareSpellRows(left, right))
+      .map((spell) => this.toCombatDefinition(spell));
+  }
+
   async getCombatSpellDefinitions(playerId: string): Promise<SpellDefinition[]> {
     // Always get fresh data from current equipment instead of relying on the potentially stale playerSpell table
     const spellRows = await this.getProjectedSpellRows(playerId);

@@ -245,6 +245,20 @@ describe('PlayerSpellProjectionService', () => {
     expect(result[0].effectConfig).toBeNull();
   });
 
+  it('getAllSpellDefinitions returns the full catalog sorted, mapped to combat definitions', async () => {
+    // Catalogue complet (banc admin) : findMany sans filtre, indépendant de l'équipement.
+    prisma.spell.findMany.mockResolvedValue([defaultSpell, warriorSpellRows[0]]);
+
+    const result = await service.getAllSpellDefinitions();
+
+    expect(prisma.spell.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.spell.findMany).toHaveBeenCalledWith();
+    // Trié par sortOrder : Frappe (10) avant Claque (99) ; id = code.
+    expect(result.map((s) => s.code)).toEqual(['spell-frappe', 'spell-claque']);
+    expect(result[0].id).toBe('spell-frappe');
+    expect(result[0].damage).toEqual({ min: 35, max: 45 });
+  });
+
   it('returns empty array when no spells are assigned after sync', async () => {
     prisma.playerSpell.findMany.mockResolvedValue([]);
 
