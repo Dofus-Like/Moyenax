@@ -1,17 +1,19 @@
 import { TerrainType } from '@game/shared-types';
-import { CameraControls, OrthographicCamera, Text } from '@react-three/drei';
+import { CameraControls, OrthographicCamera, PerspectiveCamera, Sparkles, Text } from '@react-three/drei';
 import { Canvas, useLoader } from '@react-three/fiber';
 import CameraControlsImpl from 'camera-controls';
-import React, { Suspense, useEffect, useMemo } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as THREE from 'three';
 
 import { CameraEffects } from '../game/Combat/CameraEffects';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
+import { DistantIslands } from '../game/Combat/DistantIslands';
+import { WaterPlane } from '../game/Combat/WaterPlane';
 import { allSpriteUrls } from '../game/constants/spriteRegistry';
 import { CombatHUD } from '../game/HUD/CombatHUD';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
-import '../game/constants/colors';
+import { COMBAT_COLORS } from '../game/constants/colors';
 import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
 import { ProfiledRegion } from '../perf/render-profiler';
 import { useAuthStore } from '../store/auth.store';
@@ -146,6 +148,7 @@ export function CombatPage() {
   }, [combatState?.map]);
 
   const timeOfDay = getTimeOfDay(activeSession?.currentRound ?? 1);
+  const [perspective, setPerspective] = useState(false);
 
   if (!sessionId) return null;
 
@@ -169,14 +172,37 @@ export function CombatPage() {
               camera={{ fov: 30 }}
             >
               <CanvasPerfOverlay />
+              <fogExp2 attach="fog" args={[COMBAT_COLORS.SCENE_FOG, 0.006]} />
               <CombatBackgroundShader timeOfDay={timeOfDay} />
-              <OrthographicCamera
-                makeDefault
-                position={[20, 20, 20]}
-                zoom={50}
-                near={0.1}
-                far={1000}
+              <Suspense fallback={null}>
+                <DistantIslands />
+              </Suspense>
+              <Suspense fallback={null}>
+                <WaterPlane
+                  timeOfDay={timeOfDay}
+                  islandSize={gameMap ? [gameMap.width, gameMap.height] : undefined}
+                />
+              </Suspense>
+              <Sparkles
+                count={140}
+                scale={[140, 45, 140]}
+                position={[0, 8, 0]}
+                size={4}
+                speed={0.25}
+                opacity={0.5}
+                color={COMBAT_COLORS.WATER_CLOUD}
               />
+              {perspective ? (
+                <PerspectiveCamera makeDefault position={[48, 22, 48]} fov={40} near={0.1} far={2000} />
+              ) : (
+                <OrthographicCamera
+                  makeDefault
+                  position={[20, 20, 20]}
+                  zoom={50}
+                  near={0.1}
+                  far={1000}
+                />
+              )}
               <CameraControls
                 ref={controlsRef}
                 onRest={onRest}
@@ -235,6 +261,17 @@ export function CombatPage() {
                 </Suspense>
               )}
             </Canvas>
+
+            <button
+              type="button"
+              className="hud-log-btn"
+              onClick={() => setPerspective((p) => !p)}
+              aria-label="Mode caméra"
+              title={perspective ? 'Repasser en vue isométrique' : 'Passer en vue perspective'}
+              style={{ position: 'absolute', top: '64px', left: '16px', zIndex: 20, fontSize: '11px', fontWeight: 700 }}
+            >
+              {perspective ? 'PER' : 'ISO'}
+            </button>
 
             <CombatHUD />
           </div>

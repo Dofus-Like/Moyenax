@@ -65,7 +65,17 @@ vi.mock('@react-three/fiber', () => ({
 vi.mock('@react-three/drei', () => ({
   CameraControls: () => null,
   OrthographicCamera: () => null,
+  PerspectiveCamera: () => null,
+  Sparkles: () => null,
   useProgress: () => ({ active: false, progress: 100 }),
+}));
+
+vi.mock('../game/Combat/WaterPlane', () => ({
+  WaterPlane: () => null,
+}));
+
+vi.mock('../game/Combat/DistantIslands', () => ({
+  DistantIslands: () => null,
 }));
 
 vi.mock('camera-controls', () => ({
