@@ -50,7 +50,13 @@ Les assets web sont **auto-découverts** par registre via `import.meta.glob` : *
 - **Sprites** → `apps/web/src/assets/sprites/<perso>/{idle,walk,attack}.png` (`idle.png` obligatoire = le perso est listé). Référencer via `spriteUrl('<perso>', 'idle'|'walk'|'attack')` / `allSpriteUrls()` (`game/constants/spriteRegistry.ts`), **jamais** une URL en dur (ni en JS, ni en `background-image` CSS — utiliser un fond inline).
 - **Skins** → `apps/web/src/assets/skins/<id>.json` (`{ id, name, type, hue, saturation, description, sortOrder? }` ; `type` = nom du dossier de sprites). Lus via `SKINS` / `getSkinById('<id>')` (`game/constants/skins.ts`).
 
-**Ajouter un perso** = déposer `sprites/<nom>/{idle,walk,attack}.png` **+** `skins/<id>.json` (`"type": "<nom>"`) → il apparaît partout, zéro code.
+**Ajouter un asset = déposer le(s) fichier(s), zéro code :**
+- **un modèle** → `assets/models/<categorie>/<nom>.glb` ; consommer via `modelUrl('<categorie>/<nom>.glb')`.
+- **une animation de sprite** → `assets/sprites/<perso>/<idle|walk|attack>.png` (créer le dossier `<perso>/` avec au moins `idle.png` pour un nouveau perso).
+- **un skin** → `assets/skins/<id>.json` (`"type"` = un dossier de `sprites/` existant).
+- **un perso complet** = `sprites/<nom>/{idle,walk,attack}.png` **+** `skins/<id>.json` (`"type": "<nom>"`).
+
+Dans tous les cas il apparaît automatiquement partout via son registre — rien d'autre à éditer.
 - ❌ Ne jamais mettre un asset dans `public/` ni écrire un chemin `/assets/...` en dur — toujours passer par le registre.
 - ❌ Ne pas maintenir de liste/tableau d'assets à la main — le glob s'en charge.
 - En **déplaçant/renommant** un asset : vérifier qu'aucun chemin en dur ne subsiste (`grep -rn '/assets/' apps/web/src`) ; tout doit passer par une clé de registre.
