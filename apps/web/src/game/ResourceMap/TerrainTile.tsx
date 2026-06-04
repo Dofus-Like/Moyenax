@@ -6,7 +6,7 @@ import {
   CombatTerrainType,
 } from "@game/shared-types";
 
-const TERRAIN_COLORS: Record<TerrainType, { base: string; hover: string }> = {
+export const TERRAIN_COLORS: Record<TerrainType, { base: string; hover: string }> = {
   [TerrainType.GROUND]: { base: "#374151", hover: "#4b5563" },
   [TerrainType.IRON]: { base: "#78716c", hover: "#a8a29e" },
   [TerrainType.LEATHER]: { base: "#92400e", hover: "#b45309" },
