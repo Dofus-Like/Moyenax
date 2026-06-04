@@ -23,9 +23,15 @@ describe('SfxLabPanel', () => {
   });
 
   it('expose un bouton pour chaque son du catalogue', () => {
-    render(<SfxLabPanel />);
+    const { container } = render(<SfxLabPanel />);
+    // Lecture DOM directe (rapide) plutôt que 50× queryAllByRole(name regex) (lent en CI).
+    const labels = new Set(
+      [...container.querySelectorAll('.at-sfx-btn')].map(
+        (b) => b.textContent?.replace('▶', '').trim() ?? '',
+      ),
+    );
     for (const name of SFX_NAMES) {
-      expect(screen.queryAllByRole('button', { name: new RegExp(name) }).length).toBeGreaterThan(0);
+      expect(labels.has(name)).toBe(true);
     }
   });
 
