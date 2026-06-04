@@ -43,6 +43,18 @@ Liste complète : [`README.md`](./README.md).
 - ❌ Aucune autre convention visuelle, thème, couleur en dur hors token, ni librairie de composants UI.
 - Réutiliser les tokens/patterns existants ; ne pas réinventer couleurs, espacements ou composants déjà définis.
 
+### Assets (modèles, sprites, skins) — auto-découverte
+Les assets web sont **auto-découverts** par registre via `import.meta.glob` : **déposer le fichier au bon endroit suffit**, aucun import manuel, aucune liste à éditer. Vivent dans `apps/web/src/assets/` (jamais `public/` : Vite les hashe, inline les <4 Ko et exclut le build de ce qui est inutile).
+
+- **Modèles GLB** → `apps/web/src/assets/models/<categorie>/<nom>.glb` (`environments/`, `poi/`, `props/`). Référencer **toujours** via `modelUrl('<categorie>/<nom>.glb')` (`game/models/modelRegistry.ts`), **jamais** un chemin `/assets/...` en dur. `raw/` = sources lourdes, exclues du build de prod (`loadRawModels()`, DEV-only).
+- **Sprites** → `apps/web/src/assets/sprites/<perso>/{idle,walk,attack}.png` (`idle.png` obligatoire = le perso est listé). Référencer via `spriteUrl('<perso>', 'idle'|'walk'|'attack')` / `allSpriteUrls()` (`game/constants/spriteRegistry.ts`), **jamais** une URL en dur (ni en JS, ni en `background-image` CSS — utiliser un fond inline).
+- **Skins** → `apps/web/src/assets/skins/<id>.json` (`{ id, name, type, hue, saturation, description, sortOrder? }` ; `type` = nom du dossier de sprites). Lus via `SKINS` / `getSkinById('<id>')` (`game/constants/skins.ts`).
+
+**Ajouter un perso** = déposer `sprites/<nom>/{idle,walk,attack}.png` **+** `skins/<id>.json` (`"type": "<nom>"`) → il apparaît partout, zéro code.
+- ❌ Ne jamais mettre un asset dans `public/` ni écrire un chemin `/assets/...` en dur — toujours passer par le registre.
+- ❌ Ne pas maintenir de liste/tableau d'assets à la main — le glob s'en charge.
+- En **déplaçant/renommant** un asset : vérifier qu'aucun chemin en dur ne subsiste (`grep -rn '/assets/' apps/web/src`) ; tout doit passer par une clé de registre.
+
 ### Tests (TDD)
 - **Obligatoire** : tout fix de bug (test rouge → fix), toute logique dans `libs/game-engine`, tout code sécurité.
 - Cycle **Red → Green → Refactor**, vérifier que le test échoue **pour la bonne raison**.
