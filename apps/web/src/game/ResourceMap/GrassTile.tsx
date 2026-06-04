@@ -2,6 +2,10 @@ import { useGLTF } from '@react-three/drei';
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 
+import { modelUrl } from '../models/modelRegistry';
+
+const GRASS_URL = modelUrl('props/grass.glb');
+
 export interface GrassTileProps {
   position: [number, number, number];
   seed?: number;
@@ -19,7 +23,7 @@ function seededRandom(seed: number): number {
  * de façon stable grâce au seed de la case.
  */
 export function GrassTile({ position, seed = 0, scale = 1.0 }: GrassTileProps) {
-  const { scene } = useGLTF('/assets/models/grass.glb');
+  const { scene } = useGLTF(GRASS_URL);
 
   const clonedTile = useMemo(() => {
     const fullClone = scene.clone(true);
@@ -67,4 +71,4 @@ export function GrassTile({ position, seed = 0, scale = 1.0 }: GrassTileProps) {
   );
 }
 
-useGLTF.preload('/assets/models/grass.glb');
+useGLTF.preload(GRASS_URL);

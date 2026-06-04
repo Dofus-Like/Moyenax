@@ -1,4 +1,6 @@
-export const HUB_GLB_URL = '/models/hub/Hub_Base.glb';
+import { modelUrl } from '../models/modelRegistry';
+
+export const HUB_GLB_URL = modelUrl('environments/hub.glb');
 
 export const MAP_SCALE = 16;
 
@@ -91,7 +93,7 @@ export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiCon
     label: 'Combat aléatoire',
     position: [7, PLAYER_GROUND_Y, -6.8],
     color: '#ef4444',
-    modelPath: '/models/poi/combat.glb',
+    modelPath: modelUrl('poi/combat.glb'),
     assetScale: 2.4,
     faceCenter: true,
     rotationOffsetY: Math.PI * 0.05,
@@ -101,7 +103,7 @@ export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiCon
     label: 'VS AI',
     position: [-7.6, PLAYER_GROUND_Y, -6.8],
     color: '#facc15',
-    modelPath: '/models/poi/vs-ai.glb',
+    modelPath: modelUrl('poi/vs-ai.glb'),
     assetScale: 2.5,
     faceCenter: true,
     rotationOffsetY: 0,
@@ -116,7 +118,7 @@ export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiCon
     label: 'Apparence',
     position: [-8, PLAYER_GROUND_Y, 7],
     color: '#c084fc',
-    modelPath: '/models/poi/appearance.optimized.glb',
+    modelPath: modelUrl('poi/appearance.optimized.glb'),
     assetScale: 2,
     faceCenter: true,
     rotationOffsetY: -Math.PI * 0.06,
@@ -131,7 +133,7 @@ export const HUB_POIS: Record<'combat' | 'vsAi' | 'appearance' | 'rooms', PoiCon
     label: 'Rooms personnalisées',
     position: [8, PLAYER_GROUND_Y, 7],
     color: '#22c55e',
-    modelPath: '/models/poi/rooms.optimized.glb',
+    modelPath: modelUrl('poi/rooms.optimized.glb'),
     assetScale: 2.3,
     faceCenter: true,
     rotationOffsetY: Math.PI * 0.04,

@@ -91,6 +91,11 @@ const PlaygroundPage = lazy(() =>
     default: module.PlaygroundPage,
   })),
 );
+const AdminTestPage = lazy(() =>
+  import("./pages/AdminTestPage").then((module) => ({
+    default: module.AdminTestPage,
+  })),
+);
 
 function PageLoader({ message }: { message?: string }) {
   const { t } = useTranslation();
@@ -241,6 +246,18 @@ root.render(
                         </ProtectedRoute>
                       }
                     />
+                    {SHOW_DEBUG && (
+                      <Route
+                        path="/admin/test"
+                        element={
+                          <ProtectedRoute>
+                            <LazyPage>
+                              <AdminTestPage />
+                            </LazyPage>
+                          </ProtectedRoute>
+                        }
+                      />
+                    )}
                     <Route
                       path="/debug"
                       element={

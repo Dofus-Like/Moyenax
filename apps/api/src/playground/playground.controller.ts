@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -27,6 +27,11 @@ export class PlaygroundController {
   @Post('combat')
   startCombat(@Request() req: { user: { id: string } }) {
     return this.playground.startCombat(req.user.id);
+  }
+
+  @Get('spells')
+  listSpells() {
+    return this.playground.listSpells();
   }
 
   @Post(':sessionId/paint')

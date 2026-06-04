@@ -34,6 +34,7 @@ describe('PlaygroundService', () => {
   let redis: Mocked;
   let sse: Mocked;
   let prisma: { item: Mocked; inventoryItem: Mocked };
+  let playerSpells: Mocked;
   let state: CombatState;
 
   beforeEach(() => {
@@ -51,6 +52,7 @@ describe('PlaygroundService', () => {
       item: { findUnique: jest.fn() },
       inventoryItem: { findFirst: jest.fn(), create: jest.fn() },
     };
+    playerSpells = { getAllSpellDefinitions: jest.fn() };
 
     service = new PlaygroundService(
       session as never,
@@ -59,7 +61,18 @@ describe('PlaygroundService', () => {
       redis as never,
       sse as never,
       prisma as never,
+      playerSpells as never,
     );
+  });
+
+  describe('listSpells', () => {
+    it('délègue au catalogue complet de sorts', async () => {
+      const catalog = [{ id: 'spell-claque' }];
+      playerSpells.getAllSpellDefinitions.mockResolvedValue(catalog);
+
+      await expect(service.listSpells()).resolves.toBe(catalog);
+      expect(playerSpells.getAllSpellDefinitions).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('paintTile', () => {

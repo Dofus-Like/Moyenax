@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 
-import type { CombatPlayer, CombatState, PlayerStats } from '@game/shared-types';
+import type { CombatPlayer, CombatState, PlayerStats, SpellDefinition } from '@game/shared-types';
 import { TERRAIN_PROPERTIES, TerrainType } from '@game/shared-types';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { EquipmentService } from '../economy/equipment/equipment.service';
 import { InventoryService } from '../economy/inventory/inventory.service';
 import { SessionService } from '../combat/session/session.service';
+import { PlayerSpellProjectionService } from '../player/player-spell-projection.service';
 import { PrismaService } from '../shared/prisma/prisma.service';
 import { RedisService } from '../shared/redis/redis.service';
 import { SseService } from '../shared/sse/sse.service';
@@ -84,11 +85,17 @@ export class PlaygroundService {
     private readonly redis: RedisService,
     private readonly sse: SseService,
     private readonly prisma: PrismaService,
+    private readonly playerSpells: PlayerSpellProjectionService,
   ) {}
 
   async start(humanId: string): Promise<CombatState> {
     this.logger.log(`Démarrage d'un bac à sable playground pour ${humanId}`);
     return this.session.startPlaygroundCombat(humanId);
+  }
+
+  /** Catalogue complet des sorts (banc de test admin /admin/test). */
+  listSpells(): Promise<SpellDefinition[]> {
+    return this.playerSpells.getAllSpellDefinitions();
   }
 
   async startCombat(humanId: string): Promise<CombatState> {

@@ -173,20 +173,23 @@ const SFX = {
 
 export type SfxName = keyof typeof SFX;
 
+/** Noms ordonnés du catalogue (outillage de test/admin : grille de tous les sons). */
+export const SFX_NAMES = Object.keys(SFX) as SfxName[];
+
 /** Son de lancement distinct par sort (clé = code du sort). Fallback : « spellCast ». */
 export const SPELL_CAST_SFX: Record<string, SfxName> = {
-  "spell-boule-de-feu": "castFireball",
-  "spell-frappe": "castSlash",
-  "spell-claque": "castSlap",
-  "spell-kunai": "castKunai",
-  "spell-bombe-repousse": "castBomb",
-  "spell-soin": "castHeal",
-  "spell-heal": "castHeal",
-  "spell-endurance": "castEndurance",
-  "spell-velocite": "castVelocite",
-  "spell-buff-pm": "castVelocite",
-  "spell-bond": "castLeap",
-  "spell-menhir": "castMenhir",
+  'spell-boule-de-feu': 'castFireball',
+  'spell-frappe': 'castSlash',
+  'spell-claque': 'castSlap',
+  'spell-kunai': 'castKunai',
+  'spell-bombe-repousse': 'castBomb',
+  'spell-soin': 'castHeal',
+  'spell-heal': 'castHeal',
+  'spell-endurance': 'castEndurance',
+  'spell-velocite': 'castVelocite',
+  'spell-buff-pm': 'castVelocite',
+  'spell-bond': 'castLeap',
+  'spell-menhir': 'castMenhir',
 };
 
 // Un son est synthétisé une seule fois puis rejoué (chaque play() crée une nouvelle source).
@@ -235,5 +238,21 @@ export function playSfx(name: SfxName): void {
     audio.play();
   } catch {
     /* sfx best-effort */
+  }
+}
+
+/**
+ * Joue une chaîne sfxr (preset ou base58 sérialisée) sans l'ajouter au catalogue.
+ * Sert au banc d'intégration admin : écouter un son candidat avant de l'intégrer.
+ * Renvoie false si la chaîne est vide ou illisible.
+ */
+export function previewSfxString(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  try {
+    buildAudio(trimmed).play();
+    return true;
+  } catch {
+    return false;
   }
 }
