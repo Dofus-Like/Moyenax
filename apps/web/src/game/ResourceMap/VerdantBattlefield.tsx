@@ -2,6 +2,10 @@ import { useGLTF } from '@react-three/drei';
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 
+import { modelUrl } from '../models/modelRegistry';
+
+const VERDANT_URL = modelUrl('environments/verdant_battlefield.glb');
+
 interface VerdantBattlefieldProps {
   position?: [number, number, number];
   targetSize?: number;
@@ -68,7 +72,7 @@ export const VerdantBattlefield = React.memo(
     targetSize = 12,
     rotation = [0, 0, 0],
   }: VerdantBattlefieldProps) => {
-    const { scene } = useGLTF('/assets/models/verdant_battlefield.glb');
+    const { scene } = useGLTF(VERDANT_URL);
 
     const { clonedScene, scaleFactor, offset } = useMemo(
       () => optimizeScene(scene, targetSize),
@@ -85,4 +89,4 @@ export const VerdantBattlefield = React.memo(
   },
 );
 
-useGLTF.preload('/assets/models/verdant_battlefield.glb');
+useGLTF.preload(VERDANT_URL);
