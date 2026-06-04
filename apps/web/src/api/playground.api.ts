@@ -1,10 +1,16 @@
-import type { CombatState, EquipmentSlotType, TerrainType } from '@game/shared-types';
+import type {
+  CombatState,
+  EquipmentSlotType,
+  SpellDefinition,
+  TerrainType,
+} from '@game/shared-types';
 
 import { apiClient } from './client';
 
 export const playgroundApi = {
   start: () => apiClient.post<CombatState>('/playground/start'),
   startCombat: () => apiClient.post<CombatState>('/playground/combat'),
+  listSpells: () => apiClient.get<SpellDefinition[]>('/playground/spells'),
   paint: (sessionId: string, body: { x: number; y: number; terrain: TerrainType }) =>
     apiClient.post<CombatState>(`/playground/${sessionId}/paint`, body),
   gather: (sessionId: string, body: { x: number; y: number }) =>

@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { getSkinById } from '../game/constants/skins';
 
@@ -11,15 +11,27 @@ interface PortraitPawnProps {
   skinId?: string;
   isAttacking?: boolean;
   onAttackComplete?: () => void;
+  /** Surcharge la teinte du skin (degrés). Défaut : valeur du preset. */
+  hue?: number;
+  /** Surcharge la saturation du skin (multiplicateur). Défaut : valeur du preset. */
+  saturation?: number;
 }
 
-export const PortraitPawn = ({ skinId = 'soldier-classic', isAttacking = false, onAttackComplete }: PortraitPawnProps) => {
+export const PortraitPawn = ({
+  skinId = 'soldier-classic',
+  isAttacking = false,
+  onAttackComplete,
+  hue,
+  saturation,
+}: PortraitPawnProps) => {
   const spriteRef = useRef<THREE.Sprite>(null);
   const animFrameRef = useRef(0);
   const frameCounterRef = useRef(0);
 
   const skinConfig = useMemo(() => getSkinById(skinId), [skinId]);
   const spriteType = skinConfig.type;
+  const hueDeg = hue ?? skinConfig.hue;
+  const satMul = saturation ?? skinConfig.saturation;
 
   const texIdle = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/idle.png`);
   const texAttack = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/attack.png`);
@@ -28,7 +40,7 @@ export const PortraitPawn = ({ skinId = 'soldier-classic', isAttacking = false, 
     texIdle.magFilter = texIdle.minFilter = THREE.NearestFilter;
     texIdle.repeat.set(1 / IDLE_FRAMES, 1);
     texIdle.colorSpace = THREE.SRGBColorSpace;
-    
+
     texAttack.magFilter = texAttack.minFilter = THREE.NearestFilter;
     texAttack.repeat.set(1 / ATTACK_FRAMES, 1);
     texAttack.colorSpace = THREE.SRGBColorSpace;
@@ -36,10 +48,13 @@ export const PortraitPawn = ({ skinId = 'soldier-classic', isAttacking = false, 
     return { textureIdle: texIdle, textureAttack: texAttack };
   }, [texIdle, texAttack]);
 
-  const uniforms = useMemo(() => ({
-    uHue: { value: (skinConfig.hue * Math.PI) / 180 },
-    uSat: { value: skinConfig.saturation }
-  }), [skinConfig]);
+  const uniforms = useMemo(
+    () => ({
+      uHue: { value: (hueDeg * Math.PI) / 180 },
+      uSat: { value: satMul },
+    }),
+    [hueDeg, satMul],
+  );
 
   const spriteMaterial = useMemo(() => {
     const mat = new THREE.SpriteMaterial({
@@ -73,7 +88,7 @@ export const PortraitPawn = ({ skinId = 'soldier-classic', isAttacking = false, 
           texelColor.rgb = applySat(texelColor.rgb, uSat);
           diffuseColor *= texelColor;
         #endif
-        `
+        `,
       );
     };
     return mat;
@@ -100,7 +115,7 @@ export const PortraitPawn = ({ skinId = 'soldier-classic', isAttacking = false, 
         animFrameRef.current = (animFrameRef.current + 1) % frames;
       }
       frameCounterRef.current = 0;
-      
+
       if (spriteRef.current) {
         spriteRef.current.material.map = activeTex;
         activeTex.offset.x = animFrameRef.current / frames;
