@@ -2,6 +2,7 @@ import { useFrame, useLoader } from '@react-three/fiber';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { getSkinById } from '../game/constants/skins';
+import { spriteUrl } from '../game/constants/spriteRegistry';
 
 const ANIM_SPEED = 18;
 const IDLE_FRAMES = 6;
@@ -33,8 +34,8 @@ export const PortraitPawn = ({
   const hueDeg = hue ?? skinConfig.hue;
   const satMul = saturation ?? skinConfig.saturation;
 
-  const texIdle = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/idle.png`);
-  const texAttack = useLoader(THREE.TextureLoader, `/assets/sprites/${spriteType}/attack.png`);
+  const texIdle = useLoader(THREE.TextureLoader, spriteUrl(spriteType, 'idle'));
+  const texAttack = useLoader(THREE.TextureLoader, spriteUrl(spriteType, 'attack'));
 
   const { textureIdle, textureAttack } = useMemo(() => {
     texIdle.magFilter = texIdle.minFilter = THREE.NearestFilter;

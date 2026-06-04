@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { type CSSProperties, type ReactElement, useEffect, useRef, useState } from 'react';
 
 import {
   AlertTriangleIcon,
@@ -14,9 +14,10 @@ import {
   StatusChipActiveIcon,
   SwordCrossedIcon,
 } from '../assets/icons/hub3d/HubIcons';
-import { PoiBadge } from '../game/Hub3D/PoiBadges';
-import { HUB_POIS, type PoiId } from '../game/Hub3D/constants';
 import { SKINS, type SkinConfig } from '../game/constants/skins';
+import { spriteUrl } from '../game/constants/spriteRegistry';
+import { HUB_POIS, type PoiId } from '../game/Hub3D/constants';
+import { PoiBadge } from '../game/Hub3D/PoiBadges';
 
 const STYLE_TAG_ID = 'hub-poi-modal-anims';
 const ANIM_OPEN_MS = 280;
@@ -312,7 +313,10 @@ function renderPanel(id: PoiId, props: HubPoiModalProps): ReactElement {
   return <RoomsPanel {...props.rooms} />;
 }
 
-function useModalLifecycle(activePoiId: PoiId | null): { renderedId: PoiId | null; closing: boolean } {
+function useModalLifecycle(activePoiId: PoiId | null): {
+  renderedId: PoiId | null;
+  closing: boolean;
+} {
   const [renderedId, setRenderedId] = useState<PoiId | null>(activePoiId);
   const [closing, setClosing] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
@@ -337,9 +341,12 @@ function useModalLifecycle(activePoiId: PoiId | null): { renderedId: PoiId | nul
     }, ANIM_CLOSE_MS);
   }, [activePoiId, renderedId]);
 
-  useEffect((): (() => void) => (): void => {
-    if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
-  }, []);
+  useEffect(
+    (): (() => void) => (): void => {
+      if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
+    },
+    [],
+  );
 
   return { renderedId, closing };
 }
@@ -357,13 +364,19 @@ export function HubPoiModal(props: HubPoiModalProps): ReactElement | null {
 
   return (
     <div style={OVERLAY} className={backdropClass} onClick={onClose}>
-      <div
-        style={buildModalWrapStyle()}
-        className={cardClass}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="hub-modal-scroll" style={buildModalStyle(color)} role="dialog" aria-modal="true">
-          <ModalHeader poiId={renderedId} color={color} label={poiConfig?.label ?? ''} onClose={onClose} />
+      <div style={buildModalWrapStyle()} className={cardClass} onClick={(e) => e.stopPropagation()}>
+        <div
+          className="hub-modal-scroll"
+          style={buildModalStyle(color)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <ModalHeader
+            poiId={renderedId}
+            color={color}
+            label={poiConfig?.label ?? ''}
+            onClose={onClose}
+          />
           {renderPanel(renderedId, props)}
         </div>
       </div>
@@ -380,9 +393,22 @@ function CloseMedallion({ color, onClose }: { color: string; onClose: () => void
       className="hub-modal-close-medallion"
       aria-label="Fermer"
     >
-      <svg width="38" height="38" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        width="38"
+        height="38"
+        viewBox="0 0 72 72"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <defs>
-          <radialGradient id={`${gradId}-bg`} cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(36 24) rotate(90) scale(44)">
+          <radialGradient
+            id={`${gradId}-bg`}
+            cx="0"
+            cy="0"
+            r="1"
+            gradientUnits="userSpaceOnUse"
+            gradientTransform="translate(36 24) rotate(90) scale(44)"
+          >
             <stop stopColor="#1a2236" />
             <stop offset="1" stopColor="#0a0e18" />
           </radialGradient>
@@ -394,39 +420,66 @@ function CloseMedallion({ color, onClose }: { color: string; onClose: () => void
         <circle cx="36" cy="36" r="28" fill={`url(#${gradId}-bg)`} />
         <circle cx="36" cy="36" r="28" stroke={`url(#${gradId}-rim)`} strokeWidth="2.5" />
         <circle cx="36" cy="36" r="21" stroke="#ffffff" strokeOpacity="0.14" strokeWidth="1" />
-        <path d="M28 28L44 44M44 28L28 44" stroke="#F7FBFF" strokeWidth="3.2" strokeLinecap="round" />
+        <path
+          d="M28 28L44 44M44 28L28 44"
+          stroke="#F7FBFF"
+          strokeWidth="3.2"
+          strokeLinecap="round"
+        />
       </svg>
     </button>
   );
 }
 
-function ModalHeader({ poiId, color, label, onClose }: { poiId: PoiId; color: string; label: string; onClose: () => void }): ReactElement {
+function ModalHeader({
+  poiId,
+  color,
+  label,
+  onClose,
+}: {
+  poiId: PoiId;
+  color: string;
+  label: string;
+  onClose: () => void;
+}): ReactElement {
   return (
     <div style={{ marginBottom: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '14px',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
           <PoiBadge poiId={poiId} color={color} size={48} />
-          <h2 style={{
-            margin: 0,
-            fontSize: '1.2rem',
-            fontWeight: 400,
-            color: '#ffffff',
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: '1.2rem',
+              fontWeight: 400,
+              color: '#ffffff',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              textShadow:
+                '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
             {label}
           </h2>
         </div>
         <CloseMedallion color={color} onClose={onClose} />
       </div>
-      <div style={{
-        marginTop: '16px',
-        height: '1px',
-        background: `linear-gradient(90deg, transparent 0%, ${color}66 20%, ${color}99 50%, ${color}66 80%, transparent 100%)`,
-      }} />
+      <div
+        style={{
+          marginTop: '16px',
+          height: '1px',
+          background: `linear-gradient(90deg, transparent 0%, ${color}66 20%, ${color}99 50%, ${color}66 80%, transparent 100%)`,
+        }}
+      />
     </div>
   );
 }
@@ -435,7 +488,15 @@ function Spinner({ color }: { color: string }): ReactElement {
   return <SpinnerRuneIcon size={14} style={{ color }} />;
 }
 
-function ErrorBanner({ message, color, onDismiss }: { message: string; color: string; onDismiss: () => void }): ReactElement {
+function ErrorBanner({
+  message,
+  color,
+  onDismiss,
+}: {
+  message: string;
+  color: string;
+  onDismiss: () => void;
+}): ReactElement {
   return (
     <div
       role="alert"
@@ -477,18 +538,40 @@ function ErrorBanner({ message, color, onDismiss }: { message: string; color: st
   );
 }
 
-
-function CombatPanel({ isInQueue, hasOpenSession, busy, error, onJoinQueue, onLeaveQueue, onClearError }: CombatActions): ReactElement {
+function CombatPanel({
+  isInQueue,
+  hasOpenSession,
+  busy,
+  error,
+  onJoinQueue,
+  onLeaveQueue,
+  onClearError,
+}: CombatActions): ReactElement {
   const color = '#ef4444';
   if (isInQueue) {
     return (
       <div>
         {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
         <p style={DESC}>Recherche d'un adversaire en cours...</p>
-        <p style={{ color, fontWeight: 700, marginBottom: '16px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <p
+          style={{
+            color,
+            fontWeight: 700,
+            marginBottom: '16px',
+            fontSize: '0.9rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
           <Spinner color={color} /> En file d'attente
         </p>
-        <button type="button" className="hub-modal-secondary" onClick={onLeaveQueue} disabled={busy}>
+        <button
+          type="button"
+          className="hub-modal-secondary"
+          onClick={onLeaveQueue}
+          disabled={busy}
+        >
           {busy ? 'Annulation…' : 'Annuler la recherche'}
         </button>
       </div>
@@ -497,27 +580,65 @@ function CombatPanel({ isInQueue, hasOpenSession, busy, error, onJoinQueue, onLe
   return (
     <div>
       {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
-      <p style={DESC}>Affrontez un adversaire aléatoire en PvP. La partie commence dès qu'un match est trouvé.</p>
-      <button type="button" className="hub-modal-cta" style={ctaVars(color)} disabled={hasOpenSession || busy} onClick={onJoinQueue}>
-        {busy ? <><Spinner color="#fff" /> Recherche…</> : <><SwordCrossedIcon size={16} /> Lancer la recherche</>}
+      <p style={DESC}>
+        Affrontez un adversaire aléatoire en PvP. La partie commence dès qu'un match est trouvé.
+      </p>
+      <button
+        type="button"
+        className="hub-modal-cta"
+        style={ctaVars(color)}
+        disabled={hasOpenSession || busy}
+        onClick={onJoinQueue}
+      >
+        {busy ? (
+          <>
+            <Spinner color="#fff" /> Recherche…
+          </>
+        ) : (
+          <>
+            <SwordCrossedIcon size={16} /> Lancer la recherche
+          </>
+        )}
       </button>
       {hasOpenSession && <p style={FAINT}>Terminez d'abord votre session en cours.</p>}
     </div>
   );
 }
 
-function VsAiPanel({ hasOpenSession, isInQueue, busy, error, onStart, onQuickStart, onResume, onReset, onClearError }: VsAiActions): ReactElement {
+function VsAiPanel({
+  hasOpenSession,
+  isInQueue,
+  busy,
+  error,
+  onStart,
+  onQuickStart,
+  onResume,
+  onReset,
+  onClearError,
+}: VsAiActions): ReactElement {
   const color = '#facc15';
   if (hasOpenSession) {
     return (
       <div>
         {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
         <p style={DESC}>Une session est déjà en cours.</p>
-        <button type="button" className="hub-modal-cta" style={ctaVars('#10b981')} onClick={onResume} disabled={busy}>
+        <button
+          type="button"
+          className="hub-modal-cta"
+          style={ctaVars('#10b981')}
+          onClick={onResume}
+          disabled={busy}
+        >
           <PlayArrowIcon size={15} /> Reprendre la partie
         </button>
         <button type="button" className="hub-modal-secondary" onClick={onReset} disabled={busy}>
-          {busy ? 'Réinitialisation…' : <><RefreshIcon size={15} /> Réinitialiser la session</>}
+          {busy ? (
+            'Réinitialisation…'
+          ) : (
+            <>
+              <RefreshIcon size={15} /> Réinitialiser la session
+            </>
+          )}
         </button>
       </div>
     );
@@ -526,10 +647,30 @@ function VsAiPanel({ hasOpenSession, isInQueue, busy, error, onStart, onQuickSta
     <div>
       {error && <ErrorBanner message={error} color={color} onDismiss={onClearError} />}
       <p style={DESC}>Lancez un combat solo contre l'intelligence artificielle.</p>
-      <button type="button" className="hub-modal-cta" style={ctaVars(color)} disabled={isInQueue || busy} onClick={onStart}>
-        {busy ? <><Spinner color="#fff" /> Lancement…</> : <><ChipRuneIcon size={16} /> Lancer VS AI</>}
+      <button
+        type="button"
+        className="hub-modal-cta"
+        style={ctaVars(color)}
+        disabled={isInQueue || busy}
+        onClick={onStart}
+      >
+        {busy ? (
+          <>
+            <Spinner color="#fff" /> Lancement…
+          </>
+        ) : (
+          <>
+            <ChipRuneIcon size={16} /> Lancer VS AI
+          </>
+        )}
       </button>
-      <button type="button" className="hub-modal-secondary" style={{ marginTop: '10px' }} disabled={isInQueue || busy} onClick={onQuickStart}>
+      <button
+        type="button"
+        className="hub-modal-secondary"
+        style={{ marginTop: '10px' }}
+        disabled={isInQueue || busy}
+        onClick={onQuickStart}
+      >
         <SwordCrossedIcon size={15} /> Combat direct
       </button>
       {isInQueue && <p style={FAINT}>Quittez la file d'attente d'abord.</p>}
@@ -537,14 +678,39 @@ function VsAiPanel({ hasOpenSession, isInQueue, busy, error, onStart, onQuickSta
   );
 }
 
-interface BannerPreset { id: string; name: string; gradient: string; }
-interface FramePreset { id: string; name: string; border: string; glow: string; }
+interface BannerPreset {
+  id: string;
+  name: string;
+  gradient: string;
+}
+interface FramePreset {
+  id: string;
+  name: string;
+  border: string;
+  glow: string;
+}
 
 const BANNER_PRESETS: BannerPreset[] = [
-  { id: 'arcane', name: 'Arcane', gradient: 'linear-gradient(135deg, #6d28d9 0%, #c084fc 50%, #312e81 100%)' },
-  { id: 'forge', name: 'Forge', gradient: 'linear-gradient(135deg, #b91c1c 0%, #f59e0b 60%, #1f2937 100%)' },
-  { id: 'verdant', name: 'Verdant', gradient: 'linear-gradient(135deg, #065f46 0%, #34d399 60%, #064e3b 100%)' },
-  { id: 'tide', name: 'Marée', gradient: 'linear-gradient(135deg, #1e3a8a 0%, #38bdf8 60%, #0f172a 100%)' },
+  {
+    id: 'arcane',
+    name: 'Arcane',
+    gradient: 'linear-gradient(135deg, #6d28d9 0%, #c084fc 50%, #312e81 100%)',
+  },
+  {
+    id: 'forge',
+    name: 'Forge',
+    gradient: 'linear-gradient(135deg, #b91c1c 0%, #f59e0b 60%, #1f2937 100%)',
+  },
+  {
+    id: 'verdant',
+    name: 'Verdant',
+    gradient: 'linear-gradient(135deg, #065f46 0%, #34d399 60%, #064e3b 100%)',
+  },
+  {
+    id: 'tide',
+    name: 'Marée',
+    gradient: 'linear-gradient(135deg, #1e3a8a 0%, #38bdf8 60%, #0f172a 100%)',
+  },
 ];
 
 const FRAME_PRESETS: FramePreset[] = [
@@ -574,7 +740,15 @@ function getActiveFrame(id: string): FramePreset {
   return FRAME_PRESETS.find((f) => f.id === id) ?? FRAME_PRESETS[0];
 }
 
-function SkinAvatar({ skin, size, frame }: { skin: SkinConfig | undefined; size: number; frame?: FramePreset }): ReactElement {
+function SkinAvatar({
+  skin,
+  size,
+  frame,
+}: {
+  skin: SkinConfig | undefined;
+  size: number;
+  frame?: FramePreset;
+}): ReactElement {
   const radius = size * 0.18;
   const baseStyle: CSSProperties = {
     width: size,
@@ -582,7 +756,8 @@ function SkinAvatar({ skin, size, frame }: { skin: SkinConfig | undefined; size:
     borderRadius: radius,
     flexShrink: 0,
     backgroundColor: 'rgba(8,12,22,0.55)',
-    boxShadow: frame?.glow ?? 'inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.05)',
+    boxShadow:
+      frame?.glow ?? 'inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.05)',
     border: frame?.border,
     overflow: 'hidden',
     position: 'relative',
@@ -600,7 +775,7 @@ function SkinAvatar({ skin, size, frame }: { skin: SkinConfig | undefined; size:
   const spriteStyle: CSSProperties = {
     position: 'absolute',
     inset: 0,
-    backgroundImage: `url(/assets/sprites/${skin.type}/idle.png)`,
+    backgroundImage: `url(${spriteUrl(skin.type, 'idle')})`,
     backgroundSize: `${IDLE_SPRITE_FRAMES * 100}% 100%`,
     backgroundPosition: '0% 0%',
     backgroundRepeat: 'no-repeat',
@@ -614,7 +789,13 @@ function SkinAvatar({ skin, size, frame }: { skin: SkinConfig | undefined; size:
   );
 }
 
-function ProfileHeader({ username, gold, skin, banner, frame }: {
+function ProfileHeader({
+  username,
+  gold,
+  skin,
+  banner,
+  frame,
+}: {
   username: string | undefined;
   gold: number | undefined;
   skin: SkinConfig | undefined;
@@ -622,25 +803,43 @@ function ProfileHeader({ username, gold, skin, banner, frame }: {
   frame: FramePreset;
 }): ReactElement {
   return (
-    <div style={{
-      position: 'relative',
-      borderRadius: '6px',
-      padding: '12px 14px',
-      background: banner.gradient,
-      border: '2px solid rgba(255,255,255,0.9)',
-      outline: '1.5px solid rgba(0,0,0,0.85)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 12px rgba(0,0,0,0.3)',
-      display: 'flex',
-      gap: '12px',
-      alignItems: 'center',
-      overflow: 'hidden',
-    }}>
+    <div
+      style={{
+        position: 'relative',
+        borderRadius: '6px',
+        padding: '12px 14px',
+        background: banner.gradient,
+        border: '2px solid rgba(255,255,255,0.9)',
+        outline: '1.5px solid rgba(0,0,0,0.85)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 12px rgba(0,0,0,0.3)',
+        display: 'flex',
+        gap: '12px',
+        alignItems: 'center',
+        overflow: 'hidden',
+      }}
+    >
       <SkinAvatar skin={skin} size={52} frame={frame} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '0.98rem', fontWeight: 800, letterSpacing: '-0.01em', textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}>
+        <div
+          style={{
+            fontSize: '0.98rem',
+            fontWeight: 800,
+            letterSpacing: '-0.01em',
+            textShadow: '0 1px 4px rgba(0,0,0,0.55)',
+          }}
+        >
           {username ?? 'Aventurier'}
         </div>
-        <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.85)', marginTop: '3px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div
+          style={{
+            fontSize: '0.74rem',
+            color: 'rgba(255,255,255,0.85)',
+            marginTop: '3px',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center',
+          }}
+        >
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <CoinIcon size={13} /> {gold ?? 0}
           </span>
@@ -651,7 +850,15 @@ function ProfileHeader({ username, gold, skin, banner, frame }: {
   );
 }
 
-function SkinCard({ skin, isActive, onSelect }: { skin: SkinConfig; isActive: boolean; onSelect: () => void }): ReactElement {
+function SkinCard({
+  skin,
+  isActive,
+  onSelect,
+}: {
+  skin: SkinConfig;
+  isActive: boolean;
+  onSelect: () => void;
+}): ReactElement {
   return (
     <button
       type="button"
@@ -675,8 +882,19 @@ function SkinCard({ skin, isActive, onSelect }: { skin: SkinConfig; isActive: bo
     >
       <SkinAvatar skin={skin} size={34} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: '0.84rem', color: 'rgba(255,255,255,0.95)' }}>{skin.name}</div>
-        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.42)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '1px' }}>
+        <div style={{ fontWeight: 700, fontSize: '0.84rem', color: 'rgba(255,255,255,0.95)' }}>
+          {skin.name}
+        </div>
+        <div
+          style={{
+            fontSize: '0.7rem',
+            color: 'rgba(255,255,255,0.42)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            marginTop: '1px',
+          }}
+        >
           {skin.description}
         </div>
       </div>
@@ -685,7 +903,15 @@ function SkinCard({ skin, isActive, onSelect }: { skin: SkinConfig; isActive: bo
   );
 }
 
-function BannerSwatch({ preset, isActive, onSelect }: { preset: BannerPreset; isActive: boolean; onSelect: () => void }): ReactElement {
+function BannerSwatch({
+  preset,
+  isActive,
+  onSelect,
+}: {
+  preset: BannerPreset;
+  isActive: boolean;
+  onSelect: () => void;
+}): ReactElement {
   return (
     <button
       type="button"
@@ -699,7 +925,9 @@ function BannerSwatch({ preset, isActive, onSelect }: { preset: BannerPreset; is
         cursor: 'pointer',
         background: preset.gradient,
         border: `2px solid ${isActive ? '#ffffff' : 'rgba(255,255,255,0.1)'}`,
-        boxShadow: isActive ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+        boxShadow: isActive
+          ? '0 0 10px rgba(255,255,255,0.3)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.08)',
         transition: 'border-color 160ms ease, box-shadow 160ms ease',
         padding: 0,
       }}
@@ -707,7 +935,15 @@ function BannerSwatch({ preset, isActive, onSelect }: { preset: BannerPreset; is
   );
 }
 
-function FrameSwatch({ preset, isActive, onSelect }: { preset: FramePreset; isActive: boolean; onSelect: () => void }): ReactElement {
+function FrameSwatch({
+  preset,
+  isActive,
+  onSelect,
+}: {
+  preset: FramePreset;
+  isActive: boolean;
+  onSelect: () => void;
+}): ReactElement {
   return (
     <button
       type="button"
@@ -737,7 +973,15 @@ function FrameSwatch({ preset, isActive, onSelect }: { preset: FramePreset; isAc
   );
 }
 
-function AppearancePanel({ currentSkin, username, gold, busy, error, onSetSkin, onClearError }: AppearanceActions): ReactElement {
+function AppearancePanel({
+  currentSkin,
+  username,
+  gold,
+  busy,
+  error,
+  onSetSkin,
+  onClearError,
+}: AppearanceActions): ReactElement {
   const [bannerId, setBannerId] = useState<string>(BANNER_PRESETS[0].id);
   const [frameId, setFrameId] = useState<string>(FRAME_PRESETS[0].id);
   const skin = SKINS.find((s) => s.id === currentSkin);
@@ -749,64 +993,151 @@ function AppearancePanel({ currentSkin, username, gold, busy, error, onSetSkin, 
       {error && <ErrorBanner message={error} color="#c084fc" onDismiss={onClearError} />}
       <ProfileHeader username={username} gold={gold} skin={skin} banner={banner} frame={frame} />
       {busy && (
-        <p style={{ ...FAINT, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+        <p
+          style={{
+            ...FAINT,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            justifyContent: 'center',
+          }}
+        >
           <Spinner color="#c084fc" /> Mise à jour de l'apparence…
         </p>
       )}
 
-      <div style={SECTION_HEADER}><span>Apparence</span><span style={{ opacity: 0.5 }}>{SKINS.length}</span></div>
+      <div style={SECTION_HEADER}>
+        <span>Apparence</span>
+        <span style={{ opacity: 0.5 }}>{SKINS.length}</span>
+      </div>
       <div
         className="hub-modal-scroll hub-modal-skins-list"
-        style={{ maxHeight: '180px', overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '6px', opacity: busy ? 0.6 : 1, pointerEvents: busy ? 'none' : 'auto' }}
+        style={{
+          maxHeight: '180px',
+          overflowY: 'auto',
+          paddingRight: '4px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          opacity: busy ? 0.6 : 1,
+          pointerEvents: busy ? 'none' : 'auto',
+        }}
       >
         {SKINS.map((s) => (
-          <SkinCard key={s.id} skin={s} isActive={s.id === currentSkin} onSelect={() => onSetSkin(s.id)} />
+          <SkinCard
+            key={s.id}
+            skin={s}
+            isActive={s.id === currentSkin}
+            onSelect={() => onSetSkin(s.id)}
+          />
         ))}
       </div>
 
       {/* TODO backend: bannière/cadre stockés localement (pas de persistance API) */}
       <div style={SECTION_HEADER}>
         <span>Bannière</span>
-        <span style={{ opacity: 0.4, textTransform: 'none', fontSize: '0.65rem', letterSpacing: '0.04em' }}>local</span>
+        <span
+          style={{
+            opacity: 0.4,
+            textTransform: 'none',
+            fontSize: '0.65rem',
+            letterSpacing: '0.04em',
+          }}
+        >
+          local
+        </span>
       </div>
       <div style={{ display: 'flex', gap: '6px' }}>
         {BANNER_PRESETS.map((p) => (
-          <BannerSwatch key={p.id} preset={p} isActive={p.id === bannerId} onSelect={() => setBannerId(p.id)} />
+          <BannerSwatch
+            key={p.id}
+            preset={p}
+            isActive={p.id === bannerId}
+            onSelect={() => setBannerId(p.id)}
+          />
         ))}
       </div>
 
       <div style={SECTION_HEADER}>
         <span>Cadre</span>
-        <span style={{ opacity: 0.4, textTransform: 'none', fontSize: '0.65rem', letterSpacing: '0.04em' }}>local</span>
+        <span
+          style={{
+            opacity: 0.4,
+            textTransform: 'none',
+            fontSize: '0.65rem',
+            letterSpacing: '0.04em',
+          }}
+        >
+          local
+        </span>
       </div>
       <div style={{ display: 'flex', gap: '6px' }}>
         {FRAME_PRESETS.map((p) => (
-          <FrameSwatch key={p.id} preset={p} isActive={p.id === frameId} onSelect={() => setFrameId(p.id)} />
+          <FrameSwatch
+            key={p.id}
+            preset={p}
+            isActive={p.id === frameId}
+            onSelect={() => setFrameId(p.id)}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function RoomCard({ room, isOwn, disabled, onJoin }: { room: RoomEntry; isOwn: boolean; disabled: boolean; onJoin: () => void }): ReactElement {
+function RoomCard({
+  room,
+  isOwn,
+  disabled,
+  onJoin,
+}: {
+  room: RoomEntry;
+  isOwn: boolean;
+  disabled: boolean;
+  onJoin: () => void;
+}): ReactElement {
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '10px 14px',
-      borderRadius: '6px',
-      marginBottom: '8px',
-      background: 'rgba(0,0,0,0.55)',
-      border: '2px solid rgba(255,255,255,0.4)',
-      borderLeft: '3px solid #22c55e',
-      outline: '1.5px solid rgba(0,0,0,0.85)',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px 14px',
+        borderRadius: '6px',
+        marginBottom: '8px',
+        background: 'rgba(0,0,0,0.55)',
+        border: '2px solid rgba(255,255,255,0.4)',
+        borderLeft: '3px solid #22c55e',
+        outline: '1.5px solid rgba(0,0,0,0.85)',
+      }}
+    >
       <div>
         <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{room.p1.username}</div>
-        <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+        <div
+          style={{
+            fontSize: '0.72rem',
+            color: 'rgba(255,255,255,0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '2px',
+          }}
+        >
           <span>{new Date(room.createdAt).toLocaleTimeString()}</span>
-          <span style={{ background: 'rgba(34,197,94,0.14)', border: '1px solid rgba(34,197,94,0.28)', borderRadius: '999px', padding: '1px 7px', fontWeight: 600, color: 'rgba(34,197,94,0.88)', fontSize: '0.67rem', letterSpacing: '0.02em' }}>1 / 2</span>
+          <span
+            style={{
+              background: 'rgba(34,197,94,0.14)',
+              border: '1px solid rgba(34,197,94,0.28)',
+              borderRadius: '999px',
+              padding: '1px 7px',
+              fontWeight: 600,
+              color: 'rgba(34,197,94,0.88)',
+              fontSize: '0.67rem',
+              letterSpacing: '0.02em',
+            }}
+          >
+            1 / 2
+          </span>
         </div>
       </div>
       <button
@@ -814,7 +1145,13 @@ function RoomCard({ room, isOwn, disabled, onJoin }: { room: RoomEntry; isOwn: b
         onClick={onJoin}
         disabled={isOwn || disabled}
         className="hub-modal-cta"
-        style={{ ...ctaVars('#22c55e'), width: 'auto', padding: '8px 16px', fontSize: '0.8rem', marginTop: 0 }}
+        style={{
+          ...ctaVars('#22c55e'),
+          width: 'auto',
+          padding: '8px 16px',
+          fontSize: '0.8rem',
+          marginTop: 0,
+        }}
       >
         {isOwn ? 'Votre room' : 'Rejoindre'}
       </button>
@@ -822,7 +1159,14 @@ function RoomCard({ room, isOwn, disabled, onJoin }: { room: RoomEntry; isOwn: b
   );
 }
 
-function RoomsContent({ loading, rooms, playerId, hasOpenSession, isInQueue, onJoinRoom }: {
+function RoomsContent({
+  loading,
+  rooms,
+  playerId,
+  hasOpenSession,
+  isInQueue,
+  onJoinRoom,
+}: {
   loading: boolean;
   rooms: RoomEntry[];
   playerId: string | undefined;
@@ -847,17 +1191,54 @@ function RoomsContent({ loading, rooms, playerId, hasOpenSession, isInQueue, onJ
   );
 }
 
-function buildRoomsCta(isWaiting: boolean, busy: boolean): { color: string; content: ReactElement } {
+function buildRoomsCta(
+  isWaiting: boolean,
+  busy: boolean,
+): { color: string; content: ReactElement } {
   const color = isWaiting ? '#ef4444' : '#22c55e';
   if (busy) {
     const label = isWaiting ? 'Annulation…' : 'Création…';
-    return { color, content: <><Spinner color="#fff" /> {label}</> };
+    return {
+      color,
+      content: (
+        <>
+          <Spinner color="#fff" /> {label}
+        </>
+      ),
+    };
   }
-  if (isWaiting) return { color, content: <><CancelSearchIcon size={16} /> Annuler ma room</> };
-  return { color, content: <><DoorRoomIcon size={16} /> Créer une room</> };
+  if (isWaiting)
+    return {
+      color,
+      content: (
+        <>
+          <CancelSearchIcon size={16} /> Annuler ma room
+        </>
+      ),
+    };
+  return {
+    color,
+    content: (
+      <>
+        <DoorRoomIcon size={16} /> Créer une room
+      </>
+    ),
+  };
 }
 
-function RoomsHints({ isWaiting, isInQueue, hasOpenSession, busy, color }: { isWaiting: boolean; isInQueue: boolean; hasOpenSession: boolean; busy: boolean; color: string }): ReactElement | null {
+function RoomsHints({
+  isWaiting,
+  isInQueue,
+  hasOpenSession,
+  busy,
+  color,
+}: {
+  isWaiting: boolean;
+  isInQueue: boolean;
+  hasOpenSession: boolean;
+  busy: boolean;
+  color: string;
+}): ReactElement | null {
   if (isWaiting && !busy) {
     return (
       <p style={{ ...FAINT, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -871,7 +1252,21 @@ function RoomsHints({ isWaiting, isInQueue, hasOpenSession, busy, color }: { isW
   return null;
 }
 
-function RoomsPanel({ rooms, loading, isWaiting, hasOpenSession, isInQueue, playerId, busy, error, onCreateRoom, onJoinRoom, onCancelRoom, onClearError, onPlayground }: RoomsActions): ReactElement {
+function RoomsPanel({
+  rooms,
+  loading,
+  isWaiting,
+  hasOpenSession,
+  isInQueue,
+  playerId,
+  busy,
+  error,
+  onCreateRoom,
+  onJoinRoom,
+  onCancelRoom,
+  onClearError,
+  onPlayground,
+}: RoomsActions): ReactElement {
   const createDisabled = isInQueue || (hasOpenSession && !isWaiting) || busy;
   const cta = buildRoomsCta(isWaiting, busy);
   return (
@@ -887,7 +1282,13 @@ function RoomsPanel({ rooms, loading, isWaiting, hasOpenSession, isInQueue, play
       >
         {cta.content}
       </button>
-      <RoomsHints isWaiting={isWaiting} isInQueue={isInQueue} hasOpenSession={hasOpenSession} busy={busy} color={cta.color} />
+      <RoomsHints
+        isWaiting={isWaiting}
+        isInQueue={isInQueue}
+        hasOpenSession={hasOpenSession}
+        busy={busy}
+        color={cta.color}
+      />
       <div style={{ marginTop: '16px' }}>
         <RoomsContent
           loading={loading}
@@ -899,7 +1300,13 @@ function RoomsPanel({ rooms, loading, isWaiting, hasOpenSession, isInQueue, play
         />
       </div>
       {SHOW_PLAYGROUND && (
-        <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: '12px' }}>
+        <div
+          style={{
+            marginTop: '16px',
+            borderTop: '1px solid rgba(255,255,255,0.12)',
+            paddingTop: '12px',
+          }}
+        >
           <p style={FAINT}>Dev — banc de test sans enjeu.</p>
           <button
             type="button"

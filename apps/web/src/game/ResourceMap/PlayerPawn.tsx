@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import type { PathNode, CombatPlayer } from '@game/shared-types';
 
 import { getSkinById } from '../../game/constants/skins';
+import { spriteUrl } from '../../game/constants/spriteRegistry';
 import { useAuthStore } from '../../store/auth.store';
 
 const FARMING_MOVE_SPEED = 12.0;
@@ -245,9 +246,9 @@ export const PlayerPawn = React.forwardRef<PlayerPawnHandle, PlayerPawnProps>(
     // On utilise un try/catch ou un fallback pour le loader en React-Three-Fiber est complexe, 
     // on va plutôt utiliser des chemins valides (soldier par défaut) si on skip.
     const pathPrefix = skipSprites ? 'soldier' : spriteType;
-    const texIdle = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/idle.png`);
-    const texWalk = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/walk.png`);
-    const texAttack = useLoader(THREE.TextureLoader, `/assets/sprites/${pathPrefix}/attack.png`);
+    const texIdle = useLoader(THREE.TextureLoader, spriteUrl(pathPrefix, 'idle'));
+    const texWalk = useLoader(THREE.TextureLoader, spriteUrl(pathPrefix, 'walk'));
+    const texAttack = useLoader(THREE.TextureLoader, spriteUrl(pathPrefix, 'attack'));
 
     const { textureIdle, textureWalk, textureAttack } = useMemo(() => {
       if (skipSprites) return { textureIdle: texIdle, textureWalk: texWalk, textureAttack: texAttack };

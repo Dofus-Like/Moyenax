@@ -2,16 +2,17 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { gameSessionApi } from '../api/game-session.api';
+import { SKINS } from '../game/constants/skins';
+import { spriteUrl } from '../game/constants/spriteRegistry';
+import { type PoiId } from '../game/Hub3D/constants';
 import { Hub3DLoader, type Hub3DLoaderState } from '../game/Hub3D/Hub3DLoader';
 import { Hub3DScene } from '../game/Hub3D/Hub3DScene';
 import { HubBackdrop } from '../game/Hub3D/HubBackdrop';
 import { HubChatPanel } from '../game/Hub3D/HubChatPanel';
 import { HubOnboardingHint } from '../game/Hub3D/HubOnboardingHint';
-import { useHubMultiplayer } from '../game/Hub3D/useHubMultiplayer';
-import { type PoiId } from '../game/Hub3D/constants';
 import { readOnboardingDismissed, writeOnboardingDismissed } from '../game/Hub3D/onboarding';
 import { deriveActivePoiList, derivePoiStateLabels } from '../game/Hub3D/poiState';
-import { SKINS } from '../game/constants/skins';
+import { useHubMultiplayer } from '../game/Hub3D/useHubMultiplayer';
 import { useAuthStore } from '../store/auth.store';
 import { useTranslation } from '../store/language.store';
 import { useGameSession } from './GameTunnel';
@@ -119,84 +120,116 @@ export function LobbyPage(): React.ReactNode {
   }, [activeSession, navigate]);
 
   const handleCreateRoom = async () => {
-    await action.runAction('rooms', async () => {
-      await gameSessionApi.createPrivateSession();
-      await refreshSession({ silent: true });
-      await fetchLobbyState();
-    }, t('createRoom'));
+    await action.runAction(
+      'rooms',
+      async () => {
+        await gameSessionApi.createPrivateSession();
+        await refreshSession({ silent: true });
+        await fetchLobbyState();
+      },
+      t('createRoom'),
+    );
   };
 
   const handleCancelOpenSession = async () => {
     if (!activeSession) return;
-    await action.runAction('rooms', async () => {
-      await gameSessionApi.endSession(activeSession.id);
-      await refreshSession({ silent: true });
-      await fetchLobbyState();
-    }, t('cancelRoom'));
+    await action.runAction(
+      'rooms',
+      async () => {
+        await gameSessionApi.endSession(activeSession.id);
+        await refreshSession({ silent: true });
+        await fetchLobbyState();
+      },
+      t('cancelRoom'),
+    );
   };
 
   const handleJoinRoom = async (sessionId: string) => {
-    await action.runAction('rooms', async () => {
-      try {
-        await gameSessionApi.joinPrivateSession(sessionId);
-        await refreshSession({ silent: true });
-        navigate('/farming');
-      } catch (error) {
-        const msg = getApiErrorMessage(error, t('join'));
-        if (msg.includes('deja une room ouverte')) {
+    await action.runAction(
+      'rooms',
+      async () => {
+        try {
+          await gameSessionApi.joinPrivateSession(sessionId);
           await refreshSession({ silent: true });
           navigate('/farming');
-          return;
+        } catch (error) {
+          const msg = getApiErrorMessage(error, t('join'));
+          if (msg.includes('deja une room ouverte')) {
+            await refreshSession({ silent: true });
+            navigate('/farming');
+            return;
+          }
+          throw error;
         }
-        throw error;
-      }
-    }, t('join'));
+      },
+      t('join'),
+    );
   };
 
   const handleResetSession = async () => {
     if (!window.confirm(t('resetSessionConfirm'))) {
       return;
     }
-    await action.runAction('vsAi', async () => {
-      await gameSessionApi.resetSession();
-      await refreshSession({ silent: true });
-      await fetchLobbyState();
-      window.alert(t('resetSessionSuccess'));
-    }, t('reset'));
+    await action.runAction(
+      'vsAi',
+      async () => {
+        await gameSessionApi.resetSession();
+        await refreshSession({ silent: true });
+        await fetchLobbyState();
+        window.alert(t('resetSessionSuccess'));
+      },
+      t('reset'),
+    );
   };
 
   const handleStartVsAiCombat = async () => {
-    await action.runAction('vsAi', async () => {
-      await gameSessionApi.startVsAi();
-      await refreshSession({ silent: true });
-      navigate('/farming');
-    }, t('startVsAi'));
+    await action.runAction(
+      'vsAi',
+      async () => {
+        await gameSessionApi.startVsAi();
+        await refreshSession({ silent: true });
+        navigate('/farming');
+      },
+      t('startVsAi'),
+    );
   };
 
   const handleJoinQueue = async () => {
-    await action.runAction('combat', async () => {
-      const response = await gameSessionApi.joinQueue();
-      if (response.data?.status === 'matched') {
-        await refreshSession({ silent: true });
-        setIsInQueue(false);
-        navigate('/farming');
-        return;
-      }
-      setIsInQueue(true);
-    }, t('startSearch'));
+    await action.runAction(
+      'combat',
+      async () => {
+        const response = await gameSessionApi.joinQueue();
+        if (response.data?.status === 'matched') {
+          await refreshSession({ silent: true });
+          setIsInQueue(false);
+          navigate('/farming');
+          return;
+        }
+        setIsInQueue(true);
+      },
+      t('startSearch'),
+    );
   };
 
   const handleLeaveQueue = async () => {
-    await action.runAction('combat', async () => {
-      await gameSessionApi.leaveQueue();
-      setIsInQueue(false);
-    }, t('cancel'));
+    await action.runAction(
+      'combat',
+      async () => {
+        await gameSessionApi.leaveQueue();
+        setIsInQueue(false);
+      },
+      t('cancel'),
+    );
   };
 
   const handleSetSkin = async (id: string) => {
-    await action.runAction('appearance', async () => {
-      await setSkin(id);
-    }, 'Impossible de changer le skin.');
+    await action.runAction(
+      'appearance',
+      async () => {
+        await setSkin(id);
+      },
+      'Impossible de changer le skin.',
+    );
   };
 
   const { clearError } = action;
@@ -345,7 +378,7 @@ export function LobbyPage(): React.ReactNode {
                   className={`skin-sprite-icon type-${skin.type} avatar-${skin.type === 'soldier' ? 'soldier' : 'orc'}`}
                   style={{
                     filter: `hue-rotate(${skin.hue}deg) saturate(${skin.saturation})`,
-                    backgroundImage: `url(/assets/sprites/${skin.type}/idle.png)`,
+                    backgroundImage: `url(${spriteUrl(skin.type, 'idle')})`,
                   }}
                 />
               </div>
@@ -465,11 +498,7 @@ export function LobbyPage(): React.ReactNode {
           )}
 
           {hasOpenSession && (
-            <button
-              type="button"
-              className="reset-session-link"
-              onClick={handleResetSession}
-            >
+            <button type="button" className="reset-session-link" onClick={handleResetSession}>
               🔄 {t('reset')}
             </button>
           )}

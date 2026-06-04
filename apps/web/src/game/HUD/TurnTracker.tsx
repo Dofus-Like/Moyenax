@@ -1,8 +1,8 @@
+import type { CombatPlayer } from '@game/shared-types';
 import React from 'react';
 
-import type { CombatPlayer } from '@game/shared-types';
-
 import { getSkinById } from '../../game/constants/skins';
+import { spriteUrl } from '../../game/constants/spriteRegistry';
 
 import './TurnTracker.css';
 
@@ -41,7 +41,9 @@ function AvatarCircle({ fighter, isActive, isSelf, index }: AvatarCircleProps) {
     'tt-avatar',
     isActive ? 'tt-avatar--active' : '',
     isSelf ? 'tt-avatar--self' : 'tt-avatar--foe',
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className="tt-slot-wrapper">
@@ -49,12 +51,17 @@ function AvatarCircle({ fighter, isActive, isSelf, index }: AvatarCircleProps) {
         {fighter.type === 'SUMMON' ? (
           <>
             <span className="tt-avatar-emoji">🗿</span>
-            <span className="tt-passive-badge" title="Ne joue pas de tour">♾️</span>
+            <span className="tt-passive-badge" title="Ne joue pas de tour">
+              ♾️
+            </span>
           </>
         ) : (
           <div
-            className={`tt-avatar-sprite avatar-${skinConfig.type}`}
-            style={{ filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` }}
+            className="tt-avatar-sprite"
+            style={{
+              backgroundImage: `url(${spriteUrl(skinConfig.type, 'idle')})`,
+              filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})`,
+            }}
           />
         )}
       </div>
@@ -63,7 +70,12 @@ function AvatarCircle({ fighter, isActive, isSelf, index }: AvatarCircleProps) {
   );
 }
 
-export function TurnTracker({ fighters, currentTurnPlayerId, turnNumber, selfId }: TurnTrackerProps) {
+export function TurnTracker({
+  fighters,
+  currentTurnPlayerId,
+  turnNumber,
+  selfId,
+}: TurnTrackerProps) {
   const ordered = React.useMemo(
     () => [...fighters].sort((a, b) => (b.stats?.ini ?? 0) - (a.stats?.ini ?? 0)),
     [fighters],

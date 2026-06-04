@@ -66,8 +66,8 @@
   image-rendering: pixelated;
 }
 
-.avatar-orc { background-image: url('/assets/sprites/orc/idle.png'); animation: idle-orc 0.8s steps(6) infinite; }
-.avatar-soldier { background-image: url('/assets/sprites/soldier/idle.png'); animation: idle-soldier 0.8s steps(6) infinite; }
+.avatar-orc { animation: idle-orc 0.8s steps(6) infinite; }
+.avatar-soldier { animation: idle-soldier 0.8s steps(6) infinite; }
 
 @keyframes idle-orc { from { background-position-x: -86px; } to { background-position-x: -1486px; } }
 @keyframes idle-soldier { from { background-position-x: -80px; } to { background-position-x: -1480px; } }

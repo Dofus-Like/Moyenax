@@ -130,14 +130,6 @@
   animation: turn-avatar-idle 0.8s steps(6) infinite;
 }
 
-.tt-avatar-sprite.avatar-orc {
-  background-image: url("/assets/sprites/orc/idle.png");
-}
-
-.tt-avatar-sprite.avatar-soldier {
-  background-image: url("/assets/sprites/soldier/idle.png");
-}
-
 .tt-avatar-emoji {
   font-size: 1.6rem;
   line-height: 1;
