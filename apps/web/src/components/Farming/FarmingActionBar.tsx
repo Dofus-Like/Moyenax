@@ -1,4 +1,6 @@
 import React from 'react';
+
+import { assetUrl } from '../../game/constants/assetUrl';
 import { useTranslation } from '../../store/language.store';
 import './FarmingActionBar.css';
 
@@ -25,9 +27,9 @@ export const FarmingActionBar = ({
 
   // Ensure we have 8 slots for that classic Dofus look
   const slots = Array(8).fill(null);
-  spells.forEach((spell, i) => {
+  for (const [i, spell] of spells.entries()) {
     if (i < slots.length) slots[i] = spell;
-  });
+  }
 
   console.log('FarmingActionBar: rendering with spells', spells);
 
@@ -55,7 +57,7 @@ export const FarmingActionBar = ({
 
               {spell && (
                 <img
-                  src={spell.iconPath || '/assets/pack/spells/epee.png'}
+                  src={assetUrl(spell.iconPath || '/assets/pack/spells/epee.png')}
                   className="spell-icon-img"
                   alt={spell.name}
                 />

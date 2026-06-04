@@ -1,5 +1,7 @@
+import { assetUrl } from '../game/constants/assetUrl';
+
 export const getResourceIconPath = (resourceName: string | null): string => {
-  if (!resourceName) return '/assets/items/bois.png';
+  if (!resourceName) return assetUrl('/assets/items/bois.png');
   
   const mapping: Record<string, string> = {
     'BOIS': 'bois.png',
@@ -13,5 +15,5 @@ export const getResourceIconPath = (resourceName: string | null): string => {
   
   const key = resourceName.toUpperCase();
   const filename = mapping[key] || 'bois.png';
-  return `/assets/items/${filename}`;
+  return assetUrl(`/assets/items/${filename}`);
 };

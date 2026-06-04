@@ -1,4 +1,6 @@
 import React from 'react';
+
+import { assetUrl } from '../../game/constants/assetUrl';
 import { getResourceIconPath } from '../../utils/resourceIcons';
 import './ForgeList.css';
 
@@ -32,7 +34,7 @@ export const ForgeList = ({ items, allItems = [], onItemClick, onItemHover, onIt
         >
           <div className="forge-item-main">
             <div className="forge-item-icon">
-              <img src={item.iconPath || `/assets/items/${item.id}.png`} alt={item.name} />
+              <img src={assetUrl(item.iconPath || `/assets/items/${item.id}.png`)} alt={item.name} />
             </div>
             <div className="forge-item-info">
               <div className="forge-item-name">{item.name}</div>

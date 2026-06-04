@@ -2,6 +2,8 @@ import { useFBX, useTexture } from '@react-three/drei';
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 
+import { assetUrl } from '../constants/assetUrl';
+
 export interface TreeProps {
   position: [number, number, number];
   scale?: number;
@@ -14,9 +16,9 @@ const TREE_URLS = [
   '/assets/models/Tree_03.fbx',
   '/assets/models/Tree_04.fbx',
   '/assets/models/Tree_05.fbx',
-];
+].map(assetUrl);
 
-const TEXTURE_PATH = '/assets/models/forest_texture.png';
+const TEXTURE_PATH = assetUrl('/assets/models/forest_texture.png');
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed + 1) * 43758.5453123;

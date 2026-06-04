@@ -11,21 +11,23 @@ import {
   CombatTerrainType,
 } from "@game/shared-types";
 
-const BUSH_URLS = ["/assets/models/Bush_4E.fbx", "/assets/models/Bush_4F.fbx"];
-const TREE_URLS = ["/assets/models/Tree_02.fbx", "/assets/models/Tree_04.fbx"];
+import { assetUrl } from "../constants/assetUrl";
+
+const BUSH_URLS = ["/assets/models/Bush_4E.fbx", "/assets/models/Bush_4F.fbx"].map(assetUrl);
+const TREE_URLS = ["/assets/models/Tree_02.fbx", "/assets/models/Tree_04.fbx"].map(assetUrl);
 const ROCK_FBX_URLS = [
   "/assets/models/Rock_2E.fbx",
   "/assets/models/Rock_2F.fbx",
   "/assets/models/Rock_2G.fbx",
   "/assets/models/Rock_2H.fbx",
-];
+].map(assetUrl);
 const GRASS_URLS = [
   "/assets/models/Grass_1A.fbx",
   "/assets/models/Grass_1B.fbx",
   "/assets/models/Grass_2A.fbx",
   "/assets/models/Grass_2B.fbx",
-];
-const TEXTURE_PATH = "/assets/models/forest_texture.png";
+].map(assetUrl);
+const TEXTURE_PATH = assetUrl("/assets/models/forest_texture.png");
 
 // Slots = one InstancedMesh per (category, variant). Fixed order: bush, tree, rock, grass.
 const BUSH_SLOT = 0;

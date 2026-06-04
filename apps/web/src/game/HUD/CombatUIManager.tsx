@@ -7,6 +7,7 @@ import { combatApi } from '../../api/combat.api';
 import { PlayerAvatar } from '../../components/Player/PlayerAvatar';
 import { useAuthStore } from '../../store/auth.store';
 import { useCombatStore } from '../../store/combat.store';
+import { assetUrl } from '../constants/assetUrl';
 
 import { CombatMannequins } from './CombatMannequins';
 import './CombatUIManager.css';
@@ -160,7 +161,7 @@ export function CombatUIManager() {
                 onClick={() => !disabled && setSelectedSpell(isActive ? null : spell.id)}
               >
                 <div className="spell-cost">{spell.paCost}</div>
-                <img src={spell.iconPath || '/assets/pack/spells/epee.png'} alt={spell.name} />
+                <img src={assetUrl(spell.iconPath || '/assets/pack/spells/epee.png')} alt={spell.name} />
                 {onCooldown && <div className="cooldown-overlay">{currentPlayer.spellCooldowns[spell.id]}</div>}
               </div>
             );

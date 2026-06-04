@@ -1,4 +1,6 @@
 import React from 'react';
+
+import { assetUrl } from '../../game/constants/assetUrl';
 import { useTranslation } from '../../store/language.store';
 import './Mannequin.css';
 
@@ -16,7 +18,7 @@ const EquipmentSlot = ({ type, label, item, onDoubleClick }: EquipmentSlotProps)
   >
     <div className="slot-label-bg">{label}</div>
     {item && (
-      <img src={item.iconPath} alt={item.name} className="slot-icon" />
+      <img src={assetUrl(item.iconPath)} alt={item.name} className="slot-icon" />
     )}
   </div>
 );

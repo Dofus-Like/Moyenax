@@ -10,11 +10,12 @@ import {
 import type { HubChatMessage } from '@game/shared-types';
 
 import { useHubStore } from '../../store/hub.store';
+import { assetUrl } from '../constants/assetUrl';
 
 import './HubChatPanel.css';
 
 const MAX_LEN = 280;
-const CHAT_ICON = '/assets/icons/chatting.png';
+const CHAT_ICON = assetUrl('/assets/icons/chatting.png');
 
 type ChatStatus = 'idle' | 'connecting' | 'connected' | 'error';
 
