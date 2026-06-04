@@ -84,6 +84,7 @@ export interface CombatPlayer {
   skin?: string;
   items?: any[];
   casterId?: string;
+  spawn?: CombatPosition; // Playground : position d'origine pour le reset des mannequins
 }
 
 export enum CombatActionType {
@@ -112,4 +113,6 @@ export interface CombatState {
     tiles: Tile[];
   };
   winnerId?: string; // Ajout du gagnant
+  isPlayground?: boolean; // Mode banc de test (/playground) : panneaux dev, pas de fin de combat
+  noCooldown?: boolean; // Playground : ignore les cooldowns de sorts
 }

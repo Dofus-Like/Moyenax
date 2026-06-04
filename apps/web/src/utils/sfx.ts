@@ -106,6 +106,9 @@ const SFX = {
     '11111mqnbhVWL9Zv6NBPBWMDjhC6J1YqAUe8MtPJ4AwNeBr87RxcR7Qi7xqKq4Q8nifZ9V1qbwrJGH1LDEvGDoYo8rFF6h9KzMQjiCWLj3cm8aQGqw2s14s',
   castLeap:
     '11111Fc13ScxjeU5T2qZVimPPgv4qtk1g1fcX6xyoGEqm2wgtEMPujo6c4DKD9onX5BAeeRmKQX1JtFBMaBTu4MMr4uZqp4bvqfe8bneqTZffQty1yindTnP',
+  // invocation du Menhir : impact de pierre lourd et sourd
+  castMenhir:
+    '7BMHBGAc8o7kxuwyGTS8GpMzXZeA6TcnVXk6YN9bhytMQrm4PE7EsfATY7rhPaNqtnfzAx5inX2Rygam9b9hi6PBb2yEY4EoqV115ivo7WgSWmDnqN23YXS9D',
   // dégâts infligés
   damageDealt:
     '34T6PkjPGwq3wpvt66AnJsmdzYpb5joLRYgpu9YhSi2UNqTAKSKGG1YTTf3jcs8Bv6vr8r8X9Q2RTTRhnDe6JgZz7wncNfrnGKgtcqgZ4DFtSW21QhDSq8q3M',
@@ -169,6 +172,22 @@ const SFX = {
 } satisfies Record<string, string>;
 
 export type SfxName = keyof typeof SFX;
+
+/** Son de lancement distinct par sort (clé = code du sort). Fallback : « spellCast ». */
+export const SPELL_CAST_SFX: Record<string, SfxName> = {
+  "spell-boule-de-feu": "castFireball",
+  "spell-frappe": "castSlash",
+  "spell-claque": "castSlap",
+  "spell-kunai": "castKunai",
+  "spell-bombe-repousse": "castBomb",
+  "spell-soin": "castHeal",
+  "spell-heal": "castHeal",
+  "spell-endurance": "castEndurance",
+  "spell-velocite": "castVelocite",
+  "spell-buff-pm": "castVelocite",
+  "spell-bond": "castLeap",
+  "spell-menhir": "castMenhir",
+};
 
 // Un son est synthétisé une seule fois puis rejoué (chaque play() crée une nouvelle source).
 const cache = new Map<SfxName, SfxrAudio>();

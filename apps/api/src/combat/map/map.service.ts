@@ -37,6 +37,22 @@ export class MapService {
   }
 
   /**
+   * Génère une carte de combat entièrement vide (que du sol), sans ressource ni
+   * obstacle. Utilisée par le playground où le développeur peint lui-même les cases.
+   */
+  generateFlatMap(width = 10, height = 10): Tile[] {
+    const tiles: Tile[] = [];
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        tiles.push({ x, y, type: TerrainType.GROUND });
+      }
+    }
+
+    return tiles;
+  }
+
+  /**
    * Retourne les positions atteignables pour pré-visualisation front.
    */
   getReachablePositions(

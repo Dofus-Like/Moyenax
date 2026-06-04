@@ -43,6 +43,28 @@ describe('MapService', () => {
     });
   });
 
+  describe('generateFlatMap', () => {
+    it('retourne width×height tiles', () => {
+      expect(service.generateFlatMap(5, 5)).toHaveLength(25);
+    });
+
+    it('taille par défaut 10×10', () => {
+      expect(service.generateFlatMap()).toHaveLength(100);
+    });
+
+    it('ne contient que du GROUND (aucune ressource)', () => {
+      const tiles = service.generateFlatMap(10, 10);
+      tiles.forEach((t) => expect(t.type).toBe(TerrainType.GROUND));
+    });
+
+    it('couvre chaque coordonnée une seule fois', () => {
+      const tiles = service.generateFlatMap(4, 3);
+      const keys = new Set(tiles.map((t) => `${t.x},${t.y}`));
+      expect(keys.size).toBe(12);
+      expect(tiles.every((t) => t.x >= 0 && t.x < 4 && t.y >= 0 && t.y < 3)).toBe(true);
+    });
+  });
+
   describe('getReachablePositions', () => {
     const emptyTiles = () => {
       const tiles: Array<{ x: number; y: number; type: TerrainType }> = [];
