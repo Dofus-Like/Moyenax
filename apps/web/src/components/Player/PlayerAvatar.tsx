@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 
 import { getSkinById } from '../../game/constants/skins';
+import { spriteUrl } from '../../game/constants/spriteRegistry';
 import './PlayerAvatar.css';
 
 interface PlayerAvatarProps {
@@ -15,31 +16,32 @@ interface PlayerAvatarProps {
  * Composant réutilisable pour afficher l'avatar d'un joueur.
  * Supporte le changement de skin (hue, saturation) et les animations CSS.
  */
-export function PlayerAvatar({ 
-  skin, 
-  size = 80, 
+export function PlayerAvatar({
+  skin,
+  size = 80,
   animation = 'idle',
   className = '',
-  style 
+  style,
 }: PlayerAvatarProps) {
   const skinConfig = useMemo(() => getSkinById(skin || 'soldier-classic'), [skin]);
-  
+
   const widthStr = typeof size === 'number' ? `${size}px` : size;
   const heightStr = typeof size === 'number' ? `${size}px` : size;
 
   return (
-    <div 
+    <div
       className={`player-avatar-root ${className}`}
-      style={{ 
-        width: widthStr, 
+      style={{
+        width: widthStr,
         height: heightStr,
-        ...style 
+        ...style,
       }}
     >
-      <div 
+      <div
         className={`avatar-sprite-img type-${skinConfig.type} anim-${animation}`}
-        style={{ 
-          filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})` 
+        style={{
+          backgroundImage: `url(${spriteUrl(skinConfig.type, animation)})`,
+          filter: `hue-rotate(${skinConfig.hue}deg) saturate(${skinConfig.saturation})`,
         }}
       />
     </div>

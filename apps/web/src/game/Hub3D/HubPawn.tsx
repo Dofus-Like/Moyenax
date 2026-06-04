@@ -12,6 +12,7 @@ import {
 } from 'three';
 
 import { SKINS, type SkinConfig } from '../constants/skins';
+import { spriteUrl } from '../constants/spriteRegistry';
 
 import {
   PLAYER_BOB_LERP,
@@ -216,8 +217,8 @@ function applyBob(sprite: Sprite, bob: BobState, state: PlayerVisualState, ctx: 
 }
 
 function useSpriteMaterials(skin: SkinConfig): { idleTex: Texture; walkTex: Texture; material: SpriteMaterial } {
-  const idleSrc = useTexture(`/assets/sprites/${skin.type}/idle.png`) as Texture;
-  const walkSrc = useTexture(`/assets/sprites/${skin.type}/walk.png`) as Texture;
+  const idleSrc = useTexture(spriteUrl(skin.type, 'idle')) as Texture;
+  const walkSrc = useTexture(spriteUrl(skin.type, 'walk')) as Texture;
   const { idleTex, walkTex } = useMemo(() => {
     const idle = idleSrc.clone();
     const walk = walkSrc.clone();

@@ -1,20 +1,20 @@
-import { OrthographicCamera, CameraControls, Text } from '@react-three/drei';
+import { TerrainType } from '@game/shared-types';
+import { CameraControls, OrthographicCamera, Text } from '@react-three/drei';
 import { Canvas, useLoader } from '@react-three/fiber';
 import CameraControlsImpl from 'camera-controls';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 
-import { TerrainType } from '@game/shared-types';
-
 import { playgroundApi } from '../api/playground.api';
 import { CameraEffects } from '../game/Combat/CameraEffects';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
+import { allSpriteUrls } from '../game/constants/spriteRegistry';
 import { CombatHUD } from '../game/HUD/CombatHUD';
 import { DamageMeterPanel } from '../game/Playground/DamageMeterPanel';
 import { EquipmentPanel } from '../game/Playground/EquipmentPanel';
 import { PlaygroundControlsPanel } from '../game/Playground/PlaygroundControlsPanel';
-import { TerrainBrushPanel, type PlaygroundMode } from '../game/Playground/TerrainBrushPanel';
+import { type PlaygroundMode, TerrainBrushPanel } from '../game/Playground/TerrainBrushPanel';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import '../game/constants/colors';
 import { useAuthStore } from '../store/auth.store';
@@ -24,14 +24,7 @@ import { getTimeOfDay } from '../utils/timeOfDay';
 import './CombatPage.css';
 
 function CombatPreloader() {
-  useLoader(THREE.TextureLoader, [
-    '/assets/sprites/soldier/idle.png',
-    '/assets/sprites/soldier/walk.png',
-    '/assets/sprites/soldier/attack.png',
-    '/assets/sprites/orc/idle.png',
-    '/assets/sprites/orc/walk.png',
-    '/assets/sprites/orc/attack.png',
-  ]);
+  useLoader(THREE.TextureLoader, allSpriteUrls());
   return <Text visible={false}>Preload Font</Text>;
 }
 
@@ -89,9 +82,7 @@ export function PlaygroundPage() {
       try {
         disconnect();
         const { data } =
-          target === 'combat'
-            ? await playgroundApi.startCombat()
-            : await playgroundApi.start();
+          target === 'combat' ? await playgroundApi.startCombat() : await playgroundApi.start();
         setArena(target);
         setMode('play');
         setSessionId(data.sessionId);
@@ -159,7 +150,13 @@ export function PlaygroundPage() {
             camera={{ fov: 30 }}
           >
             <CombatBackgroundShader timeOfDay={timeOfDay} />
-            <OrthographicCamera makeDefault position={[20, 20, 20]} zoom={50} near={0.1} far={1000} />
+            <OrthographicCamera
+              makeDefault
+              position={[20, 20, 20]}
+              zoom={50}
+              near={0.1}
+              far={1000}
+            />
             <CameraControls
               ref={controlsRef}
               minZoom={15}
@@ -231,7 +228,9 @@ export function PlaygroundPage() {
               </button>
             </div>
             <span className="pg-arena-label">
-              {isSandbox ? 'Bac à sable — sans tours, PA/PM illimités' : 'Combat tour par tour vs IA'}
+              {isSandbox
+                ? 'Bac à sable — sans tours, PA/PM illimités'
+                : 'Combat tour par tour vs IA'}
             </span>
           </div>
 

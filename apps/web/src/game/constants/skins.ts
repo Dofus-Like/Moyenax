@@ -1,63 +1,25 @@
+// Skins auto-découverts : déposer un fichier src/assets/skins/<id>.json l'ajoute
+// automatiquement au catalogue (même formule que les modèles GLB). `type` désigne
+// le dossier de sprites (src/assets/sprites/<type>/), résolu via spriteRegistry.
 export interface SkinConfig {
   id: string;
   name: string;
-  type: 'soldier' | 'orc';
+  type: string;
   hue: number;
   saturation: number;
   description: string;
+  sortOrder?: number;
 }
 
-export const SKINS: SkinConfig[] = [
-  { 
-    id: 'soldier-classic', 
-    name: 'Guerrier de Chair', 
-    type: 'soldier', 
-    hue: 0, 
-    saturation: 1,
-    description: 'L\'équipement standard du garde des fôrets de Chair.'
-  },
-  { 
-    id: 'soldier-royal', 
-    name: 'Guerrier Royal', 
-    type: 'soldier', 
-    hue: 200, 
-    saturation: 1.2,
-    description: 'Une armure azurée infusée de magie protector.'
-  },
-  { 
-    id: 'soldier-dark', 
-    name: 'Chevalier d\'Ébène', 
-    type: 'soldier', 
-    hue: 0, 
-    saturation: 0.1,
-    description: 'Un guerrier solitaire aux couleurs ternies par les batailles.'
-  },
-  { 
-    id: 'orc-classic', 
-    name: 'Orc Sauvage', 
-    type: 'orc', 
-    hue: 0, 
-    saturation: 1,
-    description: 'Peau verte et rage de vaincre.'
-  },
-  { 
-    id: 'orc-fire', 
-    name: 'Orc de Sang', 
-    type: 'orc', 
-    hue: -120, 
-    saturation: 1.6,
-    description: 'Venu des volcans, sa peau brûle d\'un rouge ardent.'
-  },
-  { 
-    id: 'orc-void', 
-    name: 'Orc Corrompu', 
-    type: 'orc', 
-    hue: 130, 
-    saturation: 0.8,
-    description: 'Touché par le néant, il arbore des teintes violettes.'
-  },
-];
+const modules = import.meta.glob('../../assets/skins/*.json', {
+  eager: true,
+  import: 'default',
+}) as Record<string, SkinConfig>;
+
+export const SKINS: SkinConfig[] = Object.values(modules).sort(
+  (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id.localeCompare(b.id),
+);
 
 export function getSkinById(id: string): SkinConfig {
-  return SKINS.find(s => s.id === id) || SKINS[0];
+  return SKINS.find((s) => s.id === id) ?? SKINS[0];
 }

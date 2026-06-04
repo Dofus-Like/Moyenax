@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 
 import { getSkinById } from '../constants/skins';
+import { spriteUrl } from '../constants/spriteRegistry';
 
 // Les feuilles idle.png font 600×100 = 6 frames de 100px. On affiche la 1re frame,
 // mise à l'échelle de la vignette, teintée par hue/saturation du skin.
@@ -11,7 +12,7 @@ export function SkinThumb({ skinId, size = 48 }: { skinId: string; size?: number
   const style: CSSProperties = {
     width: size,
     height: size,
-    backgroundImage: `url(/assets/sprites/${skin.type}/idle.png)`,
+    backgroundImage: `url(${spriteUrl(skin.type, 'idle')})`,
     backgroundSize: `${size * IDLE_FRAMES}px ${size}px`,
     backgroundPosition: '0 0',
     backgroundRepeat: 'no-repeat',
