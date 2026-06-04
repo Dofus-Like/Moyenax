@@ -2,14 +2,16 @@ import { useFBX, useTexture } from '@react-three/drei';
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 
+import { assetUrl } from '../constants/assetUrl';
+
 export interface BushProps {
   position: [number, number, number];
   scale?: number;
   seed?: number;
 }
 
-const BUSH_URLS = ['/assets/models/Bush_4E.fbx', '/assets/models/Bush_4F.fbx'];
-const TEXTURE_PATH = '/assets/models/forest_texture.png';
+const BUSH_URLS = ['/assets/models/Bush_4E.fbx', '/assets/models/Bush_4F.fbx'].map(assetUrl);
+const TEXTURE_PATH = assetUrl('/assets/models/forest_texture.png');
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed + 1) * 43758.5453123;

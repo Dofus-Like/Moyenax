@@ -3,6 +3,7 @@ import { useFrame, useLoader } from '@react-three/fiber';
 import React, { useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
 
+import { assetUrl } from '../../constants/assetUrl';
 import { COMBAT_COLORS } from '../../constants/colors';
 
 import { FireballParticles } from './FireballVFX';
@@ -20,7 +21,7 @@ export function SpellVFX({ type, from, to, onComplete }: SpellVFXProps) {
   const kunaiMeshRef = useRef<THREE.Mesh>(null);
   
   // Chargement textures (optionnel pour kunai/arrow)
-  const arrowTexture = useLoader(THREE.TextureLoader, '/assets/vfx/arrow.png');
+  const arrowTexture = useLoader(THREE.TextureLoader, assetUrl('/assets/vfx/arrow.png'));
   
   // recalage -4.5 pour correspondre au toWorld des persos (gridSize: 10)
   const startPos = useMemo(() => new THREE.Vector3(from.x - 4.5, 0.8, from.y - 4.5), [from.x, from.y]);

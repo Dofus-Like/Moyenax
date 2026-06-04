@@ -1,4 +1,6 @@
 import React from 'react';
+
+import { assetUrl } from '../../game/constants/assetUrl';
 import './InventoryGrid.css';
 
 interface InventoryGridProps {
@@ -21,9 +23,9 @@ export const InventoryGrid = ({
   goldLabel = 'Po',
 }: InventoryGridProps) => {
   const slots = Array(Math.max(15, items.length)).fill(null);
-  items.forEach((item, index) => {
+  for (const [index, item] of items.entries()) {
     if (index < slots.length) slots[index] = item;
-  });
+  }
 
   return (
     <div className="inventory-grid-container">
@@ -47,7 +49,7 @@ export const InventoryGrid = ({
           >
             {item && (
               <>
-                <img src={item.iconPath || `/assets/items/${item.itemId || item.id}.png`} alt={item.name} className="item-icon" />
+                <img src={assetUrl(item.iconPath || `/assets/items/${item.itemId || item.id}.png`)} alt={item.name} className="item-icon" />
                 {item.quantity > 1 && (
                   <span className="item-quantity">x{item.quantity}</span>
                 )}

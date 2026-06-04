@@ -43,6 +43,28 @@ Liste complète : [`README.md`](./README.md).
 - ❌ Aucune autre convention visuelle, thème, couleur en dur hors token, ni librairie de composants UI.
 - Réutiliser les tokens/patterns existants ; ne pas réinventer couleurs, espacements ou composants déjà définis.
 
+### Assets (modèles, sprites, skins) — auto-découverte
+Les assets web vivent **tous** dans `apps/web/src/assets/` (un **seul** dossier ; pas de `public/assets/`). Ils sont **auto-découverts** par registre via `import.meta.glob` : **déposer le fichier au bon endroit suffit**, aucun import manuel, aucune liste à éditer. Vite les hashe, inline les <4 Ko et exclut du build ce qui est inutile.
+
+- **Modèles GLB** → `apps/web/src/assets/models/<categorie>/<nom>.glb` (`environments/`, `poi/`, `props/`). Référencer **toujours** via `modelUrl('<categorie>/<nom>.glb')` (`game/models/modelRegistry.ts`), **jamais** un chemin `/assets/...` en dur. `raw/` = sources lourdes, exclues du build de prod (`loadRawModels()`, DEV-only).
+- **Sprites** → `apps/web/src/assets/sprites/<perso>/{idle,walk,attack}.png` (`idle.png` obligatoire = le perso est listé). Référencer via `spriteUrl('<perso>', 'idle'|'walk'|'attack')` / `allSpriteUrls()` (`game/constants/spriteRegistry.ts`), **jamais** une URL en dur (ni en JS, ni en `background-image` CSS — utiliser un fond inline).
+- **Skins** → `apps/web/src/assets/skins/<id>.json` (`{ id, name, type, hue, saturation, description, sortOrder? }` ; `type` = nom du dossier de sprites). Lus via `SKINS` / `getSkinById('<id>')` (`game/constants/skins.ts`).
+- **Sons (SFX)** → `apps/web/src/assets/sounds/<name>.json` (`{ value, volume?, description?, order? }` ; `value` = chaîne sfxr base58). Lus via `playSfx('<name>')` / `SFX_NAMES` (`utils/sfx.ts`), jamais le catalogue en dur. La musique reste un fichier dans `assets/music/`.
+- **Icônes / items / sorts / vfx / FBX** (anciennement servis depuis `public/assets/`) → `apps/web/src/assets/{icons,items,vfx,pack,models}/`. Référencer via `assetUrl('/assets/<sous-chemin>')` (`game/constants/assetUrl.ts`) : résolution par **sous-chemin** (donc `items/epee.png` ≠ `pack/spells/epee.png`). Les `iconPath` stockés en **base** (`/assets/...`) restent inchangés : `assetUrl` les mappe vers l'URL hashée (idempotent). **Jamais** de `<img src="/assets/...">` en dur. Les icônes SVG du hub 3D restent des **composants React** dans `src/assets/icons/hub3d/`.
+- **Masters d'art non livrés** (`.aseprite`, planches sources) → `apps/web/src/assets/raw/` : archive d'édition, **hors glob et non bundlée** (rien ne l'importe). Ne jamais les ranger sous `sprites/` (le glob les prendrait pour des persos). On exporte depuis `raw/` vers `sprites/`, on ne sert jamais `raw/` à l'app.
+
+**Ajouter un asset = déposer le(s) fichier(s), zéro code :**
+- **un modèle** → `assets/models/<categorie>/<nom>.glb` ; consommer via `modelUrl('<categorie>/<nom>.glb')`.
+- **une animation de sprite** → `assets/sprites/<perso>/<idle|walk|attack>.png` (créer le dossier `<perso>/` avec au moins `idle.png` pour un nouveau perso).
+- **un skin** → `assets/skins/<id>.json` (`"type"` = un dossier de `sprites/` existant).
+- **un son** → `assets/sounds/<name>.json` (`value` sfxr) ; jouer via `playSfx('<name>')`.
+- **un perso complet** = `sprites/<nom>/{idle,walk,attack}.png` **+** `skins/<id>.json` (`"type": "<nom>"`).
+
+Dans tous les cas il apparaît automatiquement partout via son registre — rien d'autre à éditer.
+- ❌ Ne jamais mettre un asset dans `public/` ni écrire un chemin `/assets/...` en dur — toujours passer par le registre.
+- ❌ Ne pas maintenir de liste/tableau d'assets à la main — le glob s'en charge.
+- En **déplaçant/renommant** un asset : vérifier qu'aucun chemin en dur ne subsiste (`grep -rn '/assets/' apps/web/src`) ; tout doit passer par une clé de registre.
+
 ### Tests (TDD)
 - **Obligatoire** : tout fix de bug (test rouge → fix), toute logique dans `libs/game-engine`, tout code sécurité.
 - Cycle **Red → Green → Refactor**, vérifier que le test échoue **pour la bonne raison**.

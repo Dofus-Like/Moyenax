@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { assetUrl } from '../constants/assetUrl';
+
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   combatState: {
@@ -179,8 +181,8 @@ describe('CombatHUD', () => {
     const claqueIcon = screen.getByAltText('Claque');
     const fireballIcon = screen.getByAltText('Boule de Feu');
 
-    expect(claqueIcon.getAttribute('src')).toBe('/assets/pack/spells/epee.png');
-    expect(fireballIcon.getAttribute('src')).toBe('/assets/pack/spells/fireball.png');
+    expect(claqueIcon.getAttribute('src')).toBe(assetUrl('/assets/pack/spells/epee.png'));
+    expect(fireballIcon.getAttribute('src')).toBe(assetUrl('/assets/pack/spells/fireball.png'));
     expect(container.querySelector('.spell-card.family-common')).not.toBeNull();
     expect(container.querySelector('.spell-card.family-mage')).not.toBeNull();
   });

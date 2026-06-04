@@ -1,8 +1,11 @@
 import React, { useCallback, useState } from "react";
+
+import { CombatActionType } from "@game/shared-types";
+
+import { combatApi } from "../../api/combat.api";
 import { useAuthStore } from "../../store/auth.store";
 import { useCombatStore } from "../../store/combat.store";
-import { combatApi } from "../../api/combat.api";
-import { CombatActionType } from "@game/shared-types";
+import { assetUrl } from "../constants/assetUrl";
 
 import "./CombatPlayerPanel.css";
 
@@ -141,7 +144,7 @@ function StatsSection({ atk, def, mag, res, ini, items = [] }: StatsSectionProps
     <div key={item.id} className="cpp-detailed-item">
       <div className={`cpp-di-icon rank-${item.rank}`}>
         {item.iconPath ? (
-          <img src={item.iconPath} alt={item.name} />
+          <img src={assetUrl(item.iconPath)} alt={item.name} />
         ) : (
           <span>{item.name.charAt(0)}</span>
         )}
@@ -216,7 +219,7 @@ function StatsSection({ atk, def, mag, res, ini, items = [] }: StatsSectionProps
                 return (
                   <div key={item.id} className={`cpp-item-slot rank-${item.rank}`} title={`${item.name} (★${item.rank})`}>
                     {item.iconPath ? (
-                      <img src={item.iconPath} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      <img src={assetUrl(item.iconPath)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     ) : (
                       <span className="cpp-item-initial">{item.name.charAt(0)}</span>
                     )}

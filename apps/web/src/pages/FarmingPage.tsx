@@ -1,19 +1,10 @@
 import { CameraControls, OrthographicCamera, useProgress } from '@react-three/drei';
-import CameraControlsImpl from 'camera-controls';
 import { Canvas } from '@react-three/fiber';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import CameraControlsImpl from 'camera-controls';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FarmingMapScene } from './FarmingMapScene';
-import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
-import { gameSessionApi } from '../api/game-session.api';
-import { useAuthStore } from '../store/auth.store';
-import { useFarmingStore } from '../store/farming.store';
-import { useGameSession } from './GameTunnel';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { inventoryApi } from '../api/inventory.api';
-import { equipmentApi } from '../api/equipment.api';
-import { shopApi } from '../api/shop.api';
-import { craftingApi } from '../api/crafting.api';
+
 import {
   type PathNode,
   type PlayerStats,
@@ -24,18 +15,30 @@ import {
   TerrainType,
   type SeedId,
 } from '@game/shared-types';
-import { getItemVisualMeta } from '../utils/itemVisual';
+import { craftingApi } from '../api/crafting.api';
+import { equipmentApi } from '../api/equipment.api';
+import { gameSessionApi } from '../api/game-session.api';
+import { inventoryApi } from '../api/inventory.api';
 import { getResourceIconPath } from '../utils/resourceIcons';
-import { playSfx } from '../utils/sfx';
-import { FarmingSidebar } from '../components/Farming/FarmingSidebar';
 import { SpellBar, SpellBarItem } from '../components/SpellBar/SpellBar';
 import { playerApi } from '../api/player.api';
+import { shopApi } from '../api/shop.api';
+import { FarmingSidebar } from '../components/Farming/FarmingSidebar';
 import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CameraEffects } from '../game/Combat/CameraEffects';
-import { countRemainingResources } from '../utils/farming';
-import { getTimeOfDay } from '../utils/timeOfDay';
 import { EndTurnButton } from '../game/HUD/EndTurnButton';
+import { assetUrl } from '../game/constants/assetUrl';
+import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
+import { useAuthStore } from '../store/auth.store';
+import { useFarmingStore } from '../store/farming.store';
 import { useTranslation } from '../store/language.store';
+import { countRemainingResources } from '../utils/farming';
+import { getItemVisualMeta } from '../utils/itemVisual';
+import { playSfx } from '../utils/sfx';
+import { getTimeOfDay } from '../utils/timeOfDay';
+
+import { FarmingMapScene } from './FarmingMapScene';
+import { useGameSession } from './GameTunnel';
 import './ResourceMapPage.css';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -693,7 +696,7 @@ export function FarmingPage() {
           title="Paramètres"
           onClick={() => setShowSettings(true)}
         >
-          <img src="/assets/icons/parametres.png" alt="Paramètres" style={{ width: '18px', height: '18px' }} />
+          <img src={assetUrl('/assets/icons/parametres.png')} alt="Paramètres" style={{ width: '18px', height: '18px' }} />
         </button>
         <button
           type="button"
@@ -701,7 +704,7 @@ export function FarmingPage() {
           aria-label="Audio"
           title="Audio"
         >
-          <img src="/assets/icons/audio.png" alt="Audio" style={{ width: '18px', height: '18px' }} />
+          <img src={assetUrl('/assets/icons/audio.png')} alt="Audio" style={{ width: '18px', height: '18px' }} />
         </button>
         <button
           type="button"
@@ -710,7 +713,7 @@ export function FarmingPage() {
           title="Statistiques"
           onClick={() => setStatsOpen((v) => !v)}
         >
-          <img src="/assets/pack/icons/graph.png" alt="Statistiques" style={{ width: '18px', height: '18px' }} />
+          <img src={assetUrl('/assets/icons/graph.png')} alt="Statistiques" style={{ width: '18px', height: '18px' }} />
         </button>
         <button
           type="button"
@@ -719,7 +722,7 @@ export function FarmingPage() {
           title="Abandonner"
           onClick={handleEndSession}
         >
-          <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
+          <img src={assetUrl('/assets/icons/flag.png')} alt="Abandonner" style={{ width: '18px', height: '18px' }} />
         </button>
       </div>
 

@@ -1,6 +1,9 @@
 import React from "react";
 
-import { SpellFamily, SpellEffectKind, PlayerStats } from "@game/shared-types";
+import type { PlayerStats } from "@game/shared-types";
+import { SpellFamily, SpellEffectKind } from "@game/shared-types";
+
+import { assetUrl } from "../../game/constants/assetUrl";
 import { useTranslation } from "../../store/language.store";
 import { playSfx } from "../../utils/sfx";
 import "./SpellBar.css";
@@ -91,7 +94,7 @@ const SpellTooltip = ({
   const isPush = spell.effectKind === SpellEffectKind.PUSH_LINE;
 
   const lines: React.ReactNode[] = [];
-  let keywords: Array<{ name: string; desc: string }> = [];
+  const keywords: Array<{ name: string; desc: string }> = [];
 
   if (isDamage && spell.damage) {
     const power = attackerStats ? (isMagical ? attackerStats.mag : attackerStats.atk) : 0;
@@ -370,7 +373,7 @@ export const SpellBar = ({
 
               <div className="spell-card-inner">
                 <img
-                  src={spell.iconPath || "/assets/pack/spells/epee.png"}
+                  src={assetUrl(spell.iconPath || "/assets/pack/spells/epee.png")}
                   className="spell-icon-img"
                   alt={spell.name}
                 />

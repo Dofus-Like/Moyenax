@@ -13,6 +13,8 @@ import { useGameSession } from "../../pages/GameTunnel";
 import { useAuthStore } from "../../store/auth.store";
 import { useCombatStore } from "../../store/combat.store";
 import { useTranslation } from "../../store/language.store";
+import { assetUrl } from "../constants/assetUrl";
+
 import { CombatPlayerPanel } from "./CombatPlayerPanel";
 import { EndTurnButton } from "./EndTurnButton";
 import { TurnTracker } from "./TurnTracker";
@@ -217,7 +219,7 @@ export function CombatHUD() {
                 aria-label="Émotes"
                 title="Émotes"
               >
-                <img src="/assets/pack/icons/emojis.png" alt="Émotes" style={{ width: '18px', height: '18px' }} />
+                <img src={assetUrl('/assets/icons/emojis.png')} alt="Émotes" style={{ width: '18px', height: '18px' }} />
               </button>
               {!isSandbox && (
                 <button
@@ -232,7 +234,7 @@ export function CombatHUD() {
                     }
                   }}
                 >
-                  <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
+                  <img src={assetUrl('/assets/icons/flag.png')} alt="Abandonner" style={{ width: '18px', height: '18px' }} />
                 </button>
               )}
               <button
@@ -242,7 +244,7 @@ export function CombatHUD() {
                 aria-label="Mode tactique"
                 title={tacticsMode ? "Mode normal" : "Mode tactique"}
               >
-                <img src="/assets/icons/eye.png" alt="Tactique" style={{ width: '18px', height: '18px' }} />
+                <img src={assetUrl('/assets/icons/eye.png')} alt="Tactique" style={{ width: '18px', height: '18px' }} />
               </button>
             </div>
             <SpellBar
@@ -281,7 +283,7 @@ export function CombatHUD() {
                 onClick={handleToggleLogs}
                 aria-label="Journal de combat"
               >
-                <img src="/assets/pack/icons/chatting.png" alt="Journal de combat" style={{ width: '18px', height: '18px' }} />
+                <img src={assetUrl('/assets/icons/chatting.png')} alt="Journal de combat" style={{ width: '18px', height: '18px' }} />
                 {unseenCount > 0 && (
                   <span className="hud-log-badge">{unseenCount}</span>
                 )}
@@ -292,7 +294,7 @@ export function CombatHUD() {
                 onClick={() => setStatsOpen((v) => !v)}
                 aria-label="Statistiques"
               >
-                <img src="/assets/pack/icons/graph.png" alt="Statistiques" style={{ width: '18px', height: '18px' }} />
+                <img src={assetUrl('/assets/icons/graph.png')} alt="Statistiques" style={{ width: '18px', height: '18px' }} />
               </button>
             </div>
           </div>

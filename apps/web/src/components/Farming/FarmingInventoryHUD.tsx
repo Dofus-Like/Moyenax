@@ -1,4 +1,6 @@
 import React from 'react';
+
+import { assetUrl } from '../../game/constants/assetUrl';
 import { getResourceIconPath } from '../../utils/resourceIcons';
 import './FarmingInventoryHUD.css';
 
@@ -26,7 +28,7 @@ export const FarmingInventoryHUD = ({ items = [] }: FarmingInventoryHUDProps) =>
         {activeItems.map((item) => (
           <div key={item.id} className="inventory-hud-item" title={item.name}>
             <img 
-              src={item.iconPath || getResourceIconPath(item.name)} 
+              src={assetUrl(item.iconPath || getResourceIconPath(item.name))}
               alt={item.name} 
               className="inventory-item-icon" 
             />

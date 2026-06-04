@@ -5,6 +5,7 @@ import * as THREE from 'three';
 
 import type { PathNode, CombatPlayer } from '@game/shared-types';
 
+import { assetUrl } from '../../game/constants/assetUrl';
 import { getSkinById } from '../../game/constants/skins';
 import { spriteUrl } from '../../game/constants/spriteRegistry';
 import { useAuthStore } from '../../store/auth.store';
@@ -42,8 +43,8 @@ const MENHIR_URLS = [
   '/assets/models/Rock_1N.fbx',
   '/assets/models/Rock_1P.fbx',
   '/assets/models/Rock_1Q.fbx',
-];
-const MENHIR_TEXTURE = '/assets/models/forest_texture.png';
+].map(assetUrl);
+const MENHIR_TEXTURE = assetUrl('/assets/models/forest_texture.png');
 const MENHIR_GLOW = '#8b5cf6';
 
 function seededRandom(seed: number): number {

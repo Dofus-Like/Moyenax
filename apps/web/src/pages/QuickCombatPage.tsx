@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { combatApi } from '../api/combat.api';
 import { shopApi } from '../api/shop.api';
+import { assetUrl } from '../game/constants/assetUrl';
 import './QuickCombatPage.css';
 
 export function QuickCombatPage() {
@@ -84,7 +85,7 @@ export function QuickCombatPage() {
                 disabled={ringChoiceLoading === ring.name}
               >
                 <img
-                  src={ring.iconPath || `/assets/items/${ring.id}.png`}
+                  src={assetUrl(ring.iconPath || `/assets/items/${ring.id}.png`)}
                   alt={ring.name}
                   className="quick-combat-ring-icon"
                 />
