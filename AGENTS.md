@@ -49,6 +49,7 @@ Les assets web sont **auto-découverts** par registre via `import.meta.glob` : *
 - **Modèles GLB** → `apps/web/src/assets/models/<categorie>/<nom>.glb` (`environments/`, `poi/`, `props/`). Référencer **toujours** via `modelUrl('<categorie>/<nom>.glb')` (`game/models/modelRegistry.ts`), **jamais** un chemin `/assets/...` en dur. `raw/` = sources lourdes, exclues du build de prod (`loadRawModels()`, DEV-only).
 - **Sprites** → `apps/web/src/assets/sprites/<perso>/{idle,walk,attack}.png` (`idle.png` obligatoire = le perso est listé). Référencer via `spriteUrl('<perso>', 'idle'|'walk'|'attack')` / `allSpriteUrls()` (`game/constants/spriteRegistry.ts`), **jamais** une URL en dur (ni en JS, ni en `background-image` CSS — utiliser un fond inline).
 - **Skins** → `apps/web/src/assets/skins/<id>.json` (`{ id, name, type, hue, saturation, description, sortOrder? }` ; `type` = nom du dossier de sprites). Lus via `SKINS` / `getSkinById('<id>')` (`game/constants/skins.ts`).
+- **Masters d'art non livrés** (`.aseprite`, planches sources) → `apps/web/src/assets/raw/` : archive d'édition, **hors glob et non bundlée** (rien ne l'importe). Ne jamais les ranger sous `sprites/` (le glob les prendrait pour des persos). On exporte depuis `raw/` vers `sprites/`, on ne sert jamais `raw/` à l'app.
 
 **Ajouter un asset = déposer le(s) fichier(s), zéro code :**
 - **un modèle** → `assets/models/<categorie>/<nom>.glb` ; consommer via `modelUrl('<categorie>/<nom>.glb')`.
