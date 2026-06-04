@@ -37,6 +37,22 @@ export const COMBAT_COLORS = {
   WALL_SUNSET: '#875800',
   WALL_NIGHT: '#4a5a7a',
 
+  WATER_DAY_DEEP: '#0c5378',
+  WATER_DAY_SHALLOW: '#3fd0d8',
+  WATER_DAY_FOAM: '#eaffff',
+  WATER_SUNSET_DEEP: '#2a3a7a',
+  WATER_SUNSET_SHALLOW: '#d98a6a',
+  WATER_SUNSET_FOAM: '#ffe0c2',
+  WATER_NIGHT_DEEP: '#0a1840',
+  WATER_NIGHT_SHALLOW: '#28406e',
+  WATER_NIGHT_FOAM: '#9fb4d6',
+  WATER_CLOUD: '#eaf3ff',
+  WATER_SUN_DAY: '#fff1c2',
+  WATER_SUN_SUNSET: '#ff9d5a',
+  WATER_SUN_NIGHT: '#ccd8ff',
+  WATER_FOG: '#bcd9e8',
+  SCENE_FOG: '#c2dbe8',
+
   /* ─────────────────────────────────────────────
      DA3 — Full Glassmorphism UI palette
      (used by CombatHUD / CombatPlayerPanel / CombatPage)

@@ -1,4 +1,4 @@
-import { CameraControls, OrthographicCamera, useProgress } from '@react-three/drei';
+import { CameraControls, OrthographicCamera, PerspectiveCamera, Sparkles, useProgress } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import CameraControlsImpl from 'camera-controls';
@@ -24,10 +24,13 @@ import { SpellBar, SpellBarItem } from '../components/SpellBar/SpellBar';
 import { playerApi } from '../api/player.api';
 import { shopApi } from '../api/shop.api';
 import { FarmingSidebar } from '../components/Farming/FarmingSidebar';
-import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
 import { CameraEffects } from '../game/Combat/CameraEffects';
+import { CombatBackgroundShader } from '../game/Combat/CombatBackgroundShader';
+import { DistantIslands } from '../game/Combat/DistantIslands';
+import { WaterPlane } from '../game/Combat/WaterPlane';
 import { EndTurnButton } from '../game/HUD/EndTurnButton';
 import { assetUrl } from '../game/constants/assetUrl';
+import { COMBAT_COLORS } from '../game/constants/colors';
 import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
 import { useAuthStore } from '../store/auth.store';
 import { useFarmingStore } from '../store/farming.store';
@@ -102,6 +105,7 @@ export function FarmingPage() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [, setIsTransitioning] = useState(false);
   const [statsOpen, setStatsOpen] = useState(true);
+  const [perspective, setPerspective] = useState(false);
   const isActionInProgressRef = useRef(false);
   const [queuedAction, setQueuedAction] = useState<{ type: 'gather'; x: number; y: number } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -565,16 +569,36 @@ export function FarmingPage() {
             camera={{ fov: 30 }}
           >
             <CanvasPerfOverlay />
+            <fogExp2 attach="fog" args={[COMBAT_COLORS.SCENE_FOG, 0.006]} />
             <CombatBackgroundShader timeOfDay={timeOfDay} />
-            <OrthographicCamera 
-              makeDefault 
-              position={[20, 20, 20]} 
-              zoom={50} 
-              near={0.1} 
-              far={1000} 
+            <Suspense fallback={null}>
+              <DistantIslands />
+            </Suspense>
+            <Suspense fallback={null}>
+              <WaterPlane timeOfDay={timeOfDay} islandSize={[map.width, map.height]} />
+            </Suspense>
+            <Sparkles
+              count={140}
+              scale={[140, 45, 140]}
+              position={[0, 8, 0]}
+              size={4}
+              speed={0.25}
+              opacity={0.5}
+              color={COMBAT_COLORS.WATER_CLOUD}
             />
-            <CameraControls 
-              ref={setControls} 
+            {perspective ? (
+              <PerspectiveCamera makeDefault position={[24, 22, 24]} fov={40} near={0.1} far={2000} />
+            ) : (
+              <OrthographicCamera
+                makeDefault
+                position={[20, 20, 20]}
+                zoom={50}
+                near={0.1}
+                far={1000}
+              />
+            )}
+            <CameraControls
+              ref={setControls}
               minZoom={15} 
               maxZoom={80} 
               dollyToCursor={true}
@@ -714,6 +738,16 @@ export function FarmingPage() {
           onClick={() => setStatsOpen((v) => !v)}
         >
           <img src={assetUrl('/assets/icons/graph.png')} alt="Statistiques" style={{ width: '18px', height: '18px' }} />
+        </button>
+        <button
+          type="button"
+          className="farming-icon-btn"
+          aria-label="Mode caméra"
+          title={perspective ? 'Repasser en vue isométrique' : 'Passer en vue perspective'}
+          onClick={() => setPerspective((p) => !p)}
+          style={{ fontSize: '11px', fontWeight: 700 }}
+        >
+          {perspective ? 'PER' : 'ISO'}
         </button>
         <button
           type="button"

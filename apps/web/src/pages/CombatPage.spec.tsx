@@ -63,9 +63,19 @@ vi.mock('../game/Combat/CombatBackgroundShader', () => ({
   CombatBackgroundShader: () => <div data-testid="combat-background-shader" />,
 }));
 
+vi.mock('../game/Combat/WaterPlane', () => ({
+  WaterPlane: () => null,
+}));
+
+vi.mock('../game/Combat/DistantIslands', () => ({
+  DistantIslands: () => null,
+}));
+
 vi.mock('@react-three/drei', () => ({
   OrthographicCamera: () => null,
+  PerspectiveCamera: () => null,
   CameraControls: () => null,
+  Sparkles: () => null,
   Text: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
