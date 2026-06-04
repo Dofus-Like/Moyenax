@@ -5,6 +5,9 @@ import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
 import { COMBAT_COLORS } from '../constants/colors';
+import { modelUrl } from '../models/modelRegistry';
+
+const CASTLE_URL = modelUrl('environments/castle_ruin.glb');
 
 interface CastleProps {
   position: [number, number, number];
@@ -14,7 +17,7 @@ interface CastleProps {
 }
 
 export function Castle({ position, targetSize, rotation = [0, 0, 0], timeOfDay = 0 }: CastleProps) {
-  const { scene } = useGLTF('/assets/models/castle_ruin.glb');
+  const { scene } = useGLTF(CASTLE_URL);
 
   const { clonedScene, scaleFactor, offset, materials } = useMemo(() => {
     const clone = scene.clone(true);
@@ -122,4 +125,4 @@ export function Castle({ position, targetSize, rotation = [0, 0, 0], timeOfDay =
   );
 }
 
-useGLTF.preload('/assets/models/castle_ruin.glb');
+useGLTF.preload(CASTLE_URL);
