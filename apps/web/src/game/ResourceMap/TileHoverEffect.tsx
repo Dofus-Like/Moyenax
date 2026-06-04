@@ -18,6 +18,7 @@ const HOVER_COLORS: Record<TerrainType, string> = {
   [TerrainType.WOOD]: '#22c55e',
   [TerrainType.HERB]: '#86efac',
   [TerrainType.GOLD]: '#fde047',
+  [TerrainType.WALL]: '#9ca3af',
 };
 
 export const TileHoverEffect = React.memo(({ x, y, terrain, gridSize }: TileHoverEffectProps) => {

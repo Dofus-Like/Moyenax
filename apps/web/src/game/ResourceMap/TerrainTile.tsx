@@ -1,16 +1,21 @@
-import React from 'react';
+import React from "react";
 
-import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
+import {
+  TerrainType,
+  TERRAIN_PROPERTIES,
+  CombatTerrainType,
+} from "@game/shared-types";
 
 export const TERRAIN_COLORS: Record<TerrainType, { base: string; hover: string }> = {
-  [TerrainType.GROUND]: { base: '#374151', hover: '#4b5563' },
-  [TerrainType.IRON]: { base: '#78716c', hover: '#a8a29e' },
-  [TerrainType.LEATHER]: { base: '#92400e', hover: '#b45309' },
-  [TerrainType.CRYSTAL]: { base: '#7c3aed', hover: '#a78bfa' },
-  [TerrainType.FABRIC]: { base: '#a855f7', hover: '#c084fc' },
-  [TerrainType.WOOD]: { base: '#166534', hover: '#22c55e' },
-  [TerrainType.HERB]: { base: '#4ade80', hover: '#86efac' },
-  [TerrainType.GOLD]: { base: '#eab308', hover: '#fde047' },
+  [TerrainType.GROUND]: { base: "#374151", hover: "#4b5563" },
+  [TerrainType.IRON]: { base: "#78716c", hover: "#a8a29e" },
+  [TerrainType.LEATHER]: { base: "#92400e", hover: "#b45309" },
+  [TerrainType.CRYSTAL]: { base: "#7c3aed", hover: "#a78bfa" },
+  [TerrainType.FABRIC]: { base: "#a855f7", hover: "#c084fc" },
+  [TerrainType.WOOD]: { base: "#166534", hover: "#22c55e" },
+  [TerrainType.HERB]: { base: "#4ade80", hover: "#86efac" },
+  [TerrainType.GOLD]: { base: "#eab308", hover: "#fde047" },
+  [TerrainType.WALL]: { base: "#6b7280", hover: "#9ca3af" },
 };
 
 export interface TileHoverInfo {
@@ -35,11 +40,26 @@ export interface TerrainTileProps {
   wallColor?: string;
 }
 
-function TacticsWall({ position, wallColor }: { position: [number, number, number]; wallColor?: string }) {
+function TacticsWall({
+  position,
+  wallColor,
+}: {
+  position: [number, number, number];
+  wallColor?: string;
+}) {
   return (
-    <mesh position={[position[0], 0.25, position[2]]} castShadow receiveShadow raycast={() => null}>
+    <mesh
+      position={[position[0], 0.25, position[2]]}
+      castShadow
+      receiveShadow
+      raycast={() => null}
+    >
       <boxGeometry args={[1.0, 0.5, 1.0]} />
-      <meshStandardMaterial color={wallColor ?? '#5E863F'} metalness={0.3} roughness={0.6} />
+      <meshStandardMaterial
+        color={wallColor ?? "#5E863F"}
+        metalness={0.3}
+        roughness={0.6}
+      />
     </mesh>
   );
 }
@@ -55,21 +75,26 @@ function WallObstacle({
   color: string;
   height: number;
   terrain: TerrainType;
-  neighbors?: TerrainTileProps['neighbors'];
+  neighbors?: TerrainTileProps["neighbors"];
 }) {
   const isMetal = terrain === TerrainType.IRON || terrain === TerrainType.GOLD;
   const isCrystal = terrain === TerrainType.CRYSTAL;
 
   let metalness = 0.1;
   let roughness = 0.7;
-  if (isMetal) { metalness = 0.8; roughness = 0.4; }
-  else if (isCrystal) { metalness = 0.3; roughness = 0.2; }
+  if (isMetal) {
+    metalness = 0.8;
+    roughness = 0.4;
+  } else if (isCrystal) {
+    metalness = 0.3;
+    roughness = 0.2;
+  }
 
   const [x, , z] = position;
 
   const leftEdge = neighbors?.left ? -0.5 : -0.35;
   const rightEdge = neighbors?.right ? 0.5 : 0.35;
-  const topEdge = neighbors?.top ? -0.5 : -0.35; 
+  const topEdge = neighbors?.top ? -0.5 : -0.35;
   const bottomEdge = neighbors?.bottom ? 0.5 : 0.35;
 
   const width = rightEdge - leftEdge;
@@ -77,11 +102,21 @@ function WallObstacle({
   const offsetX = (leftEdge + rightEdge) / 2;
   const offsetZ = (topEdge + bottomEdge) / 2;
 
-  const hasNeighbors = !!(neighbors?.top || neighbors?.bottom || neighbors?.left || neighbors?.right);
+  const hasNeighbors = !!(
+    neighbors?.top ||
+    neighbors?.bottom ||
+    neighbors?.left ||
+    neighbors?.right
+  );
   const isWood = terrain === TerrainType.WOOD;
 
   return (
-    <mesh position={[x + offsetX, height / 2, z + offsetZ]} castShadow receiveShadow raycast={() => null}>
+    <mesh
+      position={[x + offsetX, height / 2, z + offsetZ]}
+      castShadow
+      receiveShadow
+      raycast={() => null}
+    >
       {isWood && !hasNeighbors ? (
         <cylinderGeometry args={[0.35, 0.35, height, 8]} />
       ) : (
@@ -96,14 +131,26 @@ function WallObstacle({
   );
 }
 
-function HoleTerrain({ position, color }: { position: [number, number, number]; color: string }) {
+function HoleTerrain({
+  position,
+  color,
+}: {
+  position: [number, number, number];
+  color: string;
+}) {
   return (
     <group raycast={() => null}>
-      <mesh position={[position[0], -0.15, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh
+        position={[position[0], -0.15, position[2]]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
         <planeGeometry args={[0.82, 0.82]} />
         <meshStandardMaterial color={color} transparent opacity={0.8} />
       </mesh>
-      <mesh position={[position[0], -0.01, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh
+        position={[position[0], -0.01, position[2]]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
         <ringGeometry args={[0.3, 0.42, 12]} />
         <meshStandardMaterial color="#78350f" transparent opacity={0.5} />
       </mesh>
@@ -111,15 +158,22 @@ function HoleTerrain({ position, color }: { position: [number, number, number]; 
   );
 }
 
-function FlatResource({ position, color }: { position: [number, number, number]; color: string }) {
+function FlatResource({
+  position,
+  color,
+}: {
+  position: [number, number, number];
+  color: string;
+}) {
   return (
-    <mesh position={[position[0], 0.08, position[2]]} castShadow receiveShadow raycast={() => null}>
+    <mesh
+      position={[position[0], 0.08, position[2]]}
+      castShadow
+      receiveShadow
+      raycast={() => null}
+    >
       <cylinderGeometry args={[0.25, 0.25, 0.08, 16]} />
-      <meshStandardMaterial 
-        color={color}
-        metalness={0.1}
-        roughness={0.8}
-      />
+      <meshStandardMaterial color={color} metalness={0.1} roughness={0.8} />
     </mesh>
   );
 }
@@ -128,54 +182,65 @@ function FlatResource({ position, color }: { position: [number, number, number];
  * TerrainTile now ONLY renders visual decorations.
  * Interaction is delegated to the unified 'map-hit-plane' for 100% precision and performance.
  */
-export const TerrainTile = React.memo(({ 
-  x, y, terrain, gridSize, neighbors, tacticsMode, wallColor 
-}: TerrainTileProps) => {
-  const colors = TERRAIN_COLORS[terrain];
-  const props = TERRAIN_PROPERTIES[terrain];
+export const TerrainTile = React.memo(
+  ({
+    x,
+    y,
+    terrain,
+    gridSize,
+    neighbors,
+    tacticsMode,
+    wallColor,
+  }: TerrainTileProps) => {
+    if (terrain === TerrainType.WALL) return null;
 
-  const worldX = x - gridSize / 2 + 0.5;
-  const worldZ = y - gridSize / 2 + 0.5;
-  const pos: [number, number, number] = [worldX, 0, worldZ];
+    const colors = TERRAIN_COLORS[terrain];
+    const props = TERRAIN_PROPERTIES[terrain];
 
-  return (
-    <group userData={{ x, y, terrain, type: 'decoration' }}>
-      {tacticsMode ? (
-        <>
-          {props.combatType === CombatTerrainType.WALL && (
-            <TacticsWall position={pos} neighbors={neighbors} wallColor={wallColor} />
-          )}
-          {props.combatType === CombatTerrainType.HOLE && (
-            <HoleTerrain position={pos} color={colors.base} />
-          )}
-        </>
-      ) : (
-        <>
-          {props.combatType === CombatTerrainType.WALL && terrain !== TerrainType.WOOD && (
-            <WallObstacle
-              position={pos}
-              color={colors.base}
-              height={0.6}
-              terrain={terrain}
-              neighbors={neighbors}
-            />
-          )}
+    const worldX = x - gridSize / 2 + 0.5;
+    const worldZ = y - gridSize / 2 + 0.5;
+    const pos: [number, number, number] = [worldX, 0, worldZ];
 
-          {props.combatType === CombatTerrainType.HOLE && (
-            <HoleTerrain
-              position={pos}
-              color={colors.base}
-            />
-          )}
+    return (
+      <group userData={{ x, y, terrain, type: "decoration" }}>
+        {tacticsMode ? (
+          <>
+            {props.combatType === CombatTerrainType.WALL && (
+              <TacticsWall
+                position={pos}
+                neighbors={neighbors}
+                wallColor={wallColor}
+              />
+            )}
+            {props.combatType === CombatTerrainType.HOLE && (
+              <HoleTerrain position={pos} color={colors.base} />
+            )}
+          </>
+        ) : (
+          <>
+            {props.combatType === CombatTerrainType.WALL &&
+              terrain !== TerrainType.WOOD && (
+                <WallObstacle
+                  position={pos}
+                  color={colors.base}
+                  height={0.6}
+                  terrain={terrain}
+                  neighbors={neighbors}
+                />
+              )}
 
-          {props.combatType === CombatTerrainType.FLAT && props.harvestable && terrain !== TerrainType.HERB && (
-            <FlatResource
-              position={pos}
-              color={colors.base}
-            />
-          )}
-        </>
-      )}
-    </group>
-  );
-});
+            {props.combatType === CombatTerrainType.HOLE && (
+              <HoleTerrain position={pos} color={colors.base} />
+            )}
+
+            {props.combatType === CombatTerrainType.FLAT &&
+              props.harvestable &&
+              terrain !== TerrainType.HERB && (
+                <FlatResource position={pos} color={colors.base} />
+              )}
+          </>
+        )}
+      </group>
+    );
+  },
+);

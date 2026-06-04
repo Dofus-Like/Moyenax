@@ -1,17 +1,25 @@
-import type { ThreeEvent } from '@react-three/fiber';
-import { useFrame } from '@react-three/fiber';
-import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ThreeEvent } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
+import React, {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-import type { GameMap, PathNode } from '@game/shared-types';
-import { TerrainType } from '@game/shared-types';
+import type { GameMap, PathNode } from "@game/shared-types";
+import { TerrainType } from "@game/shared-types";
 
-import type { PlayerPawnHandle } from '../game/ResourceMap/PlayerPawn';
-import { useAuthStore } from '../store/auth.store';
+import type { PlayerPawnHandle } from "../game/ResourceMap/PlayerPawn";
+import { VerdantBattlefield } from "../game/ResourceMap/VerdantBattlefield";
 import {
   HoverLayer,
   PlayersLayer,
   TerrainLayer,
-} from '../game/UnifiedMap/UnifiedMapLayers';
+} from "../game/UnifiedMap/UnifiedMapLayers";
+import { useAuthStore } from "../store/auth.store";
 
 interface HitPlaneProps {
   map: GameMap;
@@ -44,7 +52,9 @@ interface FarmingMapSceneProps {
   movePath?: PathNode[] | null;
   onPathComplete?: () => void;
   onTileClick?: (x: number, y: number, terrain: TerrainType) => void;
-  onTileHover?: (info: { x: number; y: number; terrain: TerrainType } | null) => void;
+  onTileHover?: (
+    info: { x: number; y: number; terrain: TerrainType } | null,
+  ) => void;
   isMoving?: boolean;
   onTileReached?: (node: PathNode) => void;
   onSceneReady?: () => void;
@@ -61,7 +71,7 @@ export const FarmingMapScene = React.memo(
     onPathComplete,
     onTileClick,
     onTileHover,
-    isMoving = false,
+    isMoving: _isMoving = false,
     onTileReached,
     onSceneReady,
     playerPa,
@@ -73,7 +83,7 @@ export const FarmingMapScene = React.memo(
       if (!map || !harvestedTiles.size) return map;
       const grid = map.grid.map((row) => [...row]);
       for (const key of harvestedTiles) {
-        const [x, y] = key.split(',').map(Number);
+        const [x, y] = key.split(",").map(Number);
         if (grid[y] && grid[y][x] !== undefined) {
           grid[y][x] = TerrainType.GROUND;
         }
@@ -81,7 +91,10 @@ export const FarmingMapScene = React.memo(
       return { ...map, grid };
     }, [map, harvestedTiles]);
 
-    const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
+    const [hoveredTile, setHoveredTile] = useState<{
+      x: number;
+      y: number;
+    } | null>(null);
     const deferredHoveredTile = React.useDeferredValue(hoveredTile);
 
     const mapGroupRef = useRef<THREE.Group>(null);
@@ -119,7 +132,10 @@ export const FarmingMapScene = React.memo(
         if (isPointerPressedRef.current) return;
 
         const gx = Math.min(map.width - 1, Math.floor(uv.x * map.width));
-        const gz = Math.min(map.height - 1, Math.floor((1 - uv.y) * map.height));
+        const gz = Math.min(
+          map.height - 1,
+          Math.floor((1 - uv.y) * map.height),
+        );
 
         if (gx < 0 || gx >= map.width || gz < 0 || gz >= map.height) {
           clearHoveredTile();
@@ -154,7 +170,10 @@ export const FarmingMapScene = React.memo(
         if (wasDraggingRef.current || e.button !== 0 || !e.uv || !map) return;
 
         const gx = Math.min(map.width - 1, Math.floor(e.uv.x * map.width));
-        const gz = Math.min(map.height - 1, Math.floor((1 - e.uv.y) * map.height));
+        const gz = Math.min(
+          map.height - 1,
+          Math.floor((1 - e.uv.y) * map.height),
+        );
         const terrain = (visibleMap ?? map).grid[gz][gx] as TerrainType;
         onTileClick?.(gx, gz, terrain);
       },
@@ -212,26 +231,29 @@ export const FarmingMapScene = React.memo(
         isDraggingRef.current = false;
       };
 
-      window.addEventListener('pointerdown', onPointerDown);
-      window.addEventListener('pointermove', onPointerMove);
-      window.addEventListener('pointerup', onPointerUp);
-      window.addEventListener('pointercancel', onPointerCancel);
+      window.addEventListener("pointerdown", onPointerDown);
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
+      window.addEventListener("pointercancel", onPointerCancel);
 
       return (): void => {
-        window.removeEventListener('pointerdown', onPointerDown);
-        window.removeEventListener('pointermove', onPointerMove);
-        window.removeEventListener('pointerup', onPointerUp);
-        window.removeEventListener('pointercancel', onPointerCancel);
+        window.removeEventListener("pointerdown", onPointerDown);
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", onPointerUp);
+        window.removeEventListener("pointercancel", onPointerCancel);
       };
     }, []);
 
-    const setPawnRef = useCallback((_playerId: string, handle: PlayerPawnHandle | null) => {
-      if (handle) {
-        pawnRefs.current.set('player', handle);
-      } else {
-        pawnRefs.current.delete('player');
-      }
-    }, []);
+    const setPawnRef = useCallback(
+      (_playerId: string, handle: PlayerPawnHandle | null) => {
+        if (handle) {
+          pawnRefs.current.set("player", handle);
+        } else {
+          pawnRefs.current.delete("player");
+        }
+      },
+      [],
+    );
 
     if (!map) return null;
 
@@ -241,7 +263,17 @@ export const FarmingMapScene = React.memo(
         onContextMenu={(event) => event.nativeEvent.preventDefault()}
       >
         <group ref={mapGroupRef}>
-          <TerrainLayer map={visibleMap} tacticsMode={false} checkerColorA="#434F34" checkerColorB="#434F34" tileSize={1} tileRadius={0} />
+          <Suspense fallback={null}>
+            <VerdantBattlefield />
+          </Suspense>
+          <TerrainLayer
+            map={visibleMap}
+            tacticsMode={false}
+            checkerColorA="#659624"
+            checkerColorB="#659624"
+            tileSize={1}
+            tileRadius={0}
+          />
 
           <HitPlane
             map={visibleMap}
@@ -258,7 +290,7 @@ export const FarmingMapScene = React.memo(
             playerPosition={playerPosition}
             movePath={movePath}
             onPathComplete={onPathComplete}
-            farmingPlayerName={user?.username ?? ''}
+            farmingPlayerName={user?.username ?? ""}
             farmingPlayerSkin={user?.skin}
             farmingPlayerPa={playerPa}
             farmingPlayerPm={playerPm}
@@ -267,7 +299,9 @@ export const FarmingMapScene = React.memo(
             playerPaths={{}}
             jumpingPlayers={{}}
             setPawnRef={setPawnRef}
-            onCombatPathComplete={() => {}}
+            onCombatPathComplete={() => {
+              /* no-op */
+            }}
             onTileReached={onTileReached}
           />
         </group>

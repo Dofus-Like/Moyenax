@@ -41,30 +41,42 @@ describe('MapGeneratorService', () => {
       expect(diffs.length).toBeGreaterThan(0);
     });
 
-    it('laisse les 4 coins de spawn (2x2 chaque) en GROUND', () => {
+    it('laisse les coins de spawn (2x2) en GROUND, 1 case à l\'intérieur du bord', () => {
       const map = service.generate('FORGE', 42);
-      // Coin top-left
-      for (let x = 0; x < 2; x++) {
-        for (let y = 0; y < 2; y++) {
+      // Top-left spawn inside border: (1,1)-(2,2)
+      for (let x = 1; x < 3; x++) {
+        for (let y = 1; y < 3; y++) {
           expect(map.grid[y][x]).toBe(TerrainType.GROUND);
         }
       }
-      // Coin bottom-right
-      for (let x = MAP_SIZE - 2; x < MAP_SIZE; x++) {
-        for (let y = MAP_SIZE - 2; y < MAP_SIZE; y++) {
+      // Bottom-right spawn inside border: (MAP_SIZE-3,MAP_SIZE-3)-(MAP_SIZE-2,MAP_SIZE-2)
+      for (let x = MAP_SIZE - 3; x < MAP_SIZE - 1; x++) {
+        for (let y = MAP_SIZE - 3; y < MAP_SIZE - 1; y++) {
           expect(map.grid[y][x]).toBe(TerrainType.GROUND);
         }
       }
     });
 
-    it('assure qu\'un chemin existe entre les deux coins de spawn', () => {
+    it('place des WALL sur tout le contour de la map', () => {
+      const map = service.generate('FORGE', 42);
+      for (let y = 0; y < MAP_SIZE; y++) {
+        expect(map.grid[y][0]).toBe(TerrainType.WALL);
+        expect(map.grid[y][MAP_SIZE - 1]).toBe(TerrainType.WALL);
+      }
+      for (let x = 0; x < MAP_SIZE; x++) {
+        expect(map.grid[0][x]).toBe(TerrainType.WALL);
+        expect(map.grid[MAP_SIZE - 1][x]).toBe(TerrainType.WALL);
+      }
+    });
+
+    it('assure qu\'un chemin existe entre les deux coins de spawn (intérieur)', () => {
       for (const seed of ALL_SEED_IDS) {
         const map = service.generate(seed, 12345);
-        const start = { x: 0, y: 0 };
-        const end = { x: MAP_SIZE - 1, y: MAP_SIZE - 1 };
+        const start = { x: 1, y: 1 };
+        const end = { x: MAP_SIZE - 2, y: MAP_SIZE - 2 };
         const visited = new Set<string>();
         const queue = [start];
-        visited.add('0,0');
+        visited.add('1,1');
         let reached = false;
         while (queue.length > 0) {
           const cur = queue.shift()!;
@@ -75,7 +87,7 @@ describe('MapGeneratorService', () => {
           for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
             const nx = cur.x + dx;
             const ny = cur.y + dy;
-            if (nx < 0 || nx >= MAP_SIZE || ny < 0 || ny >= MAP_SIZE) continue;
+            if (nx < 1 || nx >= MAP_SIZE - 1 || ny < 1 || ny >= MAP_SIZE - 1) continue;
             const key = `${nx},${ny}`;
             if (visited.has(key)) continue;
             if (!TERRAIN_PROPERTIES[map.grid[ny][nx]].traversable) continue;
@@ -87,16 +99,17 @@ describe('MapGeneratorService', () => {
       }
     });
 
-    it('ne place que les terrains listés dans SEED_CONFIGS[seedId].resources (+ GROUND)', () => {
+    it('ne place que les terrains listés dans SEED_CONFIGS[seedId].resources (+ GROUND + WALL)', () => {
       const map = service.generate('FORGE', 1);
       const types = new Set(map.grid.flat());
-      // FORGE = IRON, LEATHER, HERB, GOLD + GROUND
+      // FORGE = IRON, LEATHER, HERB, GOLD + GROUND + WALL (border)
       const allowed = new Set([
         TerrainType.GROUND,
         TerrainType.IRON,
         TerrainType.LEATHER,
         TerrainType.HERB,
         TerrainType.GOLD,
+        TerrainType.WALL,
       ]);
       types.forEach((t) => expect(allowed).toContain(t));
     });

@@ -26,6 +26,7 @@ export enum TerrainType {
   WOOD = 'WOOD',
   HERB = 'HERB',
   GOLD = 'GOLD',
+  WALL = 'WALL',
 }
 
 export interface TerrainProperties {
@@ -111,6 +112,15 @@ export const TERRAIN_PROPERTIES: Record<TerrainType, TerrainProperties> = {
     harvestable: true,
     resourceName: 'Or',
   },
+  [TerrainType.WALL]: {
+    family: null,
+    combatType: CombatTerrainType.WALL,
+    traversable: false,
+    blockLineOfSight: true,
+    jumpable: false,
+    harvestable: false,
+    resourceName: null,
+  },
 };
 
 export const TERRAIN_LABELS: Record<TerrainType, string> = {
@@ -122,11 +132,12 @@ export const TERRAIN_LABELS: Record<TerrainType, string> = {
   [TerrainType.WOOD]: 'Bois',
   [TerrainType.HERB]: 'Herbe médicinale',
   [TerrainType.GOLD]: 'Or',
+  [TerrainType.WALL]: 'Mur',
 };
 
 // --- Map ---
 
-export const MAP_SIZE = 10;
+export const MAP_SIZE = 11;
 
 export interface GameMap {
   width: number;
