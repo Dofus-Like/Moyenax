@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import type { PathNode, SeedId, GameMap, FarmingState as FarmingApiState } from '@game/shared-types';
-import { TerrainType } from '@game/shared-types';
+import { TerrainType, MAP_SIZE } from '@game/shared-types';
 
 import { farmingApi } from '../api/farming.api';
 import { inventoryApi } from '../api/inventory.api';
@@ -89,7 +89,6 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
         farmingApi.getState(),
         inventoryApi.getInventory(),
       ]);
-      const MAP_SIZE = 10;
       const grid: TerrainType[][] = Array.from({ length: MAP_SIZE }, () =>
         Array(MAP_SIZE).fill(TerrainType.GROUND),
       );
@@ -178,7 +177,6 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
   nextRound: async () => {
     try {
       const state = await farmingApi.nextRound();
-      const MAP_SIZE = 10;
       const grid: TerrainType[][] = Array.from({ length: MAP_SIZE }, () =>
         Array(MAP_SIZE).fill(TerrainType.GROUND),
       );

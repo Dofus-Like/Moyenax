@@ -239,7 +239,9 @@ function applyWind(material: THREE.Material): void {
   material.needsUpdate = true;
 }
 
-export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
+export const InstancedFoliage = React.memo(({ map, mode }: { map: GameMap; mode?: 'combat' | 'farming' }) => {
+  // Mettre à true pour réactiver l'herbe
+  const effectiveShowGrass = false;
   const texture = useTexture(TEXTURE_PATH);
   texture.colorSpace = THREE.SRGBColorSpace;
 
@@ -351,7 +353,7 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
             ox: 0,
             oz: 0,
           });
-        } else if (props.combatType === CombatTerrainType.WALL) {
+        } else if (props.combatType === CombatTerrainType.WALL && terrain !== TerrainType.WALL) {
           list.push({
             x,
             y,
@@ -410,6 +412,7 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
     <group>
       {slots.map((asset, slot) => {
         const isGrass = slot >= GRASS_SLOT;
+        if (isGrass && !effectiveShowGrass) return null;
         return asset && counts[slot] > 0 ? (
           <instancedMesh
             key={slot}

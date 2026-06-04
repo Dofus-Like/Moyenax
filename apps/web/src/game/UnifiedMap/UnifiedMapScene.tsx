@@ -966,6 +966,7 @@ export const UnifiedMapScene = React.memo(
           </Suspense>
           <TerrainLayer 
             map={activeMap} 
+            mode={mode}
             onTileClick={handleTileClickDispatcher} 
             checkerColorA={mode === 'combat' ? currentTileColors.checkerColorA : undefined}
             checkerColorB={mode === 'combat' ? currentTileColors.checkerColorB : undefined}

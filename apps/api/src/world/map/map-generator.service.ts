@@ -26,6 +26,7 @@ const RESOURCE_BUDGETS: Record<TerrainType, { count: number; clustered: boolean 
   [TerrainType.WOOD]: { count: 3, clustered: true },
   [TerrainType.HERB]: { count: 3, clustered: false },
   [TerrainType.GOLD]: { count: 2, clustered: true },
+  [TerrainType.WALL]: { count: 0, clustered: false },
 };
 
 @Injectable()
@@ -51,6 +52,15 @@ export class MapGeneratorService {
     const grid: TerrainType[][] = Array.from({ length: MAP_SIZE }, () =>
       Array.from({ length: MAP_SIZE }, () => TerrainType.GROUND),
     );
+
+    for (let y = 0; y < MAP_SIZE; y++) {
+      grid[y][0] = TerrainType.WALL;
+      grid[y][MAP_SIZE - 1] = TerrainType.WALL;
+    }
+    for (let x = 0; x < MAP_SIZE; x++) {
+      grid[0][x] = TerrainType.WALL;
+      grid[MAP_SIZE - 1][x] = TerrainType.WALL;
+    }
 
     const spawnZones = this.getSpawnZones();
 
@@ -85,8 +95,8 @@ export class MapGeneratorService {
     const margin = 2;
     for (let x = 0; x < margin; x++) {
       for (let y = 0; y < margin; y++) {
-        zones.add(`${x},${y}`);
-        zones.add(`${MAP_SIZE - 1 - x},${MAP_SIZE - 1 - y}`);
+        zones.add(`${1 + x},${1 + y}`);
+        zones.add(`${MAP_SIZE - 2 - x},${MAP_SIZE - 2 - y}`);
       }
     }
     return zones;
@@ -97,8 +107,8 @@ export class MapGeneratorService {
    * If blocked, carves a walkable corridor.
    */
   private ensureConnectivity(grid: TerrainType[][], _spawnZones: Set<string>): void {
-    const start = { x: 0, y: 0 };
-    const end = { x: MAP_SIZE - 1, y: MAP_SIZE - 1 };
+    const start = { x: 1, y: 1 };
+    const end = { x: MAP_SIZE - 2, y: MAP_SIZE - 2 };
 
     const visited = new Set<string>();
     const queue = [start];
@@ -116,7 +126,7 @@ export class MapGeneratorService {
       ]) {
         const nx = current.x + dx;
         const ny = current.y + dy;
-        if (nx < 0 || nx >= MAP_SIZE || ny < 0 || ny >= MAP_SIZE) continue;
+        if (nx < 1 || nx >= MAP_SIZE - 1 || ny < 1 || ny >= MAP_SIZE - 1) continue;
         const key = `${nx},${ny}`;
         if (visited.has(key)) continue;
         if (!TERRAIN_PROPERTIES[grid[ny][nx]].traversable) continue;
@@ -125,15 +135,15 @@ export class MapGeneratorService {
       }
     }
 
-    let cx = 0,
-      cy = 0;
-    while (cx < MAP_SIZE - 1 || cy < MAP_SIZE - 1) {
+    let cx = 1,
+      cy = 1;
+    while (cx < MAP_SIZE - 2 || cy < MAP_SIZE - 2) {
       if (!TERRAIN_PROPERTIES[grid[cy][cx]].traversable) {
         grid[cy][cx] = TerrainType.GROUND;
       }
-      if (cx < MAP_SIZE - 1) cx++;
+      if (cx < MAP_SIZE - 2) cx++;
       else cy++;
-      if (cy < MAP_SIZE - 1 && cx === MAP_SIZE - 1) cy++;
+      if (cy < MAP_SIZE - 2 && cx === MAP_SIZE - 2) cy++;
     }
   }
 

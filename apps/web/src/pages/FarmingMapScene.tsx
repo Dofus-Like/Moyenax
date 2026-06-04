@@ -13,12 +13,13 @@ import type { GameMap, PathNode } from "@game/shared-types";
 import { TerrainType } from "@game/shared-types";
 
 import type { PlayerPawnHandle } from "../game/ResourceMap/PlayerPawn";
-import { useAuthStore } from "../store/auth.store";
+import { VerdantBattlefield } from "../game/ResourceMap/VerdantBattlefield";
 import {
   HoverLayer,
   PlayersLayer,
   TerrainLayer,
 } from "../game/UnifiedMap/UnifiedMapLayers";
+import { useAuthStore } from "../store/auth.store";
 
 interface HitPlaneProps {
   map: GameMap;
@@ -70,7 +71,7 @@ export const FarmingMapScene = React.memo(
     onPathComplete,
     onTileClick,
     onTileHover,
-    isMoving = false,
+    isMoving: _isMoving = false,
     onTileReached,
     onSceneReady,
     playerPa,
@@ -262,11 +263,14 @@ export const FarmingMapScene = React.memo(
         onContextMenu={(event) => event.nativeEvent.preventDefault()}
       >
         <group ref={mapGroupRef}>
+          <Suspense fallback={null}>
+            <VerdantBattlefield />
+          </Suspense>
           <TerrainLayer
             map={visibleMap}
             tacticsMode={false}
-            checkerColorA="#434F34"
-            checkerColorB="#434F34"
+            checkerColorA="#659624"
+            checkerColorB="#659624"
             tileSize={1}
             tileRadius={0}
           />
@@ -295,7 +299,9 @@ export const FarmingMapScene = React.memo(
             playerPaths={{}}
             jumpingPlayers={{}}
             setPawnRef={setPawnRef}
-            onCombatPathComplete={() => {}}
+            onCombatPathComplete={() => {
+              /* no-op */
+            }}
             onTileReached={onTileReached}
           />
         </group>

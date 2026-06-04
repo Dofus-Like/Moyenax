@@ -249,7 +249,7 @@ root.render(
           <PerfHud />
         </Suspense>
       )}
-      <Leva hidden={true} />
+      <Leva hidden />
     </QueryClientProvider>
   </React.StrictMode>,
 );

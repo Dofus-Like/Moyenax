@@ -24,6 +24,7 @@ import { SpellVFX } from './overlays/SpellVFX';
 
 interface TerrainLayerProps {
   map: GameMap;
+  mode?: 'combat' | 'farming';
   onTileClick?: (x: number, y: number, terrain: TerrainType) => void;
   checkerColorA?: string;
   checkerColorB?: string;
@@ -34,7 +35,7 @@ interface TerrainLayerProps {
   wallColor?: string;
 }
 
-export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius, tacticsMode, wallColor }: TerrainLayerProps) => {
+export const TerrainLayer = React.memo(({ map, mode, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius, tacticsMode, wallColor }: TerrainLayerProps) => {
   const decorations = useMemo(() => {
     const result: React.ReactElement[] = [];
 
@@ -58,7 +59,7 @@ export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sid
         } else {
           // Normal mode: skip instanced foliage, only render non-ground decorations
           // All WALL terrain → 3D models (trees or rocks). HERB → bushes. Skip TerrainTile for these.
-          const isInstancedFoliage = props.combatType === CombatTerrainType.WALL || terrain === TerrainType.HERB;
+          const isInstancedFoliage = terrain !== TerrainType.WALL && (props.combatType === CombatTerrainType.WALL || terrain === TerrainType.HERB);
 
           if (!isInstancedFoliage && (props.combatType !== CombatTerrainType.FLAT || props.harvestable)) {
             result.push(
@@ -89,7 +90,7 @@ export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sid
       )}
       {!tacticsMode && (
         <Suspense fallback={null}>
-          <InstancedFoliage map={map} />
+          <InstancedFoliage map={map} mode={mode} />
         </Suspense>
       )}
       {decorations}

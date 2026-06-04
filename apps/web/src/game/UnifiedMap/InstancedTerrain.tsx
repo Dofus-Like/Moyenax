@@ -39,6 +39,7 @@ const TERRAIN_COLORS: Record<TerrainType, string> = {
   [TerrainType.WOOD]: '#166534',
   [TerrainType.HERB]: '#4ade80',
   [TerrainType.GOLD]: '#eab308',
+  [TerrainType.WALL]: '#6b7280',
 };
 
 export const InstancedTerrain = React.memo(({ 

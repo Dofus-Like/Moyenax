@@ -5,6 +5,7 @@ import { Vector3, type Group } from 'three';
 
 import { useHubStore } from '../../store/hub.store';
 import { playSfx } from '../../utils/sfx';
+import hubMusic from '../../assets/music/loop_moyenax.mp3';
 
 import { HubAmbientParticles } from './HubAmbientParticles';
 import { HubCamera } from './HubCamera';
@@ -291,6 +292,28 @@ function HubWorld({ onPoiActivate, activePoiId, wasDraggingRef, poiStateLabels, 
 
 export function Hub3DScene({ onPoiActivate, activePoiId, poiStateLabels, activePoiIds, onboardingHighlightId, onReady, onError }: Hub3DSceneProps): ReactElement {
   const wasDraggingRef = useRef(false);
+  const [musicStarted, setMusicStarted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (musicStarted) return;
+    const handler = () => {
+      if (!audioRef.current) {
+        audioRef.current = new Audio(hubMusic);
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.4;
+      }
+      audioRef.current.play().catch(() => {});
+      setMusicStarted(true);
+    };
+    window.addEventListener('pointerdown', handler, { once: true });
+    window.addEventListener('keydown', handler, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', handler);
+      window.removeEventListener('keydown', handler);
+    };
+  }, [musicStarted]);
+
   return (
     <Canvas
       shadows
