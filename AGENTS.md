@@ -49,12 +49,15 @@ Les assets web sont **auto-découverts** par registre via `import.meta.glob` : *
 - **Modèles GLB** → `apps/web/src/assets/models/<categorie>/<nom>.glb` (`environments/`, `poi/`, `props/`). Référencer **toujours** via `modelUrl('<categorie>/<nom>.glb')` (`game/models/modelRegistry.ts`), **jamais** un chemin `/assets/...` en dur. `raw/` = sources lourdes, exclues du build de prod (`loadRawModels()`, DEV-only).
 - **Sprites** → `apps/web/src/assets/sprites/<perso>/{idle,walk,attack}.png` (`idle.png` obligatoire = le perso est listé). Référencer via `spriteUrl('<perso>', 'idle'|'walk'|'attack')` / `allSpriteUrls()` (`game/constants/spriteRegistry.ts`), **jamais** une URL en dur (ni en JS, ni en `background-image` CSS — utiliser un fond inline).
 - **Skins** → `apps/web/src/assets/skins/<id>.json` (`{ id, name, type, hue, saturation, description, sortOrder? }` ; `type` = nom du dossier de sprites). Lus via `SKINS` / `getSkinById('<id>')` (`game/constants/skins.ts`).
+- **Sons (SFX)** → `apps/web/src/assets/sounds/<name>.json` (`{ value, volume?, description?, order? }` ; `value` = chaîne sfxr base58). Lus via `playSfx('<name>')` / `SFX_NAMES` (`utils/sfx.ts`), jamais le catalogue en dur. La musique reste un fichier dans `assets/music/`.
+- **Icônes** : les icônes raster du HUD vivent dans **un seul** dossier `public/assets/icons/` (servies par `<img src="/assets/icons/...">`, comme les icônes d'items/sorts pilotées par la base). Les icônes SVG du hub 3D sont des **composants React** dans `src/assets/icons/hub3d/` (importés, pas des `<img>`).
 - **Masters d'art non livrés** (`.aseprite`, planches sources) → `apps/web/src/assets/raw/` : archive d'édition, **hors glob et non bundlée** (rien ne l'importe). Ne jamais les ranger sous `sprites/` (le glob les prendrait pour des persos). On exporte depuis `raw/` vers `sprites/`, on ne sert jamais `raw/` à l'app.
 
 **Ajouter un asset = déposer le(s) fichier(s), zéro code :**
 - **un modèle** → `assets/models/<categorie>/<nom>.glb` ; consommer via `modelUrl('<categorie>/<nom>.glb')`.
 - **une animation de sprite** → `assets/sprites/<perso>/<idle|walk|attack>.png` (créer le dossier `<perso>/` avec au moins `idle.png` pour un nouveau perso).
 - **un skin** → `assets/skins/<id>.json` (`"type"` = un dossier de `sprites/` existant).
+- **un son** → `assets/sounds/<name>.json` (`value` sfxr) ; jouer via `playSfx('<name>')`.
 - **un perso complet** = `sprites/<nom>/{idle,walk,attack}.png` **+** `skins/<id>.json` (`"type": "<nom>"`).
 
 Dans tous les cas il apparaît automatiquement partout via son registre — rien d'autre à éditer.
