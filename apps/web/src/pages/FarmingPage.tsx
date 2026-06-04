@@ -710,7 +710,7 @@ export function FarmingPage() {
           title="Statistiques"
           onClick={() => setStatsOpen((v) => !v)}
         >
-          <img src="/assets/pack/icons/graph.png" alt="Statistiques" style={{ width: '18px', height: '18px' }} />
+          <img src="/assets/icons/graph.png" alt="Statistiques" style={{ width: '18px', height: '18px' }} />
         </button>
         <button
           type="button"
@@ -719,7 +719,7 @@ export function FarmingPage() {
           title="Abandonner"
           onClick={handleEndSession}
         >
-          <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
+          <img src="/assets/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
         </button>
       </div>
 

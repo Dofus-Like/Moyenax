@@ -14,7 +14,7 @@ import { useHubStore } from '../../store/hub.store';
 import './HubChatPanel.css';
 
 const MAX_LEN = 280;
-const CHAT_ICON = '/assets/pack/icons/chatting.png';
+const CHAT_ICON = '/assets/icons/chatting.png';
 
 type ChatStatus = 'idle' | 'connecting' | 'connected' | 'error';
 
