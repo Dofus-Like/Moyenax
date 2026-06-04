@@ -76,6 +76,8 @@ export class CombatWatchdogService {
       try {
         const state = await this.redis.getJson<CombatState & { lastActionAt?: number }>(key);
         if (!state || state.winnerId) continue;
+        // Bac à sable /playground : pas de système de tour, jamais de force END_TURN.
+        if (state.isPlayground) continue;
 
         const lastActionAt = state.lastActionAt ?? 0;
         if (lastActionAt === 0) continue; // pas encore tracké

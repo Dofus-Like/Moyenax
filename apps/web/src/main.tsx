@@ -86,6 +86,11 @@ const QuickCombatPage = lazy(() =>
     default: module.QuickCombatPage,
   })),
 );
+const PlaygroundPage = lazy(() =>
+  import("./pages/PlaygroundPage").then((module) => ({
+    default: module.PlaygroundPage,
+  })),
+);
 
 function PageLoader({ message }: { message?: string }) {
   const { t } = useTranslation();
@@ -222,6 +227,16 @@ root.render(
                         <ProtectedRoute>
                           <LazyPage>
                             <QuickCombatPage />
+                          </LazyPage>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/playground"
+                      element={
+                        <ProtectedRoute>
+                          <LazyPage>
+                            <PlaygroundPage />
                           </LazyPage>
                         </ProtectedRoute>
                       }

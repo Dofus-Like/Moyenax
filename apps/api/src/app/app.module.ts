@@ -10,6 +10,7 @@ import { EconomyModule } from '../economy/economy.module';
 import { GameSessionModule } from '../game-session/game-session.module';
 import { HealthModule } from '../health/health.module';
 import { HubModule } from '../hub/hub.module';
+import { PlaygroundModule } from '../playground/playground.module';
 import { PlayerModule } from '../player/player.module';
 import { PerfModule } from '../shared/perf/perf.module';
 import { RequestContextMiddleware } from '../shared/perf/request-context.middleware';
@@ -21,6 +22,11 @@ import { SecurityModule } from '../shared/security/security.module';
 import { SseModule } from '../shared/sse/sse.module';
 import { VersionModule } from '../version/version.module';
 import { WorldModule } from '../world/world.module';
+
+// Module dev-only : banc de test /playground, gaté par SHOW_DEBUG (même flag que
+// le perf HUD et les debug endpoints back+front ; côté web : VITE_SHOW_DEBUG).
+const showDebugFlag = (process.env.SHOW_DEBUG ?? '').toLowerCase().trim();
+const devModules = ['1', 'true', 'on', 'yes'].includes(showDebugFlag) ? [PlaygroundModule] : [];
 
 @Module({
   imports: [
@@ -47,6 +53,7 @@ import { WorldModule } from '../world/world.module';
     HubModule,
     HealthModule,
     VersionModule,
+    ...devModules,
   ],
   providers: [
     {

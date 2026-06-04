@@ -48,6 +48,7 @@ function makeProps(overrides?: Partial<HubPoiModalProps>): HubPoiModalProps {
       onJoinRoom: vi.fn(),
       onCancelRoom: vi.fn(),
       onClearError: vi.fn(),
+      onPlayground: vi.fn(),
     },
     ...overrides,
   };

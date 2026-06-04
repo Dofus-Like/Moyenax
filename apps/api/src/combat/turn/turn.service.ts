@@ -217,7 +217,9 @@ export class TurnService {
     const distance =
       Math.abs(target.x - player.position.x) + Math.abs(target.y - player.position.y);
     player.position = target;
-    player.remainingPm -= distance;
+    if (!state.isPlayground) {
+      player.remainingPm -= distance;
+    }
 
     return state;
   }
@@ -242,7 +244,9 @@ export class TurnService {
 
     const from = { ...player.position };
     player.position = target;
-    player.remainingPm -= 1;
+    if (!state.isPlayground) {
+      player.remainingPm -= 1;
+    }
 
     this.sse.emit(state.sessionId, 'PLAYER_JUMPED', {
       playerId: player.playerId,
@@ -265,11 +269,11 @@ export class TurnService {
       throw new BadRequestException('Sort introuvable');
     }
 
-    if (player.remainingPa < spell.paCost) {
+    if (!state.isPlayground && player.remainingPa < spell.paCost) {
       throw new BadRequestException('PA insuffisants');
     }
 
-    if (player.spellCooldowns[spell.id] > 0) {
+    if (!state.noCooldown && player.spellCooldowns[spell.id] > 0) {
       throw new BadRequestException('Sort encore en cooldown');
     }
 
@@ -296,8 +300,10 @@ export class TurnService {
       this.sse.emit(state.sessionId, event.type, event.payload);
     }
 
-    player.remainingPa -= spell.paCost;
-    if (spell.cooldown > 0) {
+    if (!state.isPlayground) {
+      player.remainingPa -= spell.paCost;
+    }
+    if (spell.cooldown > 0 && !state.noCooldown) {
       player.spellCooldowns[spell.id] = spell.cooldown;
     }
 
@@ -322,6 +328,8 @@ export class TurnService {
   }
 
   private async checkVictory(state: CombatState) {
+    // Bac à sable : aucune fin de combat (mannequins encaissent sans verrouiller la session).
+    if (state.isPlayground) return false;
     const players = Object.values(state.players).filter((p) => p.type === 'PLAYER');
     for (const player of players) {
       if (player.currentVit <= 0) {

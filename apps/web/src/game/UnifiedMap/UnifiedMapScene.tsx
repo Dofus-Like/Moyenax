@@ -50,6 +50,9 @@ interface UnifiedMapSceneProps {
   onTileReached?: (node: PathNode) => void;
   onSceneReady?: () => void;
   timeOfDay?: number;
+  /** Banc de test /playground : 'paint'/'gather' détourne le clic de case. */
+  playgroundMode?: 'play' | 'paint' | 'gather';
+  onPlaygroundTileClick?: (x: number, y: number, terrain: TerrainType) => void;
 }
 
 function getProjectileType(spellId: string) {
@@ -76,6 +79,8 @@ export const UnifiedMapScene = React.memo(
     onTileReached,
     onSceneReady,
     timeOfDay = 0,
+    playgroundMode = 'play',
+    onPlaygroundTileClick,
   }: UnifiedMapSceneProps) => {
     const combatState = useCombatStore((state) => state.combatState);
     const selectedSpellId = useCombatStore((state) => state.selectedSpellId);
@@ -774,6 +779,11 @@ export const UnifiedMapScene = React.memo(
 
     const handleTileClickDispatcher = useCallback(
       (x: number, y: number, terrain: TerrainType) => {
+        if (mode === 'combat' && onPlaygroundTileClick && playgroundMode !== 'play') {
+          onPlaygroundTileClick(x, y, terrain);
+          return;
+        }
+
         if (mode === 'combat') {
           void handleCombatTileClick(x, y);
           return;
@@ -781,7 +791,7 @@ export const UnifiedMapScene = React.memo(
 
         onTileClick?.(x, y, terrain);
       },
-      [handleCombatTileClick, mode, onTileClick],
+      [handleCombatTileClick, mode, onTileClick, onPlaygroundTileClick, playgroundMode],
     );
 
     const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {

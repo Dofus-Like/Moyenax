@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import type { CombatPlayer } from "@game/shared-types";
 import { CombatActionType, SpellFamily } from "@game/shared-types";
@@ -107,6 +107,8 @@ export function CombatHUD() {
 
   const user = useAuthStore((s) => s.player);
   const navigate = useNavigate();
+  // Sur /playground, l'écran de fin de combat est géré par la page (retour bac à sable).
+  const isPlaygroundRoute = useLocation().pathname.startsWith("/playground");
   const { activeSession } = useGameSession();
 
   const currentPlayer =
@@ -129,6 +131,9 @@ export function CombatHUD() {
   }, [setUiMessage, uiMessage]);
 
   if (!combatState || !user || !currentPlayer) return null;
+
+  // Bac à sable /playground : pas de système de tour (ni frise, ni fin de tour, ni abandon).
+  const isSandbox = combatState.isPlayground === true;
 
   const handleCombatExit = () => {
     disconnect();
@@ -167,7 +172,7 @@ export function CombatHUD() {
         <div key={uiMessage.id} className={`combat-toast${isToastExiting ? ' exiting' : ''}`}>{uiMessage.text}</div>
       )}
 
-      {showCombatEnd && (
+      {showCombatEnd && !isPlaygroundRoute && (
         <div
           className={`combat-end-overlay ${isWinner ? "victory" : "defeat"}`}
         >
@@ -185,13 +190,15 @@ export function CombatHUD() {
         </div>
       )}
 
-      {/* TOP CENTER: Turn tracker */}
-      <TurnTracker
-        fighters={fighters}
-        currentTurnPlayerId={combatState.currentTurnPlayerId}
-        turnNumber={combatState.turnNumber}
-        selfId={user.id}
-      />
+      {/* TOP CENTER: Turn tracker (masqué en bac à sable : pas de tours) */}
+      {!isSandbox && (
+        <TurnTracker
+          fighters={fighters}
+          currentTurnPlayerId={combatState.currentTurnPlayerId}
+          turnNumber={combatState.turnNumber}
+          selfId={user.id}
+        />
+      )}
 
       {/* BOTTOM PLAYER PANELS */}
       <CombatPlayerPanel playerId={user.id} side="left" showStats={statsOpen} />
@@ -212,20 +219,22 @@ export function CombatHUD() {
               >
                 <img src="/assets/pack/icons/emojis.png" alt="Émotes" style={{ width: '18px', height: '18px' }} />
               </button>
-              <button
-                type="button"
-                className="hud-log-btn"
-                aria-label="Abandonner"
-                title="Abandonner"
-                onClick={() => {
-                  if (window.confirm(t("confirmAbandon") || "Voulez-vous vraiment abandonner le combat ?")) {
-                    surrender();
-                    handleCombatExit();
-                  }
-                }}
-              >
-                <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
-              </button>
+              {!isSandbox && (
+                <button
+                  type="button"
+                  className="hud-log-btn"
+                  aria-label="Abandonner"
+                  title="Abandonner"
+                  onClick={() => {
+                    if (window.confirm(t("confirmAbandon") || "Voulez-vous vraiment abandonner le combat ?")) {
+                      surrender();
+                      handleCombatExit();
+                    }
+                  }}
+                >
+                  <img src="/assets/pack/icons/flag.png" alt="Abandonner" style={{ width: '18px', height: '18px' }} />
+                </button>
+              )}
               <button
                 type="button"
                 className={`hud-log-btn ${tacticsMode ? "active" : ""}`}
@@ -250,12 +259,14 @@ export function CombatHUD() {
                 enemyId ? combatState.players[enemyId]?.stats : undefined
               }
             >
-              <EndTurnButton 
-                isMyTurn={isMyTurn} 
-                onEndTurn={handleEndTurn} 
-                canCastSpell={canCastSpell}
-                hasPm={hasPm}
-              />
+              {!isSandbox && (
+                <EndTurnButton
+                  isMyTurn={isMyTurn}
+                  onEndTurn={handleEndTurn}
+                  canCastSpell={canCastSpell}
+                  hasPm={hasPm}
+                />
+              )}
             </SpellBar>
           </div>
 
