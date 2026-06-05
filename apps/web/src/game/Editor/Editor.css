@@ -156,6 +156,31 @@
   flex-direction: column;
   gap: 12px;
   align-items: flex-end;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  overflow-x: visible;
+  padding: 4px 6px 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.editor-left {
+  overflow-y: auto;
+  overflow-x: visible;
+  padding: 4px 0 4px 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.editor-right::-webkit-scrollbar,
+.editor-left::-webkit-scrollbar {
+  width: 8px;
+}
+
+.editor-right::-webkit-scrollbar-thumb,
+.editor-left::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 
 .editor-select {
