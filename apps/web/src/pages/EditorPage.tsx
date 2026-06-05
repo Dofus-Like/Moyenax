@@ -10,6 +10,7 @@ import { EditorPrefabPanel } from '../game/Editor/EditorPrefabPanel';
 import { EditorScene } from '../game/Editor/EditorScene';
 import { EditorSceneIO } from '../game/Editor/EditorSceneIO';
 import { EditorShortcutsPanel } from '../game/Editor/EditorShortcutsPanel';
+import { EditorTerrainBrushPanel } from '../game/Editor/EditorTerrainBrushPanel';
 import { EditorTerrainPanel } from '../game/Editor/EditorTerrainPanel';
 import { EditorToolbar } from '../game/Editor/EditorToolbar';
 import { handleEditorKey } from '../game/Editor/shortcuts';
@@ -38,6 +39,7 @@ export function EditorPage(): ReactElement {
           </div>
         )}
         <div className="editor-right">
+          {editing && <EditorTerrainBrushPanel />}
           {editing && <EditorToolbar />}
           {editing && <EditorInspector />}
           {editing && <EditorArrangePanel />}

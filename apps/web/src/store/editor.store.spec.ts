@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { TerrainType } from '@game/shared-types';
+
 import { useEditorStore } from './editor.store';
 
 function reset(): void {
@@ -10,6 +12,7 @@ function reset(): void {
   useEditorStore.getState().setMode('edit');
   useEditorStore.getState().setSnapToGrid(false);
   useEditorStore.getState().setShowColliders(false);
+  useEditorStore.getState().setEditTool('props');
   useEditorStore.setState({ past: [], future: [], clipboard: [], showShortcuts: false });
 }
 
@@ -300,6 +303,20 @@ describe('useEditorStore', () => {
     const props = useEditorStore.getState().template.props;
     expect(props.find((p) => p.id === a)?.position[0]).toBe(0);
     expect(props.find((p) => p.id === b)?.position[0]).toBe(0);
+  });
+
+  it('setEditTool(terrain) initialise la grille de terrain', () => {
+    expect(useEditorStore.getState().template.terrain.grid).toBeUndefined();
+    useEditorStore.getState().setEditTool('terrain');
+    expect(useEditorStore.getState().editTool).toBe('terrain');
+    expect(useEditorStore.getState().template.terrain.grid).toHaveLength(11);
+  });
+
+  it('paintTile peint une cellule avec le pinceau courant', () => {
+    useEditorStore.getState().setEditTool('terrain');
+    useEditorStore.getState().setBrushType(TerrainType.GOLD);
+    useEditorStore.getState().paintTile(5, 5);
+    expect(useEditorStore.getState().template.terrain.grid?.[5][5]).toBe(TerrainType.GOLD);
   });
 
   it('resetTemplate vide les props et la sélection', () => {

@@ -2,25 +2,17 @@ import { OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { type ReactElement, Suspense, useMemo } from 'react';
 
-import { generateMap } from '@game/game-engine';
-
 import { useEditorStore } from '../../store/editor.store';
 import { InstancedFoliage } from '../UnifiedMap/InstancedFoliage';
 import { InstancedTerrain } from '../UnifiedMap/InstancedTerrain';
 
 import { EditorSky } from './EditorSky';
 import { StaticProps } from './StaticProps';
-
-// Stable numeric seed from the seedId string → same resources every render for a given seed.
-function seedHash(seedId: string): number {
-  let hash = 0;
-  for (let i = 0; i < seedId.length; i++) hash = (hash * 31 + seedId.charCodeAt(i)) % 1_000_000;
-  return hash;
-}
+import { terrainToMap } from './terrainGrid';
 
 export function EditorPlayScene(): ReactElement {
-  const seedId = useEditorStore((s) => s.template.terrain.seedId);
-  const map = useMemo(() => generateMap(seedId, seedHash(seedId)), [seedId]);
+  const terrain = useEditorStore((s) => s.template.terrain);
+  const map = useMemo(() => terrainToMap(terrain), [terrain]);
 
   return (
     <Canvas

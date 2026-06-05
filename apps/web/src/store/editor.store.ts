@@ -5,14 +5,17 @@ import {
   DEFAULT_PROP_COLLIDES,
   DEFAULT_PROP_ROTATION,
   DEFAULT_PROP_SCALE,
+  TerrainType,
   ambianceForTimeOfDay,
   createEmptyTemplate,
 } from '@game/shared-types';
 
 import { type AlignMode, type Axis, alignProps, distributeProps } from '../game/Editor/arrange';
+import { terrainToMap } from '../game/Editor/terrainGrid';
 
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 export type EditorMode = 'edit' | 'play';
+export type EditTool = 'props' | 'terrain';
 export interface PropPatch {
   id: string;
   patch: Partial<Omit<PlacedProp, 'id'>>;
@@ -74,6 +77,12 @@ interface EditorStoreState {
   clipboard: PlacedProp[];
   showShortcuts: boolean;
   resetViewSignal: number;
+  editTool: EditTool;
+  brushType: TerrainType;
+  setEditTool: (tool: EditTool) => void;
+  setBrushType: (type: TerrainType) => void;
+  beginTerrainStroke: () => void;
+  paintTile: (x: number, y: number) => void;
   addProp: (modelKey: string, position: Vec3) => void;
   addProps: (inits: Omit<PlacedProp, 'id'>[]) => void;
   updateProp: (id: string, patch: Partial<Omit<PlacedProp, 'id'>>) => void;
@@ -140,6 +149,37 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
     clipboard: [],
     showShortcuts: false,
     resetViewSignal: 0,
+    editTool: 'props',
+    brushType: TerrainType.WALL,
+
+    setEditTool: (tool): void => {
+      if (tool === 'terrain' && !get().template.terrain.grid) {
+        const grid = terrainToMap(get().template.terrain).grid;
+        set((s) => ({ template: { ...s.template, terrain: { ...s.template.terrain, grid } } }));
+      }
+      set({ editTool: tool });
+    },
+    setBrushType: (type): void => set({ brushType: type }),
+
+    // One history entry per stroke: snapshot on pointer-down, then paint live.
+    beginTerrainStroke: (): void =>
+      set((state) => ({
+        past: [...state.past, state.template].slice(-HISTORY_LIMIT),
+        future: [],
+      })),
+
+    paintTile: (x, y): void =>
+      set((state) => {
+        const grid = state.template.terrain.grid;
+        if (!grid || !grid[y] || grid[y][x] === undefined || grid[y][x] === get().brushType)
+          return {};
+        const nextGrid = grid.map((row, ry) =>
+          ry === y ? row.map((cell, rx) => (rx === x ? get().brushType : cell)) : row,
+        );
+        return {
+          template: { ...state.template, terrain: { ...state.template.terrain, grid: nextGrid } },
+        };
+      }),
 
     addProp: (modelKey, position): void => {
       const prop: PlacedProp = {
@@ -156,7 +196,10 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
     addProps: (inits): void => {
       if (inits.length === 0) return;
       const created: PlacedProp[] = inits.map((init) => ({ ...init, id: nextPropId() }));
-      change((t) => ({ ...t, props: [...t.props, ...created] }), selection(created.map((c) => c.id)));
+      change(
+        (t) => ({ ...t, props: [...t.props, ...created] }),
+        selection(created.map((c) => c.id)),
+      );
     },
 
     updateProp: (id, patch): void => mapProps((p) => (p.id === id ? { ...p, ...patch } : p)),

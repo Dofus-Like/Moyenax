@@ -10,6 +10,7 @@ import { EditorGround } from './EditorGround';
 import { EditorSky } from './EditorSky';
 import { EditorTransformGizmo } from './EditorTransformGizmo';
 import { PlacedProps } from './PlacedProps';
+import { TerrainPaintLayer } from './TerrainPaintLayer';
 
 interface ResettableControls {
   reset?: () => void;
@@ -27,6 +28,7 @@ function CameraResetter(): null {
 
 export function EditorScene(): ReactElement {
   const objects = useRef<Map<string, Object3D>>(new Map());
+  const terrainMode = useEditorStore((s) => s.editTool === 'terrain');
 
   return (
     <Canvas
@@ -46,11 +48,17 @@ export function EditorScene(): ReactElement {
         infiniteGrid
         position={[0, 0.01, 0]}
       />
-      <EditorGround objects={objects} />
-      <DropTarget objects={objects} />
       <PlacedProps objects={objects} />
-      <EditorTransformGizmo objects={objects} />
-      <OrbitControls makeDefault enableDamping />
+      {terrainMode ? (
+        <TerrainPaintLayer />
+      ) : (
+        <>
+          <EditorGround objects={objects} />
+          <DropTarget objects={objects} />
+          <EditorTransformGizmo objects={objects} />
+        </>
+      )}
+      <OrbitControls makeDefault enableDamping enableRotate={!terrainMode} />
       <CameraResetter />
     </Canvas>
   );
