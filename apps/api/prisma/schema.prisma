@@ -23,8 +23,22 @@ model Player {
   gameSessionsAsP1 GameSession[]   @relation("GSP1")
   gameSessionsAsP2 GameSession[]   @relation("GSP2")
   inventory        InventoryItem[]
+  sceneTemplates   SceneTemplate[]
   spells           PlayerSpell[]
   stats            PlayerStats?
+}
+
+model SceneTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  data      Json
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  owner     Player   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, name])
+  @@index([ownerId])
 }
 
 model PlayerStats {

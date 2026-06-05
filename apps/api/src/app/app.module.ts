@@ -12,6 +12,7 @@ import { HealthModule } from '../health/health.module';
 import { HubModule } from '../hub/hub.module';
 import { PlaygroundModule } from '../playground/playground.module';
 import { PlayerModule } from '../player/player.module';
+import { SceneTemplateModule } from '../scene-template/scene-template.module';
 import { PerfModule } from '../shared/perf/perf.module';
 import { RequestContextMiddleware } from '../shared/perf/request-context.middleware';
 import { PrismaModule } from '../shared/prisma/prisma.module';
@@ -53,6 +54,7 @@ const devModules = ['1', 'true', 'on', 'yes'].includes(showDebugFlag) ? [Playgro
     HubModule,
     HealthModule,
     VersionModule,
+    SceneTemplateModule,
     ...devModules,
   ],
   providers: [
