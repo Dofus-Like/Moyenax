@@ -19,6 +19,7 @@ import { TileHoverEffect } from '../ResourceMap/TileHoverEffect';
 import { CombatHighlightsLayer } from './CombatHighlights';
 import { InstancedFoliage } from './InstancedFoliage';
 import { InstancedTerrain } from './InstancedTerrain';
+import { WindGusts } from './WindGusts';
 import { DamagePopup } from './overlays/DamagePopup';
 import { SpellVFX } from './overlays/SpellVFX';
 
@@ -35,7 +36,7 @@ interface TerrainLayerProps {
   wallColor?: string;
 }
 
-export const TerrainLayer = React.memo(({ map, mode, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius, tacticsMode, wallColor }: TerrainLayerProps) => {
+export const TerrainLayer = React.memo(({ map, checkerColorA, checkerColorB, sideColor, tileSize, tileRadius, tacticsMode, wallColor }: TerrainLayerProps) => {
   const decorations = useMemo(() => {
     const result: React.ReactElement[] = [];
 
@@ -59,7 +60,7 @@ export const TerrainLayer = React.memo(({ map, mode, checkerColorA, checkerColor
         } else {
           // Normal mode: skip instanced foliage, only render non-ground decorations
           // All WALL terrain → 3D models (trees or rocks). HERB → bushes. Skip TerrainTile for these.
-          const isInstancedFoliage = terrain !== TerrainType.WALL && (props.combatType === CombatTerrainType.WALL || terrain === TerrainType.HERB);
+          const isInstancedFoliage = props.combatType === CombatTerrainType.WALL || terrain === TerrainType.HERB;
 
           if (!isInstancedFoliage && (props.combatType !== CombatTerrainType.FLAT || props.harvestable)) {
             result.push(
@@ -90,7 +91,8 @@ export const TerrainLayer = React.memo(({ map, mode, checkerColorA, checkerColor
       )}
       {!tacticsMode && (
         <Suspense fallback={null}>
-          <InstancedFoliage map={map} mode={mode} />
+          <InstancedFoliage map={map} />
+          <WindGusts map={map} />
         </Suspense>
       )}
       {decorations}
