@@ -38,6 +38,8 @@ export const SHORTCUTS: ShortcutGroup[] = [
   {
     title: 'Objets',
     items: [
+      { keys: 'Maj+clic', label: 'Ajouter / retirer de la sélection' },
+      { keys: 'Ctrl+A', label: 'Tout sélectionner' },
       { keys: 'Ctrl+D', label: 'Dupliquer' },
       { keys: 'Ctrl+C · Ctrl+V', label: 'Copier · Coller' },
       { keys: 'Suppr', label: 'Supprimer' },
@@ -81,9 +83,10 @@ function handleGlobalShortcut(event: KeyboardEvent, store: EditorStore): boolean
   const actions: Record<string, () => void> = {
     z: () => (event.shiftKey ? store.redo() : store.undo()),
     y: () => store.redo(),
+    a: () => store.selectAll(),
     c: () => store.copySelected(),
     v: () => store.paste(),
-    d: () => store.selectedId && store.duplicateProp(store.selectedId),
+    d: () => store.duplicateSelected(),
     s: () => downloadTemplate(store.template),
   };
   const action = actions[key];
@@ -94,10 +97,9 @@ function handleGlobalShortcut(event: KeyboardEvent, store: EditorStore): boolean
 }
 
 function handleSelectionKey(event: KeyboardEvent, store: EditorStore): boolean {
-  const { selectedId } = store;
-  if (!selectedId) return false;
+  if (store.selectedIds.length === 0) return false;
   if (event.key === 'Delete' || event.key === 'Backspace') {
-    store.removeProp(selectedId);
+    store.removeSelected();
     return true;
   }
   return false;

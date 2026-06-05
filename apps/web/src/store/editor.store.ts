@@ -9,8 +9,14 @@ import {
   createEmptyTemplate,
 } from '@game/shared-types';
 
+import { type AlignMode, type Axis, alignProps, distributeProps } from '../game/Editor/arrange';
+
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 export type EditorMode = 'edit' | 'play';
+export interface PropPatch {
+  id: string;
+  patch: Partial<Omit<PlacedProp, 'id'>>;
+}
 
 const HISTORY_LIMIT = 50;
 
@@ -24,7 +30,10 @@ export function snapVec(position: Vec3): Vec3 {
   return [Math.round(position[0]), position[1], Math.round(position[2])];
 }
 
-// Keep generated ids ahead of any loaded template's ids to avoid collisions.
+function isSelectable(prop: PlacedProp): boolean {
+  return !prop.locked && !prop.hidden;
+}
+
 function syncCounterTo(props: PlacedProp[]): void {
   for (const prop of props) {
     const match = /^prop-(\d+)$/.exec(prop.id);
@@ -32,12 +41,29 @@ function syncCounterTo(props: PlacedProp[]): void {
   }
 }
 
+function offsetClone(prop: PlacedProp): PlacedProp {
+  return {
+    ...prop,
+    id: nextPropId(),
+    position: [prop.position[0] + 1, prop.position[1], prop.position[2] + 1],
+    locked: false,
+    hidden: false,
+  };
+}
+
 type TemplateProducer = (template: SceneTemplate) => SceneTemplate;
-type Extra = Partial<Pick<EditorStoreState, 'selectedId' | 'placingModelKey'>>;
+type Selection = Pick<EditorStoreState, 'selectedId' | 'selectedIds'>;
+type Extra = Partial<Selection & Pick<EditorStoreState, 'placingModelKey'>>;
+
+function selection(ids: string[]): Selection {
+  return { selectedIds: ids, selectedId: ids.length > 0 ? ids[ids.length - 1] : null };
+}
 
 interface EditorStoreState {
   template: SceneTemplate;
+  /** Primaire (dernier sélectionné) — compat mono-sélection. */
   selectedId: string | null;
+  selectedIds: string[];
   gizmoMode: GizmoMode;
   placingModelKey: string | null;
   mode: EditorMode;
@@ -45,16 +71,26 @@ interface EditorStoreState {
   showColliders: boolean;
   past: SceneTemplate[];
   future: SceneTemplate[];
-  clipboard: PlacedProp | null;
+  clipboard: PlacedProp[];
   showShortcuts: boolean;
   resetViewSignal: number;
   addProp: (modelKey: string, position: Vec3) => void;
   updateProp: (id: string, patch: Partial<Omit<PlacedProp, 'id'>>) => void;
+  batchUpdateProps: (updates: PropPatch[]) => void;
   removeProp: (id: string) => void;
+  removeSelected: () => void;
   duplicateProp: (id: string) => void;
+  duplicateSelected: () => void;
   copySelected: () => void;
   paste: () => void;
   select: (id: string | null) => void;
+  toggleSelect: (id: string) => void;
+  selectMany: (ids: string[]) => void;
+  selectAll: () => void;
+  toggleLock: (id: string) => void;
+  toggleHide: (id: string) => void;
+  alignSelected: (axis: Axis, mode: AlignMode) => void;
+  distributeSelected: (axis: Axis) => void;
   setGizmoMode: (mode: GizmoMode) => void;
   setPlacingModel: (modelKey: string | null) => void;
   setSnapToGrid: (value: boolean) => void;
@@ -74,14 +110,6 @@ interface EditorStoreState {
   redo: () => void;
 }
 
-function offsetClone(prop: PlacedProp): PlacedProp {
-  return {
-    ...prop,
-    id: nextPropId(),
-    position: [prop.position[0] + 1, prop.position[1], prop.position[2] + 1],
-  };
-}
-
 export const useEditorStore = create<EditorStoreState>((set, get) => {
   // Every template mutation flows through here so undo/redo history stays consistent.
   const change = (producer: TemplateProducer, extra: Extra = {}): void =>
@@ -92,9 +120,15 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
       ...extra,
     }));
 
+  const mapProps = (fn: (p: PlacedProp) => PlacedProp, extra: Extra = {}): void =>
+    change((t) => ({ ...t, props: t.props.map(fn) }), extra);
+
+  const selectedSet = (): Set<string> => new Set(get().selectedIds);
+
   return {
     template: createEmptyTemplate(),
     selectedId: null,
+    selectedIds: [],
     gizmoMode: 'translate',
     placingModelKey: null,
     mode: 'edit',
@@ -102,7 +136,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
     showColliders: false,
     past: [],
     future: [],
-    clipboard: null,
+    clipboard: [],
     showShortcuts: false,
     resetViewSignal: 0,
 
@@ -115,39 +149,86 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
         scale: DEFAULT_PROP_SCALE,
         collides: DEFAULT_PROP_COLLIDES,
       };
-      change((t) => ({ ...t, props: [...t.props, prop] }), { selectedId: prop.id });
+      change((t) => ({ ...t, props: [...t.props, prop] }), selection([prop.id]));
     },
 
-    updateProp: (id, patch): void =>
-      change((t) => ({ ...t, props: t.props.map((p) => (p.id === id ? { ...p, ...patch } : p)) })),
+    updateProp: (id, patch): void => mapProps((p) => (p.id === id ? { ...p, ...patch } : p)),
+
+    batchUpdateProps: (updates): void => {
+      const byId = new Map(updates.map((u) => [u.id, u.patch]));
+      mapProps((p) => (byId.has(p.id) ? { ...p, ...byId.get(p.id) } : p));
+    },
 
     removeProp: (id): void => {
-      const sel = get().selectedId;
-      change((t) => ({ ...t, props: t.props.filter((p) => p.id !== id) }), {
-        selectedId: sel === id ? null : sel,
-      });
+      const remaining = get().selectedIds.filter((sid) => sid !== id);
+      change((t) => ({ ...t, props: t.props.filter((p) => p.id !== id) }), selection(remaining));
+    },
+
+    removeSelected: (): void => {
+      const ids = selectedSet();
+      if (ids.size === 0) return;
+      change((t) => ({ ...t, props: t.props.filter((p) => !ids.has(p.id)) }), selection([]));
     },
 
     duplicateProp: (id): void => {
       const original = get().template.props.find((p) => p.id === id);
       if (!original) return;
       const clone = offsetClone(original);
-      change((t) => ({ ...t, props: [...t.props, clone] }), { selectedId: clone.id });
+      change((t) => ({ ...t, props: [...t.props, clone] }), selection([clone.id]));
+    },
+
+    duplicateSelected: (): void => {
+      const ids = selectedSet();
+      const clones = get()
+        .template.props.filter((p) => ids.has(p.id))
+        .map(offsetClone);
+      if (clones.length === 0) return;
+      change((t) => ({ ...t, props: [...t.props, ...clones] }), selection(clones.map((c) => c.id)));
     },
 
     copySelected: (): void => {
-      const prop = get().template.props.find((p) => p.id === get().selectedId);
-      if (prop) set({ clipboard: prop });
+      const ids = selectedSet();
+      const copied = get().template.props.filter((p) => ids.has(p.id));
+      if (copied.length > 0) set({ clipboard: copied });
     },
 
     paste: (): void => {
-      const { clipboard } = get();
-      if (!clipboard) return;
-      const clone = offsetClone(clipboard);
-      change((t) => ({ ...t, props: [...t.props, clone] }), { selectedId: clone.id });
+      const clones = get().clipboard.map(offsetClone);
+      if (clones.length === 0) return;
+      change((t) => ({ ...t, props: [...t.props, ...clones] }), selection(clones.map((c) => c.id)));
     },
 
-    select: (id): void => set({ selectedId: id }),
+    select: (id): void => set(selection(id ? [id] : [])),
+    toggleSelect: (id): void => {
+      const ids = get().selectedIds;
+      set(selection(ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+    },
+    selectMany: (ids): void => set(selection(ids)),
+    selectAll: (): void =>
+      set(
+        selection(
+          get()
+            .template.props.filter(isSelectable)
+            .map((p) => p.id),
+        ),
+      ),
+
+    toggleLock: (id): void =>
+      mapProps(
+        (p) => (p.id === id ? { ...p, locked: !p.locked } : p),
+        selection(get().selectedIds.filter((sid) => sid !== id)),
+      ),
+    toggleHide: (id): void =>
+      mapProps(
+        (p) => (p.id === id ? { ...p, hidden: !p.hidden } : p),
+        selection(get().selectedIds.filter((sid) => sid !== id)),
+      ),
+
+    alignSelected: (axis, mode): void =>
+      change((t) => ({ ...t, props: alignProps(t.props, selectedSet(), axis, mode) })),
+    distributeSelected: (axis): void =>
+      change((t) => ({ ...t, props: distributeProps(t.props, selectedSet(), axis) })),
+
     setGizmoMode: (mode): void => set({ gizmoMode: mode }),
     setPlacingModel: (modelKey): void => set({ placingModelKey: modelKey }),
     setSnapToGrid: (value): void => set({ snapToGrid: value }),
@@ -157,26 +238,23 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
     requestResetView: (): void => set((s) => ({ resetViewSignal: s.resetViewSignal + 1 })),
 
     selectNext: (direction): void => {
-      const { props } = get().template;
-      if (props.length === 0) return;
-      const index = props.findIndex((p) => p.id === get().selectedId);
+      const selectables = get().template.props.filter(isSelectable);
+      if (selectables.length === 0) return;
+      const index = selectables.findIndex((p) => p.id === get().selectedId);
       let base = index;
       if (index < 0) base = direction > 0 ? -1 : 0;
-      const next = (base + direction + props.length) % props.length;
-      set({ selectedId: props[next].id });
+      const next = (base + direction + selectables.length) % selectables.length;
+      set(selection([selectables[next].id]));
     },
 
     nudgeSelected: (dx, dz): void => {
-      const id = get().selectedId;
-      if (!id) return;
-      change((t) => ({
-        ...t,
-        props: t.props.map((p) =>
-          p.id === id
-            ? { ...p, position: [p.position[0] + dx, p.position[1], p.position[2] + dz] }
-            : p,
-        ),
-      }));
+      const ids = selectedSet();
+      if (ids.size === 0) return;
+      mapProps((p) =>
+        ids.has(p.id) && !p.locked
+          ? { ...p, position: [p.position[0] + dx, p.position[1], p.position[2] + dz] }
+          : p,
+      );
     },
 
     setTimeOfDay: (timeOfDay): void =>
@@ -189,10 +267,10 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
 
     loadTemplate: (template): void => {
       syncCounterTo(template.props);
-      change(() => template, { selectedId: null, placingModelKey: null });
+      change(() => template, { ...selection([]), placingModelKey: null });
     },
     resetTemplate: (): void =>
-      change(() => createEmptyTemplate(), { selectedId: null, placingModelKey: null }),
+      change(() => createEmptyTemplate(), { ...selection([]), placingModelKey: null }),
 
     undo: (): void =>
       set((state) => {
@@ -202,7 +280,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
           template: previous,
           past: state.past.slice(0, -1),
           future: [state.template, ...state.future],
-          selectedId: null,
+          ...selection([]),
           placingModelKey: null,
         };
       }),
@@ -215,7 +293,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
           template: next,
           past: [...state.past, state.template],
           future: rest,
-          selectedId: null,
+          ...selection([]),
           placingModelKey: null,
         };
       }),

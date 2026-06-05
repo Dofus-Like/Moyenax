@@ -9,17 +9,19 @@ const DEG2RAD = Math.PI / 180;
 
 export function EditorInspector(): ReactElement | null {
   const selectedId = useEditorStore((s) => s.selectedId);
+  const count = useEditorStore((s) => s.selectedIds.length);
   const prop = useEditorStore((s) => s.template.props.find((p) => p.id === selectedId) ?? null);
   const updateProp = useEditorStore((s) => s.updateProp);
-  const duplicateProp = useEditorStore((s) => s.duplicateProp);
-  const removeProp = useEditorStore((s) => s.removeProp);
+  const duplicateSelected = useEditorStore((s) => s.duplicateSelected);
+  const removeSelected = useEditorStore((s) => s.removeSelected);
 
   if (!prop) return null;
   const name = prop.modelKey.split('/').pop();
+  const title = count > 1 ? `${count} objets` : name;
 
   return (
     <aside className="editor-panel editor-inspector">
-      <p className="editor-panel-title">🔍 {name}</p>
+      <p className="editor-panel-title">🔍 {title}</p>
 
       <VectorRow
         label="Position"
@@ -48,13 +50,13 @@ export function EditorInspector(): ReactElement | null {
       </label>
 
       <div className="editor-btn-row">
-        <button type="button" className="editor-btn" onClick={() => duplicateProp(prop.id)}>
+        <button type="button" className="editor-btn" onClick={() => duplicateSelected()}>
           ⧉ Dupliquer
         </button>
         <button
           type="button"
           className="editor-btn editor-btn-danger"
-          onClick={() => removeProp(prop.id)}
+          onClick={() => removeSelected()}
         >
           🗑 Supprimer
         </button>

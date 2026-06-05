@@ -4,7 +4,7 @@ import { Euler, type Object3D, Vector3 } from 'three';
 
 import type { Vec3 } from '@game/shared-types';
 
-import { type GizmoMode, snapVec, useEditorStore } from '../../store/editor.store';
+import { type GizmoMode, type PropPatch, snapVec, useEditorStore } from '../../store/editor.store';
 
 import { type ObjectsRef } from './PlacedProps';
 import { type Obstacle, collectObstacles, hasNewCollision, worldModelBox } from './collision';
@@ -19,13 +19,11 @@ interface Snapshot {
   scale: Vector3;
 }
 
-interface CollisionGuard {
+interface GizmoDrag {
   onDragStart: () => void;
   onObjectChange: () => void;
 }
 
-// Force uniform scaling: dragging any scale handle (or the centre) grows the prop
-// equally on the 3 axes, driven by the axis that deviates most from the start scale.
 function uniformizeScale(obj: Object3D, startScale: number): void {
   const ratios = [obj.scale.x / startScale, obj.scale.y / startScale, obj.scale.z / startScale];
   const ratio = ratios.reduce(
@@ -35,16 +33,17 @@ function uniformizeScale(obj: Object3D, startScale: number): void {
   obj.scale.setScalar(Math.max(0.05, startScale * ratio));
 }
 
-// Blocks a transform that would push a collidable prop into another. Pre-existing
-// overlaps are ignored so two already-merged objects can still be pulled apart.
-function useCollisionGuard(
+// Drives a transform drag: uniform scaling, group translation (move the whole
+// selection together), and single-object collision blocking.
+function useGizmoDrag(
   target: Object3D | null,
-  selectedId: string | null,
   gizmoMode: GizmoMode,
   objects: ObjectsRef,
-): CollisionGuard {
+): GizmoDrag {
   const obstacles = useRef<Obstacle[]>([]);
+  const others = useRef<Object3D[]>([]);
   const startScale = useRef(1);
+  const prevPrimary = useRef(new Vector3());
   const lastValid = useRef<Snapshot>({
     position: new Vector3(),
     rotation: new Euler(),
@@ -58,19 +57,32 @@ function useCollisionGuard(
   }, []);
 
   const onDragStart = useCallback((): void => {
-    if (!target || !selectedId) return;
+    if (!target) return;
     saveValid(target);
     startScale.current = target.scale.x;
-    const { props } = useEditorStore.getState().template;
-    const selfCollides = props.find((p) => p.id === selectedId)?.collides ?? false;
-    obstacles.current = selfCollides
-      ? collectObstacles(selectedId, worldModelBox(target), objects, props)
-      : [];
-  }, [target, selectedId, objects, saveValid]);
+    prevPrimary.current.copy(target.position);
+    const { selectedId, selectedIds, template } = useEditorStore.getState();
+    others.current = selectedIds
+      .filter((id) => id !== selectedId)
+      .map((id) => objects.current.get(id))
+      .filter((o): o is Object3D => !!o);
+    const single = selectedIds.length <= 1;
+    const selfCollides = template.props.find((p) => p.id === selectedId)?.collides ?? false;
+    obstacles.current =
+      single && selfCollides
+        ? collectObstacles(selectedId ?? '', worldModelBox(target), objects, template.props)
+        : [];
+  }, [target, objects, saveValid]);
 
   const onObjectChange = useCallback((): void => {
     if (!target) return;
     if (gizmoMode === 'scale') uniformizeScale(target, startScale.current);
+    if (gizmoMode === 'translate' && others.current.length > 0) {
+      const delta = target.position.clone().sub(prevPrimary.current);
+      for (const obj of others.current) obj.position.add(delta);
+      prevPrimary.current.copy(target.position);
+      return;
+    }
     if (obstacles.current.length === 0) return;
     if (hasNewCollision(worldModelBox(target), obstacles.current)) {
       target.position.copy(lastValid.current.position);
@@ -84,31 +96,41 @@ function useCollisionGuard(
   return { onDragStart, onObjectChange };
 }
 
+function readTransform(obj: Object3D): PropPatch['patch'] {
+  return {
+    position: obj.position.toArray() as Vec3,
+    rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+    scale: obj.scale.x,
+  };
+}
+
 export function EditorTransformGizmo({ objects }: EditorTransformGizmoProps): ReactElement | null {
   const selectedId = useEditorStore((s) => s.selectedId);
+  const selectedCount = useEditorStore((s) => s.selectedIds.length);
   const gizmoMode = useEditorStore((s) => s.gizmoMode);
   const propCount = useEditorStore((s) => s.template.props.length);
-  const updateProp = useEditorStore((s) => s.updateProp);
   const [, forceRender] = useState(0);
 
   useEffect(() => {
     forceRender((n) => n + 1);
-  }, [selectedId, propCount]);
+  }, [selectedId, selectedCount, propCount]);
 
   const target = selectedId ? (objects.current.get(selectedId) ?? null) : null;
-  const { onDragStart, onObjectChange } = useCollisionGuard(target, selectedId, gizmoMode, objects);
+  const { onDragStart, onObjectChange } = useGizmoDrag(target, gizmoMode, objects);
 
   const commit = useCallback((): void => {
-    if (!selectedId || !target) return;
-    const raw = target.position.toArray() as Vec3;
-    const position = useEditorStore.getState().snapToGrid ? snapVec(raw) : raw;
-    target.position.set(position[0], position[1], position[2]);
-    updateProp(selectedId, {
-      position,
-      rotation: [target.rotation.x, target.rotation.y, target.rotation.z],
-      scale: target.scale.x,
-    });
-  }, [selectedId, target, updateProp]);
+    if (!target) return;
+    const store = useEditorStore.getState();
+    if (store.snapToGrid) {
+      const snapped = snapVec(target.position.toArray() as Vec3);
+      target.position.set(snapped[0], snapped[1], snapped[2]);
+    }
+    const updates: PropPatch[] = store.selectedIds
+      .map((id) => ({ id, obj: objects.current.get(id) }))
+      .filter((e): e is { id: string; obj: Object3D } => !!e.obj)
+      .map((e) => ({ id: e.id, patch: readTransform(e.obj) }));
+    store.batchUpdateProps(updates);
+  }, [target]);
 
   if (!target) return null;
   return (

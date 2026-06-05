@@ -10,7 +10,14 @@ function reset(): void {
   useEditorStore.getState().setMode('edit');
   useEditorStore.getState().setSnapToGrid(false);
   useEditorStore.getState().setShowColliders(false);
-  useEditorStore.setState({ past: [], future: [], clipboard: null, showShortcuts: false });
+  useEditorStore.setState({ past: [], future: [], clipboard: [], showShortcuts: false });
+}
+
+function addTwo(): [string, string] {
+  useEditorStore.getState().addProp('props/a.glb', [0, 0, 0]);
+  useEditorStore.getState().addProp('props/b.glb', [4, 0, 0]);
+  const [a, b] = useEditorStore.getState().template.props;
+  return [a.id, b.id];
 }
 
 describe('useEditorStore', () => {
@@ -227,6 +234,72 @@ describe('useEditorStore', () => {
     useEditorStore.getState().select(id);
     useEditorStore.getState().nudgeSelected(1, -1);
     expect(useEditorStore.getState().template.props[0].position).toEqual([3, 0, 2]);
+  });
+
+  it('toggleSelect ajoute puis retire de la multi-sélection', () => {
+    const [a, b] = addTwo();
+    useEditorStore.getState().select(a);
+    useEditorStore.getState().toggleSelect(b);
+    expect(useEditorStore.getState().selectedIds).toEqual([a, b]);
+    expect(useEditorStore.getState().selectedId).toBe(b); // primaire = dernier
+    useEditorStore.getState().toggleSelect(b);
+    expect(useEditorStore.getState().selectedIds).toEqual([a]);
+  });
+
+  it('selectAll sélectionne tout sauf verrouillé/masqué', () => {
+    const [a, b] = addTwo();
+    useEditorStore.getState().toggleLock(b);
+    useEditorStore.getState().selectAll();
+    expect(useEditorStore.getState().selectedIds).toEqual([a]);
+  });
+
+  it('toggleLock verrouille et désélectionne la prop', () => {
+    const [a] = addTwo();
+    useEditorStore.getState().select(a);
+    useEditorStore.getState().toggleLock(a);
+    expect(useEditorStore.getState().template.props.find((p) => p.id === a)?.locked).toBe(true);
+    expect(useEditorStore.getState().selectedIds).not.toContain(a);
+  });
+
+  it('toggleHide masque la prop', () => {
+    const [a] = addTwo();
+    useEditorStore.getState().toggleHide(a);
+    expect(useEditorStore.getState().template.props.find((p) => p.id === a)?.hidden).toBe(true);
+  });
+
+  it('removeSelected supprime toute la sélection', () => {
+    const [a, b] = addTwo();
+    useEditorStore.getState().selectMany([a, b]);
+    useEditorStore.getState().removeSelected();
+    expect(useEditorStore.getState().template.props).toHaveLength(0);
+    expect(useEditorStore.getState().selectedIds).toEqual([]);
+  });
+
+  it('duplicateSelected duplique toute la sélection', () => {
+    const [a, b] = addTwo();
+    useEditorStore.getState().selectMany([a, b]);
+    useEditorStore.getState().duplicateSelected();
+    expect(useEditorStore.getState().template.props).toHaveLength(4);
+    expect(useEditorStore.getState().selectedIds).toHaveLength(2);
+  });
+
+  it('nudgeSelected décale la sélection mais pas les props verrouillées', () => {
+    const [a, b] = addTwo();
+    useEditorStore.getState().toggleLock(b);
+    useEditorStore.getState().selectMany([a, b]);
+    useEditorStore.getState().nudgeSelected(1, 0);
+    const props = useEditorStore.getState().template.props;
+    expect(props.find((p) => p.id === a)?.position[0]).toBe(1);
+    expect(props.find((p) => p.id === b)?.position[0]).toBe(4); // verrouillée
+  });
+
+  it('alignSelected aligne la sélection sur l’axe X', () => {
+    const [a, b] = addTwo();
+    useEditorStore.getState().selectMany([a, b]);
+    useEditorStore.getState().alignSelected('x', 'min');
+    const props = useEditorStore.getState().template.props;
+    expect(props.find((p) => p.id === a)?.position[0]).toBe(0);
+    expect(props.find((p) => p.id === b)?.position[0]).toBe(0);
   });
 
   it('resetTemplate vide les props et la sélection', () => {

@@ -18,9 +18,11 @@ export function PlacedProps({ objects }: PlacedPropsProps): ReactElement {
   const props = useEditorStore((s) => s.template.props);
   return (
     <>
-      {props.map((prop) => (
-        <PlacedPropItem key={prop.id} prop={prop} objects={objects} />
-      ))}
+      {props
+        .filter((prop) => !prop.hidden)
+        .map((prop) => (
+          <PlacedPropItem key={prop.id} prop={prop} objects={objects} />
+        ))}
     </>
   );
 }
@@ -31,8 +33,7 @@ interface PlacedPropItemProps {
 }
 
 function PlacedPropItem({ prop, objects }: PlacedPropItemProps): ReactElement {
-  const selectedId = useEditorStore((s) => s.selectedId);
-  const select = useEditorStore((s) => s.select);
+  const selected = useEditorStore((s) => s.selectedIds.includes(prop.id));
 
   const setRef = useCallback(
     (node: Group | null): void => {
@@ -45,9 +46,12 @@ function PlacedPropItem({ prop, objects }: PlacedPropItemProps): ReactElement {
   const handleSelect = useCallback(
     (event: ThreeEvent<MouseEvent>): void => {
       event.stopPropagation();
-      select(prop.id);
+      if (prop.locked) return;
+      const store = useEditorStore.getState();
+      if (event.nativeEvent.shiftKey) store.toggleSelect(prop.id);
+      else store.select(prop.id);
     },
-    [select, prop.id],
+    [prop.id, prop.locked],
   );
 
   return (
@@ -55,7 +59,7 @@ function PlacedPropItem({ prop, objects }: PlacedPropItemProps): ReactElement {
       <Suspense fallback={null}>
         <PropModel
           modelKey={prop.modelKey}
-          selected={selectedId === prop.id}
+          selected={selected}
           collides={prop.collides}
           onSelect={handleSelect}
         />
