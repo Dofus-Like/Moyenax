@@ -371,3 +371,12 @@
 .editor-layer-toggle.is-off {
   opacity: 0.45;
 }
+
+/* Prefabs */
+.editor-prefab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  max-height: 22vh;
+}

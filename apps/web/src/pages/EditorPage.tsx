@@ -6,6 +6,7 @@ import { EditorAssetPalette } from '../game/Editor/EditorAssetPalette';
 import { EditorInspector } from '../game/Editor/EditorInspector';
 import { EditorLayersPanel } from '../game/Editor/EditorLayersPanel';
 import { EditorPlayScene } from '../game/Editor/EditorPlayScene';
+import { EditorPrefabPanel } from '../game/Editor/EditorPrefabPanel';
 import { EditorScene } from '../game/Editor/EditorScene';
 import { EditorSceneIO } from '../game/Editor/EditorSceneIO';
 import { EditorShortcutsPanel } from '../game/Editor/EditorShortcutsPanel';
@@ -33,6 +34,7 @@ export function EditorPage(): ReactElement {
           <div className="editor-left">
             <EditorAssetPalette />
             <EditorLayersPanel />
+            <EditorPrefabPanel />
           </div>
         )}
         <div className="editor-right">

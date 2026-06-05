@@ -75,6 +75,7 @@ interface EditorStoreState {
   showShortcuts: boolean;
   resetViewSignal: number;
   addProp: (modelKey: string, position: Vec3) => void;
+  addProps: (inits: Omit<PlacedProp, 'id'>[]) => void;
   updateProp: (id: string, patch: Partial<Omit<PlacedProp, 'id'>>) => void;
   batchUpdateProps: (updates: PropPatch[]) => void;
   removeProp: (id: string) => void;
@@ -150,6 +151,12 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
         collides: DEFAULT_PROP_COLLIDES,
       };
       change((t) => ({ ...t, props: [...t.props, prop] }), selection([prop.id]));
+    },
+
+    addProps: (inits): void => {
+      if (inits.length === 0) return;
+      const created: PlacedProp[] = inits.map((init) => ({ ...init, id: nextPropId() }));
+      change((t) => ({ ...t, props: [...t.props, ...created] }), selection(created.map((c) => c.id)));
     },
 
     updateProp: (id, patch): void => mapProps((p) => (p.id === id ? { ...p, ...patch } : p)),
