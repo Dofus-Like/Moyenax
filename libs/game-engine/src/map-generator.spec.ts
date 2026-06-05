@@ -1,8 +1,41 @@
 import { ALL_SEED_IDS, MAP_SIZE, TERRAIN_PROPERTIES, TerrainType } from '@game/shared-types';
 
-import { generateMap } from './map-generator';
+import { ensureConnectivity, generateMap, isConnected } from './map-generator';
+
+function barrierGrid(): TerrainType[][] {
+  const grid = Array.from({ length: MAP_SIZE }, () =>
+    Array.from({ length: MAP_SIZE }, () => TerrainType.GROUND),
+  );
+  // Mur vertical bloquant : le couloir en L (rangée 1) ouvrira une brèche.
+  for (let y = 0; y < MAP_SIZE; y++) grid[y][5] = TerrainType.WALL;
+  return grid;
+}
+
+describe('ensureConnectivity', () => {
+  it('détecte une grille déconnectée et creuse un couloir', () => {
+    const grid = barrierGrid();
+    expect(isConnected(grid)).toBe(false);
+    ensureConnectivity(grid);
+    expect(isConnected(grid)).toBe(true);
+  });
+
+  it('ne touche pas une grille déjà connexe', () => {
+    const open = Array.from({ length: MAP_SIZE }, () =>
+      Array.from({ length: MAP_SIZE }, () => TerrainType.GROUND),
+    );
+    expect(isConnected(open)).toBe(true);
+    ensureConnectivity(open);
+    expect(open.every((row) => row.every((c) => c === TerrainType.GROUND))).toBe(true);
+  });
+});
 
 describe('generateMap', () => {
+  it('fonctionne sans randomSeed (seed aléatoire)', () => {
+    const map = generateMap('NATURE');
+    expect(map.grid).toHaveLength(MAP_SIZE);
+    expect(map.seedId).toBe('NATURE');
+  });
+
   it('retourne une grille MAP_SIZE × MAP_SIZE avec le seedId fourni', () => {
     const map = generateMap('FORGE', 42);
     expect(map.width).toBe(MAP_SIZE);
