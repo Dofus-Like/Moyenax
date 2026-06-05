@@ -84,5 +84,10 @@ void main() {
   float cloudBand = smoothstep(0.015, 0.18, elev) * smoothstep(1.05, 0.35, elev);
   color = mix(color, colorC, clouds * cloudBand * 0.85);
 
+  // Sous l'horizon : fond vers une teinte mer profonde (fallback si le plan
+  // d'eau ne couvre pas un coin de l'écran → pas de bande cyan vif).
+  float below = smoothstep(-0.01, -0.20, elev);
+  color = mix(color, colorB * 0.55, below * 0.9);
+
   gl_FragColor = vec4(color, uOpacity);
 }
