@@ -6,7 +6,7 @@ import * as THREE from 'three';
 
 import stripUrl from '../../assets/textures/distant_islands_strip.png';
 
-const STRIP_ASPECT = 443 / 3546; // hauteur / largeur de la texture
+const STRIP_ASPECT = 512 / 4096; // hauteur / largeur de la texture
 
 /**
  * Bande d'îles lointaines à l'horizon : un cylindre texturé centré sur la caméra
