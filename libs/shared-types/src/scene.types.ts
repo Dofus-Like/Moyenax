@@ -11,6 +11,10 @@ export interface PlacedProp {
   scale: number;
   /** L'objet bloque-t-il (collision de gameplay) ? Décor non bloquant si false. */
   collides: boolean;
+  /** Verrouillé : non sélectionnable / non déplaçable dans l'éditeur. */
+  locked?: boolean;
+  /** Masqué : non rendu dans l'éditeur. */
+  hidden?: boolean;
 }
 
 export interface SceneTerrain {
