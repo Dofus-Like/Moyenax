@@ -8,3 +8,4 @@ export {
   canMoveTo,
   canJumpTo,
 } from './combat.calculator';
+export { generateMap } from './map-generator';
