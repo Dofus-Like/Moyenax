@@ -1,13 +1,64 @@
 import { extend } from '@react-three/fiber';
-import React, { useRef, useLayoutEffect } from 'react';
+import React, { useRef, useLayoutEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three-stdlib';
 
 import type { GameMap} from '@game/shared-types';
 import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
 
+import { fbm } from './noise';
+
 
 extend({ RoundedBoxGeometry });
+
+// World-space repeat of the procedural grain: lower = larger, softer terrain features.
+const TERRAIN_TEX_SCALE = 0.15;
+
+// Subtle FBM grayscale grain so tile tops read as terrain, not flat painted squares.
+// Multiplied onto the per-instance colour, so the checker/terrain tint is preserved.
+function makeTerrainTexture(): THREE.Texture {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.Texture();
+  const img = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      // Two scales: broad mottling (dirt patches) + fine grain (soil texture).
+      const broad = fbm(x * 0.04, y * 0.04, 7);
+      const grain = fbm(x * 0.2, y * 0.2, 23);
+      const n = broad * 0.6 + grain * 0.4;
+      const v = Math.floor((0.55 + n * 0.45) * 255);
+      const i = (y * size + x) * 4;
+      img.data[i] = v;
+      img.data[i + 1] = v;
+      img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+// Drive the grain UVs from world position so the texture flows across tiles continuously
+// instead of repeating identically per cell (which would re-expose the grid).
+function makeTerrainTopMaterial(): THREE.MeshStandardMaterial {
+  const mat = new THREE.MeshStandardMaterial({ map: makeTerrainTexture(), roughness: 1, metalness: 0 });
+  mat.onBeforeCompile = (shader): void => {
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <uv_vertex>',
+      `#include <uv_vertex>
+      vec4 terrainWorld = modelMatrix * instanceMatrix * vec4( position, 1.0 );
+      vMapUv = terrainWorld.xz * ${TERRAIN_TEX_SCALE.toFixed(3)};`,
+    );
+  };
+  return mat;
+}
 
 interface RoundedBoxGeometryProps {
   args?: [width?: number, height?: number, depth?: number];
@@ -39,7 +90,7 @@ const TERRAIN_COLORS: Record<TerrainType, string> = {
   [TerrainType.WOOD]: '#166534',
   [TerrainType.HERB]: '#4ade80',
   [TerrainType.GOLD]: '#eab308',
-  [TerrainType.WALL]: '#6b7280',
+  [TerrainType.WALL]: '#57534e',
 };
 
 export const InstancedTerrain = React.memo(({ 
@@ -52,6 +103,7 @@ export const InstancedTerrain = React.memo(({
 }: InstancedTerrainProps) => {
   const meshRefA = useRef<THREE.InstancedMesh>(null);
   const meshRefB = useRef<THREE.InstancedMesh>(null);
+  const topMaterial = useMemo(() => makeTerrainTopMaterial(), []);
 
   const getPos = React.useCallback((x: number, y: number): [number, number, number] => [
     x - map.width / 2 + 0.5,
@@ -121,7 +173,7 @@ export const InstancedTerrain = React.memo(({
       {/* Top surface of tiles */}
       <instancedMesh ref={meshRefB} args={[undefined, undefined, count]} raycast={() => null}>
         <planeGeometry args={[tileSize - 0.02, tileSize - 0.02]} />
-        <meshStandardMaterial />
+        <primitive object={topMaterial} attach="material" />
       </instancedMesh>
     </group>
   );
