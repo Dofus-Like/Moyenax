@@ -79,9 +79,11 @@ describe('useFarmingStore', () => {
       data: [{ quantity: 1, item: { name: 'Or', type: 'RESOURCE' } }],
     });
 
-    await useFarmingStore.getState().gatherNode(2, 2);
+    const result = await useFarmingStore.getState().gatherNode(2, 2);
 
     const state = useFarmingStore.getState();
+    expect(result?.state.pips).toBe(3);
+    expect(result?.inventory).toEqual([{ quantity: 1, item: { name: 'Or', type: 'RESOURCE' } }]);
     expect(state.pips).toBe(3);
     expect(state.spendableGold).toBe(3);
     expect(state.inventory).toEqual({});

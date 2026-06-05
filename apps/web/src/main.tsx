@@ -22,11 +22,7 @@ import { useAuthStore } from "./store/auth.store";
 import { useTranslation } from "./store/language.store";
 import "./styles/global.css";
 
-const SHOW_DEBUG = ["1", "true", "on", "yes"].includes(
-  String(import.meta.env.VITE_SHOW_DEBUG ?? "")
-    .toLowerCase()
-    .trim(),
-);
+const SHOW_DEBUG = import.meta.env.VITE_SHOW_DEBUG === "1";
 
 const PerfHud = SHOW_DEBUG
   ? lazy(() => import("./perf").then((mod) => ({ default: mod.PerfHud })))

@@ -11,6 +11,7 @@ import {
   CombatTerrainType,
 } from "@game/shared-types";
 
+import { createSceneMetricRecorder, isSceneDebugEnabled } from "../../perf/scene-metric-recorder";
 import { assetUrl } from "../constants/assetUrl";
 
 const BUSH_URLS = ["/assets/models/Bush_4E.fbx", "/assets/models/Bush_4F.fbx"].map(assetUrl);
@@ -320,13 +321,20 @@ export const InstancedFoliage = React.memo(({ map, mode }: { map: GameMap; mode?
     texture,
   ]);
 
+  const recordGrassUniforms = useMemo(
+    () => createSceneMetricRecorder('UnifiedMapScene:grass-uniform-update', 2),
+    [],
+  );
+
   useFrame((state) => {
+    const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
     for (let i = GRASS_SLOT; i < SLOT_COUNT; i++) {
       const shader = slots[i]?.material.userData.shader as
         | { uniforms: { uTime: { value: number } } }
         | undefined;
       if (shader) shader.uniforms.uTime.value = state.clock.elapsedTime;
     }
+    if (startedAt > 0) recordGrassUniforms(performance.now() - startedAt);
   });
 
   const foliageList = useMemo(() => {
@@ -378,8 +386,13 @@ export const InstancedFoliage = React.memo(({ map, mode }: { map: GameMap; mode?
   }, [foliageList]);
 
   const meshRefs = useRef<(THREE.InstancedMesh | null)[]>([]);
+  const recordFoliageRebuild = useMemo(
+    () => createSceneMetricRecorder('UnifiedMapScene:foliage-rebuild', 8),
+    [],
+  );
 
   useLayoutEffect(() => {
+    const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
     const cursors = new Array<number>(SLOT_COUNT).fill(0);
     const matrix = new THREE.Matrix4();
     const position = new THREE.Vector3();
@@ -408,7 +421,8 @@ export const InstancedFoliage = React.memo(({ map, mode }: { map: GameMap; mode?
     for (const mesh of meshRefs.current) {
       if (mesh) mesh.instanceMatrix.needsUpdate = true;
     }
-  }, [foliageList, slots, map]);
+    if (startedAt > 0) recordFoliageRebuild(performance.now() - startedAt);
+  }, [foliageList, slots, map, recordFoliageRebuild]);
 
   return (
     <group>

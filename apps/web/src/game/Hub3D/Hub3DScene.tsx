@@ -1,11 +1,11 @@
 import { Canvas, useThree } from '@react-three/fiber';
 import type { MutableRefObject, ReactElement, ReactNode } from 'react';
-import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Vector3, type Group } from 'three';
 
+import hubMusic from '../../assets/music/loop_moyenax.mp3';
 import { useHubStore } from '../../store/hub.store';
 import { playSfx } from '../../utils/sfx';
-import hubMusic from '../../assets/music/loop_moyenax.mp3';
 
 import { HubAmbientParticles } from './HubAmbientParticles';
 import { HubCamera } from './HubCamera';
@@ -28,6 +28,37 @@ import {
 import { computePoiStopPoint } from './movement';
 import { useClickToMove } from './useClickToMove';
 import { useHubInputController } from './useHubInputController';
+
+const SHOW_DEBUG = import.meta.env.VITE_SHOW_DEBUG === '1';
+
+const DebugCanvasPerfOverlay = SHOW_DEBUG
+  ? lazy(() => import('../../perf/CanvasPerfOverlay').then((mod) => ({ default: mod.CanvasPerfOverlay })))
+  : null;
+const DebugScenePerfProbe = SHOW_DEBUG
+  ? lazy(() => import('../../perf/scene-profiler').then((mod) => ({ default: mod.ScenePerfProbe })))
+  : null;
+const DebugRegion = SHOW_DEBUG
+  ? lazy(() => import('../../perf/render-profiler').then((mod) => ({ default: mod.ProfiledRegion })))
+  : null;
+
+function DebugProfiledRegion({ id, children }: { id: string; children: ReactNode }) {
+  if (!DebugRegion) return <>{children}</>;
+  return (
+    <Suspense fallback={null}>
+      <DebugRegion id={id}>{children}</DebugRegion>
+    </Suspense>
+  );
+}
+
+function DebugCanvasProbes({ id }: { id: string }) {
+  if (!DebugCanvasPerfOverlay || !DebugScenePerfProbe) return null;
+  return (
+    <Suspense fallback={null}>
+      <DebugCanvasPerfOverlay />
+      <DebugScenePerfProbe id={id} />
+    </Suspense>
+  );
+}
 
 interface Hub3DSceneProps {
   onPoiActivate: (id: PoiId) => void;
@@ -323,18 +354,21 @@ export function Hub3DScene({ onPoiActivate, activePoiId, poiStateLabels, activeP
       className="hub-canvas-root"
       onContextMenu={(event) => event.preventDefault()}
     >
+      <DebugCanvasProbes id="Hub3DCanvas" />
       <HubGroundProvider>
-        <HubCamera wasDraggingRef={wasDraggingRef} enabled={activePoiId === null} />
-        <HubWorld
-          onPoiActivate={onPoiActivate}
-          activePoiId={activePoiId}
-          wasDraggingRef={wasDraggingRef}
-          poiStateLabels={poiStateLabels}
-          activePoiIds={activePoiIds}
-          onboardingHighlightId={onboardingHighlightId}
-          onReady={onReady}
-          onError={onError}
-        />
+        <DebugProfiledRegion id="Hub3DScene">
+          <HubCamera wasDraggingRef={wasDraggingRef} enabled={activePoiId === null} />
+          <HubWorld
+            onPoiActivate={onPoiActivate}
+            activePoiId={activePoiId}
+            wasDraggingRef={wasDraggingRef}
+            poiStateLabels={poiStateLabels}
+            activePoiIds={activePoiIds}
+            onboardingHighlightId={onboardingHighlightId}
+            onReady={onReady}
+            onError={onError}
+          />
+        </DebugProfiledRegion>
       </HubGroundProvider>
     </Canvas>
   );

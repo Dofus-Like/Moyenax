@@ -4,6 +4,8 @@ import type {
   LongTaskSample,
   NetworkSample,
   RenderAggregate,
+  SceneGpuSnapshot,
+  SceneMetricAggregate,
   WebVitals,
 } from './perf-hud.store';
 import { usePerfHudStore } from './perf-hud.store';
@@ -23,6 +25,8 @@ export interface SavedSnapshot {
   vitals: WebVitals;
   longTasks: LongTaskSample[];
   renders: Record<string, RenderAggregate>;
+  sceneMetrics: Record<string, SceneMetricAggregate>;
+  sceneGpu: Record<string, SceneGpuSnapshot>;
   requests: NetworkSample[];
   backend: BackendSnapshot | null;
 }
@@ -71,6 +75,8 @@ export function saveCurrentSnapshot(label: string): SavedSnapshot {
     vitals: state.vitals,
     longTasks: state.longTasks,
     renders: state.renders,
+    sceneMetrics: state.sceneMetrics,
+    sceneGpu: state.sceneGpu,
     requests: state.requests,
     backend: state.backend,
   };
@@ -176,6 +182,16 @@ export function buildDiff(before: SavedSnapshot, after: SavedSnapshot): DiffRow[
     betterIsLower: true,
   });
 
+  const topBeforeScene = topSceneMaxMs(before.sceneMetrics);
+  const topAfterScene = topSceneMaxMs(after.sceneMetrics);
+  rows.push({
+    label: `Scene hot spot (${topBeforeScene.id || '–'} → ${topAfterScene.id || '–'})`,
+    before: topBeforeScene.maxMs,
+    after: topAfterScene.maxMs,
+    ...safeDelta(topBeforeScene.maxMs, topAfterScene.maxMs),
+    betterIsLower: true,
+  });
+
   return rows;
 }
 
@@ -185,4 +201,12 @@ function topTotalMs(agg: Record<string, RenderAggregate>): { id: string; totalMs
     if (!best || r.totalMs > best.totalMs) best = r;
   }
   return best ? { id: best.id, totalMs: Number(best.totalMs.toFixed(1)) } : { id: '', totalMs: 0 };
+}
+
+function topSceneMaxMs(agg: Record<string, SceneMetricAggregate> | undefined): { id: string; maxMs: number } {
+  let best: SceneMetricAggregate | null = null;
+  for (const r of Object.values(agg ?? {})) {
+    if (!best || r.maxMs > best.maxMs) best = r;
+  }
+  return best ? { id: best.id, maxMs: Number(best.maxMs.toFixed(1)) } : { id: '', maxMs: 0 };
 }

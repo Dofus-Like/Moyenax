@@ -36,6 +36,8 @@ function makeSnapshot(overrides: Partial<SavedSnapshot> = {}): SavedSnapshot {
     vitals: {},
     longTasks: [],
     renders: {},
+    sceneMetrics: {},
+    sceneGpu: {},
     requests: [],
     backend: null,
     ...overrides,
@@ -52,6 +54,8 @@ describe('snapshots', () => {
       vitals: {},
       longTasks: [],
       renders: {},
+      sceneMetrics: {},
+      sceneGpu: {},
       requests: [],
       backend: null,
     });
@@ -176,6 +180,42 @@ describe('snapshots', () => {
       const row = rows.find((r) => r.label === 'Long tasks count');
       expect(row?.before).toBe(0);
       expect(row?.after).toBe(1);
+    });
+
+    it('inclut le hot spot des scènes', () => {
+      const before = makeSnapshot({
+        sceneMetrics: {
+          'WaterPlane:uniform-update': {
+            id: 'WaterPlane:uniform-update',
+            count: 10,
+            totalMs: 12,
+            avgMs: 1.2,
+            maxMs: 3,
+            slowCount: 1,
+            lastMs: 1,
+            lastAt: 1,
+          },
+        },
+      });
+      const after = makeSnapshot({
+        sceneMetrics: {
+          'UnifiedMapScene:combat-hover-raycast': {
+            id: 'UnifiedMapScene:combat-hover-raycast',
+            count: 10,
+            totalMs: 25,
+            avgMs: 2.5,
+            maxMs: 8,
+            slowCount: 2,
+            lastMs: 2,
+            lastAt: 2,
+          },
+        },
+      });
+      const rows = buildDiff(before, after);
+      const row = rows.find((r) => r.label.includes('Scene hot spot'));
+      expect(row?.before).toBe(3);
+      expect(row?.after).toBe(8);
+      expect(row?.betterIsLower).toBe(true);
     });
   });
 });

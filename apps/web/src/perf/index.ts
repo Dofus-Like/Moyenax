@@ -12,6 +12,7 @@ import { startWebVitalsReporter } from './web-vitals-reporter';
 export { CanvasPerfOverlay } from './CanvasPerfOverlay';
 export { PerfHud } from './PerfHud';
 export { ProfiledRegion } from './render-profiler';
+export { ScenePerfProbe, isScenePerfEnabled, useScenePerfAccumulator } from './scene-profiler';
 export { usePerfHudStore } from './perf-hud.store';
 
 let initialized = false;

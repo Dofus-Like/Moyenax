@@ -1,12 +1,12 @@
 import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useControls, folder } from 'leva';
-import { type JSX, useRef } from 'react';
+import { type JSX, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
 import foamTextureUrl from '../../assets/textures/water_foam.png';
 import patternTextureUrl from '../../assets/textures/water_pattern.png';
-
+import { createSceneMetricRecorder, isSceneDebugEnabled } from '../../perf/scene-metric-recorder';
 import { COMBAT_COLORS } from '../constants/colors';
 
 import fragmentShader from './water.frag?raw';
@@ -116,8 +116,13 @@ export function WaterPlane({ timeOfDay, islandSize = [10, 10] }: WaterPlaneProps
     uFoamTex: { value: foamTex },
     uWaterTex: { value: patternTex },
   });
+  const recordWaterUniforms = useMemo(
+    () => createSceneMetricRecorder('WaterPlane:uniform-update', 2),
+    [],
+  );
 
   useFrame((state) => {
+    const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
     const mesh = meshRef.current;
     if (!mesh) return;
     const u = (mesh.material as THREE.ShaderMaterial).uniforms;
@@ -156,6 +161,7 @@ export function WaterPlane({ timeOfDay, islandSize = [10, 10] }: WaterPlaneProps
     u.uFogColor.value.set(config.fogColor);
     u.uFogStart.value = config.fogStart;
     u.uFogEnd.value = config.fogEnd;
+    if (startedAt > 0) recordWaterUniforms(performance.now() - startedAt);
   });
 
   return (

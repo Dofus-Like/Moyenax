@@ -215,11 +215,7 @@ interface RoomsActions extends ActionFeedback {
 
 // Banc de test dev : visible uniquement quand le debug est activé (route /playground
 // backend gatée par ENABLE_DEBUG_ROUTES).
-const SHOW_PLAYGROUND = ['1', 'true', 'on', 'yes'].includes(
-  String(import.meta.env.VITE_SHOW_DEBUG ?? '')
-    .toLowerCase()
-    .trim(),
-);
+const SHOW_PLAYGROUND = import.meta.env.VITE_SHOW_DEBUG === '1';
 
 export interface HubPoiModalProps {
   activePoiId: PoiId | null;

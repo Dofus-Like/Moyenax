@@ -5,6 +5,8 @@ import type {
   MemorySample,
   NetworkSample,
   RenderAggregate,
+  SceneGpuSnapshot,
+  SceneMetricAggregate,
   SseEventSample,
   WebVitals,
 } from './perf-hud.store';
@@ -16,6 +18,8 @@ interface ReportInput {
   requests: NetworkSample[];
   longTasks: LongTaskSample[];
   renders: Record<string, RenderAggregate>;
+  sceneMetrics: Record<string, SceneMetricAggregate>;
+  sceneGpu: Record<string, SceneGpuSnapshot>;
   sseEvents: SseEventSample[];
   sseByType: Record<string, { count: number; totalBytes: number; lastAt: number }>;
   memory: MemorySample | null;
@@ -84,6 +88,30 @@ export function buildMarkdownReport(input: ReportInput): string {
       formatted = key === 'CLS' ? value.toFixed(3) : `${value.toFixed(0)}ms`;
     }
     lines.push(`| ${key} | ${formatted} | ${ref} |`);
+  }
+  lines.push('');
+
+  const sceneRows = Object.values(input.sceneMetrics).sort((a, b) => b.maxMs - a.maxMs).slice(0, 15);
+  const gpuRows = Object.values(input.sceneGpu).sort((a, b) => b.calls - a.calls);
+  lines.push(`## Frontend — Scene probes (${sceneRows.length} measured operations)`);
+  if (gpuRows.length === 0 && sceneRows.length === 0) {
+    lines.push('_No scene probes captured. Open a R3F scene with VITE_SHOW_DEBUG=1._');
+  } else {
+    if (gpuRows.length > 0) {
+      lines.push('| Canvas | Calls | Triangles | Geometries | Textures | Programs |');
+      lines.push('|---|---:|---:|---:|---:|---:|');
+      for (const r of gpuRows) {
+        lines.push(`| \`${r.id}\` | ${r.calls} | ${r.triangles} | ${r.geometries} | ${r.textures} | ${r.programs} |`);
+      }
+      lines.push('');
+    }
+    if (sceneRows.length > 0) {
+      lines.push('| Metric | Count | Avg ms | Max ms | Slow count | Last ms |');
+      lines.push('|---|---:|---:|---:|---:|---:|');
+      for (const r of sceneRows) {
+        lines.push(`| \`${r.id}\` | ${r.count} | ${r.avgMs.toFixed(2)} | ${r.maxMs.toFixed(2)} | ${r.slowCount} | ${r.lastMs.toFixed(2)} |`);
+      }
+    }
   }
   lines.push('');
 
@@ -269,6 +297,8 @@ export function buildJsonReport(input: ReportInput): string {
         requests: input.requests,
         longTasks: input.longTasks,
         renders: input.renders,
+        sceneMetrics: input.sceneMetrics,
+        sceneGpu: input.sceneGpu,
         sseEvents: input.sseEvents,
         sseByType: input.sseByType,
         memory: input.memory,

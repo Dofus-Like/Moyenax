@@ -13,6 +13,8 @@ describe('usePerfHudStore', () => {
       requests: [],
       longTasks: [],
       renders: {},
+      sceneMetrics: {},
+      sceneGpu: {},
       sseEvents: [],
       sseByType: {},
       memory: null,
@@ -92,6 +94,81 @@ describe('usePerfHudStore', () => {
       usePerfHudStore.getState().recordRender('Comp', 'mount', 5);
       usePerfHudStore.getState().clearRenders();
       expect(usePerfHudStore.getState().renders).toEqual({});
+    });
+  });
+
+  describe('scene perf', () => {
+    it('recordSceneMetric cumule les batches', () => {
+      const store = usePerfHudStore.getState();
+      store.recordSceneMetric({
+        id: 'Canvas:frame',
+        count: 2,
+        totalMs: 40,
+        maxMs: 25,
+        slowCount: 1,
+        lastMs: 15,
+        lastAt: 1,
+      });
+      store.recordSceneMetric({
+        id: 'Canvas:frame',
+        count: 1,
+        totalMs: 30,
+        maxMs: 30,
+        slowCount: 1,
+        lastMs: 30,
+        lastAt: 2,
+      });
+
+      const metric = usePerfHudStore.getState().sceneMetrics['Canvas:frame'];
+      expect(metric.count).toBe(3);
+      expect(metric.totalMs).toBe(70);
+      expect(metric.avgMs).toBeCloseTo(23.33, 2);
+      expect(metric.maxMs).toBe(30);
+      expect(metric.slowCount).toBe(2);
+      expect(metric.lastMs).toBe(30);
+    });
+
+    it('setSceneGpu stocke un snapshot par canvas', () => {
+      usePerfHudStore.getState().setSceneGpu({
+        id: 'CombatCanvas',
+        calls: 120,
+        triangles: 5000,
+        points: 0,
+        lines: 0,
+        geometries: 12,
+        textures: 8,
+        programs: 4,
+        at: 1,
+      });
+
+      expect(usePerfHudStore.getState().sceneGpu.CombatCanvas.calls).toBe(120);
+    });
+
+    it('clearScenePerf vide les métriques scène', () => {
+      const store = usePerfHudStore.getState();
+      store.recordSceneMetric({
+        id: 'WaterPlane:uniform-update',
+        count: 1,
+        totalMs: 5,
+        maxMs: 5,
+        slowCount: 1,
+        lastMs: 5,
+        lastAt: 1,
+      });
+      store.setSceneGpu({
+        id: 'FarmingCanvas',
+        calls: 1,
+        triangles: 1,
+        points: 0,
+        lines: 0,
+        geometries: 1,
+        textures: 1,
+        programs: 1,
+        at: 1,
+      });
+      store.clearScenePerf();
+      expect(usePerfHudStore.getState().sceneMetrics).toEqual({});
+      expect(usePerfHudStore.getState().sceneGpu).toEqual({});
     });
   });
 

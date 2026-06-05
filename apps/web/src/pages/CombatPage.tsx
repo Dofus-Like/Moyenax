@@ -14,8 +14,6 @@ import { allSpriteUrls } from '../game/constants/spriteRegistry';
 import { CombatHUD } from '../game/HUD/CombatHUD';
 import { UnifiedMapScene } from '../game/UnifiedMap/UnifiedMapScene';
 import { COMBAT_COLORS } from '../game/constants/colors';
-import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
-import { ProfiledRegion } from '../perf/render-profiler';
 import { useAuthStore } from '../store/auth.store';
 import { useCombatStore } from '../store/combat.store';
 import { useTranslation } from '../store/language.store';
@@ -23,6 +21,37 @@ import { playSfx } from '../utils/sfx';
 import { getTimeOfDay } from '../utils/timeOfDay';
 import { useGameSession } from './GameTunnel';
 import './CombatPage.css';
+
+const SHOW_DEBUG = import.meta.env.VITE_SHOW_DEBUG === '1';
+
+const DebugCanvasPerfOverlay = SHOW_DEBUG
+  ? React.lazy(() => import('../perf/CanvasPerfOverlay').then((mod) => ({ default: mod.CanvasPerfOverlay })))
+  : null;
+const DebugScenePerfProbe = SHOW_DEBUG
+  ? React.lazy(() => import('../perf/scene-profiler').then((mod) => ({ default: mod.ScenePerfProbe })))
+  : null;
+const DebugRegion = SHOW_DEBUG
+  ? React.lazy(() => import('../perf/render-profiler').then((mod) => ({ default: mod.ProfiledRegion })))
+  : null;
+
+function DebugProfiledRegion({ id, children }: { id: string; children: React.ReactNode }) {
+  if (!DebugRegion) return <>{children}</>;
+  return (
+    <Suspense fallback={null}>
+      <DebugRegion id={id}>{children}</DebugRegion>
+    </Suspense>
+  );
+}
+
+function DebugCanvasProbes({ id }: { id: string }) {
+  if (!DebugCanvasPerfOverlay || !DebugScenePerfProbe) return null;
+  return (
+    <Suspense fallback={null}>
+      <DebugCanvasPerfOverlay />
+      <DebugScenePerfProbe id={id} />
+    </Suspense>
+  );
+}
 
 /**
  * Pré chargeur d'assets pour éviter les "flashs" lors du premier sort ou déplacement
@@ -153,7 +182,7 @@ export function CombatPage() {
   if (!sessionId) return null;
 
   return (
-    <ProfiledRegion id="CombatPage">
+    <DebugProfiledRegion id="CombatPage">
       <div className="combat-page-container">
         {!combatState && (
           <div className="combat-overlay">
@@ -171,7 +200,7 @@ export function CombatPage() {
               dpr={[1, 2]}
               camera={{ fov: 30 }}
             >
-              <CanvasPerfOverlay />
+              <DebugCanvasProbes id="CombatCanvas" />
               <fogExp2 attach="fog" args={[COMBAT_COLORS.SCENE_FOG, 0.006]} />
               <CombatBackgroundShader timeOfDay={timeOfDay} />
               <Suspense fallback={null}>
@@ -250,14 +279,16 @@ export function CombatPage() {
 
               {gameMap && (
                 <Suspense fallback={null}>
-                  <UnifiedMapScene
-                    mode="combat"
-                    map={gameMap}
-                    sessionId={sessionId}
-                    isCameraMoving={isCameraMoving}
-                    timeOfDay={timeOfDay}
-                    onTileReached={handleTileReached}
-                  />
+                  <DebugProfiledRegion id="CombatMapScene">
+                    <UnifiedMapScene
+                      mode="combat"
+                      map={gameMap}
+                      sessionId={sessionId}
+                      isCameraMoving={isCameraMoving}
+                      timeOfDay={timeOfDay}
+                      onTileReached={handleTileReached}
+                    />
+                  </DebugProfiledRegion>
                 </Suspense>
               )}
             </Canvas>
@@ -277,6 +308,6 @@ export function CombatPage() {
           </div>
         </div>
       </div>
-    </ProfiledRegion>
+    </DebugProfiledRegion>
   );
 }
