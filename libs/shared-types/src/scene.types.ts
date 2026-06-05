@@ -1,4 +1,4 @@
-import type { SeedId } from './map.types';
+import type { SeedId, TerrainType } from './map.types';
 import { MAP_SIZE } from './map.types';
 
 export type Vec3 = [number, number, number];
@@ -21,6 +21,8 @@ export interface SceneTerrain {
   width: number;
   height: number;
   seedId: SeedId;
+  /** Grille peinte à la main ; si absente, les ressources sont générées depuis le seed. */
+  grid?: TerrainType[][];
 }
 
 export type TimeOfDay = 'dawn' | 'day' | 'sunset' | 'night';
