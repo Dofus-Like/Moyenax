@@ -10,10 +10,11 @@ import React, {
 } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import { GameLayout } from "./components/GameLayout";
 import { DebugPage } from "./pages/DebugPage";
-import { HudTestPage } from "./pages/HudTestPage";
 import { GameSessionProvider, GameTunnelGuard } from "./pages/GameTunnel";
+import { HudTestPage } from "./pages/HudTestPage";
 import { InventoryPage } from "./pages/InventoryPage";
 import { LobbyPage } from "./pages/LobbyPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -90,6 +91,11 @@ const PlaygroundPage = lazy(() =>
 const AdminTestPage = lazy(() =>
   import("./pages/AdminTestPage").then((module) => ({
     default: module.AdminTestPage,
+  })),
+);
+const EditorPage = lazy(() =>
+  import("./pages/EditorPage").then((module) => ({
+    default: module.EditorPage,
   })),
 );
 
@@ -242,6 +248,18 @@ root.render(
                         </ProtectedRoute>
                       }
                     />
+                    {SHOW_DEBUG && (
+                      <Route
+                        path="/editor"
+                        element={
+                          <ProtectedRoute>
+                            <LazyPage>
+                              <EditorPage />
+                            </LazyPage>
+                          </ProtectedRoute>
+                        }
+                      />
+                    )}
                     {SHOW_DEBUG && (
                       <Route
                         path="/admin/test"
