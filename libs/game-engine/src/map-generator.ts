@@ -157,7 +157,7 @@ function orthNeighbors(x: number, y: number): [number, number][] {
 }
 
 /** BFS connectivity between the two interior spawn corners. */
-function isConnected(grid: TerrainType[][]): boolean {
+export function isConnected(grid: TerrainType[][]): boolean {
   const goal = `${MAP_SIZE - 2},${MAP_SIZE - 2}`;
   const visited = new Set(['1,1']);
   const queue: [number, number][] = [[1, 1]];
@@ -172,6 +172,11 @@ function isConnected(grid: TerrainType[][]): boolean {
     }
   }
   return false;
+}
+
+/** Ensures the two spawn corners are connected, carving an L-corridor if needed. */
+export function ensureConnectivity(grid: TerrainType[][]): void {
+  if (!isConnected(grid)) carveCorridor(grid);
 }
 
 /** Carve an L-shaped corridor when the spawn corners are not connected. */
@@ -193,6 +198,6 @@ function carveCorridor(grid: TerrainType[][]): void {
 export function generateMap(seedId: SeedId, randomSeed?: number): GameMap {
   const ctx: GenContext = { grid: baseGrid(), spawn: spawnZones(), rand: makeRng(randomSeed) };
   for (const budget of budgetsFor(seedId)) placeBudget(ctx, budget);
-  if (!isConnected(ctx.grid)) carveCorridor(ctx.grid);
+  ensureConnectivity(ctx.grid);
   return { width: MAP_SIZE, height: MAP_SIZE, grid: ctx.grid, seedId };
 }
