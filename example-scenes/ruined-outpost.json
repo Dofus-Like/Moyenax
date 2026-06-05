@@ -1,0 +1,224 @@
+{
+  "id": "ruined-outpost",
+  "name": "Avant-poste en ruine",
+  "terrain": {
+    "width": 11,
+    "height": 11,
+    "seedId": "FORGE"
+  },
+  "ambiance": {
+    "timeOfDay": "sunset",
+    "ambientIntensity": 0.6,
+    "directionalIntensity": 1.2
+  },
+  "props": [
+    {
+      "id": "prop-1",
+      "modelKey": "environments/castle_ruin.glb",
+      "position": [
+        0,
+        0,
+        -1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": 1.2,
+      "collides": true
+    },
+    {
+      "id": "prop-2",
+      "modelKey": "props/rock_pile.glb",
+      "position": [
+        5,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": 1.1,
+      "collides": true
+    },
+    {
+      "id": "prop-3",
+      "modelKey": "props/rock_pile.glb",
+      "position": [
+        2.5,
+        0,
+        4.33
+      ],
+      "rotation": [
+        0,
+        -1.0471975511965976,
+        0
+      ],
+      "scale": 1.1,
+      "collides": true
+    },
+    {
+      "id": "prop-4",
+      "modelKey": "props/rock_pile.glb",
+      "position": [
+        -2.5,
+        0,
+        4.33
+      ],
+      "rotation": [
+        0,
+        -2.0943951023931953,
+        0
+      ],
+      "scale": 1.1,
+      "collides": true
+    },
+    {
+      "id": "prop-5",
+      "modelKey": "props/rock_pile.glb",
+      "position": [
+        -5,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        -3.141592653589793,
+        0
+      ],
+      "scale": 1.1,
+      "collides": true
+    },
+    {
+      "id": "prop-6",
+      "modelKey": "props/rock_pile.glb",
+      "position": [
+        -2.5,
+        0,
+        -4.33
+      ],
+      "rotation": [
+        0,
+        -4.1887902047863905,
+        0
+      ],
+      "scale": 1.1,
+      "collides": true
+    },
+    {
+      "id": "prop-7",
+      "modelKey": "props/rock_pile.glb",
+      "position": [
+        2.5,
+        0,
+        -4.33
+      ],
+      "rotation": [
+        0,
+        -5.235987755982989,
+        0
+      ],
+      "scale": 1.1,
+      "collides": true
+    },
+    {
+      "id": "prop-8",
+      "modelKey": "props/grass.glb",
+      "position": [
+        4,
+        0,
+        4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": 1,
+      "collides": false
+    },
+    {
+      "id": "prop-9",
+      "modelKey": "props/grass.glb",
+      "position": [
+        -4,
+        0,
+        4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": 1,
+      "collides": false
+    },
+    {
+      "id": "prop-10",
+      "modelKey": "props/grass.glb",
+      "position": [
+        4,
+        0,
+        -4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": 1,
+      "collides": false
+    },
+    {
+      "id": "prop-11",
+      "modelKey": "props/grass.glb",
+      "position": [
+        -4,
+        0,
+        -4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": 1,
+      "collides": false
+    },
+    {
+      "id": "prop-12",
+      "modelKey": "props/herb_plants.glb",
+      "position": [
+        2,
+        0,
+        -3
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": 1,
+      "collides": false
+    },
+    {
+      "id": "prop-13",
+      "modelKey": "props/herb_plants.glb",
+      "position": [
+        -2,
+        0,
+        3
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": 1,
+      "collides": false
+    }
+  ]
+}
