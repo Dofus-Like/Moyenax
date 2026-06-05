@@ -3,6 +3,7 @@ import { type ReactElement, useEffect } from 'react';
 import { EditorAmbiancePanel } from '../game/Editor/EditorAmbiancePanel';
 import { EditorArrangePanel } from '../game/Editor/EditorArrangePanel';
 import { EditorAssetPalette } from '../game/Editor/EditorAssetPalette';
+import { EditorCloudPanel } from '../game/Editor/EditorCloudPanel';
 import { EditorInspector } from '../game/Editor/EditorInspector';
 import { EditorLayersPanel } from '../game/Editor/EditorLayersPanel';
 import { EditorPlayScene } from '../game/Editor/EditorPlayScene';
@@ -46,6 +47,7 @@ export function EditorPage(): ReactElement {
           <EditorTerrainPanel />
           <EditorAmbiancePanel />
           <EditorSceneIO />
+          <EditorCloudPanel />
         </div>
       </div>
       <EditorShortcutsPanel />
