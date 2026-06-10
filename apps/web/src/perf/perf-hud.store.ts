@@ -32,6 +32,32 @@ export interface RenderAggregate {
   lastAt: number;
 }
 
+export interface SceneMetricBatch {
+  id: string;
+  count: number;
+  totalMs: number;
+  maxMs: number;
+  slowCount: number;
+  lastMs: number;
+  lastAt: number;
+}
+
+export interface SceneMetricAggregate extends SceneMetricBatch {
+  avgMs: number;
+}
+
+export interface SceneGpuSnapshot {
+  id: string;
+  calls: number;
+  triangles: number;
+  points: number;
+  lines: number;
+  geometries: number;
+  textures: number;
+  programs: number;
+  at: number;
+}
+
 export interface SseEventSample {
   id: number;
   source: string;
@@ -174,6 +200,8 @@ interface PerfHudState {
   requests: NetworkSample[];
   longTasks: LongTaskSample[];
   renders: Record<string, RenderAggregate>;
+  sceneMetrics: Record<string, SceneMetricAggregate>;
+  sceneGpu: Record<string, SceneGpuSnapshot>;
   sseEvents: SseEventSample[];
   sseByType: Record<string, { count: number; totalBytes: number; lastAt: number }>;
   memory: MemorySample | null;
@@ -189,6 +217,9 @@ interface PerfHudState {
   clearLongTasks: () => void;
   recordRender: (id: string, phase: 'mount' | 'update' | 'nested-update', durationMs: number) => void;
   clearRenders: () => void;
+  recordSceneMetric: (batch: SceneMetricBatch) => void;
+  setSceneGpu: (snapshot: SceneGpuSnapshot) => void;
+  clearScenePerf: () => void;
   pushSseEvent: (sample: SseEventSample) => void;
   clearSseEvents: () => void;
   setVital: (key: keyof WebVitals, value: number) => void;
@@ -211,6 +242,8 @@ export const usePerfHudStore = create<PerfHudState>((set) => ({
   requests: [],
   longTasks: [],
   renders: {},
+  sceneMetrics: {},
+  sceneGpu: {},
   sseEvents: [],
   sseByType: {},
   memory: null,
@@ -251,6 +284,26 @@ export const usePerfHudStore = create<PerfHudState>((set) => ({
       return { renders: { ...state.renders, [id]: updated } };
     }),
   clearRenders: () => set({ renders: {} }),
+  recordSceneMetric: (batch) =>
+    set((state) => {
+      const prev = state.sceneMetrics[batch.id];
+      const totalCount = (prev?.count ?? 0) + batch.count;
+      const totalMs = (prev?.totalMs ?? 0) + batch.totalMs;
+      const updated: SceneMetricAggregate = {
+        id: batch.id,
+        count: totalCount,
+        totalMs,
+        avgMs: totalCount > 0 ? totalMs / totalCount : 0,
+        maxMs: Math.max(prev?.maxMs ?? 0, batch.maxMs),
+        slowCount: (prev?.slowCount ?? 0) + batch.slowCount,
+        lastMs: batch.lastMs,
+        lastAt: batch.lastAt,
+      };
+      return { sceneMetrics: { ...state.sceneMetrics, [batch.id]: updated } };
+    }),
+  setSceneGpu: (snapshot) =>
+    set((state) => ({ sceneGpu: { ...state.sceneGpu, [snapshot.id]: snapshot } })),
+  clearScenePerf: () => set({ sceneMetrics: {}, sceneGpu: {} }),
   pushSseEvent: (sample) =>
     set((state) => {
       const next = [sample, ...state.sseEvents];

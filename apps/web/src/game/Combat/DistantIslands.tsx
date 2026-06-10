@@ -5,6 +5,7 @@ import { type JSX, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
 import stripUrl from '../../assets/textures/distant_islands_strip.png';
+import { createSceneMetricRecorder, isSceneDebugEnabled } from '../../perf/scene-metric-recorder';
 
 const STRIP_ASPECT = 443 / 3546; // hauteur / largeur de la texture
 
@@ -17,6 +18,10 @@ export function DistantIslands(): JSX.Element {
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   const strip = useTexture(stripUrl);
+  const recordFollowCamera = useMemo(
+    () => createSceneMetricRecorder('DistantIslands:follow-camera', 1),
+    [],
+  );
 
   const config = useControls('Îles lointaines', {
     Horizon: folder({
@@ -44,11 +49,13 @@ export function DistantIslands(): JSX.Element {
   );
 
   useFrame(() => {
+    const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
     const g = groupRef.current;
     if (!g) return;
     // Suit la caméra en XZ, mais reste ancrée au niveau de la mer (Y monde fixe)
     // → la ligne d'eau des îles se pose pile sur l'horizon, sans trou.
     g.position.set(camera.position.x, config.horizonY, camera.position.z);
+    if (startedAt > 0) recordFollowCamera(performance.now() - startedAt);
   });
 
   return (

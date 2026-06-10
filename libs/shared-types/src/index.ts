@@ -3,6 +3,7 @@ export * from './combat.types';
 export * from './events';
 export * from './api.types';
 export * from './map.types';
+export * from './scene.types';
 export * from './pathfinding';
 export * from './farming.types';
 export * from './hub.types';

@@ -7,6 +7,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { GameMap } from '@game/shared-types';
 import { TerrainType, TERRAIN_PROPERTIES, CombatTerrainType } from '@game/shared-types';
 
+import { createSceneMetricRecorder, isSceneDebugEnabled } from '../../perf/scene-metric-recorder';
 import { assetUrl } from '../constants/assetUrl';
 
 import { seededRandom } from './noise';
@@ -363,11 +364,18 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
     return out;
   }, [bush0, bush1, tree0, tree1, rock0, rock1, rock2, rock3, grass0, grass1, grass2, grass3, texture]);
 
+  const recordGrassUniforms = useMemo(
+    () => createSceneMetricRecorder('UnifiedMapScene:grass-uniform-update', 2),
+    [],
+  );
+
   useFrame((state) => {
+    const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
     for (const asset of slots) {
       const shader = asset?.material.userData.shader as { uniforms: { uTime: { value: number } } } | undefined;
       if (shader) shader.uniforms.uTime.value = state.clock.elapsedTime;
     }
+    if (startedAt > 0) recordGrassUniforms(performance.now() - startedAt);
   });
 
   const foliageList = useMemo(() => {
@@ -398,8 +406,13 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
   }, [foliageList]);
 
   const meshRefs = useRef<(THREE.InstancedMesh | null)[]>([]);
+  const recordFoliageRebuild = useMemo(
+    () => createSceneMetricRecorder('UnifiedMapScene:foliage-rebuild', 8),
+    [],
+  );
 
   useLayoutEffect(() => {
+    const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
     const cursors = new Array<number>(SLOT_COUNT).fill(0);
     const matrix = new THREE.Matrix4();
     const position = new THREE.Vector3();
@@ -424,7 +437,8 @@ export const InstancedFoliage = React.memo(({ map }: { map: GameMap }) => {
     for (const mesh of meshRefs.current) {
       if (mesh) mesh.instanceMatrix.needsUpdate = true;
     }
-  }, [foliageList, slots, map]);
+    if (startedAt > 0) recordFoliageRebuild(performance.now() - startedAt);
+  }, [foliageList, slots, map, recordFoliageRebuild]);
 
   return (
     <group>

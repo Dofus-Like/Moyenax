@@ -35,7 +35,7 @@ interface FarmingStoreState {
   movePlayer: (position: PathNode) => void;
   setHarvesting: (harvesting: boolean) => void;
   fetchState: () => Promise<void>;
-  gatherNode: (x: number, y: number) => Promise<FarmingApiState | null>;
+  gatherNode: (x: number, y: number) => Promise<GatherNodeResult | null>;
   endPhase: () => Promise<void>;
   debugRefill: () => Promise<void>;
   nextRound: () => Promise<void>;
@@ -48,6 +48,11 @@ interface InventoryEntry {
     name?: string;
     type?: string;
   };
+}
+
+interface GatherNodeResult {
+  state: FarmingApiState;
+  inventory: InventoryEntry[];
 }
 
 function toInventoryCounts(entries: InventoryEntry[]): Record<string, number> {
@@ -126,7 +131,8 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
     try {
       const newState = await farmingApi.gather(x, y, playerPosition.x, playerPosition.y);
       const inventoryResponse = await inventoryApi.getInventory();
-      const newInventory = toInventoryCounts(inventoryResponse.data as InventoryEntry[]);
+      const inventoryEntries = inventoryResponse.data as InventoryEntry[];
+      const newInventory = toInventoryCounts(inventoryEntries);
       const newTotal = Object.values(newInventory).reduce((a, b) => a + b, 0);
 
       const gainedSomething = newTotal > prevTotal || newState.spendableGold > prevGold;
@@ -147,7 +153,7 @@ export const useFarmingStore = create<FarmingStoreState>((set, get) => ({
       });
       const terrain = currentMap.grid[y]?.[x];
       playSfx((terrain && HARVEST_SFX[terrain]) || 'harvestComplete');
-      return newState;
+      return { state: newState, inventory: inventoryEntries };
     } catch (e) {
       console.error('Erreur lors de la rÇ¸colte', e);
       throw e;

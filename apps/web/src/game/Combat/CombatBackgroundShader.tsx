@@ -1,8 +1,9 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useControls, button, folder } from 'leva';
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
+import { createSceneMetricRecorder, isSceneDebugEnabled } from '../../perf/scene-metric-recorder';
 import { COMBAT_COLORS } from '../constants/colors';
 
 import fragmentShader from './background.frag?raw';
@@ -15,6 +16,10 @@ interface CombatBackgroundShaderProps {
 export function CombatBackgroundShader({ timeOfDay }: CombatBackgroundShaderProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
+  const recordShaderUpdate = useMemo(
+    () => createSceneMetricRecorder('CombatBackgroundShader:uniform-update', 2),
+    [],
+  );
 
   const config = useControls('Background Shader', {
     'Sky Colors': folder({
@@ -53,6 +58,7 @@ export function CombatBackgroundShader({ timeOfDay }: CombatBackgroundShaderProp
   });
 
   useFrame((state) => {
+    const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
     if (meshRef.current) {
       const material = meshRef.current.material as THREE.ShaderMaterial;
       material.uniforms.uTime.value = state.clock.getElapsedTime() * config.speed;
@@ -73,6 +79,7 @@ export function CombatBackgroundShader({ timeOfDay }: CombatBackgroundShaderProp
       // Move to camera position to surround it
       meshRef.current.position.copy(camera.position);
     }
+    if (startedAt > 0) recordShaderUpdate(performance.now() - startedAt);
   });
 
   return (

@@ -2,9 +2,7 @@ import React, { Suspense, lazy } from 'react';
 
 import { usePerfHudStore } from './perf-hud.store';
 
-const SHOW_DEBUG = ['1', 'true', 'on', 'yes'].includes(
-  String(import.meta.env.VITE_SHOW_DEBUG ?? '').toLowerCase().trim(),
-);
+const SHOW_DEBUG = import.meta.env.VITE_SHOW_DEBUG === '1';
 
 const LazyPerf = SHOW_DEBUG
   ? lazy(() => import('r3f-perf').then((mod) => ({ default: mod.Perf })))

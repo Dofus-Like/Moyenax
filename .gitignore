@@ -44,6 +44,7 @@ testem.log
 .env
 .env.*
 !.env.example
+!.env.production
 *.js.map
 
 # System Files

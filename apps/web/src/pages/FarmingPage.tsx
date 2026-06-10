@@ -31,7 +31,6 @@ import { WaterPlane } from '../game/Combat/WaterPlane';
 import { EndTurnButton } from '../game/HUD/EndTurnButton';
 import { assetUrl } from '../game/constants/assetUrl';
 import { COMBAT_COLORS } from '../game/constants/colors';
-import { CanvasPerfOverlay } from '../perf/CanvasPerfOverlay';
 import { useAuthStore } from '../store/auth.store';
 import { useFarmingStore } from '../store/farming.store';
 import { useTranslation } from '../store/language.store';
@@ -43,6 +42,43 @@ import { getTimeOfDay } from '../utils/timeOfDay';
 import { FarmingMapScene } from './FarmingMapScene';
 import { useGameSession } from './GameTunnel';
 import './ResourceMapPage.css';
+
+const SHOW_DEBUG = import.meta.env.VITE_SHOW_DEBUG === '1';
+const FARMING_QUERY_STALE_MS = 30_000;
+const FARMING_QUERY_OPTIONS = {
+  staleTime: FARMING_QUERY_STALE_MS,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const;
+
+const DebugCanvasPerfOverlay = SHOW_DEBUG
+  ? React.lazy(() => import('../perf/CanvasPerfOverlay').then((mod) => ({ default: mod.CanvasPerfOverlay })))
+  : null;
+const DebugScenePerfProbe = SHOW_DEBUG
+  ? React.lazy(() => import('../perf/scene-profiler').then((mod) => ({ default: mod.ScenePerfProbe })))
+  : null;
+const DebugRegion = SHOW_DEBUG
+  ? React.lazy(() => import('../perf/render-profiler').then((mod) => ({ default: mod.ProfiledRegion })))
+  : null;
+
+function DebugProfiledRegion({ id, children }: { id: string; children: React.ReactNode }) {
+  if (!DebugRegion) return <>{children}</>;
+  return (
+    <Suspense fallback={null}>
+      <DebugRegion id={id}>{children}</DebugRegion>
+    </Suspense>
+  );
+}
+
+function DebugCanvasProbes({ id }: { id: string }) {
+  if (!DebugCanvasPerfOverlay || !DebugScenePerfProbe) return null;
+  return (
+    <Suspense fallback={null}>
+      <DebugCanvasPerfOverlay />
+      <DebugScenePerfProbe id={id} />
+    </Suspense>
+  );
+}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = (_id: string): void => {};
@@ -158,26 +194,31 @@ export function FarmingPage() {
   const { data: inventoryData } = useQuery({
     queryKey: ['inventory'],
     queryFn: () => inventoryApi.getInventory(),
+    ...FARMING_QUERY_OPTIONS,
   });
 
   const { data: spellData } = useQuery({
     queryKey: ['player-spells'],
     queryFn: () => playerApi.getSpells(),
+    ...FARMING_QUERY_OPTIONS,
   });
 
   const { data: equipmentData } = useQuery({
     queryKey: ['equipment'],
     queryFn: () => equipmentApi.getEquipment(),
+    ...FARMING_QUERY_OPTIONS,
   });
 
   const { data: shopItemsData } = useQuery({
     queryKey: ['shop-items'],
     queryFn: () => shopApi.getItems(),
+    ...FARMING_QUERY_OPTIONS,
   });
   
   const { data: statsData } = useQuery({
     queryKey: ['player-stats'],
     queryFn: () => playerApi.getStats(),
+    ...FARMING_QUERY_OPTIONS,
   });
 
   const equipMutation = useMutation({
@@ -409,8 +450,10 @@ export function FarmingPage() {
     setIsGathering(true);
     playSfx('harvestStart');
     try {
-      await gatherNode(x, y);
-      await queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      const result = await gatherNode(x, y);
+      if (result) {
+        queryClient.setQueryData(['inventory'], { data: result.inventory });
+      }
     } finally {
       setIsGathering(false);
     }
@@ -442,13 +485,6 @@ export function FarmingPage() {
     footstepFlipRef.current = !footstepFlipRef.current;
     playSfx(footstepFlipRef.current ? 'footstepA' : 'footstepB');
   }, []);
-
-  useEffect(() => {
-    // Force spell sync on mount
-    playerApi.getSpells().then(() => {
-      queryClient.invalidateQueries({ queryKey: ['player-spells'] });
-    });
-  }, [queryClient]);
 
   const handlePathComplete = useCallback(() => {
     if (movePath && movePath.length > 0) {
@@ -568,7 +604,7 @@ export function FarmingPage() {
             dpr={[1, 2]}
             camera={{ fov: 30 }}
           >
-            <CanvasPerfOverlay />
+            <DebugCanvasProbes id="FarmingCanvas" />
             <fogExp2 attach="fog" args={[COMBAT_COLORS.SCENE_FOG, 0.006]} />
             <CombatBackgroundShader timeOfDay={timeOfDay} />
             <Suspense fallback={null}>
@@ -628,19 +664,21 @@ export function FarmingPage() {
             />
             
             <Suspense fallback={null}>
-              <FarmingMapScene
-                map={map}
-                harvestedTiles={harvestedTiles}
-                playerPosition={playerPosition ?? undefined}
-                movePath={movePath}
-                onPathComplete={handlePathComplete}
-                onTileReached={handleTileReached}
-                onTileClick={handleTileClick}
-                onTileHover={handleTileHover}
-                onSceneReady={handleSceneReady}
-                playerPa={statsData?.data?.pa}
-                playerPm={statsData?.data?.pm}
-              />
+              <DebugProfiledRegion id="FarmingMapScene">
+                <FarmingMapScene
+                  map={map}
+                  harvestedTiles={harvestedTiles}
+                  playerPosition={playerPosition ?? undefined}
+                  movePath={movePath}
+                  onPathComplete={handlePathComplete}
+                  onTileReached={handleTileReached}
+                  onTileClick={handleTileClick}
+                  onTileHover={handleTileHover}
+                  onSceneReady={handleSceneReady}
+                  playerPa={statsData?.data?.pa}
+                  playerPm={statsData?.data?.pm}
+                />
+              </DebugProfiledRegion>
             </Suspense>
           </Canvas>
         )}

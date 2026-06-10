@@ -16,6 +16,7 @@ import {
 } from '@game/shared-types';
 
 import { combatApi } from '../../api/combat.api';
+import { createSceneMetricRecorder, isSceneDebugEnabled } from '../../perf/scene-metric-recorder';
 import { useAuthStore } from '../../store/auth.store';
 import { useCombatStore } from '../../store/combat.store';
 import { Castle } from '../ResourceMap/Castle';
@@ -119,6 +120,14 @@ export const UnifiedMapScene = React.memo(
     const processedTimestampsRef = useRef(new Set<number>());
     const inputProcessingLock = useRef(false);
     const isPointerOverMapRef = useRef(false);
+    const recordCombatHoverRaycast = useMemo(
+      () => createSceneMetricRecorder('UnifiedMapScene:combat-hover-raycast', 3),
+      [],
+    );
+    const recordFarmingHover = useMemo(
+      () => createSceneMetricRecorder('UnifiedMapScene:farming-hover', 2),
+      [],
+    );
 
     const { raycaster, mouse, camera, scene, gl } = useThree();
 
@@ -275,6 +284,7 @@ export const UnifiedMapScene = React.memo(
 
     const updateFarmingHoveredTile = useCallback(
       (uv: { x: number; y: number }) => {
+        const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
         if (!activeMap) return;
 
         lastFarmingHoverUvRef.current = { x: uv.x, y: uv.y };
@@ -299,8 +309,9 @@ export const UnifiedMapScene = React.memo(
         hoveredTileRef.current = { x: gx, y: gz };
         setHoveredTile({ x: gx, y: gz });
         onTileHover?.({ x: gx, y: gz, terrain });
+        if (startedAt > 0) recordFarmingHover(performance.now() - startedAt);
       },
-      [activeMap, clearHoveredTile, isCameraMoving, onTileHover],
+      [activeMap, clearHoveredTile, isCameraMoving, onTileHover, recordFarmingHover],
     );
 
     const performRaycastHover = useCallback(() => {
@@ -309,6 +320,7 @@ export const UnifiedMapScene = React.memo(
         return;
       }
 
+      const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
       raycaster.setFromCamera(mouse, camera);
 
       // 1. Raycast against players (still need this for tooltips/selection)
@@ -354,7 +366,8 @@ export const UnifiedMapScene = React.memo(
         hoveredTileRef.current = { x: gx, y: gz };
         return { x: gx, y: gz, terrain };
       });
-    }, [activeMap, camera, clearHoveredTile, mode, mouse, raycaster, scene]);
+      if (startedAt > 0) recordCombatHoverRaycast(performance.now() - startedAt);
+    }, [activeMap, camera, clearHoveredTile, mode, mouse, raycaster, recordCombatHoverRaycast, scene]);
 
     const handlePointerMove = useCallback((event: ThreeEvent<PointerEvent>) => {
       isPointerOverMapRef.current = true;

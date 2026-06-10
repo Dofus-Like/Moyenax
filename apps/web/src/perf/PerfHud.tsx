@@ -2,7 +2,14 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { apiClient } from '../api/client';
 
-import { usePerfHudStore, type NetworkSample, type RenderAggregate, type SseEventSample } from './perf-hud.store';
+import {
+  usePerfHudStore,
+  type NetworkSample,
+  type RenderAggregate,
+  type SceneGpuSnapshot,
+  type SceneMetricAggregate,
+  type SseEventSample,
+} from './perf-hud.store';
 import { buildJsonReport, buildMarkdownReport } from './share-report';
 import {
   buildDiff,
@@ -63,6 +70,8 @@ export function PerfHud() {
       memoryHistory: state.memoryHistory,
       backend: state.backend,
       backendError: state.backendError,
+      sceneMetrics: state.sceneMetrics,
+      sceneGpu: state.sceneGpu,
     };
   };
 
@@ -171,11 +180,15 @@ function OverviewTab() {
   const fpsHistory = usePerfHudStore((s) => s.fpsHistory);
   const vitals = usePerfHudStore((s) => s.vitals);
   const backend = usePerfHudStore((s) => s.backend);
+  const sceneMetrics = usePerfHudStore((s) => s.sceneMetrics);
+  const sceneGpu = usePerfHudStore((s) => s.sceneGpu);
   const longTasks = usePerfHudStore((s) => s.longTasks);
   const sseEvents = usePerfHudStore((s) => s.sseEvents);
   const memory = usePerfHudStore((s) => s.memory);
   const memoryHistory = usePerfHudStore((s) => s.memoryHistory);
   const color = pickFpsColor(fps.fps);
+  const slowScene = useMemo(() => pickSlowestSceneMetric(sceneMetrics), [sceneMetrics]);
+  const heavyCanvas = useMemo(() => pickHeaviestGpuSnapshot(sceneGpu), [sceneGpu]);
 
   return (
     <div>
@@ -186,6 +199,24 @@ function OverviewTab() {
           <Metric label="Long tasks" value={longTasks.length.toString()} color={longTasks.length > 0 ? '#facc15' : undefined} />
           <Metric label="SSE events" value={sseEvents.length.toString()} />
         </div>
+        {(slowScene || heavyCanvas) && (
+          <div style={{ ...rowStyle, marginTop: 6 }}>
+            {slowScene && (
+              <Metric
+                label="Slow scene op"
+                value={`${shortMetricId(slowScene.id)} ${slowScene.maxMs.toFixed(1)}ms`}
+                color={durationColor(slowScene.maxMs)}
+              />
+            )}
+            {heavyCanvas && (
+              <Metric
+                label="Draw calls"
+                value={`${heavyCanvas.id} ${heavyCanvas.calls}`}
+                color={heavyCanvas.calls > 200 ? '#facc15' : undefined}
+              />
+            )}
+          </div>
+        )}
         <Sparkline values={fpsHistory} />
         {memory && (
           <div style={{ marginTop: 6 }}>
@@ -624,20 +655,97 @@ function BackendTab() {
 
 function GameTab() {
   const backend = usePerfHudStore((s) => s.backend);
-  if (!backend) return <div style={mutedStyle}>Chargement…</div>;
-  const metrics = backend.gameMetrics ?? [];
-  const grouped = metrics.reduce<Record<string, typeof metrics>>((acc, m) => {
+  const sceneMetrics = usePerfHudStore((s) => s.sceneMetrics);
+  const sceneGpu = usePerfHudStore((s) => s.sceneGpu);
+  const clearScenePerf = usePerfHudStore((s) => s.clearScenePerf);
+  const metricRows = useMemo(
+    () => Object.values(sceneMetrics).sort((a, b) => b.maxMs - a.maxMs),
+    [sceneMetrics],
+  );
+  const gpuRows = useMemo(
+    () => Object.values(sceneGpu).sort((a, b) => b.calls - a.calls),
+    [sceneGpu],
+  );
+  const backendMetrics = backend?.gameMetrics ?? [];
+  const grouped = backendMetrics.reduce<Record<string, typeof backendMetrics>>((acc, m) => {
     (acc[m.scope] ??= []).push(m);
     return acc;
   }, {});
 
+  if (!backend && metricRows.length === 0 && gpuRows.length === 0) {
+    return <div style={mutedStyle}>Chargement…</div>;
+  }
+
   return (
     <div>
+      <Section title="Scene probes (R3F/WebGL)">
+        <button style={btnStyle} onClick={clearScenePerf}>Reset scene metrics</button>
+        {metricRows.length === 0 && gpuRows.length === 0 ? (
+          <div style={mutedStyle}>No scene metrics yet. Open a scene with VITE_SHOW_DEBUG=1.</div>
+        ) : (
+          <>
+            {gpuRows.length > 0 && (
+              <table style={tableStyle}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Canvas</th>
+                    <th style={thStyle}>Calls</th>
+                    <th style={thStyle}>Triangles</th>
+                    <th style={thStyle}>Geom</th>
+                    <th style={thStyle}>Textures</th>
+                    <th style={thStyle}>Programs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gpuRows.map((r) => (
+                    <tr key={r.id}>
+                      <td style={tdStyle}>{r.id}</td>
+                      <td style={{ ...tdStyle, color: r.calls > 200 ? '#facc15' : undefined }}>{r.calls}</td>
+                      <td style={tdStyle}>{formatNumber(r.triangles)}</td>
+                      <td style={tdStyle}>{r.geometries}</td>
+                      <td style={tdStyle}>{r.textures}</td>
+                      <td style={tdStyle}>{r.programs}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            {metricRows.length > 0 && (
+              <table style={{ ...tableStyle, marginTop: 6 }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Metric</th>
+                    <th style={thStyle}>Count</th>
+                    <th style={thStyle}>Avg</th>
+                    <th style={thStyle}>Max</th>
+                    <th style={thStyle}>Slow</th>
+                    <th style={thStyle}>Last</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metricRows.map((r) => (
+                    <tr key={r.id}>
+                      <td style={tdStyle}>{r.id}</td>
+                      <td style={tdStyle}>{r.count}</td>
+                      <td style={tdStyle}>{r.avgMs.toFixed(2)}</td>
+                      <td style={{ ...tdStyle, color: durationColor(r.maxMs) }}>{r.maxMs.toFixed(2)}</td>
+                      <td style={{ ...tdStyle, color: r.slowCount > 0 ? '#facc15' : undefined }}>{r.slowCount}</td>
+                      <td style={tdStyle}>{r.lastMs.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </>
+        )}
+      </Section>
+
       {Object.keys(grouped).length === 0 && (
-        <div style={mutedStyle}>No game metrics captured yet. Play a turn or cast a spell.</div>
+        <div style={mutedStyle}>No backend game metrics captured yet. Play a turn or cast a spell.</div>
       )}
       {Object.entries(grouped).map(([scope, rows]) => (
-        <Section key={scope} title={scope}>
+        <Section key={scope} title={`Backend game metrics — ${scope}`}>
           <table style={tableStyle}>
             <thead>
               <tr>
@@ -666,6 +774,32 @@ function GameTab() {
       ))}
     </div>
   );
+}
+
+function pickSlowestSceneMetric(metrics: Record<string, SceneMetricAggregate>): SceneMetricAggregate | null {
+  let best: SceneMetricAggregate | null = null;
+  for (const metric of Object.values(metrics)) {
+    if (metric.id.endsWith(':r3f-frame-gap')) continue;
+    if (!best || metric.maxMs > best.maxMs) best = metric;
+  }
+  return best;
+}
+
+function pickHeaviestGpuSnapshot(snapshots: Record<string, SceneGpuSnapshot>): SceneGpuSnapshot | null {
+  let best: SceneGpuSnapshot | null = null;
+  for (const snapshot of Object.values(snapshots)) {
+    if (!best || snapshot.calls > best.calls) best = snapshot;
+  }
+  return best;
+}
+
+function shortMetricId(id: string): string {
+  const parts = id.split(':');
+  return parts[parts.length - 1] ?? id;
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat('en-US').format(value);
 }
 
 function RedisTab() {
@@ -1086,6 +1220,8 @@ function saveCurrentVirtualSnapshot(): SavedSnapshot {
     vitals: state.vitals,
     longTasks: state.longTasks,
     renders: state.renders,
+    sceneMetrics: state.sceneMetrics,
+    sceneGpu: state.sceneGpu,
     requests: state.requests,
     backend: state.backend,
   };

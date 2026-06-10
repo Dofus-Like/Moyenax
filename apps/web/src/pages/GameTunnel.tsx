@@ -161,7 +161,8 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
   }, [activeSession?.id, activeSession?.status]);
 
   useEffect(() => {
-    if (!activeSession) return;
+    const sessionId = activeSession?.id;
+    if (!sessionId) return;
 
     let closed = false;
     let eventSource: EventSource | null = null;
@@ -205,7 +206,7 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
 
     const connect = async () => {
       try {
-        const ticketResponse = await gameSessionApi.getStreamTicket(activeSession.id);
+        const ticketResponse = await gameSessionApi.getStreamTicket(sessionId);
         if (closed) {
           return;
         }
@@ -214,7 +215,7 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
 
         const ticket = encodeURIComponent(ticketResponse.data.ticket);
         eventSource = new EventSource(
-          `/api/v1/game-session/session/${activeSession.id}/events?ticket=${ticket}`,
+          `/api/v1/game-session/session/${sessionId}/events?ticket=${ticket}`,
         );
         eventSource.addEventListener('SESSION_UPDATED', onSessionUpdated);
         eventSource.onerror = (error) => {
@@ -251,7 +252,7 @@ export function GameSessionProvider({ children }: { children: React.ReactNode })
       }
       cleanupSource();
     };
-  }, [activeSession]);
+  }, [activeSession?.id]);
 
   return (
     <GameSessionContext.Provider value={{ activeSession, refreshSession, loading }}>
