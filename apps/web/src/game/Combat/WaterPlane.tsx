@@ -125,6 +125,11 @@ export function WaterPlane({ timeOfDay, islandSize = [10, 10] }: WaterPlaneProps
     const startedAt = isSceneDebugEnabled() ? performance.now() : 0;
     const mesh = meshRef.current;
     if (!mesh) return;
+    // L'eau suit la caméra en XZ → bord toujours à 750u, jamais visible
+    // (les vagues restent ancrées au monde car calculées en position monde).
+    mesh.position.x = state.camera.position.x;
+    mesh.position.z = state.camera.position.z;
+    mesh.position.y = config.y;
     const u = (mesh.material as THREE.ShaderMaterial).uniforms;
     u.uTime.value = state.clock.getElapsedTime() * config.speed;
     u.uPhase.value = timeOfDay;

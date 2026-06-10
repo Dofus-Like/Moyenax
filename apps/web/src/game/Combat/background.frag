@@ -1,4 +1,5 @@
 varying vec2 vScreenSpace;
+varying vec3 vDir;
 
 uniform float uTime;
 uniform float uOpacity;
@@ -46,38 +47,47 @@ float fbm(vec2 p) {
 }
 
 void main() {
-  vec2 uv = vScreenSpace;
-  
-  // Layer 1: Base motion
-  float n1 = fbm(uv * 2.0 + uTime * 0.05);
-  
-  // Layer 2: Detail motion
-  float n2 = fbm(uv * 4.0 - uTime * 0.02);
-  
-  // 3-state interpolation
+  // 3-state interpolation : A = horizon, B = zénith, C = nuages
   vec3 colorA, colorB, colorC;
-  
   if (uPhase <= 1.0) {
-    // Day to Sunset
     float t = uPhase;
     colorA = mix(uDayA, uSunA, t);
     colorB = mix(uDayB, uSunB, t);
     colorC = mix(uDayC, uSunC, t);
   } else {
-    // Sunset to Night
     float t = uPhase - 1.0;
     colorA = mix(uSunA, uNightA, t);
     colorB = mix(uSunB, uNightB, t);
     colorC = mix(uSunC, uNightC, t);
   }
 
-  // Combine layers
-  vec3 color = mix(colorA, colorB, n1);
-  color = mix(color, colorC, n2 * 0.5);
-  
-  // Vignette for depth
-  float dist = length(uv - 0.5);
-  color *= smoothstep(1.0, 0.2, dist);
+  // ── Ciel en direction monde (stable quand la caméra tourne) ────────────────
+  vec3 dir = normalize(vDir);
+  float elev = clamp(dir.y, -1.0, 1.0); // 0 = horizon, 1 = zénith
+
+  // Dégradé vertical doux : pâle/brumeux à l'horizon → bleu profond au zénith.
+  float grad = pow(smoothstep(-0.02, 0.85, elev), 0.8);
+  vec3 color = mix(colorA, colorB, grad);
+
+  // Légère brume claire qui s'accumule juste au-dessus de l'horizon.
+  float haze = smoothstep(0.22, -0.04, elev) * smoothstep(-0.10, 0.04, elev);
+  color = mix(color, mix(colorA, colorC, 0.5), haze * 0.45);
+
+  // ── Nuages qui dérivent ────────────────────────────────────────────────────
+  // Projection en dôme : dir.xz aplati par l'élévation → les nuages fuient
+  // vers l'horizon en perspective. La dérive vient du uTime dans le fbm.
+  vec2 dome = dir.xz / (elev + 0.32);
+  float clouds = fbm(dome * 1.15 + vec2(uTime * 0.012, uTime * 0.004));
+  clouds = smoothstep(0.48, 0.92, clouds);
+
+  // Les nuages n'existent que dans le ciel (pas sous l'horizon, fondus au zénith).
+  float cloudBand = smoothstep(0.015, 0.18, elev) * smoothstep(1.05, 0.35, elev);
+  color = mix(color, colorC, clouds * cloudBand * 0.85);
+
+  // Sous l'horizon : fond vers une teinte mer profonde (fallback si le plan
+  // d'eau ne couvre pas un coin de l'écran → pas de bande cyan vif).
+  float below = smoothstep(-0.01, -0.20, elev);
+  color = mix(color, colorB * 0.55, below * 0.9);
 
   gl_FragColor = vec4(color, uOpacity);
 }
